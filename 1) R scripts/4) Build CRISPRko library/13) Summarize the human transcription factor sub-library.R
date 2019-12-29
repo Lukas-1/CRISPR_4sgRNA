@@ -75,7 +75,7 @@ table(TF_summary_df[, "Num_meeting_criteria"] < 4)
 columns_for_excel <- c(
   "Gene_symbol", "ENSEMBL_gene_ID", "Entrez_ID", "Original_symbol", "Original_Entrez_ID",
   "Num_overlaps", "Spacing", "Longest_subsequence", "GuideScan_specificity", "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
-  "Num_total", "Num_meeting_criteria",
+  "Num_top4_outside_criteria", "Num_total",
   "DNA_binding_domain", "TF_assessment", "Binding_mode",
   "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO", "Is_C2H2_ZF"
 )

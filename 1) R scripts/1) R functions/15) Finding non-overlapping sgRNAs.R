@@ -250,7 +250,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
     if (sum(!(are_polyT | are_curated)) >= num_sgRNAs) {
       sub_df_final <- CreateCombinations(sub_df_reordered,
                                          were_included        = !(are_polyT | are_curated),
-                                         min_space            = min_space,
+                                         min_space            = min(min_spaces),
                                          num_sgRNAs           = num_sgRNAs,
                                          num_overlaps_allowed = min_overlap,
                                          tolerate_NA_overlaps = TRUE,

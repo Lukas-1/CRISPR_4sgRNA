@@ -97,7 +97,7 @@ columns_for_excel <- c(
   "Gene_present",
   "Num_hCRISPRa_v2_transcripts", "Num_transcripts", "Num_overlapping_transcripts", "Num_incomplete_transcripts",
   "Spacing", "Longest_subsequence", "GuideScan_specificity", "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
-  "Num_total", "Num_meeting_criteria", "Num_overlapping_with_SNP"
+  "Num_top4_outside_criteria", "Num_total", "Num_overlapping_with_SNP"
 )
 
 sgRNAs_overview_excel_df <- sgRNAs_overview_df[, columns_for_excel]

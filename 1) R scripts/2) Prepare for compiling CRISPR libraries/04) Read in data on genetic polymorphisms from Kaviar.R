@@ -11,6 +11,7 @@ library("vcfR")
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR"

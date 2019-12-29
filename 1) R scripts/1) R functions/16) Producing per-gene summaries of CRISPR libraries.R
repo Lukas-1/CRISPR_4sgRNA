@@ -82,6 +82,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       "Longest_subsequence"         = NA_integer_,
       "Num_total"                   = length(x),
       "Num_overlaps"                = NULL,
+      "Num_top4_outside_criteria"   = NULL,
       "Num_meeting_criteria"        = sum(CRISPR_df[x, "Meet_criteria"]),
       "Num_without_GuideScan"       = sum(is.na(CRISPR_df[x, "GuideScan_specificity"])),
       "Num_unspecific"              = sum(CRISPR_df[x, "Are_unspecific"]),
@@ -137,6 +138,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       results_list[["Spacing"]] <- overlap_string
       are_top_4 <- CRISPR_df[x, "Rank"] %in% 1:4
       results_list[["Num_overlaps"]] <- sum(CRISPR_df[x[are_top_4], "Num_overlaps"])
+      results_list[["Num_top4_outside_criteria"]] <- sum(are_top_4) - sum(CRISPR_df[x[are_top_4], "Meet_criteria"])
       if (include_transcripts) {
         guidescan_spec_vec <- vapply(transcripts_top4_indices,
                                      function(y) AggregateSpecificityScores(CRISPR_df[x, "GuideScan_specificity"][y]),
@@ -165,12 +167,13 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
         results_list[["Longest_subsequence"]]     <- LongestSharedSubsequence(CRISPR_df[x[are_top_4], "sgRNA_sequence"])
       }
     } else {
-      results_list[["Spacing"]]                 <- NULL
-      results_list[["Num_overlaps"]]            <- NULL
-      results_list[["GuideScan_specificity"]]   <- NULL
-      results_list[["CRISPOR_3MM_specificity"]] <- NULL
-      results_list[["CRISPOR_4MM_specificity"]] <- NULL
-      results_list[["Longest_subsequence"]]     <- NULL
+      results_list[["Spacing"]]                   <- NULL
+      results_list[["Num_overlaps"]]              <- NULL
+      results_list[["Num_top4_outside_criteria"]] <- NULL
+      results_list[["GuideScan_specificity"]]     <- NULL
+      results_list[["CRISPOR_3MM_specificity"]]   <- NULL
+      results_list[["CRISPOR_4MM_specificity"]]   <- NULL
+      results_list[["Longest_subsequence"]]       <- NULL
     }
     if (include_transcripts) {
       transcripts_vec <- CRISPR_df[x, "TSS_ID"]
@@ -246,6 +249,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
     if (include_spacing) !(results_df[, "Spacing"] %in% "None")                                                               else NA_vec,
     if (include_spacing) !(results_df[, "Spacing"] %in% ">12bp")                                                              else NA_vec,
     if (include_spacing && include_transcripts) -(results_df[, "Num_incomplete_transcripts"])                                 else NA_vec,
+    if (include_spacing) -(results_df[, "Num_top4_outside_criteria"])                                                         else NA_vec,
     if (include_spacing && include_transcripts) (results_df[, "Num_transcripts"] != results_df[, "Num_unspaced_transcripts"]) else NA_vec,
     if (include_spacing && include_transcripts) -(results_df[, "Num_unspaced_transcripts"])                                   else NA_vec,
     if (include_spacing) num_nonoverlapping_vec                                                                               else NA_vec,
