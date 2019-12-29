@@ -14,7 +14,7 @@ general_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files", "
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "1) Extract gene annotation data from the org.Hs.eg.db Bioconductor database.RData"))
+load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Hs.eg.db Bioconductor database.RData"))
 
 
 

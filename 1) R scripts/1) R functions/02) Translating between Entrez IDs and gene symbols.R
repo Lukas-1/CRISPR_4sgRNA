@@ -14,7 +14,7 @@ general_RData_directory   <- file.path(RData_directory, "1) General")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "2) Map gene symbols to Entrez IDs.RData"))
+load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
 
 
 
