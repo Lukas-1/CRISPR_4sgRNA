@@ -134,6 +134,9 @@ FormatForExcel <- function(my_df,
   for (source in names(source_abbreviations_vec)) {
     my_df[have_multiple_sources, "Source"] <- sub(source, source_abbreviations_vec[[source]], my_df[have_multiple_sources, "Source"], fixed = TRUE)
   }
+  if (!(is_CRISPRa)) {
+    my_df[, "Source"] <- ifelse(my_df[, "Source"] == "GPP, Bru, TKOv3", "GPP, Bru, tk3", my_df[, "Source"])
+  }
 
   my_df[, "Color"] <- ones_and_zeros_vec + 1L
 
