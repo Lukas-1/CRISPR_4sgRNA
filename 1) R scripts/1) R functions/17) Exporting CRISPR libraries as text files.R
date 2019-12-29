@@ -48,23 +48,25 @@ MoveAfterColumn <- function(my_df, after_this_column, column_to_move) {
 FormatForExcel <- function(my_df,
                            remove_columns            = NULL,
                            probability_to_percentage = FALSE,
-                           convert_excluded_to_3     = TRUE,
+                           convert_excluded_to_2     = TRUE,
+                           convert_controls_to_3     = TRUE,
                            add_primers               = FALSE,
                            allow_curated             = FALSE
                            ) {
-
   # Depends on 'source_abbreviations_vec' in the global environment
 
   is_CRISPRa <- "Calabrese_rank" %in% colnames(my_df)
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[, "Combined_ID"])
-  if (convert_excluded_to_3) {
+  if (convert_excluded_to_2) {
     are_to_be_excluded <- !(MeetCriteria(my_df, allow_curated = allow_curated))
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
   }
-
   are_controls <- my_df[, "Is_control"] == "Yes"
   if (any(are_controls)) {
+    if (convert_controls_to_3) {
+      ones_and_zeros_vec[are_controls & (my_df[, "Num_0MM"] == 0) & (my_df[, "Num_1MM"] == 0)] <- 3L
+    }
     if (is_CRISPRa) {
       my_df[are_controls, "hCRISPRa_v2_transcript"] <- NA_character_
     }

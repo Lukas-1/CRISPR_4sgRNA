@@ -57,7 +57,17 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
 
   NA_vec <- rep.int(NA, nrow(CRISPR_sub_df))
 
+  is_CRISPRko <- "Exon_number_GPP" %in% colnames(CRISPR_sub_df)
+  if (is_CRISPRko) {
+    controls_vec <- NA_vec
+    are_Brunello_controls <- (CRISPR_sub_df[, "Is_control"] == "Yes") & (CRISPR_sub_df[, "Source"] == "Brunello")
+    controls_vec[are_Brunello_controls] <- as.integer(sub("^Control_", CRISPR_sub_df[are_Brunello_controls, "Combined_ID"]))
+  } else {
+    controls_vec <- NA_vec
+  }
+
   my_order <- order(CRISPR_sub_df[, "Is_control"] == "No",
+                    controls_vec,
                     !(grepl("TTTT", CRISPR_sub_df[, "sgRNA_sequence"], ignore.case = TRUE)),
                     !(is.na(CRISPR_sub_df[, "Start"])),
                     substr(CRISPR_sub_df[, "PAM"], 2, 3) == "GG",
@@ -71,7 +81,7 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
                     if (allow_5pG_MM) ifelse(exactly_one_vec, 1, -(CRISPR_sub_df[, "Num_5G_MM"]))                                             else NA_vec, # penalize multiple 5' G-mismatched locations
                     if (allow_5pG_MM || !("Num_5G_MM" %in% colnames(CRISPR_sub_df))) -(CRISPR_sub_df[, "Num_1MM"]) else -(rowSums(CRISPR_sub_df[, c("Num_5G_MM", "Num_1MM")])),
 
-                    if (all(c("Exon_number_GPP", "CRISPOR_Graf_status") %in% colnames(CRISPR_sub_df))) (CRISPR_sub_df[, "CRISPOR_Graf_status"] %in% "GrafOK")                else NA_vec,
+                    if (is_CRISPRko && ("CRISPOR_Graf_status" %in% colnames(CRISPR_sub_df))) (CRISPR_sub_df[, "CRISPOR_Graf_status"] %in% "GrafOK") else NA_vec,
 
                     CRISPR_sub_df[, "GuideScan_specificity"],
                     if ("CRISPOR_4MM_specificity" %in% colnames(CRISPR_sub_df)) CRISPR_sub_df[, "CRISPOR_4MM_specificity"]                    else NA_vec,

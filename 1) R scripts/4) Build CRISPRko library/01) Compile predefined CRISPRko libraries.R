@@ -198,7 +198,7 @@ new_Brunello_df[, "Original_order"] <- unlist(tapply(seq_len(nrow(new_Brunello_d
 
 Brunello_controls_df <- data.frame(
   "Combined_ID"               = paste0("Control_", sub("^NO_CURRENT_", "", Brunello_2018_df[are_controls_Brunello, "Annotated Gene Symbol"])),
-  "Source"                    = NA_character_,
+  "Source"                    = "Brunello",
   "Is_control"                = "Yes",
   "Entrez_ID"                 = NA_character_,
   "Gene_symbol"               = NA_character_,
@@ -231,10 +231,11 @@ TKOv3_exons <- ifelse(TKOv3_df[, "TARGET EXON"] == "CTRL",
 TKOv3_exons <- as.integer(TKOv3_exons)
 
 
+are_TKOv3_controls <- TKOv3_df[, "TARGET EXON"] == "CTRL"
 new_TKOv3_df <- data.frame(
-  "Combined_ID"               = NA_character_,
+  "Combined_ID"               = ifelse(are_TKOv3_controls, "Control", NA_character_),
   "Source"                    = "TKOv3",
-  "Is_control"                = ifelse(TKOv3_df[, "TARGET EXON"] == "CTRL", "Yes", "No"),
+  "Is_control"                = ifelse(are_TKOv3_controls, "Yes", "No"),
   mapped_TKOv3_df[, 1:4],
   "Original_order"            = NA_integer_,
   "Entrez_source_Brunello"    = NA_integer_,
