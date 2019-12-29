@@ -386,10 +386,7 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
 
       if (use_TSS) {
 
-        best_TSS <- unique(ifelse(is.na(CRISPR_df[this_gene_duplicates, "Best_TSS"]),
-                                  CRISPR_df[this_gene_duplicates, "First_TSS"],
-                                  CRISPR_df[this_gene_duplicates, "Best_TSS"]
-                                  ))
+        best_TSS <- unique(GetBestTSSPositions(CRISPR_df[this_gene_duplicates, ]))
 
 
         assign("delete_combined_ID", combined_ID, envir = globalenv())
@@ -484,6 +481,16 @@ ReassignTSS <- function(merged_CRISPR_df) {
                                               )
   }
   return(merged_CRISPR_df)
+}
+
+
+
+
+GetBestTSSPositions <- function(CRISPR_df) {
+  ifelse(is.na(CRISPR_df[, "Best_TSS"]),
+         ifelse(CRISPR_df[, "Strand_of_TSS"] == "+", CRISPR_df[, "First_TSS"], CRISPR_df[, "Last_TSS"]),
+         CRISPR_df[, "Best_TSS"]
+         )
 }
 
 
@@ -594,7 +601,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
 
   ### Calculate the distance from the TSS
-  TSS_position_vec <- ifelse(is.na(merged_CRISPR_df[, "Best_TSS"]), merged_CRISPR_df[, "First_TSS"], merged_CRISPR_df[, "Best_TSS"])
+  TSS_position_vec <- GetBestTSSPositions(merged_CRISPR_df)
 
   have_neg_strand_TSS <- merged_CRISPR_df[, "Strand_of_TSS"] == "-"
   merged_CRISPR_df[, "Distance_from_TSS"] <- (merged_CRISPR_df[, "Cut_location"] - TSS_position_vec) * ifelse(have_neg_strand_TSS, -1L, 1L) +

@@ -254,6 +254,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
     if (include_spacing) -(results_df[, "Num_overlaps"])                                                                      else NA_vec,
     ifelse(results_df[, "Num_total"] < 4, results_df[, "Num_total"], NA_integer_),
     ifelse(results_df[, "Num_meeting_criteria"] < 4, results_df[, "Num_meeting_criteria"], NA_integer_),
+    if (include_spacing) !(is.na(results_df[, "GuideScan_specificity"]) & is.na(results_df[, "CRISPOR_4MM_specificity"]))     else NA_vec,
     if (include_spacing) !(is.na(results_df[, "GuideScan_specificity"]))                                                      else NA_vec,
     if (include_spacing) results_df[, "GuideScan_specificity"]                                                                else NA_vec,
     if (include_spacing) !(is.na(results_df[, "CRISPOR_4MM_specificity"]))                                                    else NA_vec,
