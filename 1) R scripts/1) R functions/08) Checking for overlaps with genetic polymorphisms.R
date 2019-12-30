@@ -279,8 +279,9 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
 
 
     SNP_column_names <- grep("_SNP_", colnames(results_df), fixed = TRUE, value = TRUE)
+    SNP_column_roots <- unique(sub("^(PAM|sgRNA|all23)_", "", SNP_column_names))
 
-    SNP_AF_max_roots <- grep("_AF_max_", unique(sub("^(PAM|sgRNA|all23)_", "", SNP_column_names)), fixed = TRUE, value = TRUE)
+    SNP_AF_max_roots <- grep("_AF_max_", SNP_column_roots, fixed = TRUE, value = TRUE)
     NGG_AF_max_list <- sapply(SNP_AF_max_roots, function(root) {
       PAM_vec <- results_df[, paste0("PAM_", root)]
       sg_vec <- results_df[, paste0("sgRNA_", root)]
@@ -289,11 +290,27 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
       }, numeric(1))
     }, simplify = FALSE)
     NGG_AF_max_mat <- do.call(cbind, NGG_AF_max_list)
-    colnames(NGG_AF_max_mat) <- paste0("all22_", colnames(NGG_AF_max_mat))
-    results_df <- data.frame(results_df, NGG_AF_max_mat, stringsAsFactors = FALSE, row.names = NULL)
 
-    # SNP_rsID_roots <-
+    SNP_rsID_roots <- grep("SNP_IDs_", SNP_column_roots, fixed = TRUE, value = TRUE)
+    NGG_rsID_list <- sapply(SNP_rsID_roots, function(root) {
+      PAM_list   <- strsplit(results_df[, paste0("PAM_", root)], ", ", fixed = TRUE)
+      sg_list    <- strsplit(results_df[, paste0("sgRNA_", root)], ", ", fixed = TRUE)
+      all23_list <- strsplit(results_df[, paste0("all23_", root)], ", ", fixed = TRUE)
+      results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
+        results_vec <- intersect(all23_list[[x]], c(sg_list[[x]], PAM_list[[x]]))
+        if (all(is.na(results_vec))) {
+          return(NA_character_)
+        } else {
+          return(paste0(results_vec, collapse = ", "))
+        }
+      }, "")
+    }, simplify = FALSE)
+    NGG_rsID_mat <- do.call(cbind, NGG_rsID_list)
 
+    NGG_df <- data.frame(NGG_rsID_mat, NGG_AF_max_mat, stringsAsFactors = FALSE, row.names = NULL)
+    NGG_df <- NGG_df[, order(match(colnames(NGG_df), SNP_column_roots))]
+    colnames(NGG_df) <- paste0("all22_", colnames(NGG_df))
+    results_df <- data.frame(results_df, NGG_df, stringsAsFactors = FALSE, row.names = NULL)
 
   } else {
     results_df <- sgRNA_plus_PAM_polymorphisms_df
