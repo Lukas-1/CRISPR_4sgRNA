@@ -192,7 +192,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
     }
     if (include_transcripts && include_top4nonoverlapping) {
       results_list[["Num_unspaced_transcripts"]]    <- sum(tapply(are_incomplete[x], transcripts_fac, any))
-      results_list[["Num_incomplete_transcripts"]]  <- sum(!(lengths(transcripts_top4_indices) != 4))
+      results_list[["Num_incomplete_transcripts"]]  <- sum(lengths(transcripts_top4_indices) != 4)
       results_list[["Num_overlapping_transcripts"]] <- sum(!(tapply(CRISPR_df[x, "Num_overlaps"], transcripts_fac, function(x) sum(x %in% 0) == 4)))
     } else {
       results_list[["Num_unspaced_transcripts"]]    <- NULL
@@ -252,8 +252,8 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
     if (include_spacing) -(results_df[, "Num_top4_outside_criteria"])                                                         else NA_vec,
     if (include_spacing && include_transcripts) (results_df[, "Num_transcripts"] != results_df[, "Num_unspaced_transcripts"]) else NA_vec,
     if (include_spacing && include_transcripts) -(results_df[, "Num_unspaced_transcripts"])                                   else NA_vec,
-    if (include_spacing) num_nonoverlapping_vec                                                                               else NA_vec,
     if (include_spacing && include_transcripts) -(results_df[, "Num_overlapping_transcripts"])                                else NA_vec,
+    if (include_spacing) num_nonoverlapping_vec                                                                               else NA_vec,
     if (include_spacing) spacing_vec                                                                                          else NA_vec,
     if (include_spacing) -(results_df[, "Num_overlaps"])                                                                      else NA_vec,
     ifelse(results_df[, "Num_total"] < 4, results_df[, "Num_total"], NA_integer_),

@@ -115,6 +115,15 @@ MakeFASTAvec <- function(use_FASTA_df) {
 
 # Functions for processing output from CRISPOR ----------------------------
 
+ReadCRISPOROutput <- function(file_name) {
+  # Requires 'CRISPOR_files_directory' in the global workspace
+  read.table(file.path(CRISPOR_files_directory, file_name),
+             stringsAsFactors = FALSE, header = TRUE, check.names = FALSE, row.names = NULL,
+             sep = "\t", quote = "", comment.char = ""
+             )
+}
+
+
 SummarizeOfftargets <- function(offtargets_df) {
   offtargets_df <- offtargets_df[offtargets_df[, "guideId"] == "21forw", ]
   offtargets_df[, "mismatchCount"] <- as.ordered(offtargets_df[, "mismatchCount"])
@@ -211,6 +220,10 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
                               stringsAsFactors = FALSE,
                               row.names = NULL
                               )
+
+  if (resolve_missing_offtargets) {
+    offtargets_df <- ResolveMissingOffTargets(offtargets_df)
+  }
 
   for (column_name in setdiff(colnames(offtargets_df), "Location_ID")) {
     CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]

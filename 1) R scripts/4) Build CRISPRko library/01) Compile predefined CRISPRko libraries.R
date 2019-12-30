@@ -135,7 +135,7 @@ stopifnot(all(are_identical_entrezs))
 original_GPP_CRISPRko_all_df <- GPP_CRISPRko_all_df
 
 GPP_CRISPRko_df <- TidyGPPCRISPRkoDf(GPP_CRISPRko_all_df)
-GPP_CRISPRko_df <- GPP_CRISPRko_df[GPP_CRISPRko_df[, "Pick Order"] %in% 1:100, ]
+GPP_CRISPRko_df <- GPP_CRISPRko_df[GPP_CRISPRko_df[, "Pick Order"] %in% 1:50, ]
 
 table(GPP_CRISPRko_df[, "Pick Order"])
 sort(table(GPP_CRISPRko_df[, "Target Gene Symbol"]))

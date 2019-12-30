@@ -38,25 +38,10 @@ load(file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideSca
 
 # Read in data ------------------------------------------------------------
 
-TFs_CRISPOR_bed_df <- read.table(file.path(CRISPOR_files_directory, "Output_from_CRISPOR_CRISPRko_TFs.tsv"),
-                                 stringsAsFactors = FALSE, header = TRUE, check.names = FALSE, row.names = NULL,
-                                 sep = "\t", quote = "", comment.char = ""
-                                 )
-
-TFs_CRISPOR_offtargets_bed_df <- read.table(file.path(CRISPOR_files_directory, "Output_from_CRISPOR_CRISPRko_TFs_offs.tsv"),
-                                            stringsAsFactors = FALSE, header = TRUE, check.names = FALSE, row.names = NULL,
-                                            sep = "\t", quote = "", comment.char = ""
-                                            )
-
-TFs_CRISPOR_FASTA_df <- read.table(file.path(CRISPOR_files_directory, "Output_from_CRISPOR_FASTA_CRISPRko_TFs.tsv"),
-                                   stringsAsFactors = FALSE, header = TRUE, check.names = FALSE, row.names = NULL,
-                                   sep = "\t", quote = "", comment.char = ""
-                                   )
-
-TFs_CRISPOR_offtargets_FASTA_df <- read.table(file.path(CRISPOR_files_directory, "Output_from_CRISPOR_FASTA_CRISPRko_TFs_offs.tsv"),
-                                              stringsAsFactors = FALSE, header = TRUE, check.names = FALSE, row.names = NULL,
-                                              sep = "\t", quote = "", comment.char = ""
-                                              )
+TFs_CRISPOR_bed_df              <- ReadCRISPOROutput("Output_from_CRISPOR_CRISPRko_TFs.tsv")
+TFs_CRISPOR_offtargets_bed_df   <- ReadCRISPOROutput("Output_from_CRISPOR_CRISPRko_TFs_offs.tsv")
+TFs_CRISPOR_FASTA_df            <- ReadCRISPOROutput("Output_from_CRISPOR_FASTA_CRISPRko_TFs.tsv")
+TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutput("Output_from_CRISPOR_FASTA_CRISPRko_TFs_offs.tsv")
 
 
 
