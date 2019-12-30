@@ -59,10 +59,16 @@ LiftOverAndAnnotate <- function(ranges_df) {
 
   sgRNAs_lifted_over_df[, "Sequence_liftOver"] <- as.character(motifRG::getSequence(sgRNAs_lifted_over_GRanges_20mers, BSgenome.Hsapiens.UCSC.hg38))
 
+  old_location_columns <- c("seqnames", "strand", "start", "end")
+  new_location_columns <- c("Chromosome", "Strand", "Start", "End")
+
+  sgRNAs_lifted_over_df[, "PAM_liftOver"] <- GetNGGPAM(setNames(sgRNAs_lifted_over_df[, old_location_columns], new_location_columns))
+
   lifted_over_matches <- match(seq_len(nrow(ranges_df)), sgRNAs_lifted_over_df[, "group"])
 
-  lifted_over_matched_df <- sgRNAs_lifted_over_df[lifted_over_matches, c("Sequence_liftOver", "seqnames", "strand", "start", "end")]
-  colnames(lifted_over_matched_df)[2:5] <- paste0(c("Chromosome", "Strand", "Start", "End"), "_liftOver")
+  lifted_over_matched_df <- sgRNAs_lifted_over_df[lifted_over_matches, c("Sequence_liftOver", "PAM_liftOver", "seqnames", "strand", "start", "end")]
+  liftOver_location_columns <- paste0(new_location_columns, "_liftOver")
+  colnames(lifted_over_matched_df)[3:6] <- liftOver_location_columns
 
 
   results_df <- data.frame(
@@ -283,6 +289,7 @@ GetNGGPAM <- function(ranges_df) {
   start_vec <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 1L, ranges_df[, "Start"] - 3L)
   end_vec   <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "Start"] - 1L)
 
+  assign("delete_ranges_df", ranges_df, envir = globalenv())
   GRanges_object <- GRanges(
     seqnames = ranges_df[, "Chromosome"],
     ranges   = IRanges(start = start_vec, end = end_vec),

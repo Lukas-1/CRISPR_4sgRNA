@@ -239,6 +239,11 @@ CRISPRa_df[, "Location_liftOver"] <- NA_character_
 CRISPRa_df[have_locations, "Location_liftOver"] <- confirmed_lifted_df[ID_matches, "Location_liftOver"]
 
 
+CRISPRa_df[, "Original_PAM"] <- NA_character_
+CRISPRa_df[have_locations, "Original_PAM"] <- ifelse(is.na(CRISPRa_df[have_locations, "Original_PAM"]),
+                                                     confirmed_lifted_df[ID_matches, "PAM_liftOver"],
+                                                     CRISPRa_df[have_locations, "Original_PAM"]
+                                                     )
 
 
 

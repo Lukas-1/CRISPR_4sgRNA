@@ -262,7 +262,7 @@ write.table(duplicated_df_for_export,
 
 # Select columns to export ------------------------------------------------
 
-omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRa_v2_ID",
+omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRa_v2_ID", "Original_PAM",
 
                   "TSS_searched_by_GuideScan", "TSS_regions",
                   "Best_combination_rank", "Original_rank",

@@ -276,18 +276,25 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
       row.names = NULL
     )
 
+
+
     SNP_column_names <- grep("_SNP_", colnames(results_df), fixed = TRUE, value = TRUE)
-    SNP_colname_roots <- grep("_AF_max_", unique(sub("^(PAM|sgRNA|all23)_", "", SNP_column_names)), fixed = TRUE, value = TRUE)
-    NGG_N_list <- sapply(SNP_colname_roots, function(root) {
+
+    SNP_AF_max_roots <- grep("_AF_max_", unique(sub("^(PAM|sgRNA|all23)_", "", SNP_column_names)), fixed = TRUE, value = TRUE)
+    NGG_AF_max_list <- sapply(SNP_AF_max_roots, function(root) {
       PAM_vec <- results_df[, paste0("PAM_", root)]
       sg_vec <- results_df[, paste0("sgRNA_", root)]
       results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
         NoNAmax(c(PAM_vec[[x]], sg_vec[[x]]))
       }, numeric(1))
     }, simplify = FALSE)
-    NGG_N_df <- do.call(cbind, NGG_N_list)
-    colnames(NGG_N_df) <- paste0("all22_", colnames(NGG_N_df))
-    results_df <- data.frame(results_df, NGG_N_df, stringsAsFactors = FALSE, row.names = NULL)
+    NGG_AF_max_mat <- do.call(cbind, NGG_AF_max_list)
+    colnames(NGG_AF_max_mat) <- paste0("all22_", colnames(NGG_AF_max_mat))
+    results_df <- data.frame(results_df, NGG_AF_max_mat, stringsAsFactors = FALSE, row.names = NULL)
+
+    # SNP_rsID_roots <-
+
+
   } else {
     results_df <- sgRNA_plus_PAM_polymorphisms_df
   }

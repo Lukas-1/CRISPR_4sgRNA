@@ -28,6 +28,7 @@ ExtendWithGenomeSearch <- function(CRISPR_df, search_df, allow_5pG = FALSE) {
     stringsAsFactors = FALSE,
     row.names = NULL
   )
+  stopifnot(!(anyNA(results_df[, "Num_0MM"])))
   have_hit <- results_df[, "Num_0MM"] > 0
   if (allow_5pG) {
     have_hit <- ifelse(grepl("hCRISPRa-v2", CRISPR_df[, "Source"], fixed = TRUE) & (CRISPR_df[, "Is_control"] == "No"),

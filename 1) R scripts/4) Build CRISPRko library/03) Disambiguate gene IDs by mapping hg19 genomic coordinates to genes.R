@@ -160,6 +160,10 @@ locations_liftOver_vec[!(are_identical_sequences)] <- NA_character_
 CRISPRko_df[, "Location_liftOver"] <- NA_character_
 CRISPRko_df[have_locations, "Location_liftOver"] <- locations_liftOver_vec
 
+CRISPRko_df[have_locations, "Original_PAM"] <- ifelse(are_identical_sequences & is.na(lifted_CRISPRko_df[have_locations, "Original_PAM"]),
+                                                      lifted_CRISPRko_df[have_locations, "PAM_liftOver"],
+                                                      lifted_CRISPRko_df[have_locations, "Original_PAM"]
+                                                      )
 
 
 
@@ -167,7 +171,6 @@ CRISPRko_df[have_locations, "Location_liftOver"] <- locations_liftOver_vec
 # Remove new duplicates after correcting ambiguous Entrez IDs -------------
 
 CRISPRko_df <- ResolveDuplicates(CRISPRko_df, concatenate_columns = "TKOv3_ID")
-
 
 
 

@@ -66,11 +66,56 @@ MakeBedDf <- function(CRISPR_df, combined_IDs) {
 
 
 
+PAMorOriginalPAM <- function(CRISPR_df) {
+  are_validated_PAMs <- !(is.na(CRISPR_df[, "Original_PAM"])) &
+                        mapply(function(x, y) x %in% strsplit(y, "; ", fixed = TRUE)[[1]],
+                               CRISPR_df[, "Original_PAM"],
+                               CRISPR_df[, "PAM_0MM"]
+                               )
+  PAM_vec <- ifelse(is.na(CRISPR_df[, "PAM"]),
+                    ifelse(are_validated_PAMs, CRISPR_df[, "Original_PAM"], NA_character_),
+                    CRISPR_df[, "PAM"]
+                    )
+  return(PAM_vec)
+}
+
+
+
+MakeFASTADf <- function(CRISPR_df, combined_IDs) {
+  are_selected <- (CRISPR_df[, "Combined_ID"] %in% combined_IDs) &
+                  is.na(CRISPR_df[, "Start"])
+  results_df <- CRISPR_df[are_selected, ]
+  results_df <- results_df[results_df[, "Num_0MM"] > 0, ]
+  PAM_vec <- PAMorOriginalPAM(results_df)
+  results_df <- data.frame(
+    results_df[, c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "sgRNA_sequence")],
+    "PAM" = PAM_vec,
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+  results_df <- results_df[!(is.na(PAM_vec)), ]
+  rownames(results_df) <- NULL
+  return(results_df)
+}
+
+
+
+MakeFASTAvec <- function(use_FASTA_df) {
+  full_sequences_vec <- unique(paste0(use_FASTA_df[, "sgRNA_sequence"], use_FASTA_df[, "PAM"]))
+  FASTA_list <- lapply(seq_along(full_sequences_vec), function(x) c(paste0(">seq", x), full_sequences_vec[[x]], ""))
+  FASTA_vec <- unlist(FASTA_list)
+  return(FASTA_vec)
+}
+
+
+
+
+
+
 
 # Functions for processing output from CRISPOR ----------------------------
 
 SummarizeOfftargets <- function(offtargets_df) {
-
   offtargets_df <- offtargets_df[offtargets_df[, "guideId"] == "21forw", ]
   offtargets_df[, "mismatchCount"] <- as.ordered(offtargets_df[, "mismatchCount"])
   offtargets_df[, "cfdOfftargetScore"] <- as.numeric(ifelse(offtargets_df[, "cfdOfftargetScore"] == "None", NA, offtargets_df[, "cfdOfftargetScore"]))
@@ -83,7 +128,8 @@ SummarizeOfftargets <- function(offtargets_df) {
                            specificity_unrounded <- 1 / (1 + sum(offtargets_df[x, "cfdOfftargetScore"], na.rm = TRUE))
                            specificity_upto3MM <- 1 / (1 + sum(offtargets_df[x, "cfdOfftargetScore"][offtargets_df[x, "mismatchCount"] %in% 0:3], na.rm = TRUE))
                            return(c(
-                             list("Location_ID" = offtargets_df[x[[1]], "seqId"]),
+                             list("Location_ID"     = offtargets_df[x[[1]], "seqId"]),
+                             list("Target_sequence" = offtargets_df[x[[1]], "targetSeq"]),
                              as.list(mismatch_table),
                              list(
                                "CRISPOR_3MM_specificity" = specificity_upto3MM,
@@ -102,7 +148,7 @@ SummarizeOfftargets <- function(offtargets_df) {
 
 
 
-AddCRISPORData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
+AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
   CRISPOR_output_df <- CRISPOR_output_df[CRISPOR_output_df[, "guideId"] %in% "21forw", ]
 
   CRISPR_IDs_vec <- paste0(CRISPR_df[, "Chromosome"],
@@ -132,9 +178,44 @@ AddCRISPORData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, 
   if (resolve_missing_offtargets) {
     results_df <- ResolveMissingOffTargets(results_df)
   }
-
   return(results_df)
 }
+
+
+
+AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
+  CRISPOR_output_df <- CRISPOR_output_df[CRISPOR_output_df[, "guideId"] %in% "21forw", ]
+
+  not_mapped <- is.na(CRISPR_df[, "Start"])
+  sequences_vec <- rep(NA_character_, nrow(CRISPR_df))
+  sequences_vec[not_mapped] <- PAMorOriginalPAM(CRISPR_df[not_mapped, ])
+
+  stopifnot(!(anyNA(CRISPOR_output_df[, "targetSeq"])))
+  stopifnot(all(is.na(CRISPR_df[not_mapped, "CRISPOR_off_target_count"])))
+
+  output_matches_vec <- match(sequences_vec, CRISPOR_output_df[, "targetSeq"])
+  output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
+  colnames(output_matched_df) <- rename_CRISPOR_columns_vec
+
+  offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df)
+  stopifnot(!(anyNA(offtargets_results_df[, "Target_sequence"])))
+  offtarget_matches_vec <- match(sequences_vec, offtargets_results_df[, "Target_sequence"])
+
+  offtargets_df <- data.frame(output_matched_df,
+                              offtargets_results_df[offtarget_matches_vec, ],
+                              stringsAsFactors = FALSE,
+                              row.names = NULL
+                              )
+
+  for (column_name in setdiff(colnames(offtargets_df), "Location_ID")) {
+    CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
+  }
+
+  return(CRISPR_df)
+}
+
+
+
 
 
 

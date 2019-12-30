@@ -22,6 +22,7 @@ GuideScan_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate f
 
 
 
+
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData"))

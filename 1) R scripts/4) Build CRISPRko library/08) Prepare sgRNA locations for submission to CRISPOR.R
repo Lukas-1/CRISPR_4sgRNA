@@ -58,8 +58,16 @@ TF_combined_IDs <- intersect(all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_
 
 # Prepare data frames that can be exported to .bed files ------------------
 
-TF_bed_df             <- MakeBedDf(merged_CRISPRko_df, TF_combined_IDs)
+TF_bed_df <- MakeBedDf(merged_CRISPRko_df, TF_combined_IDs)
 # TF_noGuideScan_bed_df <- MakeBedDf(merged_CRISPRko_df, TF_noGuideScan_combined_IDs)
+
+
+
+
+# Prepare objects that can be exported to FASTA files ---------------------
+
+FASTA_df <- MakeFASTADf(merged_CRISPRko_df, TF_combined_IDs)
+FASTA_vec <- MakeFASTAvec(FASTA_df)
 
 
 
@@ -77,7 +85,10 @@ write.table(TF_bed_df,
 #             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t"
 #             )
 
-
+write.table(FASTA_vec,
+            file = file.path(CRISPOR_files_directory, "Input_for_CRISPOR_CRISPRko_TFs.fa"),
+            quote = FALSE, row.names = FALSE, col.names = FALSE
+            )
 
 
 
