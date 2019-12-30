@@ -177,10 +177,12 @@ if (any(duplicated(toupper(merged_replaced_CRISPRa_df[are_controls, "sgRNA_seque
 
 are_Calabrese <- grepl("Calabrese",   merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
 are_hCRISPRa  <- grepl("hCRISPRa-v2", merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
-have_no_matches <- (merged_replaced_CRISPRa_df[, "Num_0MM"] %in% 0) & (merged_replaced_CRISPRa_df[, "Num_1MM"] %in% 0)
+have_no_issues <- (merged_replaced_CRISPRa_df[, "Num_0MM"] %in% 0) &
+                  (merged_replaced_CRISPRa_df[, "Num_1MM"] %in% 0) &
+                  !(grepl("TTTT", merged_replaced_CRISPRa_df[, "sgRNA_sequence"], ignore.case = TRUE))
 
-controls_Calabrese   <- merged_replaced_CRISPRa_df[are_controls & have_no_matches & are_Calabrese, "sgRNA_sequence"]
-controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_controls & have_no_matches & are_hCRISPRa, "sgRNA_sequence"]
+controls_Calabrese   <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_Calabrese, "sgRNA_sequence"]
+controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_hCRISPRa, "sgRNA_sequence"]
 
 controls_hCRISPRa_v2_selected <- sample(controls_hCRISPRa_v2, length(controls_Calabrese))
 
@@ -207,7 +209,7 @@ guides_pool_vec <- unlist(guides_pool_selected)
 guides_pool_well_number <- rep(seq_along(guides_pool_selected), each = 4)
 guides_pool_rep_number <-rep(1:4, times = length(guides_pool_selected))
 
-control_sgRNAs_df <- merged_replaced_CRISPRa_df[are_controls & have_no_matches, ]
+control_sgRNAs_df <- merged_replaced_CRISPRa_df[are_controls & have_no_issues, ]
 
 guides_pool_matches <- match(guides_pool_vec, toupper(control_sgRNAs_df[, "sgRNA_sequence"]))
 control_sgRNAs_df <- control_sgRNAs_df[guides_pool_matches, ]

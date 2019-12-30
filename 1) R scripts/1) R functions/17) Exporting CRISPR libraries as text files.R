@@ -65,7 +65,9 @@ FormatForExcel <- function(my_df,
   are_controls <- my_df[, "Is_control"] == "Yes"
   if (any(are_controls)) {
     if (convert_controls_to_4) {
-      ones_and_zeros_vec[are_controls & (my_df[, "Num_0MM"] == 0) & (my_df[, "Num_1MM"] == 0)] <- 3L
+      are_valid_controls <- are_controls & (my_df[, "Num_0MM"] == 0) & (my_df[, "Num_1MM"] == 0) &
+                            !(grepl("TTTT", my_df[, "sgRNA_sequence"], ignore.case = TRUE))
+      ones_and_zeros_vec[are_valid_controls] <- 3L
     }
     if (is_CRISPRa) {
       my_df[are_controls, "hCRISPRa_v2_transcript"] <- NA_character_

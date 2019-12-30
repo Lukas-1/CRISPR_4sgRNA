@@ -28,15 +28,15 @@ ExtendWithGenomeSearch <- function(CRISPR_df, search_df, allow_5pG = FALSE) {
     stringsAsFactors = FALSE,
     row.names = NULL
   )
-  have_0MM_hit <- results_df[, "Num_0MM"] > 0
+  have_hit <- results_df[, "Num_0MM"] > 0
   if (allow_5pG) {
-    have_0MM_hit <- ifelse(grepl("hCRISPRa-v2", CRISPR_df[, "Source"], fixed = TRUE) & (CRISPR_df[, "Is_control"] == "No"),
-                           have_0MM_hit | ((results_df[, "Num_0MM"] == 0) & (results_df[, "Num_5G_MM"] > 0)),
-                           have_0MM_hit
-                           )
+    have_hit <- ifelse(grepl("hCRISPRa-v2", CRISPR_df[, "Source"], fixed = TRUE) & (CRISPR_df[, "Is_control"] == "No"),
+                       have_hit | ((results_df[, "Num_0MM"] == 0) & (results_df[, "Num_5G_MM"] > 0)),
+                       have_hit
+                       )
   }
   for (column_name in c("Chromosome", "Strand", "Start", "End")) {
-    results_df[, column_name] <- ifelse(have_0MM_hit, results_df[, column_name], NA)
+    results_df[, column_name] <- ifelse(have_hit, results_df[, column_name], NA)
     colnames(results_df)[colnames(results_df) == column_name] <- paste0("Hits_", tolower(column_name))
   }
   return(results_df)
