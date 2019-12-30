@@ -13,12 +13,31 @@ source(file.path(general_functions_directory, "02) Translating between Entrez ID
 
 # Define functions --------------------------------------------------------
 
+
+OrderControlsVec <- function(CRISPR_df) {
+  is_CRISPRko <- "Exon_number_GPP" %in% colnames(CRISPR_df)
+  NA_vec <- rep(NA, nrow(CRISPR_df))
+  if (is_CRISPRko) {
+    controls_vec <- NA_vec
+    are_Brunello_controls <- (CRISPR_df[, "Is_control"] == "Yes") & (CRISPR_df[, "Source"] == "Brunello")
+    controls_vec[are_Brunello_controls] <- as.integer(sub("^Control_", "", CRISPR_df[are_Brunello_controls, "Combined_ID"]))
+  } else {
+    controls_vec <- NA_vec
+  }
+  return(controls_vec)
+}
+
+
+
+
+
 RankCRISPRDf <- function(CRISPR_df, reorder_by_rank = TRUE, allow_5pG_MM = FALSE, ID_column = "Combined_ID") {
 
   MakeFactor <- function(x) factor(x, levels = unique(x))
 
   pre_order <- order(CRISPR_df[, "Is_control"] == "Yes",
                      GetMinEntrez(CRISPR_df[, "Entrez_ID"]),
+                     OrderControlsVec(CRISPR_df),
                      CRISPR_df[, "Combined_ID"],
                      MakeFactor(CRISPR_df[, ID_column])
                      )
@@ -30,9 +49,12 @@ RankCRISPRDf <- function(CRISPR_df, reorder_by_rank = TRUE, allow_5pG_MM = FALSE
                                        simplify = FALSE
                                        )
                                 )
+
+
   if (reorder_by_rank) {
     new_order <- order(CRISPR_df[, "Is_control"] == "Yes",
                        GetMinEntrez(CRISPR_df[, "Entrez_ID"]),
+                       OrderControlsVec(CRISPR_df),
                        CRISPR_df[, "Combined_ID"],
                        MakeFactor(CRISPR_df[, ID_column]),
                        CRISPR_df[, "Rank"]
@@ -58,16 +80,8 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
   NA_vec <- rep.int(NA, nrow(CRISPR_sub_df))
 
   is_CRISPRko <- "Exon_number_GPP" %in% colnames(CRISPR_sub_df)
-  if (is_CRISPRko) {
-    controls_vec <- NA_vec
-    are_Brunello_controls <- (CRISPR_sub_df[, "Is_control"] == "Yes") & (CRISPR_sub_df[, "Source"] == "Brunello")
-    controls_vec[are_Brunello_controls] <- as.integer(sub("^Control_", CRISPR_sub_df[are_Brunello_controls, "Combined_ID"]))
-  } else {
-    controls_vec <- NA_vec
-  }
 
   my_order <- order(CRISPR_sub_df[, "Is_control"] == "No",
-                    controls_vec,
                     !(grepl("TTTT", CRISPR_sub_df[, "sgRNA_sequence"], ignore.case = TRUE)),
                     !(is.na(CRISPR_sub_df[, "Start"])),
                     substr(CRISPR_sub_df[, "PAM"], 2, 3) == "GG",

@@ -388,7 +388,6 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
 
         best_TSS <- unique(GetBestTSSPositions(CRISPR_df[this_gene_duplicates, ]))
 
-
         assign("delete_combined_ID", combined_ID, envir = globalenv())
         assign("delete_this_gene_duplicates", this_gene_duplicates, envir = globalenv())
         assign("delete_best_TSS", best_TSS, envir = globalenv())
@@ -397,7 +396,7 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
 
         assign("delete_splits_list", splits_list, envir = globalenv())
         new_locations_df <- do.call(rbind.data.frame,
-                                    c(lapply(seq_along(splits_list), function(x) FindSingleLocationFromTSS(splits_list[[x]], entrez_chromosome, best_TSS)),
+                                    c(lapply(splits_list, function(x) FindSingleLocationFromTSS(x, entrez_chromosome, best_TSS)),
                                       list(stringsAsFactors = FALSE, make.row.names = FALSE)
                                       )
                                     )
@@ -419,7 +418,7 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
         }
 
         new_locations_df <- do.call(rbind.data.frame,
-                                    c(lapply(seq_along(splits_list), function(x) FindSingleLocationFromGene(splits_list[[x]], entrez_chromosome, gene_GRanges_object)),
+                                    c(lapply(splits_list, function(x) FindSingleLocationFromGene(x, entrez_chromosome, gene_GRanges_object)),
                                       list(stringsAsFactors = FALSE, make.row.names = FALSE)
                                       )
                                     )

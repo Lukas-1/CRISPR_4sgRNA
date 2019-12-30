@@ -42,7 +42,7 @@ GPP_CRISPRko_path           <- file.path(CRISPR_root_directory, "4) Intermediate
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "2) Map gene symbols to Entrez IDs.RData"))
+load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
 
 
 
@@ -135,7 +135,7 @@ stopifnot(all(are_identical_entrezs))
 original_GPP_CRISPRko_all_df <- GPP_CRISPRko_all_df
 
 GPP_CRISPRko_df <- TidyGPPCRISPRkoDf(GPP_CRISPRko_all_df)
-GPP_CRISPRko_df <- GPP_CRISPRko_df[GPP_CRISPRko_df[, "Pick Order"] %in% 1:10, ]
+GPP_CRISPRko_df <- GPP_CRISPRko_df[GPP_CRISPRko_df[, "Pick Order"] %in% 1:100, ]
 
 table(GPP_CRISPRko_df[, "Pick Order"])
 sort(table(GPP_CRISPRko_df[, "Target Gene Symbol"]))
