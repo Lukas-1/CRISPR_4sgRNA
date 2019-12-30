@@ -213,7 +213,7 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
 
   offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df)
   stopifnot(!(anyNA(offtargets_results_df[, "Target_sequence"])))
-  offtarget_matches_vec <- match(sequences_vec, offtargets_results_df[, "Target_sequence"])
+  offtarget_matches_vec <- match(toupper(sequences_vec), toupper(offtargets_results_df[, "Target_sequence"]))
 
   offtargets_df <- data.frame(output_matched_df,
                               offtargets_results_df[offtarget_matches_vec, ],
