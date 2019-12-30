@@ -36,7 +36,7 @@ load(file.path(CRISPRa_RData_directory, "06) Find matches for sgRNA sequences in
 
 # Include the results of a genome search for the sgRNA sequences ----------
 
-extended_CRISPRa_df <- ExtendWithGenomeSearch(CRISPRa_df, genome_search_df)
+extended_CRISPRa_df <- ExtendWithGenomeSearch(CRISPRa_df, genome_search_df, allow_5pG = TRUE)
 
 table(extended_CRISPRa_df[extended_CRISPRa_df[, "Num_5G_MM"] > 0, "Num_5G_MM"])
 

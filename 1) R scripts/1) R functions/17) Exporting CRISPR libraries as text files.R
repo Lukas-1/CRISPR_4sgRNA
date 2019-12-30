@@ -70,9 +70,13 @@ FormatForExcel <- function(my_df,
     if (is_CRISPRa) {
       my_df[are_controls, "hCRISPRa_v2_transcript"] <- NA_character_
     }
-    my_df[are_controls, "Gene_symbol"]            <- my_df[are_controls, "Combined_ID"]
-    my_df[are_controls, "Original_symbol"]        <- NA_character_
-    my_df[are_controls, "Rank"]                   <- NA_integer_
+    my_df[are_controls, "Gene_symbol"]                  <- my_df[are_controls, "Combined_ID"]
+    my_df[are_controls, "Original_symbol"]              <- ifelse(grepl("TKOv3", my_df[are_controls, "Source"], fixed = TRUE), # The TKOv3 library targets EGFP, luciferase, and LacZ
+                                                                  my_df[are_controls, "Original_symbol"],
+                                                                  NA_character_
+                                                                  )
+    my_df[are_controls, "Rank"]                         <- NA_integer_
+    my_df[are_controls, "GuideScan_offtarget_category"] <- NA_character_
   }
 
   my_df[, "Num_overlaps"] <- ifelse(is.na(my_df[, "Num_overlaps"]),

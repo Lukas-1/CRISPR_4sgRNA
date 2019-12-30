@@ -20,7 +20,7 @@ source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
 
 # Functions for integrating with a genome search and GuideScan ------------
 
-ExtendWithGenomeSearch <- function(CRISPR_df, search_df) {
+ExtendWithGenomeSearch <- function(CRISPR_df, search_df, allow_5pG = FALSE) {
   genome_matches <- match(toupper(CRISPR_df[, "sgRNA_sequence"]), toupper(search_df[, "Sequence"]))
   results_df <- data.frame(
     CRISPR_df,
@@ -28,7 +28,15 @@ ExtendWithGenomeSearch <- function(CRISPR_df, search_df) {
     stringsAsFactors = FALSE,
     row.names = NULL
   )
+  have_0MM_hit <- results_df[, "Num_0MM"] > 0
+  if (allow_5pG) {
+    have_0MM_hit <- ifelse(grepl("hCRISPRa-v2", CRISPR_df[, "Source"], fixed = TRUE) & (CRISPR_df[, "Is_control"] == "No"),
+                           have_0MM_hit | ((results_df[, "Num_0MM"] == 0) & (results_df[, "Num_5G_MM"] > 0)),
+                           have_0MM_hit
+                           )
+  }
   for (column_name in c("Chromosome", "Strand", "Start", "End")) {
+    results_df[, column_name] <- ifelse(have_0MM_hit, results_df[, column_name], NA)
     colnames(results_df)[colnames(results_df) == column_name] <- paste0("Hits_", tolower(column_name))
   }
   return(results_df)
