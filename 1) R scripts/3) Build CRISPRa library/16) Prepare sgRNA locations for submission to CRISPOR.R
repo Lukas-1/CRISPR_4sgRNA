@@ -16,6 +16,7 @@ source(file.path(general_functions_directory, "19) Using CRISPOR.R"))
 
 CRISPR_root_directory   <- "~/CRISPR"
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRa", "CRISPOR")
 
@@ -25,6 +26,7 @@ CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate fil
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
 load(file.path(CRISPRa_RData_directory, "15) Separate sgRNAs for genes with multiple relevant TSSs.RData"))
 
 
@@ -65,6 +67,11 @@ FASTA_vec <- MakeFASTAvec(FASTA_df)
 write.table(TF_bed_df,
             file = file.path(CRISPOR_files_directory, "Input_for_CRISPOR_CRISPRa_TFs.bed"),
             quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t"
+            )
+
+write.table(FASTA_vec,
+            file = file.path(CRISPOR_files_directory, "Input_for_CRISPOR_CRISPRa_TFs.fa"),
+            quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 
 

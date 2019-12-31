@@ -16,6 +16,7 @@ source(file.path(general_functions_directory, "19) Using CRISPOR.R"))
 
 CRISPR_root_directory    <- "~/CRISPR"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 CRISPOR_files_directory  <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRko", "CRISPOR")
 
@@ -25,8 +26,8 @@ CRISPOR_files_directory  <- file.path(CRISPR_root_directory, "4) Intermediate fi
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideScan.RData"))
-
+load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
+load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData"))
 
 
 
@@ -34,21 +35,21 @@ load(file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideSca
 
 # Select subsets of genes for submission to CRISPOR -----------------------
 
-TF_combined_IDs <- intersect(all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_ID"], merged_CRISPRko_df[, "Combined_ID"])
+TF_combined_IDs <- intersect(all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_ID"], extended_CRISPRko_df[, "Combined_ID"])
 
 
 
 
 # Prepare data frames that can be exported to .bed files ------------------
 
-TF_bed_df <- MakeBedDf(merged_CRISPRko_df, TF_combined_IDs)
+TF_bed_df <- MakeBedDf(extended_CRISPRko_df, TF_combined_IDs)
 
 
 
 
 # Prepare objects that can be exported to FASTA files ---------------------
 
-FASTA_df <- MakeFASTADf(merged_CRISPRko_df, TF_combined_IDs)
+FASTA_df <- MakeFASTADf(extended_CRISPRko_df, TF_combined_IDs)
 FASTA_vec <- MakeFASTAvec(FASTA_df)
 
 
