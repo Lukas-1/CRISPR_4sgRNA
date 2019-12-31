@@ -35,11 +35,14 @@ CreateCombinations <- function(sub_df_reordered,
   }
 
   are_core_library <- grepl("Calabrese|hCRISPRa-v2|Brunello|TKOv3", sub_df_reordered[, "Source"])
-  if ("hCRISPRa_v2_rank" %in% colnames(sub_df_reordered)) {
-    are_core_top5 <- grepl("Calabrese", sub_df_reordered[, "Source"], fixed = TRUE) |
+
+  is_CRISPRa <- "hCRISPRa_v2_rank" %in% colnames(sub_df_reordered)
+
+  if (is_CRISPRa) {
+    are_preferred <- grepl("Calabrese", sub_df_reordered[, "Source"], fixed = TRUE) |
                      (sub_df_reordered[, "hCRISPRa_v2_rank"] %in% 1:5)
   } else {
-    are_core_top5 <- rep.int(TRUE, nrow(sub_df_reordered))
+    are_preferred <- sub_df_reordered[, "GPP_rank"] %in% 1:10
   }
 
   assign("delete_sub_df_reordered",     sub_df_reordered,     envir = globalenv())
@@ -79,7 +82,7 @@ CreateCombinations <- function(sub_df_reordered,
         "CRISPOR_4MM_specificity" = 1 / (1 + sum((1 / sub_df_reordered[indices_vec, "CRISPOR_4MM_specificity"]) - 1)),
         "Num_strict_criteria"     = sum(meet_strict_criteria[indices_vec]),
         "Num_core_library"        = sum(are_core_library[indices_vec]),
-        "Num_core_top5"           = sum(are_core_top5[indices_vec])
+        "Num_preferred"           = sum(are_preferred[indices_vec])
       )
       return(results_list)
     }
@@ -102,8 +105,8 @@ CreateCombinations <- function(sub_df_reordered,
 
   combinations_order <- order(-combinations_mat[, "Num_strict_criteria"],
                               -combinations_mat[, "Total_overlaps"],
-                              -combinations_mat[, "Num_core_top5"],
                               -combinations_mat[, "Num_core_library"],
+                              -combinations_mat[, "Num_preferred"],
                               -combinations_mat[, "GuideScan_specificity"],
                               -combinations_mat[, "CRISPOR_4MM_specificity"],
                               combinations_mat[, "Mean_rank"]

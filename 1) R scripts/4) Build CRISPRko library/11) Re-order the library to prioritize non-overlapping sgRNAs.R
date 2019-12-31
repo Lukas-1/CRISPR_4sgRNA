@@ -62,7 +62,7 @@ combined_IDs <- unique(CRISPR_df[CRISPR_df[, "Is_control"] %in% "No", "Combined_
 controls_df <- NonOverlappingDfForControls(CRISPR_df)
 
 
-cl <- parallel:::makeCluster(10)
+cl <- parallel:::makeCluster(8)
 parallel:::clusterExport(cl, list("SortCombinations", "CreateCombinations", "MessageID",
                                   "ReorderSubDfByLocation", "NumHomologousPairs", "SplitIntoSubstrings",
                                   "CRISPR_df",
