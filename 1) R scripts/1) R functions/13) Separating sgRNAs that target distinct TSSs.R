@@ -18,7 +18,7 @@ source(file.path(general_functions_directory, "12) Re-ordering sgRNAs based on t
 
 # Define functions --------------------------------------------------------
 
-NumberTSSs <- function(locations_vec, min_space = 1001) {
+NumberTSSs <- function(locations_vec, min_space = 1001L) {
   results_vec <- rep.int(NA_integer_, length(locations_vec))
   current_number <- 0L
   current_position <- -Inf
@@ -123,7 +123,7 @@ CountNumTSSs <- function(CRISPR_df, TSS_column = "hCRISPRa_v2_transcript") {
       transcripts <- unique(transcripts[!(is.na(transcripts))])
       num_transcripts <- length(transcripts)
       if (num_transcripts == 0) {
-        num_transcripts <- 1
+        num_transcripts <- 1L
       }
       results_vec <- rep.int(num_transcripts, length(x))
       return(results_vec)
