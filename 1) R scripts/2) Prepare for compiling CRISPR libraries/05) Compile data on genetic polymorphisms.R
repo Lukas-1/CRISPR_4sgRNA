@@ -116,8 +116,14 @@ rownames(common_polymorphisms_df) <- NULL
 
 gc()
 
-dbSNP_chrom_pos_ref_vec  <- paste0(dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Chromosome"], "_", dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Position"], "_", dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Reference"])
-Kaviar_chrom_pos_ref_vec <- paste0(Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Chromosome"], "_", Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Position"], "_", Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Reference"])
+dbSNP_chrom_pos_ref_vec  <- paste0(dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Chromosome"], "_",
+                                   dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Position"],   "_",
+                                   dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Reference"]
+                                   )
+Kaviar_chrom_pos_ref_vec <- paste0(Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Chromosome"], "_",
+                                   Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Position"],   "_",
+                                   Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Reference"]
+                                   )
 chrom_pos_ref_df <- data.frame("dbSNP"  = dbSNP_chrom_pos_ref_vec,
                                "Kaviar" = Kaviar_chrom_pos_ref_vec,
                                "rsID"   = dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "rsID"],

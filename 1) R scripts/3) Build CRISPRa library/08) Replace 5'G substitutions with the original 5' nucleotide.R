@@ -76,13 +76,13 @@ replaced_merged_CRISPRa_df <- Exchange5PrimeG(merged_CRISPRa_df)
 
 # Replace 5' G nucleotides in control sgRNAs from hCRISPRa-v2 -------------
 
-are_Calabrese <- grepl("Calabrese", merged_CRISPRa_df[, "Source"], fixed = TRUE)
-are_controls <- merged_CRISPRa_df[, "Is_control"] == "Yes"
+are_Calabrese   <- grepl("Calabrese", merged_CRISPRa_df[, "Source"], fixed = TRUE)
+are_hCRISPRa_v2 <- grepl("hCRISPRa-v2", merged_CRISPRa_df[, "Source"], fixed = TRUE)
+are_controls    <- merged_CRISPRa_df[, "Is_control"] == "Yes"
+are_to_replace  <- are_controls & are_hCRISPRa_v2
 
 nucleotide_bag <- substr(merged_CRISPRa_df[are_Calabrese & !(are_controls), "sgRNA_sequence"], 1, 1)
 
-are_hCRISPRa_v2 <- grepl("hCRISPRa-v2", merged_CRISPRa_df[, "Source"], fixed = TRUE)
-are_to_replace <- are_controls & are_hCRISPRa_v2
 set.seed(1)
 new_5p_nucleotides <- sample(nucleotide_bag, sum(are_to_replace))
 

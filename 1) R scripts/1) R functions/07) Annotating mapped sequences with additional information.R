@@ -151,7 +151,6 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
 
 
 
-
 FindNearestGenes <- function(ranges_df, use_separator = ", ") {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
@@ -159,6 +158,8 @@ FindNearestGenes <- function(ranges_df, use_separator = ", ") {
 
   ### Find the closest gene to each identified sgRNA hit ###
   message("Finding the closest genes to the specified genomic ranges...")
+
+  entrez_IDs <- mcols(human_genes_GRanges)[, 1]
 
   GRanges_object <- GRanges(
     seqnames = ranges_df[, "Chromosome"],
@@ -168,10 +169,9 @@ FindNearestGenes <- function(ranges_df, use_separator = ", ") {
     strand   = ranges_df[, "Strand"]
   )
 
-  nearest_gene_matches <- nearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE)
-  entrez_IDs <- mcols(human_genes_GRanges)[, 1]
-  nearest_entrezs_vec <- entrez_IDs[nearest_gene_matches]
-  distances_vec <- mcols(distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE))[, 1]
+  nearest_Hits_object <- distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all")
+  nearest_entrezs_vec <- entrez_IDs[to(nearest_Hits_object)]
+  distances_vec <- mcols(nearest_Hits_object)[, 1]
 
 
   ### Translate the entrez IDs of the close genes to gene symbols ###
@@ -181,8 +181,6 @@ FindNearestGenes <- function(ranges_df, use_separator = ", ") {
                                 entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
                                 entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
                                 )
-
-
 
   ### Compile results ###
   results_df <- data.frame(

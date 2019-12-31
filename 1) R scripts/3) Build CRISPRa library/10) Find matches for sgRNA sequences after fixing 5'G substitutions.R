@@ -24,6 +24,7 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(CRISPRa_RData_directory, "06) Find matches for sgRNA sequences in the human genome - all_sequences_df.RData"))
 load(file.path(CRISPRa_RData_directory, "08) Replace 5'G substitutions with the original 5' nucleotide.RData"))
 
 
@@ -33,21 +34,39 @@ load(file.path(CRISPRa_RData_directory, "08) Replace 5'G substitutions with the 
 # Search the human genome for matches to sgRNAs ---------------------------
 
 replaced_unique_sequences <- unique(toupper(replaced_merged_CRISPRa_df[, "sgRNA_sequence"]))
+new_or_not_found_sequences <- setdiff(replaced_unique_sequences, all_sequences_df[, "Reference"])
 
-are_20mers <- nchar(replaced_unique_sequences) == 20
+# All replaced sequences should be from the hCRISPRa-v2 library and should be 20-mers.
+# However, in the future, some of the "not found" sequences may _NOT_ be 20-mers, in which case, the code would have to be modified.
+stopifnot(all(nchar(new_or_not_found_sequences) == 20))
 
-sequences_not_20mers_df <- FindVariableLengthSequences(replaced_unique_sequences[!(are_20mers)])
-sequences_20mers_df     <- FindSequences(replaced_unique_sequences[are_20mers])
+new_sequences_df <- FindSequences(new_or_not_found_sequences)
 
-replaced_complete_sequences_df <- rbind.data.frame(sequences_20mers_df, sequences_not_20mers_df, stringsAsFactors = FALSE, make.row.names = FALSE)
+new_sequences_df[, "PAM"] <- GetNGGPAM(new_sequences_df)
+
+
+
+
+# Merge the results from the new and old previous genome searches ---------
+
+are_still_present <- all_sequences_df[, "Reference"] %in% replaced_unique_sequences
+
+replaced_all_sequences_df <- rbind.data.frame(new_sequences_df,
+                                              all_sequences_df[are_still_present, colnames(new_sequences_df)],
+                                              stringsAsFactors = FALSE,
+                                              make.row.names = FALSE
+                                              )
+
 
 
 
 
 # Extend sequence matches with additional data (e.g. nearby genes) --------
 
-replaced_all_sequences_df <- FindNearestGenes(replaced_complete_sequences_df)
-replaced_all_sequences_df[, "PAM"] <- GetNGGPAM(replaced_all_sequences_df)
+replaced_all_sequences_df <- FindNearestGenes(replaced_all_sequences_df)
+
+
+
 
 
 
@@ -55,6 +74,7 @@ replaced_all_sequences_df[, "PAM"] <- GetNGGPAM(replaced_all_sequences_df)
 # Summarize data on all matches for a given sequence ----------------------
 
 replaced_genome_search_df <- SummarizeFoundSequencesDf(replaced_all_sequences_df, all_sequences = replaced_unique_sequences)
+
 
 
 

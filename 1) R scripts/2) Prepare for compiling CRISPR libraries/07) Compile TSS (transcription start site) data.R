@@ -199,7 +199,13 @@ FANTOM5_filtered_df[, "Entrez_ID"] <- StandardizeIDs(FANTOM5_filtered_df[, "Entr
 FANTOM5_filtered_df[, "Gene_symbol"] <- StandardizeIDs(FANTOM5_filtered_df[, "Gene_symbol"])
 
 FANTOM5_filtered_df <- data.frame(
-  "Group" = paste0(ifelse(FANTOM5_filtered_df[, "Entrez_ID"] == "", "", paste0(FANTOM5_filtered_df[, "Entrez_ID"], " | ")), FANTOM5_filtered_df[, "Gene_symbol"], " | ", FANTOM5_filtered_df[, "Chromosome"]),
+  "Group" = paste0(ifelse(FANTOM5_filtered_df[, "Entrez_ID"] == "",
+                          "",
+                          paste0(FANTOM5_filtered_df[, "Entrez_ID"], " | ")
+                          ),
+                   FANTOM5_filtered_df[, "Gene_symbol"], " | ",
+                   FANTOM5_filtered_df[, "Chromosome"]
+                   ),
   FANTOM5_filtered_df,
   stringsAsFactors = FALSE,
   row.names = NULL
@@ -231,7 +237,7 @@ BioMart_filtered_df <- data.frame(
   "Transcript_end"    = BioMart_filtered_df[, "Transcript end (bp)"],
   "TSS"               = BioMart_filtered_df[, "Transcription start site (TSS)"],
   "Transcript_length" = BioMart_filtered_df[, "Transcript length (including UTRs and CDS)"],
-  stringsAsFactors = FALSE
+  stringsAsFactors    = FALSE
 )
 
 

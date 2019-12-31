@@ -313,13 +313,10 @@ FindSingleLocationFromGene <- function(location_vec, chromosome, gene_GRanges_ob
       ranges   = IRanges(start = results_df[, "Start"], end = results_df[, "End"]),
       strand   = results_df[, "Strand"]
     )
-    distance_vec <- mcols(distanceToNearest(sgRNAs_GRanges_object, gene_GRanges_object, ignore.strand = TRUE))[, 1]
+    distance_vec <- mcols(distanceToNearest(sgRNAs_GRanges_object, gene_GRanges_object, ignore.strand = TRUE, select = "all"))[, 1]
     if (length(distance_vec) == 0) {
       results_df <- results_df[1, ] # i.e. gene_GRanges_object is on a different chromosome
     } else {
-      assign("delete_results_df", results_df, envir = globalenv())
-      assign("delete_distance_vec", distance_vec, envir = globalenv())
-      assign("delete_nearest_object", distanceToNearest(sgRNAs_GRanges_object, gene_GRanges_object, ignore.strand = TRUE), envir = globalenv())
       stopifnot(length(distance_vec) == nrow(results_df))
       results_df <- results_df[which.min(distance_vec), ]
     }
