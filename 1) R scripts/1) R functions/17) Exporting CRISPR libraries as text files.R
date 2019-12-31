@@ -177,7 +177,7 @@ AbbreviateColumns <- function(CRISPR_df) {
     are_too_long <- my_lengths > max_entries
     if (any(are_too_long)) {
       CRISPR_df[are_too_long, column_name] <- "too long"
-      message(paste0(sum(are_too_long), " rows in the ", column_name, " column were ommitted, because they were too long (>", max_entries, " entries)."))
+      message(paste0(sum(are_too_long), " rows in the ", column_name, " column were omitted, because they were too long (>", max_entries, " entries)."))
     }
   }
   return(CRISPR_df)
