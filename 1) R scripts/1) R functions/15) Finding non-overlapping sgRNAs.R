@@ -71,18 +71,17 @@ CreateCombinations <- function(sub_df_reordered,
       total_overlaps <- sum(overlap_numbers_vec) / 2
       too_many_overlaps <- isTRUE(total_overlaps > num_overlaps_allowed)
       results_list <- list(
-        "Indices"                 = indices_vec,
-        "Overlap_numbers"         = overlap_numbers_vec,
-        "Total_overlaps"          = total_overlaps,
-     # "sgRNA_sequences"          = sgRNA_sequences,
-        "Too_many_overlaps"       = too_many_overlaps,
-        "Num_homologies"          = if (!(too_many_overlaps)) NumHomologousPairs(sgRNA_sequences_vec[indices_vec]) else NA_integer_, # Save computational time by skipping the determination of homologies if the number of overlaps exceeds the limit
-        "Mean_rank"               = mean(sub_df_reordered[indices_vec, "Rank"]),
-        "GuideScan_specificity"   = 1 / (1 + sum((1 / sub_df_reordered[indices_vec, "GuideScan_specificity"]) - 1)),
-        "CRISPOR_4MM_specificity" = 1 / (1 + sum((1 / sub_df_reordered[indices_vec, "CRISPOR_4MM_specificity"]) - 1)),
-        "Num_strict_criteria"     = sum(meet_strict_criteria[indices_vec]),
-        "Num_core_library"        = sum(are_core_library[indices_vec]),
-        "Num_preferred"           = sum(are_preferred[indices_vec])
+        "Indices"                  = indices_vec,
+        "Overlap_numbers"          = overlap_numbers_vec,
+        "Total_overlaps"           = total_overlaps,
+        "Too_many_overlaps"        = too_many_overlaps,
+        "Num_homologies"           = if (!(too_many_overlaps)) NumHomologousPairs(sgRNA_sequences_vec[indices_vec]) else NA_integer_, # Save computational time by skipping the determination of homologies if the number of overlaps exceeds the limit
+        "Mean_rank"                = mean(sub_df_reordered[indices_vec, "Rank"]),
+        "GuideScan_specificity"    = 1 / (1 + sum((1 / sub_df_reordered[indices_vec, "GuideScan_specificity"]) - 1)),
+        "CRISPOR_4MM_specificity"  = 1 / (1 + sum((1 / sub_df_reordered[indices_vec, "CRISPOR_4MM_specificity"]) - 1)),
+        "Num_meet_strict_criteria" = sum(meet_strict_criteria[indices_vec]),
+        "Num_core_library"         = sum(are_core_library[indices_vec]),
+        "Num_preferred"            = sum(are_preferred[indices_vec])
       )
       return(results_list)
     }
@@ -103,13 +102,14 @@ CreateCombinations <- function(sub_df_reordered,
   combinations_list <- combinations_list[meet_criteria]
 
 
-  combinations_order <- order(-combinations_mat[, "Num_strict_criteria"],
-                              -combinations_mat[, "Total_overlaps"],
-                              -combinations_mat[, "Num_core_library"],
-                              -combinations_mat[, "Num_preferred"],
-                              -combinations_mat[, "GuideScan_specificity"],
-                              -combinations_mat[, "CRISPOR_4MM_specificity"],
-                              combinations_mat[, "Mean_rank"]
+  combinations_order <- order(combinations_mat[, "Num_meet_strict_criteria"],
+                              -(combinations_mat[, "Total_overlaps"]),
+                              combinations_mat[, "Num_core_library"],
+                              combinations_mat[, "Num_preferred"],
+                              combinations_mat[, "GuideScan_specificity"],
+                              combinations_mat[, "CRISPOR_4MM_specificity"],
+                              -(combinations_mat[, "Mean_rank"]),
+                              decreasing = TRUE
                               )
   combinations_mat <- combinations_mat[combinations_order, , drop = FALSE]
   combinations_list <- combinations_list[combinations_order]
