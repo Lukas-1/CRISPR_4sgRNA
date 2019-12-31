@@ -10,7 +10,7 @@ SplitIntoSubstrings <- function(string, substring_length = 8L) {
     return(string)
   } else {
     start_positions <- seq_len(nchar(string) - substring_length)
-    stop_positions <- substring_length:nchar(string)
+    stop_positions <- seq(substring_length, nchar(string))
     sub_strings <- substr(rep.int(string, length(start_positions)), start_positions, stop_positions)
     return(sub_strings)
   }

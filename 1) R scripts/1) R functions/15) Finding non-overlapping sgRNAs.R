@@ -215,21 +215,9 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
     were_included <- were_included & are_GPP_top_24
   }
 
-  GuideScan_present_vec <- !(is.na(sub_df_reordered[, "GuideScan_specificity"]))
-
   assign("delete_were_included", were_included, envir = globalenv())
-
-  # if (sum(were_included) > 26) {
-  #   were_included[were_included] <- FilterLocalTopRanked(sub_df_reordered[were_included, ], spacing = 10, prefer_core_library = TRUE)
-  #   if (sum(were_included) > 26) {
-  #     were_included[were_included] <- FilterLocalTopRanked(sub_df_reordered[were_included, ], spacing = 25, prefer_core_library = TRUE)
-  #   }
-  # }
-
   assign("delete_CRISPR_sub_df", CRISPR_sub_df, envir = globalenv())
 
-  # are_core_library <- grepl("Calabrese|hCRISPRa-v2", sub_df_reordered[, "Source"])
-  # enough_GuideScan <- sum(GuideScan_present_vec) > num_sgRNAs
   sgRNAs_found <- FALSE
   FoundsgRNA <- function(sub_df) sum(sub_df[, "Best_combination_rank"] %in% 1) >= num_sgRNAs
   for (min_overlap in min_overlaps) {
