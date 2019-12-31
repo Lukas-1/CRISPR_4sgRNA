@@ -238,7 +238,7 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
 
 
 
-ResolveMissingOffTargets <- function(CRISPR_df) {
+ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
 
   CFD_columns <- c("CRISPOR_4MM_specificity", "CRISPOR_3MM_specificity")
 
@@ -257,7 +257,7 @@ ResolveMissingOffTargets <- function(CRISPR_df) {
 
   too_many_offtargets <- lack_detailed_offtargets & (CRISPR_df[, "CRISPOR_CFD_specificity"] %in% 0)
   for (CFD_column in CFD_columns) {
-    CRISPR_df[too_many_offtargets, CFD_column] <- 0
+    CRISPR_df[too_many_offtargets, CFD_column] <- use_for_zero
   }
 
   return(CRISPR_df)
