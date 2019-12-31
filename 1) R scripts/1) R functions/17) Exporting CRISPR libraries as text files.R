@@ -82,7 +82,7 @@ FormatForExcel <- function(my_df,
   }
 
   my_df[, "Num_overlaps"] <- ifelse(is.na(my_df[, "Num_overlaps"]),
-                                    ifelse(my_df[, "Rank"] %in% 1:4, ifelse(my_df[, "Spacing"] %in% 10, "<10bp", "n.d."), NA_character_),
+                                    ifelse(my_df[, "Rank"] %in% 1:4, ifelse(my_df[, "Spacing"] %in% 12, "<12bp", "n.d."), NA_character_),
                                     paste0(my_df[, "Num_overlaps"], "|", my_df[, "Spacing"], "bp")
                                     )
   if (add_primers) {
