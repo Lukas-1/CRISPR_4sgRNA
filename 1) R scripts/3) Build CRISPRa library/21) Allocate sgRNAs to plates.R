@@ -7,7 +7,8 @@
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
-source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
+source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R")) # for FormatFixedWidthInteger
+source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))
 
 
 
@@ -25,54 +26,10 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(CRISPRa_RData_directory, "15) Separate sgRNAs for genes with multiple relevant TSSs.RData"))
 load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
 load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library.RData"))
 
 
-
-
-
-# Define functions --------------------------------------------------------
-
-
-RandomizeAllIndices <- function(n_total = NULL, n_per_plate_vec = NULL, n_per_plate = (384 - 38)) {
-
-  if (is.null(n_total) && is.null(n_per_plate_vec)) {
-    stop("Either n_total or n_per_plate_vec must be specified!")
-  }
-
-  if (is.null(n_per_plate_vec)) {
-    num_full_plates <- floor(n_total / n_per_plate)
-    last_plate_n <- n_total - (num_full_plates * n_per_plate)
-    n_per_plate_vec <- rep(n_per_plate, num_full_plates)
-    if (last_plate_n > 0) {
-      n_per_plate_vec <- c(n_per_plate_vec, last_plate_n)
-    }
-  } else {
-    n_total <- sum(n_per_plate_vec)
-  }
-
-  indices_pool <- seq_len(n_total)
-  num_plates <- length(n_per_plate_vec)
-  results_list <- vector(mode = "list", length = num_plates)
-
-  for (plate_number in seq_len(num_plates - 1L)) {
-    this_sample <- sample(indices_pool, n_per_plate_vec[[plate_number]])
-    results_list[[plate_number]] <- this_sample
-    indices_pool <- indices_pool[!(indices_pool %in% this_sample)]
-  }
-  results_list[[num_plates]] <- sample(indices_pool, n_per_plate_vec[[num_plates]])
-  return(results_list)
-}
-
-
-RetrieveIndices <- function(CRISPR_df, indices_vec, ID_column) {
-  unique_combined_IDs <- unique(CRISPR_df[, ID_column])
-  combined_ID_matches <- match(CRISPR_df[, ID_column], unique_combined_IDs)
-  results_df <- CRISPR_df[combined_ID_matches %in% indices_vec, ]
-  return(results_df)
-}
 
 
 
@@ -82,23 +39,54 @@ RetrieveIndices <- function(CRISPR_df, indices_vec, ID_column) {
 # Define the sublibrary ---------------------------------------------------
 
 replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_summary_df[, "Combined_ID"], ]
+rownames(replaced_TF_CRISPRa_df) <- NULL
 
 
 
 
 
+# Exclude incomplete transcripts, or those with shared subsequences -------
 
-# Identify genes with < 4 non-overlapping guides --------------------------
+are_complete_transcripts <- AreCompleteTranscripts(replaced_TF_CRISPRa_df)
+have_zero_spacing        <- replaced_TF_CRISPRa_df[, "Spacing"] %in% 0 # "Zero" spacing means that there might be homologies / long shared subsequences among the chosen 4 guides!
+are_top4                 <- replaced_TF_CRISPRa_df[, "Rank"] %in% 1:4
+are_valid_top4           <- are_top4 & !(have_zero_spacing) & (are_complete_transcripts %in% TRUE)
 
-are_problematic_genes <- TF_summary_df[, "Num_overlapping_transcripts"] > 0
+stopifnot(all(replaced_TF_CRISPRa_df[are_top4 & !(are_valid_top4), "Num_TSSs"] >= 2)) # If a transcript is excluded, make sure that there is at least one other valid transcript for this gene!
 
-problematic_genes    <- TF_summary_df[are_problematic_genes %in% TRUE, "Entrez_ID"]
-nonoverlapping_genes <- TF_summary_df[are_problematic_genes %in% FALSE, "Entrez_ID"]
+# Examine the excluded sgRNAs
+invalid_combo_show_columns <- c(
+  "Gene_symbol", "Source", "Chromosome", "Cut_location",
+  "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
+  "Rank", "Original_rank",
+  "Num_overlaps",  "Overlaps_tolerance", "Spacing",
+  "Best_combination_rank",
+  "sgRNA_sequence", "PAM"
+)
+replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts %in% TRUE),  invalid_combo_show_columns]
+replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts %in% FALSE), invalid_combo_show_columns]
 
-all(problematic_genes %in% replaced_TF_CRISPRa_df[, "Combined_ID"])
-all(nonoverlapping_genes %in% replaced_TF_CRISPRa_df[, "Combined_ID"])
 
-table(are_problematic_genes %in% FALSE)
+
+
+
+# Identify problematic genes that do not meet all criteria ----------------
+
+are_overlapping_genes      <- TF_summary_df[, "Num_overlapping_transcripts"] > 0
+do_not_meet_criteria_genes <- TF_summary_df[, "Num_top4_outside_criteria"] > 0
+
+genes_that_overlap       <- TF_summary_df[are_overlapping_genes %in% TRUE, "Entrez_ID"]
+genes_that_fail_criteria <- TF_summary_df[do_not_meet_criteria_genes %in% TRUE, "Entrez_ID"]
+
+are_problematic_genes <- are_overlapping_genes | do_not_meet_criteria_genes
+
+problematic_genes   <- TF_summary_df[are_problematic_genes %in% TRUE,  "Entrez_ID"]
+unproblematic_genes <- TF_summary_df[are_problematic_genes %in% FALSE, "Entrez_ID"]
+
+stopifnot(all(problematic_genes %in% replaced_TF_CRISPRa_df[, "Combined_ID"]))
+stopifnot(all(unproblematic_genes %in% replaced_TF_CRISPRa_df[, "Combined_ID"]))
+
+table(are_problematic_genes, useNA = "ifany")
 
 
 
@@ -106,46 +94,37 @@ table(are_problematic_genes %in% FALSE)
 
 # Count the number of genes chosen from each of the libraries -------------
 
-are_complete_transcripts <- AreCompleteTranscripts(replaced_TF_CRISPRa_df)
-are_top4 <- (replaced_TF_CRISPRa_df[, "Rank"] %in% 1:4) & are_complete_transcripts
-table(are_top4)
-sum(are_top4) / 4
+num_gene_wells <- sum(are_valid_top4) / 4
 
 are_Calabrese_TF   <- grepl("Calabrese",   replaced_TF_CRISPRa_df[, "Source"], fixed = TRUE)
 are_hCRISPRa_v2_TF <- grepl("hCRISPRa-v2", replaced_TF_CRISPRa_df[, "Source"], fixed = TRUE)
 are_GPP_TFF        <- grepl("GPP",         replaced_TF_CRISPRa_df[, "Source"], fixed = TRUE)
 
-sum(are_top4 & are_Calabrese_TF)   / 4
-sum(are_top4 & are_hCRISPRa_v2_TF) / 4
-sum(are_top4 & are_GPP_TFF)         / 4
+sum(are_valid_top4 & are_Calabrese_TF)
+sum(are_valid_top4 & are_hCRISPRa_v2_TF)
+sum(are_valid_top4 & are_GPP_TFF)
 
 
 
 
-# Calculate the number of sgRNAs per plate --------------------------------
+# Count problematic genes -------------------------------------------------
 
-controls_fraction <- 0.015
+are_problematic_sgRNAs   <- replaced_TF_CRISPRa_df[, "Entrez_ID"] %in% problematic_genes
+are_unproblematic_sgRNAs <- replaced_TF_CRISPRa_df[, "Entrez_ID"] %in% unproblematic_genes
 
-num_controls_standard_plate <- floor(384 * controls_fraction)
+num_problematic   <- sum(are_valid_top4 & are_problematic_sgRNAs)   / 4
+num_unproblematic <- sum(are_valid_top4 & are_unproblematic_sgRNAs) / 4
 
-are_problematic_sgRNAs    <- replaced_TF_CRISPRa_df[, "Entrez_ID"] %in% problematic_genes
-are_nonoverlapping_sgRNAs <- replaced_TF_CRISPRa_df[, "Entrez_ID"] %in% nonoverlapping_genes
-
-num_problematic <- sum(are_top4 & are_problematic_sgRNAs) / 4
-num_nonoverlapping <- sum(are_top4 & are_nonoverlapping_sgRNAs) / 4
-
-num_plate_5 <- num_nonoverlapping - (4 * (384 - 38))
-
-num_controls_plate_5 <- (num_plate_5 * controls_fraction)
-num_controls_problematic_plate <- (num_problematic * controls_fraction)
-
-num_controls_plate_5 <- floor(num_controls_plate_5)
-num_controls_problematic_plate <- floor(num_controls_problematic_plate)
-
-(sum(are_top4 & are_nonoverlapping_sgRNAs) / 4) / (384 - 38)
+sum(are_valid_top4 & (replaced_TF_CRISPRa_df[, "Combined_ID"] %in% genes_that_overlap))       / 4
+sum(are_valid_top4 & (replaced_TF_CRISPRa_df[, "Combined_ID"] %in% genes_that_fail_criteria)) / 4
 
 
 
+
+
+# Set the number of control wells -----------------------------------------
+
+num_control_wells <- 20
 
 
 
@@ -168,11 +147,9 @@ set.seed(1)
 
 # Generate a pool of 4sg controls -----------------------------------------
 
-num_controls_vec <- c(rep(num_controls_standard_plate, 4), num_controls_plate_5, num_controls_problematic_plate)
-
 are_controls <- merged_replaced_CRISPRa_df[, "Is_control"] == "Yes"
 if (any(duplicated(toupper(merged_replaced_CRISPRa_df[are_controls, "sgRNA_sequence"])))) {
-  stop("Error: Duplicatd control sgRNA sequences found!")
+  stop("Error: Duplicated control sgRNA sequences found!")
 }
 
 are_Calabrese <- grepl("Calabrese",   merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
@@ -182,7 +159,7 @@ have_no_issues <- (merged_replaced_CRISPRa_df[, "Num_0MM"] %in% 0) &
                   !(grepl("TTTT", merged_replaced_CRISPRa_df[, "sgRNA_sequence"], ignore.case = TRUE))
 
 controls_Calabrese   <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_Calabrese, "sgRNA_sequence"]
-controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_hCRISPRa, "sgRNA_sequence"]
+controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_hCRISPRa,  "sgRNA_sequence"]
 
 controls_hCRISPRa_v2_selected <- sample(controls_hCRISPRa_v2, length(controls_Calabrese))
 
@@ -202,7 +179,7 @@ guides_pool_list <- guides_pool_list[num_homologies_vec == 0]
 
 # Select a subset of the possible pool of 4sg controls --------------------
 
-guides_pool_selected_indices <- sample(seq_along(guides_pool_list), sum(num_controls_vec))
+guides_pool_selected_indices <- sample(seq_along(guides_pool_list), num_control_wells)
 guides_pool_selected <- guides_pool_list[guides_pool_selected_indices]
 
 guides_pool_vec <- unlist(guides_pool_selected)
@@ -222,21 +199,11 @@ control_sgRNAs_df[, "Rank"] <- guides_pool_rep_number
 
 
 
-# Add new columns to the control sgRNA data frame -------------------------
+# Shuffle the control sgRNAs ----------------------------------------------
 
-for (column_name in c("Best_combination_rank", "Spacing", "Overlaps_tolerance", "Num_overlaps", "Original_rank")) {
-  control_sgRNAs_df[, column_name] <- NA_integer_
-}
-control_sgRNAs_df <- control_sgRNAs_df[, colnames(replaced_TF_CRISPRa_df)]
+controls_indices_vec <- RandomizeAllIndices(n_per_plate_vec = 20)[[1]]
 
-
-
-
-# Select the control sgRNAs for each plate --------------------------------
-
-controls_indices_list <- RandomizeAllIndices(n_per_plate_vec = num_controls_vec)
-
-controls_df_list <- lapply(controls_indices_list, function(x) RetrieveIndices(control_sgRNAs_df, x, "Combined_ID"))
+controls_df <- RetrieveIndices(control_sgRNAs_df, controls_indices_vec, "Combined_ID")
 
 
 
@@ -244,31 +211,28 @@ controls_df_list <- lapply(controls_indices_list, function(x) RetrieveIndices(co
 
 # Build the data frames for targeting sgRNAs ------------------------------
 
-problematic_TF_df    <- replaced_TF_CRISPRa_df[are_problematic_sgRNAs & are_top4, ]
-nonoverlapping_TF_df <- replaced_TF_CRISPRa_df[are_nonoverlapping_sgRNAs & are_top4, ]
+problematic_TF_df   <- replaced_TF_CRISPRa_df[are_problematic_sgRNAs   & are_valid_top4, ]
+unproblematic_TF_df <- replaced_TF_CRISPRa_df[are_unproblematic_sgRNAs & are_valid_top4, ]
 
 
 
 
 
-# Select the targeting sgRNAs for each plate ------------------------------
+# Select the targeting sgRNAs ---------------------------------------------
 
-nonoverlapping_indices_list <- RandomizeAllIndices(n_total = num_nonoverlapping)
+problematic_indices_list   <- RandomizeAllIndices(n_total = num_problematic)
+unproblematic_indices_list <- RandomizeAllIndices(n_total = num_unproblematic)
 
-nonoverlapping_df_list <- lapply(nonoverlapping_indices_list, function(x) RetrieveIndices(nonoverlapping_TF_df, x, "AltTSS_ID"))
+problematic_df_list   <- lapply(problematic_indices_list,   function(x) RetrieveIndices(problematic_TF_df,   x, "AltTSS_ID"))
+unproblematic_df_list <- lapply(unproblematic_indices_list, function(x) RetrieveIndices(unproblematic_TF_df, x, "AltTSS_ID"))
 
-targeting_df_list <- c(nonoverlapping_df_list[1:2], list(problematic_TF_df), nonoverlapping_df_list[3:5])
-
-controls_df_list <- controls_df_list[c(1:2, 6, 3:5)]
 
 
 
 
 # Combine the data frames for each plate ----------------------------------
 
-combined_df_list <- lapply(seq_along(targeting_df_list),
-                           function(x) rbind.data.frame(targeting_df_list[[x]], controls_df_list[[x]], stringsAsFactors = FALSE, make.row.names = FALSE)
-                           )
+combined_df_list <- c(unproblematic_df_list, problematic_df_list)
 
 
 
@@ -293,6 +257,16 @@ combined_df_shuffled_list <- lapply(seq_along(shuffled_indices_list), function(x
 
 
 
+# Add the control sgRNAs --------------------------------------------------
+
+use_index <- length(combined_df_shuffled_list)
+combined_df_shuffled_list[[use_index]] <- rbind.data.frame(combined_df_shuffled_list[[use_index]], controls_df,
+                                                           stringsAsFactors = FALSE, make.row.names = FALSE
+                                                           )
+
+
+
+
 # Add plate and well numbers to the data frame ----------------------------
 
 combined_df_shuffled_list <- lapply(seq_along(combined_df_shuffled_list), function(x) {
@@ -311,7 +285,7 @@ combined_df_shuffled_list <- lapply(seq_along(combined_df_shuffled_list), functi
 
 # Combine all the data frames ---------------------------------------------
 
-sgRNA_plates_df <- do.call(rbind.data.frame, c(combined_df_shuffled_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+TF_sgRNA_plates_df <- do.call(rbind.data.frame, c(combined_df_shuffled_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
 
 
@@ -320,9 +294,9 @@ sgRNA_plates_df <- do.call(rbind.data.frame, c(combined_df_shuffled_list, list(s
 
 # Re-number the control wells ---------------------------------------------
 
-are_controls <- sgRNA_plates_df[, "Is_control"] == "Yes"
+are_controls <- TF_sgRNA_plates_df[, "Is_control"] == "Yes"
 
-sgRNA_plates_df[are_controls, "Combined_ID"] <- paste0("Control_", rep(seq_len(sum(are_controls) / 4), each = 4))
+TF_sgRNA_plates_df[are_controls, "Combined_ID"] <- paste0("Control_", rep(seq_len(sum(are_controls) / 4), each = 4))
 
 
 
@@ -331,7 +305,7 @@ sgRNA_plates_df[are_controls, "Combined_ID"] <- paste0("Control_", rep(seq_len(s
 
 # Save data ---------------------------------------------------------------
 
-save(list = "sgRNA_plates_df",
+save(list = "TF_sgRNA_plates_df",
      file = file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData")
      )
 

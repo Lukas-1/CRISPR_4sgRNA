@@ -82,7 +82,7 @@ FormatForExcel <- function(my_df,
   }
 
   my_df[, "Num_overlaps"] <- ifelse(is.na(my_df[, "Num_overlaps"]),
-                                    ifelse(my_df[, "Rank"] %in% 1:4, ifelse(my_df[, "Spacing"] %in% 12, "<12bp", "n.d."), NA_character_),
+                                    ifelse(my_df[, "Rank"] %in% 1:4, ifelse(my_df[, "Spacing"] %in% 12, "<8bp", "n.d."), NA_character_),
                                     paste0(my_df[, "Num_overlaps"], "|", my_df[, "Spacing"], "bp")
                                     )
   if (add_primers) {
@@ -204,21 +204,6 @@ AddPrimers <- function(CRISPR_df) {
     results_vec[are_this_rank] <- new_sequences
   }
   return(results_vec)
-}
-
-
-AreCompleteTranscripts <- function(CRISPR_df) {
-  are_incomplete <- rep.int(NA, nrow(CRISPR_df))
-  unique_TSS_IDs <- unique(CRISPR_df[CRISPR_df[, "Is_control"] == "No", "AltTSS_ID"])
-  for (unique_TSS_ID in unique_TSS_IDs) {
-    are_this_TSS <- CRISPR_df[, "AltTSS_ID"] %in% unique_TSS_ID
-    are_unmapped_TSS <- all(CRISPR_df[are_this_TSS, "Num_TSSs"] >= 2) && all(is.na(CRISPR_df[are_this_TSS, "Start"]))
-    if (!(are_unmapped_TSS)) { # AltTSS_IDs corresponding to unmapped sgRNAs are left to be 'NA'
-      is_complete <- all(1:4 %in% CRISPR_df[are_this_TSS, "Rank"])
-      are_incomplete[are_this_TSS] <- is_complete
-    }
-  }
-  return(are_incomplete)
 }
 
 

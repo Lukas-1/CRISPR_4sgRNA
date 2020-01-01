@@ -98,7 +98,7 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
 
 
 merged_replaced_CRISPRa_df <- merged_replaced_CRISPRa_df[, selected_columns]
-sgRNA_plates_df <- sgRNA_plates_df[, c("Plate_number", "Well_number", selected_columns)]
+TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", selected_columns)]
 
 
 
@@ -150,6 +150,7 @@ replaced_curated_CRISPRa_df <- merged_replaced_CRISPRa_df[is_curated, ]
 merged_replaced_candidates_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% candidates_CRISPRa_df[, "Combined_ID"], ]
 
 replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_summary_df[, "Combined_ID"], ]
+
 
 
 
@@ -277,21 +278,13 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 DfToTSV(replaced_TF_CRISPRa_df, "CRISPRa_transcription_factors")
 
-are_complete_transcripts <- AreCompleteTranscripts(replaced_TF_CRISPRa_df)
-replaced_TF_CRISPRa_complete_df <- replaced_TF_CRISPRa_df[are_complete_transcripts, ]
+TF_folder_name <- "TF library plate layout"
 for (i in 1:4) {
-  subset_df <- replaced_TF_CRISPRa_complete_df[replaced_TF_CRISPRa_complete_df[, "Rank"] %in% i, ]
-  file_name <- paste0(file.path("Separated guides", "CRISPRa_transcription_factors_sg"), i)
+  subset_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[, "Rank"] %in% i, ]
+  file_name <- paste0(file.path(TF_folder_name, "CRISPRa_TF_randomized_sg"), i)
   DfToTSV(subset_df, file_name, add_primers = TRUE)
 }
-
-
-for (i in 1:4) {
-  subset_df <- sgRNA_plates_df[sgRNA_plates_df[, "Rank"] %in% i, ]
-  file_name <- paste0(file.path("Separated guides", "CRISPRa_TF_randomized_sg"), i)
-  DfToTSV(subset_df, file_name, add_primers = TRUE)
-}
-DfToTSV(sgRNA_plates_df, "CRISPRa_TF_randomized_all4", add_primers = TRUE)
+DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRa_TF_randomized_all_4_guides"), add_primers = TRUE)
 
 
 DfToTSV(replaced_curated_CRISPRa_df, file.path("Candidate genes", "CRISPRa_16_sgRNAs"), allow_curated = TRUE)
