@@ -177,7 +177,7 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
   )
 
   if ("distance" %in% colnames(hits_df)) {
-    results_df[, "Distance"] <- hits_df[unique(match(query_vec, query_vec)), "distance"]
+    results_df[, "Distance"] <- hits_df[unique(match(hits_df[, "queryHits"], hits_df[, "queryHits"])), "distance"]
   }
 
   match_matches_vec <- match(seq_len(num_queries), as.integer(names(entrezs_list)))
