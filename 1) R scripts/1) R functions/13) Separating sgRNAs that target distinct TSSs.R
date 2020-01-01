@@ -178,12 +178,6 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE) {
   } else {
     controls_df <- NULL
   }
-
-  bind_list <- c(reordered_df_list,
-                 list(controls_df),
-                 list(stringsAsFactors = FALSE, make.row.names = FALSE)
-                 )
-
   results_df <- do.call(rbind.data.frame, c(reordered_df_list,
                                             list(controls_df),
                                             list(stringsAsFactors = FALSE, make.row.names = FALSE)

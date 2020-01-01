@@ -92,6 +92,7 @@ ListToDf <- function(named_list) {
     stringsAsFactors = FALSE,
     row.names = NULL
   )
+  return(results_df)
 }
 
 

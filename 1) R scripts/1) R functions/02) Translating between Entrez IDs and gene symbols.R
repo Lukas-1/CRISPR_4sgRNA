@@ -198,7 +198,6 @@ GetGenes <- function(symbols_vec, CRISPR_df = CRISPRa_df) {
 
   symbol_entrez_df <- SymbolToEntrezDf(symbols_vec)
 
-  dummy_df <- CRISPR_df[, c("Entrez_ID", "Original_symbol")]
   colnames(CRISPR_df)[colnames(CRISPR_df) == "Gene_symbol"] <- "New_symbol"
   colnames(CRISPR_df)[colnames(CRISPR_df) == "Original_symbol"] <- "Gene_symbol"
 

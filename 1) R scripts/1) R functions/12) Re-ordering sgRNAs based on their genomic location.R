@@ -36,7 +36,6 @@ ReorderSubDfByLocation <- function(CRISPR_sub_df) {
       stop("The sgRNAs mapped to more than one chromosome, and this inconsistency could not be resolved!")
     }
   }
-
   new_order <- order(CRISPR_sub_df[, "Start"])
   sub_df_reordered <- CRISPR_sub_df[new_order, ]
   were_mapped <- were_mapped[new_order]

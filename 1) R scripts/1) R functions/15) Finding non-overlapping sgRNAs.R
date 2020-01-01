@@ -51,7 +51,6 @@ CreateCombinations <- function(sub_df_reordered,
   assign("delete_num_sgRNAs",           num_sgRNAs,           envir = globalenv())
   assign("delete_num_overlaps_allowed", num_overlaps_allowed, envir = globalenv())
 
-  indices_vec <- which(were_included)
   combination_indices_mat <- combn(which(were_included), num_sgRNAs)
 
   cut_sites_vec <- sub_df_reordered[, "Cut_location"]

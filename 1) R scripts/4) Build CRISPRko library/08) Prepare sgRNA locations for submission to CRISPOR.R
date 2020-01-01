@@ -47,6 +47,7 @@ TF_bed_df <- MakeBedDf(extended_CRISPRko_df, TF_combined_IDs)
 
 
 
+
 # Prepare objects that can be exported to FASTA files ---------------------
 
 FASTA_df <- MakeFASTADf(extended_CRISPRko_df, TF_combined_IDs)
@@ -67,14 +68,6 @@ write.table(FASTA_vec,
             file = file.path(CRISPOR_files_directory, "Input_for_CRISPOR_CRISPRko_TFs.fa"),
             quote = FALSE, row.names = FALSE, col.names = FALSE
             )
-
-
-
-
-
-
-
-
 
 
 

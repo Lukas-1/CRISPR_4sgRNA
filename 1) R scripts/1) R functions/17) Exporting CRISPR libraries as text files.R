@@ -53,7 +53,7 @@ FormatForExcel <- function(my_df,
                            add_primers               = FALSE,
                            allow_curated             = FALSE
                            ) {
-  # Depends on 'source_abbreviations_vec' in the global environment
+  # Requires the object 'source_abbreviations_vec' in the global environment
 
   is_CRISPRa <- "Calabrese_rank" %in% colnames(my_df)
 
@@ -159,6 +159,7 @@ FormatForExcel <- function(my_df,
 DfToTSV <- function(CRISPR_df,file_name, remove_columns = full_omit_columns, probability_to_percentage = FALSE,
                     add_primers = FALSE, allow_curated = FALSE
                     ) {
+  # Requires the objects 'full_omit_columns' and 'file_output_directory' in the global environment
   write.table(FormatForExcel(CRISPR_df, remove_columns = remove_columns, probability_to_percentage = probability_to_percentage,
                              add_primers = add_primers, allow_curated = allow_curated
                              ),

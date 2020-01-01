@@ -122,7 +122,8 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
 
 FrequenciesFromVCFFiles <- function(ranges_df, frequency_cutoff = 0.001, round_frequencies = TRUE, only_Kaviar = FALSE) {
 
-  stopifnot("common_polymorphisms_df" %in% ls(envir = globalenv()))
+  stopifnot("common_polymorphisms_df" %in% ls(envir = globalenv())) # requires common_polymorphisms_df in the global environment
+
   CheckRangesDf(ranges_df)
 
   GRanges_object_sgRNAs <- GRanges(
@@ -276,8 +277,6 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
       row.names = NULL
     )
 
-
-
     SNP_column_names <- grep("_SNP_", colnames(results_df), fixed = TRUE, value = TRUE)
     SNP_column_roots <- unique(sub("^(PAM|sgRNA|all23)_", "", SNP_column_names))
 
@@ -288,6 +287,7 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
       results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
         NoNAmax(c(PAM_vec[[x]], sg_vec[[x]]))
       }, numeric(1))
+      return(results_vec)
     }, simplify = FALSE)
     NGG_AF_max_mat <- do.call(cbind, NGG_AF_max_list)
 
@@ -297,13 +297,14 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
       sg_list    <- strsplit(results_df[, paste0("sgRNA_", root)], ", ", fixed = TRUE)
       all23_list <- strsplit(results_df[, paste0("all23_", root)], ", ", fixed = TRUE)
       results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
-        results_vec <- intersect(all23_list[[x]], c(sg_list[[x]], PAM_list[[x]]))
-        if (all(is.na(results_vec))) {
+        rsIDs_vec <- intersect(all23_list[[x]], c(sg_list[[x]], PAM_list[[x]]))
+        if (all(is.na(rsIDs_vec))) {
           return(NA_character_)
         } else {
-          return(paste0(results_vec, collapse = ", "))
+          return(paste0(rsIDs_vec, collapse = ", "))
         }
       }, "")
+      return(results_vec)
     }, simplify = FALSE)
     NGG_rsID_mat <- do.call(cbind, NGG_rsID_list)
 

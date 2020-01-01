@@ -13,7 +13,6 @@ source(file.path(general_functions_directory, "02) Translating between Entrez ID
 
 # Define functions --------------------------------------------------------
 
-
 OrderControlsVec <- function(CRISPR_df) {
   is_CRISPRko <- "Exon_number_GPP" %in% colnames(CRISPR_df)
   NA_vec <- rep(NA, nrow(CRISPR_df))
@@ -30,8 +29,8 @@ OrderControlsVec <- function(CRISPR_df) {
 
 
 
-
 RankCRISPRDf <- function(CRISPR_df, reorder_by_rank = TRUE, allow_5pG_MM = FALSE, ID_column = "Combined_ID") {
+  # Requires the constants 'preferred_AF_max_column' and 'SNP_frequency_cutoff' in the global environment
 
   MakeFactor <- function(x) factor(x, levels = unique(x))
 
@@ -49,7 +48,6 @@ RankCRISPRDf <- function(CRISPR_df, reorder_by_rank = TRUE, allow_5pG_MM = FALSE
                                        simplify = FALSE
                                        )
                                 )
-
 
   if (reorder_by_rank) {
     new_order <- order(CRISPR_df[, "Is_control"] == "Yes",

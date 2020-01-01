@@ -79,8 +79,6 @@ MergeTSSandGuideScan <- function(CRISPR_df, guidescan_df) {
   }, simplify = FALSE)
   extended_guidescan_df <- do.call(rbind.data.frame, c(guidescan_per_region_extended_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
-  chromosome_available_vec <- !(is.na(CRISPR_df[, "Entrez_chromosome"]))
-
   vec_for_matching_CRISPR               <- paste0(CRISPR_df[, "Combined_ID"], "__", toupper(CRISPR_df[, "sgRNA_sequence"]))
   vec_for_matching_GuideScan            <- paste0(extended_guidescan_df[, "Combined_ID"], "__", toupper(extended_guidescan_df[, "gRNA"]))
   vec_for_matching_CRISPR_chromosome    <- paste0(CRISPR_df[, "Entrez_chromosome"], "__", vec_for_matching_CRISPR)
@@ -208,6 +206,7 @@ GetOffTargetCategory <- function(merged_CRISPR_df) {
 # Functions for resolving ambiguous gene IDs or sgRNA locations -----------
 
 AssignToGeneByNearbyTSS <- function(CRISPR_df, prefix = "") {
+  # Depends on the data frame 'combined_TSS_CRISPRa_df' in the global environment
 
   GRanges_object_TSSs <- GRanges(
     seqnames = sub("chr", "", combined_TSS_CRISPRa_df[, "Chromosome"], fixed = TRUE),
@@ -332,6 +331,7 @@ FindSingleLocationFromGene <- function(location_vec, chromosome, gene_GRanges_ob
 
 
 FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutoff = 20, min_to_map = 8) {
+  # Depends on the gene models object 'human_genes_GRanges' in the global environment
 
   use_TSS <- "Best_TSS" %in% colnames(CRISPR_df)
 
@@ -370,12 +370,12 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
       if (sum(already_mapped) < min_to_map) {
         gene_symbol <- unique(CRISPR_df[are_this_gene, "Gene_symbol"])
         if (length(gene_symbol) == 1) {
-          gene_string <- paste0("gene symbol '", gene_symbol, "'")
+          gene_string <- paste0("symbol '", gene_symbol, "'")
         } else {
-          gene_string <- paste0("combined ID '", x, "'")
+          gene_string <- paste0("combined ID '", combined_ID, "'")
         }
         message(paste0("The gene with the ", gene_string, " was counted as a duplicated gene, ",
-                       "although it did not reach the fraction cutoff of ", fraction_cutoff, ", ",
+                       "even though it did not reach the fraction cutoff of ", fraction_cutoff, ", ",
                        "because >", absolute_cutoff, " of its guides seem to be duplicated."
                        ))
         is_duplicated_gene <- TRUE
@@ -474,7 +474,9 @@ ReplaceDuplicatedGenes <- function(CRISPR_df) {
 
 
 ReassignTSS <- function(merged_CRISPR_df) {
-  ### Assign a TSS to all sgRNAs based on the gene ID they are associated with (also to those sgRNAs which were not found on GuideScan!)
+  # Assigns a TSS to all sgRNAs based on the gene ID they are associated with (also to those sgRNAs which were not found on GuideScan!)
+  # Depends on the data frame 'combined_TSS_CRISPRa_df' in the global environment
+
   vec_for_matching_CRISPR <- paste0(merged_CRISPR_df[, "Combined_ID"], "__", merged_CRISPR_df[, "Chromosome"])
   vec_for_matching_TSS <- paste0(combined_TSS_CRISPRa_df[, "Combined_ID"], "__", combined_TSS_CRISPRa_df[, "Chromosome"])
   matches_vec <- match(vec_for_matching_CRISPR, vec_for_matching_TSS)
@@ -549,6 +551,7 @@ MergeLocations <- function(merged_CRISPR_df) {
 
 
 AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_rank = TRUE, allow_5pG_MM = TRUE) {
+  # Depends on the data frame 'combined_TSS_CRISPRa_df' in the global environment
 
   # Prepare for re-ordering the columns in a later step
   remove_columns <- c("Entrez_chromosome", "Hits_chromosome", "GuideScan_chromosome", "Hits_strand", "GuideScan_strand", "Hits_start",

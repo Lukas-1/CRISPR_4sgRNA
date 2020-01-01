@@ -142,7 +142,7 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
 
 
 
-  ### Split the rows of guidescan_raw_df into the individual regions ###
+  ### Split the rows of raw_df into the individual regions ###
 
   file_number_vec <- GuideScanFileNumbers(raw_df)
 
@@ -161,7 +161,7 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
     if ((((x %% 100) == 0) && (x < 1000)) || (((x %% 1000)) == 0)) {
       message(paste0(x, " out of ", length(guidescan_indices_list), " locations have been processed."))
     }
-    sub_df <- guidescan_raw_df[guidescan_indices_list[[x]], ]
+    sub_df <- raw_df[guidescan_indices_list[[x]], ]
     are_present_sgRNAs <- sub_df[, 4] %in% sgRNAs_for_region[[sgRNAs_for_region_matches[[x]]]]
     if (any(are_present_sgRNAs)) {
       return(data.frame("Region" = regions_vec[[x]], sub_df[are_present_sgRNAs, ], stringsAsFactors = FALSE, row.names = NULL))
@@ -174,12 +174,10 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
   ### Assemble the filtered GuideScan output ###
 
   guidescan_all_genes_df <- do.call(rbind.data.frame, c(guidescan_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-  colnames(guidescan_all_genes_df)[2:ncol(guidescan_all_genes_df)] <- gsub(" ", "_", guidescan_raw_df[2, ], fixed = TRUE)
+  colnames(guidescan_all_genes_df)[2:ncol(guidescan_all_genes_df)] <- gsub(" ", "_", raw_df[2, ], fixed = TRUE)
 
   return(guidescan_all_genes_df)
-
 }
-
 
 
 

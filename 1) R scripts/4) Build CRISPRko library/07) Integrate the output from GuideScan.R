@@ -76,23 +76,11 @@ merged_CRISPRko_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(mer
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "merged_CRISPRko_df",
      file = file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideScan.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
 
 
 

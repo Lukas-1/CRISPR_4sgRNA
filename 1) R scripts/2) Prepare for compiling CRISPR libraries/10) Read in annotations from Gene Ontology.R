@@ -50,6 +50,7 @@ all_GO_terms_ubiquitin    <- SearchGOTerms("ubiquitin",   fixed = TRUE)
 
 
 
+
 # Save data ---------------------------------------------------------------
 
 save(list = "BioMart_GO_df",

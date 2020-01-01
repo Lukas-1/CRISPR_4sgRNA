@@ -31,6 +31,7 @@ human_genes_GRanges <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
 
 
 LiftOverAndAnnotate <- function(ranges_df) {
+  # Depends on the object 'hg19tohg38_chain' in the global environment
 
   stopifnot(all((ranges_df[, "End"] - ranges_df[, "Start"]) == 19))
 
@@ -417,6 +418,7 @@ ReturnClearMatches <- function(found_seq_df, have_clear_match, clear_match_indic
       NA_vec <- rep.int(NA_character_, nrow(found_seq_df))
     }
     results_vec <- ifelse(have_clear_match, found_seq_df[clear_match_indices_vec, x], NA_vec)
+    return(results_vec)
   })
   results_df <- do.call(data.frame, c(columns_list, list(stringsAsFactors = FALSE)))
   colnames(results_df) <- colnames(found_seq_df)
@@ -484,9 +486,7 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   sum_5G_MM_and_PAM_vec <- tapply(are_MM5primeG & are_potential_PAM, references_fac, sum)
 
   sum_0MM_vec   <- tapply(are_0MM, references_fac, sum)
-  sum_1MM_vec   <- tapply(are_1MM, references_fac, sum)
   sum_5G_MM_vec <- tapply(are_MM5primeG, references_fac, sum)
-
   have_clear_match <- (sum_0MM_and_PAM_vec == 1) | ((sum_0MM_and_PAM_vec == 0) & (sum_5G_MM_and_PAM_vec == 1))
 
   use_overlapping_genes <- all(c("Overlapping_Entrez_IDs", "Overlapping_symbols") %in% colnames(found_seq_df))
