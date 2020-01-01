@@ -272,9 +272,7 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 
 
-# Write data to disk ------------------------------------------------------
-
-### New library after replacement of 5' G-substituted sgRNAs ###
+# Write CRISPR sgRNA libraries to disk ------------------------------------
 
 DfToTSV(replaced_TF_CRISPRa_df, "CRISPRa_transcription_factors")
 
