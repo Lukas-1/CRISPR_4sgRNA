@@ -212,8 +212,11 @@ AreCompleteTranscripts <- function(CRISPR_df) {
   unique_TSS_IDs <- unique(CRISPR_df[CRISPR_df[, "Is_control"] == "No", "AltTSS_ID"])
   for (unique_TSS_ID in unique_TSS_IDs) {
     are_this_TSS <- CRISPR_df[, "AltTSS_ID"] %in% unique_TSS_ID
-    is_complete <- all(1:4 %in% CRISPR_df[are_this_TSS, "Rank"])
-    are_incomplete[are_this_TSS] <- is_complete
+    are_unmapped_TSS <- all(CRISPR_df[are_this_TSS, "Num_TSSs"] >= 2) && all(is.na(CRISPR_df[are_this_TSS, "Start"]))
+    if (!(are_unmapped_TSS)) { # AltTSS_IDs corresponding to unmapped sgRNAs are left to be 'NA'
+      is_complete <- all(1:4 %in% CRISPR_df[are_this_TSS, "Rank"])
+      are_incomplete[are_this_TSS] <- is_complete
+    }
   }
   return(are_incomplete)
 }

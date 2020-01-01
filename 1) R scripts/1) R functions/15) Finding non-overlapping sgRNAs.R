@@ -174,7 +174,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
        all(is.na(CRISPR_sub_df[, "Start"]))
       ) {
     CRISPR_sub_df[, "Best_combination_rank"] <- NA_integer_
-    CRISPR_sub_df[, "Spacing"]               <- 0L
+    CRISPR_sub_df[, "Spacing"]               <- NA_integer_
     CRISPR_sub_df[, "Overlaps_tolerance"]    <- NA_integer_
     CRISPR_sub_df[, "Num_overlaps"]          <- NA_integer_
     CRISPR_sub_df[, "Original_rank"]         <- CRISPR_sub_df[, "Rank"]
@@ -254,7 +254,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
     are_core_library <- grepl("Calabrese|hCRISPRa-v2", sub_df_reordered[, "Source"])
     sub_df_final <- sub_df_reordered[order(!(are_core_library), sub_df_reordered[, "Rank"]), ]
     sub_df_final[, "Best_combination_rank"] <- NA_integer_
-    sub_df_final[, "Spacing"]               <- 0L
+    sub_df_final[, "Spacing"]               <- ifelse(sub_df_final[, "Rank"] %in% 1:4, 0L, NA_integer_)
     sub_df_final[, "Overlaps_tolerance"]    <- NA_integer_
     sub_df_final[, "Num_overlaps"]          <- NA_integer_
     sgRNAs_found <- FALSE
