@@ -31,45 +31,42 @@ human_genes_GRanges <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
 
 LiftOverAndAnnotate <- function(ranges_df) {
 
-  CheckRangesDf(ranges_df)
-  stopifnot(all((ranges_df[, "End"] -  ranges_df[, "Start"]) == 19))
+  stopifnot(all((ranges_df[, "End"] - ranges_df[, "Start"]) == 19))
 
-  GRanges_object_sgRNAs <- GRanges(
-    seqnames = ranges_df[, "Chromosome"],
-    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
-    strand   = ranges_df[, "Strand"]
-  )
+  GRanges_object_sgRNAs <- RangesDfToGRangesObject(ranges_df)
 
   sequences_vec <- as.character(motifRG::getSequence(GRanges_object_sgRNAs, BSgenome.Hsapiens.UCSC.hg19))
 
   sgRNAs_lifted_over_GRanges <- liftOver(GRanges_object_sgRNAs, hg19tohg38_chain)
 
   sgRNAs_lifted_over_df <- as.data.frame(sgRNAs_lifted_over_GRanges)
+
+  location_columns <- c("seqnames" = "Chromosome",
+                        "strand"   = "Strand",
+                        "start"    = "Start",
+                        "end"      = "End"
+                        )
+  for (column_name in names(location_columns)) {
+    colnames(sgRNAs_lifted_over_df)[colnames(sgRNAs_lifted_over_df) == column_name] <- location_columns[[column_name]]
+  }
+
+
   sgRNAs_lifted_over_df <- sgRNAs_lifted_over_df[sgRNAs_lifted_over_df[, "width"] == 20 , ]
 
   if (any(duplicated(sgRNAs_lifted_over_df[, "group"]))) {
     stop("Some sgRNAs mapped to multiple locations in the liftOver!")
   }
 
-  sgRNAs_lifted_over_GRanges_20mers <- GRanges(
-    seqnames = sgRNAs_lifted_over_df[, "seqnames"],
-    ranges   = IRanges(start = sgRNAs_lifted_over_df[, "start"], end = sgRNAs_lifted_over_df[, "end"]),
-    strand   = sgRNAs_lifted_over_df[, "strand"]
-  )
+  sgRNAs_lifted_over_GRanges_20mers <- RangesDfToGRangesObject(sgRNAs_lifted_over_df)
 
   sgRNAs_lifted_over_df[, "Sequence_liftOver"] <- as.character(motifRG::getSequence(sgRNAs_lifted_over_GRanges_20mers, BSgenome.Hsapiens.UCSC.hg38))
 
-  old_location_columns <- c("seqnames", "strand", "start", "end")
-  new_location_columns <- c("Chromosome", "Strand", "Start", "End")
-
-  sgRNAs_lifted_over_df[, "PAM_liftOver"] <- GetNGGPAM(setNames(sgRNAs_lifted_over_df[, old_location_columns], new_location_columns))
+  sgRNAs_lifted_over_df[, "PAM_liftOver"] <- GetNGGPAM(sgRNAs_lifted_over_df)
 
   lifted_over_matches <- match(seq_len(nrow(ranges_df)), sgRNAs_lifted_over_df[, "group"])
 
-  lifted_over_matched_df <- sgRNAs_lifted_over_df[lifted_over_matches, c("Sequence_liftOver", "PAM_liftOver", "seqnames", "strand", "start", "end")]
-  liftOver_location_columns <- paste0(new_location_columns, "_liftOver")
-  colnames(lifted_over_matched_df)[3:6] <- liftOver_location_columns
-
+  lifted_over_matched_df <- sgRNAs_lifted_over_df[lifted_over_matches, c("Sequence_liftOver", "PAM_liftOver", location_columns)]
+  colnames(lifted_over_matched_df)[3:6] <- paste0(location_columns, "_liftOver")
 
   results_df <- data.frame(
     "Sequence_hg19"          = sequences_vec,
@@ -151,47 +148,56 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
 
 
 
-FindNearestGenes <- function(ranges_df, use_separator = ", ") {
+FindNearestGenes <- function(ranges_df) {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
-  CheckRangesDf(ranges_df)
-
-  ### Find the closest gene to each identified sgRNA hit ###
   message("Finding the closest genes to the specified genomic ranges...")
 
-  entrez_IDs <- mcols(human_genes_GRanges)[, 1]
+  entrez_IDs_vec <- mcols(human_genes_GRanges)[, 1]
 
-  GRanges_object <- GRanges(
-    seqnames = ranges_df[, "Chromosome"],
-    ranges   = IRanges(start = ranges_df[, "Start"],
-                       end   = ranges_df[, "End"]
-                       ),
-    strand   = ranges_df[, "Strand"]
-  )
+  GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
-  nearest_Hits_object <- distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all")
-  nearest_entrezs_vec <- entrez_IDs[to(nearest_Hits_object)]
-  distances_vec <- mcols(nearest_Hits_object)[, 1]
+  gene_nearest_matches_df <- as.data.frame(distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all"))
 
+  query_vec <- gene_nearest_matches_df[, 1]
+  query_fac <- factor(query_vec, levels = unique(query_vec))
+  nearest_matches_list <- split(gene_nearest_matches_df[, 2], query_fac)
+  match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(nearest_matches_list))
 
-  ### Translate the entrez IDs of the close genes to gene symbols ###
+  distances_vec <- vapply(split(gene_nearest_matches_df[, "distance"], query_fac), unique, integer(1))
+  distances_vec <- distances_vec[match_matches_vec]
 
-  entrez_matches <- match(nearest_entrezs_vec, entrez_to_symbol_df[, "Entrez_ID"])
-  nearest_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
-                                entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
-                                entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
-                                )
+  nearest_entrezs_list <- lapply(nearest_matches_list, function(x) entrez_IDs_vec[x])
+  nearest_entrezs_list <- lapply(nearest_entrezs_list, function(x) x[order(as.integer(x))])
+
+  nearest_entrezs_list <- nearest_entrezs_list[match_matches_vec]
+  nearest_entrezs_list <- lapply(nearest_entrezs_list, function(x) if (is.null(x)) NA_character_ else x)
+
+  nearest_entrezs_vec <- EntrezsListToEntrezsVec(nearest_entrezs_list)
+  nearest_symbols_vec <- EntrezsListToSymbolsVec(nearest_entrezs_list)
 
   ### Compile results ###
   results_df <- data.frame(
     ranges_df,
-    "Nearest_gene_Entrez_ID" = nearest_entrezs_vec,
-    "Nearest_gene_symbol"    = nearest_symbols_vec,
-    "Nearest_gene_distance"  = distances_vec,
-    stringsAsFactors         = FALSE,
-    row.names                = NULL
+    "Nearest_Entrez_IDs" = nearest_entrezs_vec,
+    "Nearest_symbols"    = nearest_symbols_vec,
+    "Distance"           = distances_vec,
+    stringsAsFactors     = FALSE,
+    row.names            = NULL
   )
   return(results_df)
+}
+
+
+
+RangesDfToGRangesObject <- function(ranges_df) {
+  CheckRangesDf(ranges_df)
+  GRanges_object <- GRanges(
+    seqnames = ranges_df[, "Chromosome"],
+    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
+    strand   = ranges_df[, "Strand"]
+  )
+  return(GRanges_object)
 }
 
 
@@ -199,15 +205,11 @@ FindNearestGenes <- function(ranges_df, use_separator = ", ") {
 
 GetOverlappingEntrezsList <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
 
-  CheckRangesDf(ranges_df)
+  RangesDfToGRangesObject(ranges_df)
 
-  target_GRanges_object <- GRanges(
-    seqnames = ranges_df[, "Chromosome"],
-    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
-    strand   = ranges_df[, "Strand"]
-  )
+  target_GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
-  entrez_IDs_vec <- as.data.frame(gene_models_GRanges)[, "gene_id"]
+  entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
 
   gene_overlap_matches_df <- as.data.frame(findOverlaps(target_GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand))
 
@@ -226,14 +228,13 @@ GetOverlappingEntrezsList <- function(ranges_df, gene_models_GRanges = human_gen
 
 
 
+EntrezsListToEntrezsVec <- function(entrezs_list) {
+  vapply(entrezs_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = ", "), "")
+}
 
-FindOverlappingGenes <- function(ranges_df, use_separator = ", ", gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
-
-  overlap_entrezs_list <- GetOverlappingEntrezsList(ranges_df, gene_models_GRanges = gene_models_GRanges, ignore_strand = ignore_strand)
-
-  overlap_entrezs_vec <- vapply(overlap_entrezs_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = ", "), "")
-
-  overlap_symbols_vec <- vapply(overlap_entrezs_list, function(x) {
+EntrezsListToSymbolsVec <- function(entrezs_list) {
+  # requires entrez_to_symbol_df in the global environment
+  results_vec <- vapply(entrezs_list, function(x) {
     if (all(is.na(x))) {
       return(NA_character_)
     } else {
@@ -241,11 +242,23 @@ FindOverlappingGenes <- function(ranges_df, use_separator = ", ", gene_models_GR
       overlap_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
                                     entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
                                     entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
-                                    )
+      )
       return(paste0(overlap_symbols_vec, collapse = ", "))
     }
 
   }, "")
+  return(results_vec)
+}
+
+
+
+
+FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+
+  overlap_entrezs_list <- GetOverlappingEntrezsList(ranges_df, gene_models_GRanges = gene_models_GRanges, ignore_strand = ignore_strand)
+
+  overlap_entrezs_vec <- EntrezsListToEntrezsVec(overlap_entrezs_list)
+  overlap_symbols_vec <- EntrezsListToSymbolsVec(overlap_entrezs_list)
 
   num_overlaps_vec <- ifelse(is.na(overlap_entrezs_list), 0L, lengths(overlap_entrezs_list))
 
@@ -264,18 +277,10 @@ FindOverlappingGenes <- function(ranges_df, use_separator = ", ", gene_models_GR
 
 
 RetrieveSequences <- function(ranges_df) {
-  CheckRangesDf(ranges_df)
-  GRanges_object <- GRanges(
-    seqnames = ranges_df[, "Chromosome"],
-    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
-    strand   = ranges_df[, "Strand"]
-  )
+  GRanges_object <- RangesDfToGRangesObject(ranges_df)
   results_vec <- as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38))
   return(results_vec)
 }
-
-
-
 
 
 
@@ -296,6 +301,7 @@ GetNGGPAM <- function(ranges_df) {
   results_vec <- as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38))
   return(results_vec)
 }
+
 
 
 
@@ -386,8 +392,8 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     entrez_column <- "Overlapping_Entrez_IDs"
     symbol_column <- "Overlapping_symbols"
   } else {
-    entrez_column <- "Nearest_gene_Entrez_ID"
-    symbol_column <- "Nearest_gene_symbol"
+    entrez_column <- "Nearest_Entrez_IDs"
+    symbol_column <- "Nearest_symbols"
   }
 
   entrezs_0MM_vec <- PasteIndices(found_seq_df, which_0MM_indices_list, entrez_column, use_separator)
