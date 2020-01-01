@@ -11,6 +11,7 @@ library("TxDb.Hsapiens.UCSC.hg38.knownGene")
 library("motifRG")
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R")) # For ExpandList
 source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R"))
 
 
@@ -144,6 +145,48 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
 
 
 
+ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
+
+  entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
+  hits_df <- as.data.frame(Hits_object)
+
+  hits_df[, "Entrez_ID"] <- entrez_IDs_vec[hits_df[, "subjectHits"]]
+  integer_entrezs <- as.integer(hits_df[, "Entrez_ID"])
+  new_order <- order(hits_df[, "queryHits"], integer_entrezs)
+  hits_df <- hits_df[new_order, ]
+
+  entrez_matches <- match(hits_df[, "Entrez_ID"], entrez_to_symbol_df[, "Entrez_ID"])
+  hits_df[, "Gene_symbol"] <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
+                                     entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
+                                     entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
+                                     )
+
+  query_fac <- factor(hits_df[, "queryHits"], unique(hits_df[, "queryHits"]))
+
+  entrezs_list <- split(hits_df[, "Entrez_ID"], query_fac)
+  entrezs_vec <- vapply(entrezs_list, function(x) paste0(x, collapse = ", "), "")
+
+  symbols_list <- split(hits_df[, "Gene_symbol"], query_fac)
+  symbols_vec <- vapply(symbols_list, function(x) paste0(x, collapse = ", "), "")
+
+  results_df <- data.frame(
+    "Entrez_ID"   = entrezs_vec,
+    "Gene_symbol" = symbols_vec,
+    "Num_genes"   = lengths(entrezs_list),
+    stringsAsFactors = FALSE
+  )
+
+  if ("distance" %in% colnames(hits_df)) {
+    results_df[, "Distance"] <- hits_df[unique(match(query_vec, query_vec)), "distance"]
+  }
+
+  match_matches_vec <- match(seq_len(num_queries), as.integer(names(entrezs_list)))
+  results_df <- results_df[match_matches_vec, ]
+  rownames(results_df) <- NULL
+  return(results_df)
+}
+
+
 
 
 
@@ -153,36 +196,18 @@ FindNearestGenes <- function(ranges_df) {
 
   message("Finding the closest genes to the specified genomic ranges...")
 
-  entrez_IDs_vec <- mcols(human_genes_GRanges)[, 1]
-
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
-  gene_nearest_matches_df <- as.data.frame(distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all"))
-
-  query_vec <- gene_nearest_matches_df[, 1]
-  query_fac <- factor(query_vec, levels = unique(query_vec))
-  nearest_matches_list <- split(gene_nearest_matches_df[, 2], query_fac)
-  match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(nearest_matches_list))
-
-  distances_vec <- gene_nearest_matches_df[unique(match(query_vec, query_vec)), "distance"] # This yields identical results to vapply(split(gene_nearest_matches_df[, "distance"], query_fac), unique, integer(1)), but is much, much faster
-  distances_vec <- distances_vec[match_matches_vec]
-
-  nearest_entrezs_list <- lapply(nearest_matches_list, function(x) entrez_IDs_vec[x])
-  nearest_entrezs_list <- lapply(nearest_entrezs_list, function(x) x[order(as.integer(x))])
-
-  nearest_entrezs_list <- nearest_entrezs_list[match_matches_vec]
-  nearest_entrezs_list <- lapply(nearest_entrezs_list, function(x) if (is.null(x)) NA_character_ else x)
-
-  nearest_entrezs_vec <- EntrezsListToEntrezsVec(nearest_entrezs_list)
-  nearest_symbols_vec <- EntrezsListToSymbolsVec(nearest_entrezs_list)
+  hits_object <- distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all")
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), human_genes_GRanges)
 
   ### Compile results ###
   results_df <- data.frame(
     ranges_df,
-    "Nearest_Entrez_IDs" = nearest_entrezs_vec,
-    "Nearest_symbols"    = nearest_symbols_vec,
-    "Distance"           = distances_vec,
-    "Num_nearest"        = ifelse(is.na(nearest_entrezs_list), 0L, lengths(nearest_entrezs_list)),
+    "Nearest_Entrez_IDs" = hits_df[, "Entrez_ID"],
+    "Nearest_symbols"    = hits_df[, "Gene_symbol"],
+    "Distance"           = hits_df[, "Distance"],
+    "Num_nearest"        = hits_df[, "Num_genes"],
     stringsAsFactors     = FALSE,
     row.names            = NULL
   )
@@ -204,75 +229,151 @@ RangesDfToGRangesObject <- function(ranges_df) {
 
 
 
-GetOverlappingEntrezsList <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+# GetOverlappingEntrezsList <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+#
+#   RangesDfToGRangesObject(ranges_df)
+#
+#   target_GRanges_object <- RangesDfToGRangesObject(ranges_df)
+#
+#   entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
+#
+#   gene_overlap_matches_df <- as.data.frame(findOverlaps(target_GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand))
+#
+#   query_vec <- gene_overlap_matches_df[, 1]
+#   overlap_matches_list <- split(gene_overlap_matches_df[, 2], factor(query_vec, levels = unique(query_vec)))
+#   match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(overlap_matches_list))
+#
+#   overlap_entrezs_list <- lapply(overlap_matches_list, function(x) entrez_IDs_vec[x])
+#   overlap_entrezs_list <- lapply(overlap_entrezs_list, function(x) x[order(as.integer(x))])
+#
+#   overlap_entrezs_list <- overlap_entrezs_list[match_matches_vec]
+#   overlap_entrezs_list <- lapply(overlap_entrezs_list, function(x) if (is.null(x)) NA_character_ else x)
+#
+#   return(overlap_entrezs_list)
+# }
+#
+#
+#
+# EntrezsListToEntrezsVec <- function(entrezs_list) {
+#   vapply(entrezs_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = ", "), "")
+# }
+#
+# EntrezsListToSymbolsVec <- function(entrezs_list) {
+#   # requires entrez_to_symbol_df in the global environment
+#   results_vec <- vapply(entrezs_list, function(x) {
+#     if (all(is.na(x))) {
+#       return(NA_character_)
+#     } else {
+#       entrez_matches <- match(x, entrez_to_symbol_df[, "Entrez_ID"])
+#       overlap_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
+#                                     entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
+#                                     entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
+#                                     )
+#       return(paste0(overlap_symbols_vec, collapse = ", "))
+#     }
+#
+#   }, "")
+#   return(results_vec)
+# }
+#
+#
+#
+#
+# FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+#
+#   overlap_entrezs_list <- GetOverlappingEntrezsList(ranges_df, gene_models_GRanges = gene_models_GRanges, ignore_strand = ignore_strand)
+#
+#   overlap_entrezs_vec <- EntrezsListToEntrezsVec(overlap_entrezs_list)
+#   overlap_symbols_vec <- EntrezsListToSymbolsVec(overlap_entrezs_list)
+#
+#   num_overlaps_vec <- ifelse(is.na(overlap_entrezs_list), 0L, lengths(overlap_entrezs_list))
+#
+#   results_df <- data.frame(
+#     ranges_df,
+#     "Num_overlapping_genes"  = num_overlaps_vec,
+#     "Overlapping_Entrez_IDs" = overlap_entrezs_vec,
+#     "Overlapping_symbols"    = overlap_symbols_vec,
+#     stringsAsFactors         = FALSE,
+#     row.names                = NULL
+#   )
+#   return(results_df)
+# }
+#
+#
+# FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+#
+#   overlap_entrezs_list <- GetOverlappingEntrezsList(ranges_df, gene_models_GRanges = gene_models_GRanges, ignore_strand = ignore_strand)
+#
+#   overlap_entrezs_vec <- EntrezsListToEntrezsVec(overlap_entrezs_list)
+#   overlap_symbols_vec <- EntrezsListToSymbolsVec(overlap_entrezs_list)
+#
+#   num_overlaps_vec <- ifelse(is.na(overlap_entrezs_list), 0L, lengths(overlap_entrezs_list))
+#
+#   results_df <- data.frame(
+#     ranges_df,
+#     "Num_overlapping_genes"  = num_overlaps_vec,
+#     "Overlapping_Entrez_IDs" = overlap_entrezs_vec,
+#     "Overlapping_symbols"    = overlap_symbols_vec,
+#     stringsAsFactors         = FALSE,
+#     row.names                = NULL
+#   )
+#   return(results_df)
+# }
 
-  RangesDfToGRangesObject(ranges_df)
-
-  target_GRanges_object <- RangesDfToGRangesObject(ranges_df)
-
-  entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
-
-  gene_overlap_matches_df <- as.data.frame(findOverlaps(target_GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand))
-
-  query_vec <- gene_overlap_matches_df[, 1]
-  overlap_matches_list <- split(gene_overlap_matches_df[, 2], factor(query_vec, levels = unique(query_vec)))
-  match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(overlap_matches_list))
-
-  overlap_entrezs_list <- lapply(overlap_matches_list, function(x) entrez_IDs_vec[x])
-  overlap_entrezs_list <- lapply(overlap_entrezs_list, function(x) x[order(as.integer(x))])
-
-  overlap_entrezs_list <- overlap_entrezs_list[match_matches_vec]
-  overlap_entrezs_list <- lapply(overlap_entrezs_list, function(x) if (is.null(x)) NA_character_ else x)
-
-  return(overlap_entrezs_list)
-}
-
-
-
-EntrezsListToEntrezsVec <- function(entrezs_list) {
-  vapply(entrezs_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = ", "), "")
-}
-
-EntrezsListToSymbolsVec <- function(entrezs_list) {
-  # requires entrez_to_symbol_df in the global environment
-  results_vec <- vapply(entrezs_list, function(x) {
-    if (all(is.na(x))) {
-      return(NA_character_)
-    } else {
-      entrez_matches <- match(x, entrez_to_symbol_df[, "Entrez_ID"])
-      overlap_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
-                                    entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
-                                    entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
-      )
-      return(paste0(overlap_symbols_vec, collapse = ", "))
-    }
-
-  }, "")
-  return(results_vec)
-}
 
 
 
 
 FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+  ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
-  overlap_entrezs_list <- GetOverlappingEntrezsList(ranges_df, gene_models_GRanges = gene_models_GRanges, ignore_strand = ignore_strand)
+  message("Finding genes that overlap with the specified genomic ranges...")
 
-  overlap_entrezs_vec <- EntrezsListToEntrezsVec(overlap_entrezs_list)
-  overlap_symbols_vec <- EntrezsListToSymbolsVec(overlap_entrezs_list)
+  GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
-  num_overlaps_vec <- ifelse(is.na(overlap_entrezs_list), 0L, lengths(overlap_entrezs_list))
+  hits_object <- findOverlaps(GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand, select = "all")
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges)
 
+  ### Compile results ###
   results_df <- data.frame(
     ranges_df,
-    "Num_overlapping_genes"  = num_overlaps_vec,
-    "Overlapping_Entrez_IDs" = overlap_entrezs_vec,
-    "Overlapping_symbols"    = overlap_symbols_vec,
+    "Overlapping_Entrez_IDs" = hits_df[, "Entrez_ID"],
+    "Overlapping_symbols"    = hits_df[, "Gene_symbol"],
+    "Num_overlapping_genes"  = hits_df[, "Num_genes"],
     stringsAsFactors         = FALSE,
     row.names                = NULL
   )
   return(results_df)
 }
+
+
+
+
+
+FindNearestGenes <- function(ranges_df) {
+  ### This function requires the 'human_genes_GRanges' object in the global environment ###
+
+  message("Finding the closest genes to the specified genomic ranges...")
+
+  GRanges_object <- RangesDfToGRangesObject(ranges_df)
+
+  hits_object <- distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all")
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), human_genes_GRanges)
+
+  ### Compile results ###
+  results_df <- data.frame(
+    ranges_df,
+    "Nearest_Entrez_IDs" = hits_df[, "Entrez_ID"],
+    "Nearest_symbols"    = hits_df[, "Gene_symbol"],
+    "Distance"           = hits_df[, "Distance"],
+    "Num_nearest"        = hits_df[, "Num_genes"],
+    stringsAsFactors     = FALSE,
+    row.names            = NULL
+  )
+  return(results_df)
+}
+
+
 
 
 
