@@ -62,7 +62,7 @@ guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideSc
 
 
 
-# Update the CRISPR libraries with additional data from GuideScan ---------
+# Update the CRISPRa library with additional data from GuideScan ----------
 
 for (column in guidescan_columns) {
   merged_replaced_CRISPRa_df[are_to_be_replaced, column] <- tidy_guidescan_sgRNAs_df[matches_vec[are_to_be_replaced], column]

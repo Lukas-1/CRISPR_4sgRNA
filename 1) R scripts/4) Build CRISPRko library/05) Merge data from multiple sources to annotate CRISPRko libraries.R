@@ -181,6 +181,8 @@ if (length(inconsistent_IDs) > 1) {
           )
   selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome", "Symbol_overlapping_0MM")
   unique(extended_CRISPRko_df[extended_CRISPRko_df[, "Combined_ID"] %in% inconsistent_IDs, selected_gene_columns])
+} else {
+  message("No inconsistent mappings (sgRNAs from the same gene, but located on different chromosomes) were found!")
 }
 
 

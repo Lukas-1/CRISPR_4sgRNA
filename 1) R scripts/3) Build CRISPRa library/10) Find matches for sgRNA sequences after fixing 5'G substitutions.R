@@ -42,7 +42,17 @@ stopifnot(all(nchar(new_or_not_found_sequences) == 20))
 
 new_sequences_df <- FindSequences(new_or_not_found_sequences)
 
+
+
+
+
+# Extend sequence matches with additional data (e.g. nearby genes) --------
+
+new_sequences_df <- FindNearestGenes(new_sequences_df)
+
 new_sequences_df[, "PAM"] <- GetNGGPAM(new_sequences_df)
+
+
 
 
 
@@ -52,20 +62,10 @@ new_sequences_df[, "PAM"] <- GetNGGPAM(new_sequences_df)
 are_still_present <- all_sequences_df[, "Reference"] %in% replaced_unique_sequences
 
 replaced_all_sequences_df <- rbind.data.frame(new_sequences_df,
-                                              all_sequences_df[are_still_present, colnames(new_sequences_df)],
+                                              all_sequences_df[are_still_present, ],
                                               stringsAsFactors = FALSE,
                                               make.row.names = FALSE
                                               )
-
-
-
-
-
-# Extend sequence matches with additional data (e.g. nearby genes) --------
-
-replaced_all_sequences_df <- FindNearestGenes(replaced_all_sequences_df)
-
-
 
 
 

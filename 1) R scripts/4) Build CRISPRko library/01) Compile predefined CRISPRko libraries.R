@@ -144,7 +144,6 @@ sort(table(GPP_CRISPRko_df[, "Target Gene Symbol"]))
 
 
 
-
 # Tidy the data frame -----------------------------------------------------
 
 Brunello_combined_symbols <- ifelse(is.na(Brunello_2018_symbols),
