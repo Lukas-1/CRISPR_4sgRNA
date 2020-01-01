@@ -27,7 +27,7 @@ CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate fil
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
-load(file.path(CRISPRa_RData_directory, "15) Separate sgRNAs for genes with multiple relevant TSSs.RData"))
+load(file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgRNA sequences after fixing 5'G substitutions.RData")) # The output of later files is not necessary
 
 
 
@@ -56,7 +56,6 @@ TF_bed_df <- MakeBedDf(merged_replaced_CRISPRa_df, TF_combined_IDs)
 
 FASTA_df <- MakeFASTADf(merged_replaced_CRISPRa_df, TF_combined_IDs)
 FASTA_vec <- MakeFASTAvec(FASTA_df)
-
 
 
 

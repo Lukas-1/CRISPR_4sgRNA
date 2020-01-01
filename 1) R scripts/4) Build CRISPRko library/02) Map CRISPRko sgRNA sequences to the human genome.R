@@ -33,7 +33,7 @@ load(file.path(CRISPRko_RData_directory, "01) Compile predefined CRISPRko librar
 
 unique_sequences <- unique(toupper(CRISPRko_df[, "sgRNA_sequence"]))
 
-CRISPRko_df[is.na(CRISPRko_df[, "sgRNA_sequence"]), ]
+stopifnot(!(anyNA(CRISPRko_df[, "sgRNA_sequence"])))
 
 are_20mers <- nchar(unique_sequences) == 20
 

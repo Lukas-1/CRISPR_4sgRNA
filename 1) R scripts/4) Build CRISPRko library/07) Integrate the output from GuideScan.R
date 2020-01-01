@@ -60,7 +60,8 @@ guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideSc
 
 
 
-# Update the CRISPR libraries with additional data from GuideScan ---------
+
+# Add the data from GuideScan to the CRISPRko library ---------------------
 
 merged_CRISPRko_df <- extended_CRISPRko_df
 
@@ -68,34 +69,9 @@ for (column in guidescan_columns) {
   merged_CRISPRko_df[, column] <- tidy_guidescan_sgRNAs_df[matches_vec, column]
 }
 
-
-new_columns_order <- c(
- "Rule_set_2_score", "PAM"
-)
-
 merged_CRISPRko_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(merged_CRISPRko_df)
 
 
-
-
-
-# Rank and re-order the sgRNAs --------------------------------------------
-
-original_merged_CRISPRko_df <- merged_CRISPRko_df
-
-merged_CRISPRko_df <- RankCRISPRDf(merged_CRISPRko_df)
-
-RankCRISPRDf(merged_CRISPRko_df[merged_CRISPRko_df[, "Gene_symbol"] %in% "NAT1", ])
-merged_CRISPRko_df[merged_CRISPRko_df[, "Gene_symbol"] %in% "NAT1", ]
-
-
-
-
-
-# Make adjustments --------------------------------------------------------
-
-merged_CRISPRko_df[, "Num_1MM"] <- rowSums(merged_CRISPRko_df[, c("Num_5G_MM", "Num_1MM")])
-merged_CRISPRko_df <- merged_CRISPRko_df[, colnames(merged_CRISPRko_df) != "Num_5G_MM"]
 
 
 

@@ -156,7 +156,12 @@ SplitOffTargetsSummary <- function(off_targets_summary_vec) {
 
 
 GetOffTargetCategory <- function(merged_CRISPR_df) {
-  is_unspecific_vec <- (rowSums(merged_CRISPR_df[, c("Num_0MM", "Num_5G_MM")]) > 1) | (merged_CRISPR_df[, "Num_1MM"] > 0)
+  if ("Num_5G_MM" %in% colnames(merged_CRISPR_df)) {
+    num_perfect_hits_vec <- rowSums(merged_CRISPR_df[, c("Num_0MM", "Num_5G_MM")])
+  } else {
+    num_perfect_hits_vec <- merged_CRISPR_df[, "Num_0MM"]
+  }
+  is_unspecific_vec <- (num_perfect_hits_vec > 1) | (merged_CRISPR_df[, "Num_1MM"] > 0)
   offtarget_levels <- c(
     "5 or fewer",
     "10 or fewer",

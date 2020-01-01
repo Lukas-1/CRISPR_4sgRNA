@@ -27,7 +27,7 @@ CRISPOR_files_directory  <- file.path(CRISPR_root_directory, "4) Intermediate fi
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
-load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData"))
+load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData")) # The output of "07) Integrate the output from GuideScan" is not yet needed
 
 
 
