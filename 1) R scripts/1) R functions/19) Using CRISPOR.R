@@ -26,11 +26,12 @@ rename_CRISPOR_columns_vec <- c(
 
 
 specificity_demo_columns <- c(
-  "Entrez_ID", "Gene_symbol", "Location_ID", "sgRNA_sequence", "PAM",
+  "Entrez_ID", "Gene_symbol", "Location_ID", "sgRNA_sequence", "PAM", "Original_PAM",
   "Num_0MM", "Num_1MM", "GuideScan_Num_2MM", "GuideScan_Num_3MM",
-  "GuideScan_specificity", "CRISPOR_MIT_specificity", "CRISPOR_CFD_specificity", "CRISPOR_off_target_count",
+  "GuideScan_specificity",
+  "CRISPOR_CFD_specificity", "CRISPOR_MIT_specificity", "CRISPOR_off_target_count",
   "CRISPOR_Doench_efficacy", "CRISPOR_Graf_status",
-  "CRISPOR_4MM_specificity"
+  "CRISPOR_3MM_specificity" # This will be NA
 )
 
 
@@ -156,6 +157,26 @@ SummarizeOfftargets <- function(offtargets_df) {
 
 
 
+ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns = specificity_demo_columns) {
+  are_invalid <- (CRISPOR_df[, "CRISPOR_CFD_specificity"] %in% "None") | (CRISPOR_df[, "CRISPOR_MIT_specificity"] %in% "None")
+  if (any(are_invalid)) {
+    message("\n")
+    message("The following sgRNAs had specificity scores of 'None', which were replaced by NA values:")
+    if (is.null(CRISPR_df)) {
+      demo_df <- CRISPOR_df
+    } else {
+      demo_df <- cbind.data.frame(CRISPOR_df, CRISPR_df[, !(colnames(CRISPR_df) %in% colnames(CRISPOR_df))])
+    }
+    print(demo_df[are_invalid, show_columns])
+    message("\n")
+    for (column_name in c("CRISPOR_CFD_specificity", "CRISPOR_MIT_specificity")) {
+      CRISPOR_df[, column_name] <- as.integer(ifelse(are_invalid, NA_character_, CRISPOR_df[, column_name]))
+    }
+    CRISPOR_df[are_invalid, "CRISPOR_off_target_count"] <- NA_integer_
+  }
+  return(CRISPOR_df)
+}
+
 
 
 
@@ -178,6 +199,8 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
   colnames(output_matched_df) <- rename_CRISPOR_columns_vec
 
+  output_matched_df <- ResolveSpecificityOfNone(output_matched_df, CRISPR_df)
+
   offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df)
   offtarget_matches_vec <- match(CRISPR_IDs_vec, offtargets_results_df[, "Location_ID"])
 
@@ -188,6 +211,7 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
                            row.names = NULL
                            )
   results_df[, "Location_ID"] <- CRISPR_IDs_vec
+  assign("delete_results_df", results_df, envir = globalenv())
 
   if (resolve_missing_offtargets) {
     results_df <- ResolveMissingOffTargets(results_df)
@@ -211,6 +235,8 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
   colnames(output_matched_df) <- rename_CRISPOR_columns_vec
 
+  output_matched_df <- ResolveSpecificityOfNone(output_matched_df, CRISPR_df)
+
   offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df)
   stopifnot(!(anyNA(offtargets_results_df[, "Target_sequence"])))
   offtarget_matches_vec <- match(toupper(sequences_vec), toupper(offtargets_results_df[, "Target_sequence"]))
@@ -228,6 +254,8 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
   for (column_name in setdiff(colnames(offtargets_df), "Location_ID")) {
     CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
   }
+
+  assign("delete_offtargets_df", offtargets_df, envir = globalenv())
 
   return(CRISPR_df)
 }
@@ -254,12 +282,10 @@ ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
   for (CFD_column in CFD_columns) {
     CRISPR_df[have_no_offtargets, CFD_column] <- 1
   }
-
   too_many_offtargets <- lack_detailed_offtargets & (CRISPR_df[, "CRISPOR_CFD_specificity"] %in% 0)
   for (CFD_column in CFD_columns) {
     CRISPR_df[too_many_offtargets, CFD_column] <- use_for_zero
   }
-
   return(CRISPR_df)
 }
 
