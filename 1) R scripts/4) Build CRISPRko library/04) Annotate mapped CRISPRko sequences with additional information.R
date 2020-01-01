@@ -33,11 +33,10 @@ load(file.path(CRISPRko_RData_directory, "03) Disambiguate gene IDs by mapping h
 
 # Search the human genome for matches to sgRNAs ---------------------------
 
-unique_sequences <- unique(toupper(CRISPRko_df[, "sgRNA_sequence"]))
-
 all_sequences_df <- FindOverlappingGenes(complete_sequences_df)
 all_sequences_df[, "PAM"] <- GetNGGPAM(all_sequences_df)
 
+unique_sequences <- unique(toupper(CRISPRko_df[, "sgRNA_sequence"]))
 genome_search_df <- SummarizeFoundSequencesDf(all_sequences_df, all_sequences = unique_sequences)
 
 
