@@ -32,9 +32,9 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 # Read in data ------------------------------------------------------------
 
-guidescan_sgRNAs_raw_df <- read.csv(file.path(GuideScan_files_directory, "GuideScan_output_CRISPRko_individual_sgRNAs.csv"),
-                                    header = FALSE, row.names = NULL, quote = "\"", stringsAsFactors = FALSE, comment.char = ""
-                                    )
+guidescan_sgRNAs_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRko_individual_sgRNAs.csv")
+
+
 
 
 
@@ -68,7 +68,6 @@ merged_CRISPRko_df <- extended_CRISPRko_df
 for (column in guidescan_columns) {
   merged_CRISPRko_df[, column] <- tidy_guidescan_sgRNAs_df[matches_vec, column]
 }
-
 merged_CRISPRko_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(merged_CRISPRko_df)
 
 

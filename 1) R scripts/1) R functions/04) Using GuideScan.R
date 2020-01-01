@@ -73,11 +73,12 @@ sgRNAStringForGuideScan <- function(CRISPR_df) {
 }
 
 
-# TSSDfToVec <- function(TSS_df) {
-#   results_vec <- paste0(TSS_df[, "Chromosome"], ":", TSS_df[, "First_TSS"] - 300, "-", TSS_df[, "Last_TSS"] + 300)
-# }
-#
-
+ReadGuideScanOutput <- function(file_name) {
+  # Requires 'CRISPOR_files_directory' in the global workspace
+  read.csv(file.path(GuideScan_files_directory, file_name),
+           header = FALSE, row.names = NULL, quote = "\"", stringsAsFactors = FALSE, comment.char = ""
+           )
+}
 
 
 
@@ -112,22 +113,18 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
 
 
 
-GuideScanFileNumbers <- function(raw_df) {
+MakeGuideScanFileNumbers <- function(raw_df) {
   are_title <- raw_df[, 2] == ""
   file_number_vec <- rep.int(NA_integer_, nrow(raw_df))
-  file_number <- 0
+  file_number <- 0L
   for (i in seq_along(file_number_vec)) {
     if (are_title[[i]]) {
-      file_number <- file_number + 1
+      file_number <- file_number + 1L
     }
     file_number_vec[[i]] <- file_number
   }
   return(file_number_vec)
 }
-
-
-
-
 
 
 
@@ -144,7 +141,7 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
 
   ### Split the rows of raw_df into the individual regions ###
 
-  file_number_vec <- GuideScanFileNumbers(raw_df)
+  file_number_vec <- MakeGuideScanFileNumbers(raw_df)
 
 
 

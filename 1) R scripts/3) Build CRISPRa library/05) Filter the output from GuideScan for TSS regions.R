@@ -34,13 +34,8 @@ load(file.path(CRISPRa_RData_directory, "03) Map CRISPR libraries to TSS data.RD
 
 # Read in data ------------------------------------------------------------
 
-guidescan_raw_df            <- read.csv(file.path(GuideScan_files_directory, "GuideScan_output_CRISPRa_all_genes.csv"),
-                                        header = FALSE, row.names = NULL, quote = "\"", stringsAsFactors = FALSE, comment.char = ""
-                                        )
-guidescan_candidates_raw_df <- read.csv(file.path(GuideScan_files_directory, "GuideScan_output_CRISPRa_candidate_genes.csv"),
-                                        header = FALSE, row.names = NULL, quote = "\"", stringsAsFactors = FALSE, comment.char = ""
-                                        )
-
+guidescan_candidates_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRa_candidate_genes.csv")
+guidescan_raw_df            <- ReadGuideScanOutput("GuideScan_output_CRISPRa_all_genes.csv")
 
 
 
@@ -48,7 +43,6 @@ guidescan_candidates_raw_df <- read.csv(file.path(GuideScan_files_directory, "Gu
 # Process the candidate genes ---------------------------------------------
 
 guidescan_candidates_df <- GuideScanOutputToDf(guidescan_candidates_raw_df)
-
 
 
 

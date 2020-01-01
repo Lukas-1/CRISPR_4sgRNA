@@ -32,9 +32,7 @@ load(file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgR
 
 # Read in data ------------------------------------------------------------
 
-guidescan_sgRNAs_raw_df <- read.csv(file.path(GuideScan_files_directory, "GuideScan_output_CRISPRa_individual_sgRNAs.csv"),
-                                    header = FALSE, row.names = NULL, quote = "\"", stringsAsFactors = FALSE, comment.char = ""
-                                    )
+guidescan_sgRNAs_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRa_individual_sgRNAs.csv")
 
 
 
