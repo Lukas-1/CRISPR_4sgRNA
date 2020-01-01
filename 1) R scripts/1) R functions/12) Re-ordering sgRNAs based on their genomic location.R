@@ -28,8 +28,8 @@ ReorderSubDfByLocation <- function(CRISPR_sub_df) {
     if ((chromosome_table[[1]] == 1) && (chromosome_table[[2]] >= 3) && (length(chromosome_table) == 2)) {
       minority_chromosome <- names(chromosome_table)[[1]]
       were_mapped <- ifelse(CRISPR_sub_df[, "Chromosome"] %in% minority_chromosome, FALSE, were_mapped)
-      message(paste0("For the combined ID ", CRISPR_sub_df[1, "Combined_ID"], ",
-                     sgRNAs mapped to multiple chromosomes, and the minority chromosome was ignored!"
+      message(paste0("For the combined ID ", CRISPR_sub_df[1, "Combined_ID"], ", ",
+                     "sgRNAs mapped to multiple chromosomes, and the minority chromosome was ignored!"
                      )
               )
     } else {
