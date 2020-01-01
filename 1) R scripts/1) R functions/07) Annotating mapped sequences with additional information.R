@@ -164,7 +164,7 @@ FindNearestGenes <- function(ranges_df) {
   nearest_matches_list <- split(gene_nearest_matches_df[, 2], query_fac)
   match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(nearest_matches_list))
 
-  distances_vec <- vapply(split(gene_nearest_matches_df[, "distance"], query_fac), unique, integer(1))
+  distances_vec <- gene_nearest_matches_df[unique(match(query_vec, query_vec)), "distance"] # This yields identical results to vapply(split(gene_nearest_matches_df[, "distance"], query_fac), unique, integer(1)), but is much, much faster
   distances_vec <- distances_vec[match_matches_vec]
 
   nearest_entrezs_list <- lapply(nearest_matches_list, function(x) entrez_IDs_vec[x])
@@ -182,6 +182,7 @@ FindNearestGenes <- function(ranges_df) {
     "Nearest_Entrez_IDs" = nearest_entrezs_vec,
     "Nearest_symbols"    = nearest_symbols_vec,
     "Distance"           = distances_vec,
+    "Num_nearest"        = ifelse(is.na(nearest_entrezs_list), 0L, lengths(nearest_entrezs_list)),
     stringsAsFactors     = FALSE,
     row.names            = NULL
   )
