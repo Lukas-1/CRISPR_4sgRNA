@@ -92,8 +92,7 @@ are_to_replace <- are_mapped & are_NA & (extended_CRISPRko_df[, "Is_control"] ==
 reassigned_df <- extended_CRISPRko_df[are_to_replace, ]
 
 replaced_entrezs <- rep(NA_character_, nrow(reassigned_df))
-overlapping_genes_df <- FindOverlappingGenes(extended_CRISPRko_df[are_to_replace, ])
-overlapping_entrezs_list <- strsplit(overlapping_genes_df[, "Entrez_ID"], ", ", fixed = TRUE)
+overlapping_entrezs_list <- strsplit(extended_CRISPRko_df[are_to_replace, "Entrez_overlapping_0MM"], ", ", fixed = TRUE)
 are_replaceable <- !(is.na(overlapping_entrezs_list)) & (lengths(overlapping_entrezs_list) == 1)
 
 for (combined_ID in unique(extended_CRISPRko_df[are_to_replace, "Combined_ID"][are_replaceable])) {
@@ -104,7 +103,6 @@ for (combined_ID in unique(extended_CRISPRko_df[are_to_replace, "Combined_ID"][a
     replaced_entrezs[are_this_ID] <- this_list[[1]]
   }
 }
-
 
 were_replaced <- !(is.na(replaced_entrezs))
 
