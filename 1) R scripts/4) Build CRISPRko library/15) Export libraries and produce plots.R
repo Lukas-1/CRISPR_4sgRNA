@@ -27,6 +27,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library.RData"))
+load(file.path(CRISPRko_RData_directory, "14) Allocate sgRNAs to plates.RData"))
 
 
 
@@ -88,6 +89,7 @@ rearranged_column_names <- c(
 
 merged_CRISPRko_df <- merged_CRISPRko_df[, rearranged_column_names]
 
+TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
 
 
 
@@ -142,10 +144,19 @@ merged_TF_CRISPRko_df[(TF_are_top4 & TF_violate_Graf) %in% TRUE, "CRISPOR_Doench
 
 
 
-# Write data to disk ------------------------------------------------------
 
-DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
+# Write CRISPRko sgRNA libraries to disk ----------------------------------
+
+TF_folder_name <- "TF library plate layout"
+for (i in 1:4) {
+  subset_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[, "Rank"] %in% i, ]
+  file_name <- paste0(file.path(TF_folder_name, "CRISPRko_TF_randomized_sg"), i)
+  DfToTSV(subset_df, file_name, add_primers = TRUE)
+}
+DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides"), add_primers = TRUE)
+
 DfToTSV(merged_TF_CRISPRko_df, "CRISPRko_transcription_factors")
+DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
 
 
