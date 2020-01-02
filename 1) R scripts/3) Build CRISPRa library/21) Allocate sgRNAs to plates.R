@@ -34,12 +34,10 @@ load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription f
 
 
 
-
-
 # Define the sublibrary ---------------------------------------------------
 
 replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_summary_df[, "Combined_ID"], ]
-rownames(replaced_TF_CRISPRa_df) <- NULL
+
 
 
 
@@ -70,23 +68,36 @@ replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts 
 
 
 
+# Define the final selection of sgRNAs ------------------------------------
+
+top4_df <- replaced_TF_CRISPRa_df[are_valid_top4, ]
+rownames(top4_df) <- NULL
+
+
+
+
+
 # Identify problematic genes that do not meet all criteria ----------------
 
-are_overlapping_genes      <- TF_summary_df[, "Num_overlapping_transcripts"] > 0
-do_not_meet_criteria_genes <- TF_summary_df[, "Num_top4_outside_criteria"] > 0
+entrez_sets <- ReturnProblematicGenes(TF_summary_df)
+lengths(entrez_sets)
 
-genes_that_overlap       <- TF_summary_df[are_overlapping_genes %in% TRUE, "Entrez_ID"]
-genes_that_fail_criteria <- TF_summary_df[do_not_meet_criteria_genes %in% TRUE, "Entrez_ID"]
 
-are_problematic_genes <- are_overlapping_genes | do_not_meet_criteria_genes
 
-problematic_genes   <- TF_summary_df[are_problematic_genes %in% TRUE,  "Entrez_ID"]
-unproblematic_genes <- TF_summary_df[are_problematic_genes %in% FALSE, "Entrez_ID"]
 
-stopifnot(all(problematic_genes %in% replaced_TF_CRISPRa_df[, "Combined_ID"]))
-stopifnot(all(unproblematic_genes %in% replaced_TF_CRISPRa_df[, "Combined_ID"]))
 
-table(are_problematic_genes, useNA = "ifany")
+# Count problematic genes -------------------------------------------------
+
+are_problematic_sgRNAs   <- top4_df[, "Entrez_ID"] %in% entrez_sets[["problematic"]]
+are_unproblematic_sgRNAs <- top4_df[, "Entrez_ID"] %in% entrez_sets[["unproblematic"]]
+
+num_problematic   <- sum(are_problematic_sgRNAs)   / 4
+num_unproblematic <- sum(are_unproblematic_sgRNAs) / 4
+
+sum(top4_df[, "Combined_ID"] %in% entrez_sets[["overlap"]])       / 4
+sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
+
+
 
 
 
@@ -94,29 +105,16 @@ table(are_problematic_genes, useNA = "ifany")
 
 # Count the number of genes chosen from each of the libraries -------------
 
-num_gene_wells <- sum(are_valid_top4) / 4
+num_gene_wells <- nrow(top4_df) / 4
 
-are_Calabrese_TF   <- grepl("Calabrese",   replaced_TF_CRISPRa_df[, "Source"], fixed = TRUE)
-are_hCRISPRa_v2_TF <- grepl("hCRISPRa-v2", replaced_TF_CRISPRa_df[, "Source"], fixed = TRUE)
-are_GPP_TFF        <- grepl("GPP",         replaced_TF_CRISPRa_df[, "Source"], fixed = TRUE)
+are_Calabrese_top4   <- grepl("Calabrese",   top4_df[, "Source"], fixed = TRUE)
+are_hCRISPRa_v2_top4 <- grepl("hCRISPRa-v2", top4_df[, "Source"], fixed = TRUE)
+are_GPP_top4         <- grepl("GPP",         top4_df[, "Source"], fixed = TRUE)
 
-sum(are_valid_top4 & are_Calabrese_TF)
-sum(are_valid_top4 & are_hCRISPRa_v2_TF)
-sum(are_valid_top4 & are_GPP_TFF)
+table(are_Calabrese_top4)
+table(are_hCRISPRa_v2_top4)
+table(are_GPP_top4)
 
-
-
-
-# Count problematic genes -------------------------------------------------
-
-are_problematic_sgRNAs   <- replaced_TF_CRISPRa_df[, "Entrez_ID"] %in% problematic_genes
-are_unproblematic_sgRNAs <- replaced_TF_CRISPRa_df[, "Entrez_ID"] %in% unproblematic_genes
-
-num_problematic   <- sum(are_valid_top4 & are_problematic_sgRNAs)   / 4
-num_unproblematic <- sum(are_valid_top4 & are_unproblematic_sgRNAs) / 4
-
-sum(are_valid_top4 & (replaced_TF_CRISPRa_df[, "Combined_ID"] %in% genes_that_overlap))       / 4
-sum(are_valid_top4 & (replaced_TF_CRISPRa_df[, "Combined_ID"] %in% genes_that_fail_criteria)) / 4
 
 
 
@@ -147,72 +145,39 @@ set.seed(1)
 
 # Generate a pool of 4sg controls -----------------------------------------
 
-are_controls <- merged_replaced_CRISPRa_df[, "Is_control"] == "Yes"
-if (any(duplicated(toupper(merged_replaced_CRISPRa_df[are_controls, "sgRNA_sequence"])))) {
-  stop("Error: Duplicated control sgRNA sequences found!")
-}
-
 are_Calabrese <- grepl("Calabrese",   merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
 are_hCRISPRa  <- grepl("hCRISPRa-v2", merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
-have_no_issues <- (merged_replaced_CRISPRa_df[, "Num_0MM"] %in% 0) &
-                  (merged_replaced_CRISPRa_df[, "Num_1MM"] %in% 0) &
-                  !(grepl("TTTT", merged_replaced_CRISPRa_df[, "sgRNA_sequence"], ignore.case = TRUE))
 
-controls_Calabrese   <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_Calabrese, "sgRNA_sequence"]
-controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_controls & have_no_issues & are_hCRISPRa,  "sgRNA_sequence"]
+are_good_controls <- AreGoodControls(merged_replaced_CRISPRa_df)
+
+controls_Calabrese   <- merged_replaced_CRISPRa_df[are_good_controls & are_Calabrese, "sgRNA_sequence"]
+controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_good_controls & are_hCRISPRa,  "sgRNA_sequence"]
 
 controls_hCRISPRa_v2_selected <- sample(controls_hCRISPRa_v2, length(controls_Calabrese))
 
-guides_pool <- toupper(c(controls_Calabrese, controls_hCRISPRa_v2_selected))
+control_sequences_pool <- toupper(c(controls_Calabrese, controls_hCRISPRa_v2_selected))
 
-indices_list <- RandomizeAllIndices(n_total = length(controls_Calabrese) * 2, n_per_plate = 4)
-indices_list <- indices_list[lengths(indices_list) == 4]
-
-guides_pool_list <- lapply(indices_list, function(x) guides_pool[x])
-
-num_homologies_vec <- vapply(guides_pool_list, NumHomologousPairs, integer(1))
-
-guides_pool_list <- guides_pool_list[num_homologies_vec == 0]
-
-
-
-
-# Select a subset of the possible pool of 4sg controls --------------------
-
-guides_pool_selected_indices <- sample(seq_along(guides_pool_list), num_control_wells)
-guides_pool_selected <- guides_pool_list[guides_pool_selected_indices]
-
-guides_pool_vec <- unlist(guides_pool_selected)
-guides_pool_well_number <- rep(seq_along(guides_pool_selected), each = 4)
-guides_pool_rep_number <-rep(1:4, times = length(guides_pool_selected))
-
-control_sgRNAs_df <- merged_replaced_CRISPRa_df[are_controls & have_no_issues, ]
-
-guides_pool_matches <- match(guides_pool_vec, toupper(control_sgRNAs_df[, "sgRNA_sequence"]))
-control_sgRNAs_df <- control_sgRNAs_df[guides_pool_matches, ]
-rownames(control_sgRNAs_df) <- NULL
-
-control_sgRNAs_df[, "Combined_ID"] <- paste0("Control_", FormatFixedWidthInteger(guides_pool_well_number))
-control_sgRNAs_df[, "Rank"] <- guides_pool_rep_number
+control_sequences_pool_list <- Make4sgControlsList(control_sequences_pool)
 
 
 
 
 
-# Shuffle the control sgRNAs ----------------------------------------------
+# Randomly select control guides, and construct a data frame --------------
 
-controls_indices_vec <- RandomizeAllIndices(n_per_plate_vec = 20)[[1]]
+selected_indices <- sample(seq_along(control_sequences_pool_list), num_control_wells)
+selected_controls_list <- control_sequences_pool_list[selected_indices]
 
-controls_df <- RetrieveIndices(control_sgRNAs_df, controls_indices_vec, "Combined_ID")
-
-
-
+controls_df <- MakeControlGuidesDf(selected_controls_list, merged_replaced_CRISPRa_df)
 
 
-# Build the data frames for targeting sgRNAs ------------------------------
 
-problematic_TF_df   <- replaced_TF_CRISPRa_df[are_problematic_sgRNAs   & are_valid_top4, ]
-unproblematic_TF_df <- replaced_TF_CRISPRa_df[are_unproblematic_sgRNAs & are_valid_top4, ]
+
+
+# Jiggle the random seed (delete this later) ------------------------------
+
+RandomizeAllIndices(n_total = 20)
+
 
 
 
@@ -220,17 +185,14 @@ unproblematic_TF_df <- replaced_TF_CRISPRa_df[are_unproblematic_sgRNAs & are_val
 
 # Select the targeting sgRNAs ---------------------------------------------
 
+problematic_top4_df   <- top4_df[are_problematic_sgRNAs, ]
+unproblematic_top4_df <- top4_df[are_unproblematic_sgRNAs, ]
+
 problematic_indices_list   <- RandomizeAllIndices(n_total = num_problematic)
 unproblematic_indices_list <- RandomizeAllIndices(n_total = num_unproblematic)
 
-problematic_df_list   <- lapply(problematic_indices_list,   function(x) RetrieveIndices(problematic_TF_df,   x, "AltTSS_ID"))
-unproblematic_df_list <- lapply(unproblematic_indices_list, function(x) RetrieveIndices(unproblematic_TF_df, x, "AltTSS_ID"))
-
-
-
-
-
-# Combine the data frames for each plate ----------------------------------
+problematic_df_list   <- lapply(problematic_indices_list,   function(x) RetrieveIndices(problematic_top4_df,   x, "AltTSS_ID"))
+unproblematic_df_list <- lapply(unproblematic_indices_list, function(x) RetrieveIndices(unproblematic_top4_df, x, "AltTSS_ID"))
 
 combined_df_list <- c(unproblematic_df_list, problematic_df_list)
 
@@ -238,20 +200,11 @@ combined_df_list <- c(unproblematic_df_list, problematic_df_list)
 
 
 
+
+
 # Randomly shuffle each plate ---------------------------------------------
 
-shuffled_indices_list <- lapply(combined_df_list, function(x) sample(seq_len(nrow(x) / 4)))
-
-combined_df_shuffled_list <- lapply(seq_along(shuffled_indices_list), function(x) {
-  my_df <- combined_df_list[[x]]
-  IDs_vec <- ifelse(my_df[, "Is_control"] == "Yes", my_df[, "Combined_ID"], my_df[, "AltTSS_ID"])
-  unique_IDs_vec <- unique(IDs_vec)
-  my_indices <- shuffled_indices_list[[x]]
-  stopifnot(length(unique_IDs_vec) == length(my_indices))
-  IDs_vec_shuffled <- unique_IDs_vec[my_indices]
-  my_df <- my_df[order(match(IDs_vec, IDs_vec_shuffled)), ]
-  return(my_df)
-})
+combined_df_shuffled_list <- RandomlyShufflePlates(combined_df_list)
 
 
 
@@ -267,36 +220,10 @@ combined_df_shuffled_list[[use_index]] <- rbind.data.frame(combined_df_shuffled_
 
 
 
-# Add plate and well numbers to the data frame ----------------------------
 
-combined_df_shuffled_list <- lapply(seq_along(combined_df_shuffled_list), function(x) {
-  my_df <- combined_df_shuffled_list[[x]]
-  results_df <- data.frame(
-    "Plate_number" = x,
-    "Well_number"  = rep(seq_len(nrow(my_df) / 4), each = 4),
-    my_df,
-    stringsAsFactors = FALSE,
-    row.names = NULL
-  )
-})
+# Combine into a data frame -----------------------------------------------
 
-
-
-
-# Combine all the data frames ---------------------------------------------
-
-TF_sgRNA_plates_df <- do.call(rbind.data.frame, c(combined_df_shuffled_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-
-
-
-
-
-
-# Re-number the control wells ---------------------------------------------
-
-are_controls <- TF_sgRNA_plates_df[, "Is_control"] == "Yes"
-
-TF_sgRNA_plates_df[are_controls, "Combined_ID"] <- paste0("Control_", rep(seq_len(sum(are_controls) / 4), each = 4))
+TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
 
 
 

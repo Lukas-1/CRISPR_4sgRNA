@@ -284,7 +284,6 @@ for (i in 1:4) {
 }
 DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRa_TF_randomized_all_4_guides"), add_primers = TRUE)
 
-
 DfToTSV(replaced_curated_CRISPRa_df, file.path("Candidate genes", "CRISPRa_16_sgRNAs"), allow_curated = TRUE)
 DfToTSV(merged_replaced_candidates_CRISPRa_df, file.path("Candidate genes", "CRISPRa_20_trial_genes"))
 DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes")
