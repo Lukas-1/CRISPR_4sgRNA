@@ -25,7 +25,6 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")) # for candidates_CRISPRa_df
-load(file.path(CRISPRa_RData_directory, "02) Extract the original sequences for sgRNAs from hCRISPRa-v2 - CRISPRa_df.RData"))
 load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
 load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library.RData"))
 load(file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData"))
@@ -272,7 +271,7 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 
 
-# Write CRISPR sgRNA libraries to disk ------------------------------------
+# Write CRISPRa sgRNA libraries to disk -----------------------------------
 
 DfToTSV(replaced_TF_CRISPRa_df, "CRISPRa_transcription_factors")
 

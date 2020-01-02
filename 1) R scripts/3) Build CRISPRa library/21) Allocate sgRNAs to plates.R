@@ -174,14 +174,6 @@ controls_df <- MakeControlGuidesDf(selected_controls_list, merged_replaced_CRISP
 
 
 
-# Jiggle the random seed (delete this later) ------------------------------
-
-RandomizeAllIndices(n_total = 20)
-
-
-
-
-
 
 # Select the targeting sgRNAs ---------------------------------------------
 
@@ -235,18 +227,6 @@ TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
 save(list = "TF_sgRNA_plates_df",
      file = file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

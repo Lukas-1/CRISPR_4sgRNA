@@ -8,8 +8,6 @@
 
 # Define functions --------------------------------------------------------
 
-
-
 RandomizeAllIndices <- function(n_total = NULL, n_per_plate_vec = NULL, n_per_plate = 384L) {
 
   if (is.null(n_total) && is.null(n_per_plate_vec)) {
