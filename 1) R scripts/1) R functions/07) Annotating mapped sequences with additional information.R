@@ -60,7 +60,6 @@ GetNGGPAM <- function(ranges_df) {
   start_vec <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 1L, ranges_df[, "Start"] - 3L)
   end_vec   <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "Start"] - 1L)
 
-  assign("delete_ranges_df", ranges_df, envir = globalenv())
   GRanges_object <- GRanges(
     seqnames = ranges_df[, "Chromosome"],
     ranges   = IRanges(start = start_vec, end = end_vec),
@@ -308,9 +307,6 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
 
   all_column_names <- c("Chromosome", "Strand", "Start", "End", SNP_column_names)#, "PAM", )
 
-  assign("delete_all_column_names", all_column_names, envir = globalenv())
-  assign("delete_found_seq_df", found_seq_df, envir = globalenv())
-
   results_df <- data.frame(
     "Sequence"           = levels(references_fac),
     "PAM"                = PAM_vec,
@@ -427,9 +423,6 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
     correct_chromosome <- unique(ambiguous_df[are_this_ID, "Chromosome"])
     stopifnot(length(correct_chromosome) == 1)
     if (!(any(duplicated(chromosomes_vec))) && length(correct_chromosome == 1)) {
-      assign("delete_entrezs_vec", entrezs_vec, envir = globalenv())
-      assign("delete_correct_chromosome", correct_chromosome, envir = globalenv())
-      assign("delete_chromosomes_vec", chromosomes_vec, envir = globalenv())
       new_entrezs_vec[are_this_ID] <- entrezs_vec[[match(correct_chromosome, chromosomes_vec)]]
       assignment_vec[are_this_ID] <- "Unambiguous chromosome"
     } else {

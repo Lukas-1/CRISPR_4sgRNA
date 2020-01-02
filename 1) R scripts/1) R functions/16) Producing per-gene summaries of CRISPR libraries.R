@@ -202,8 +202,6 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
     return(results_list)
   })
 
-  assign("delete_results_list_list", results_list_list, envir = globalenv())
-
   summary_df <- do.call(rbind.data.frame, c(results_list_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   return(summary_df)
 }
@@ -233,10 +231,6 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
   if (include_spacing) {
     have_no_space <- (results_df[, "Spacing"] %in% c("None", ">12bp")) | is.na(results_df[, "Spacing"])
     spacing_splits <- strsplit(results_df[, "Spacing"], "*", fixed = TRUE)
-
-    assign("delete_results_df", results_df, envir = globalenv())
-    assign("delete_spacing", results_df[, "Spacing"], envir = globalenv())
-    assign("delete_spacing_splits", spacing_splits, envir = globalenv())
 
     spacing_vec <- vapply(seq_along(have_no_space), function(x) if (have_no_space[[x]]) 0L else as.integer(spacing_splits[[x]][[2]]), integer(1))
     num_nonoverlapping_vec <- vapply(seq_along(have_no_space), function(x) if (have_no_space[[x]]) 0L else as.integer(spacing_splits[[x]][[1]]), integer(1))

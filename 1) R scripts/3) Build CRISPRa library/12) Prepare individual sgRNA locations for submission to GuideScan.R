@@ -45,13 +45,13 @@ submit_df[, "GuideScan_input_sgRNA"] <- sgRNAStringForGuideScan(submit_df)
 
 
 # Check for duplicated chromosomal positions ------------------------------
-# (Some of these duplications are not actually duplications, instead, one sgRNA is on the + strand, and the other is on the - strand.)
+# (Some of these duplications are not actually duplications, but rather, one sgRNA is on the + strand, and the other is on the - strand.)
 
 num_occurrences <- table(submit_df[, "GuideScan_input_sgRNA"])[submit_df[, "GuideScan_input_sgRNA"]]
 
 multiplicates_df <- submit_df[num_occurrences > 1, ]
 
-choose_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Rank", "Source", "hCRISPRa_v2_transcript",
+choose_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source", "hCRISPRa_v2_transcript",
                     "sgRNA_sequence", "PAM", "Calabrese_rank", "GPP_rank", "hCRISPRa_v2_rank",
                     "Chromosome", "Strand", "Start", "End",
                     "Distance_from_TSS", "TSS_searched_by_GuideScan",

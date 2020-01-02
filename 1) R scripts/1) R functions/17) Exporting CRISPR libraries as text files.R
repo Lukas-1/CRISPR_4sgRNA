@@ -84,11 +84,13 @@ FormatForExcel <- function(my_df,
   }
 
   my_df[, "Num_overlaps"] <- ifelse(is.na(my_df[, "Num_overlaps"]),
-                                    ifelse(my_df[, "Rank"] %in% 1:4, ifelse(my_df[, "Spacing"] %in% 12, "<8bp", "n.d."), NA_character_),
+                                    ifelse((my_df[, "Rank"] %in% 1:4) & (my_df[, "Is_control"] == "No"),
+                                           ifelse(my_df[, "Spacing"] %in% 12, "<8bp", "n.d."),
+                                           NA_character_
+                                           ),
                                     paste0(my_df[, "Num_overlaps"], "|", my_df[, "Spacing"], "bp")
                                     )
   if (add_primers) {
-    assign("delete_my_df_2", my_df, envir = globalenv())
     my_df[, "Sequence_with_primers"] <- AddPrimers(my_df)
     my_df <- MoveAfterColumn(my_df, "PAM", "Sequence_with_primers")
   }

@@ -147,8 +147,6 @@ SummarizeOfftargets <- function(offtargets_df) {
                              )
                            ))
                          })
-  assign("delete_offtargets_df", offtargets_df, envir = globalenv())
-  assign("delete_results_list", results_list, envir = globalenv())
 
   results_df <- do.call(rbind.data.frame, c(results_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   results_df[, "CRISPOR_Num_2or3MM"] <- rowSums(as.matrix(results_df[, c("CRISPOR_Num_2MM", "CRISPOR_Num_3MM")]))
@@ -211,7 +209,6 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
                            row.names = NULL
                            )
   results_df[, "Location_ID"] <- CRISPR_IDs_vec
-  assign("delete_results_df", results_df, envir = globalenv())
 
   if (resolve_missing_offtargets) {
     results_df <- ResolveMissingOffTargets(results_df)
@@ -254,8 +251,6 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
   for (column_name in setdiff(colnames(offtargets_df), "Location_ID")) {
     CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
   }
-
-  assign("delete_offtargets_df", offtargets_df, envir = globalenv())
 
   return(CRISPR_df)
 }

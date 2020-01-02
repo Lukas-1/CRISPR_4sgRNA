@@ -37,10 +37,6 @@ NumberTSSs <- function(locations_vec, min_space = 1001L) {
 
 AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TSS_prefix = "N") {
 
-  assign("delete_TSS_number_vec", TSS_number_vec, envir = globalenv())
-  assign("delete_original_TSS_vec", original_TSS_vec, envir = globalenv())
-  assign("delete_positions_vec", positions_vec, envir = globalenv())
-
   stopifnot(length(TSS_number_vec) == length(original_TSS_vec))
   allocated_vec <- rep.int(NA_character_, length(TSS_number_vec))
   TSS_numbers <- unique(TSS_number_vec)
@@ -79,7 +75,6 @@ AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TS
       results_vec[are_this_TSS] <- allocated_TSS
     }
   }
-
   return(results_vec)
 }
 

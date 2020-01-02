@@ -263,7 +263,6 @@ GetCutLocations <- function(ranges_df) {
 
 
 LocationStringToDf <- function(location_char_vec) {
-  assign("delete_location_char_vec", location_char_vec, envir = globalenv())
 
   chromosome_splits <- strsplit(location_char_vec, "(", fixed = TRUE)
   strand_splits <- strsplit(sapply(chromosome_splits, "[", 2), ")", fixed = TRUE)

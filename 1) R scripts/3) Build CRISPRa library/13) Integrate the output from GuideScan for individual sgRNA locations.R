@@ -67,7 +67,6 @@ for (column in guidescan_columns) {
 }
 
 merged_replaced_CRISPRa_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(merged_replaced_CRISPRa_df)
-merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df)
 
 
 

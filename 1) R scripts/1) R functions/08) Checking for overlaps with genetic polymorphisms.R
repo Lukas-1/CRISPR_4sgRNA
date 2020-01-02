@@ -70,8 +70,6 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
   GRanges_object_frequencies_added <- suppressWarnings(gscores(get(SNP_package_name), GRanges_object_overlapping_SNPs))
   frequencies_added_df <- as.data.frame(GRanges_object_frequencies_added, stringsAsFactors = FALSE)
 
-  assign("delete_frequencies_added_df", frequencies_added_df, envir = globalenv())
-
 
   ### Filter out low-frequency minor alleles ###
   is_high_frequency <- ifelse(is.na(frequencies_added_df[, "AF"]), FALSE, frequencies_added_df[, "AF"] >= frequency_cutoff)
@@ -87,8 +85,6 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
   match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(SNP_matches_list))
   num_SNPs_vec  <- lengths(SNP_matches_list)[match_matches_vec]
   num_SNPs_vec  <- ifelse(is.na(num_SNPs_vec), 0L, num_SNPs_vec)
-
-  assign("delete_high_frequencies_df", high_frequencies_df, envir = globalenv())
 
   SNP_rsIDs_vec <- vapply(SNP_matches_list, function(x) paste0(high_frequencies_df[x, "RefSNP_id"], collapse = ", "), "")[match_matches_vec]
   SNP_AFs_vec <- vapply(SNP_matches_list, function(x) paste0(format(high_frequencies_df[x, "AF"], scientific = FALSE), collapse = ", "), "")[match_matches_vec]

@@ -103,8 +103,6 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
     return(results_df)
   })
 
-  assign("delete_guidescan_df_list", guidescan_df_list, envir = globalenv())
-
   results_df <- do.call(rbind.data.frame, c(guidescan_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   colnames(results_df) <- gsub(" ", "_", colnames(results_df), fixed = TRUE)
   return(results_df)
