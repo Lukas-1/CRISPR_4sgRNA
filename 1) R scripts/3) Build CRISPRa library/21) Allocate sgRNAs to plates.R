@@ -102,7 +102,6 @@ sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
 
 
 
-
 # Count the number of genes chosen from each of the libraries -------------
 
 num_gene_wells <- nrow(top4_df) / 4
