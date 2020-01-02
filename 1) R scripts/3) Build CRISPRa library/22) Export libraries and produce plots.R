@@ -311,15 +311,12 @@ TF_sgRNA_plates_df_copy[TF_sgRNA_plates_df_copy[, "Is_control"] == "Yes", "Combi
 randomized_guide_IDs <- do.call(paste, c(as.list(TF_sgRNA_plates_df_copy[, ID_paste_all_columns]), list(sep = "__")))
 original_guide_IDs <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID_paste_all_columns]), list(sep = "__")))
 
-were_selected <- original_guide_IDs %in% randomized_guide_IDs
-TF_sgRNA_original_order_df <- merged_replaced_CRISPRa_df[were_selected, ]
-
-TF_sgRNA_original_order_df <- data.frame("Plate_number" = NA, "Well_number" = NA, TF_sgRNA_original_order_df, stringsAsFactors = FALSE)
-randomized_matches <- match(original_guide_IDs[were_selected], randomized_guide_IDs)
-for (column_name in c("Plate_number", "Well_number")) {
-  TF_sgRNA_original_order_df[, column_name] <- TF_sgRNA_plates_df_copy[randomized_matches, column_name]
+original_matches <- match(randomized_guide_IDs, original_guide_IDs)
+if (any(is.na(original_matches))) {
+  stop("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
 }
-stopifnot(nrow(TF_sgRNA_original_order_df) == nrow(TF_sgRNA_plates_df))
+TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
+
 
 
 
