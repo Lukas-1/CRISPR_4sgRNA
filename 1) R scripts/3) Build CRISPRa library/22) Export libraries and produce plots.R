@@ -61,7 +61,7 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
                       "Source", "hCRISPRa_v2_transcript", "Is_control",
                       "Entrez_source_Calabrese", "Entrez_source_hCRISPRa_v2",
 
-                      "sgRNA_sequence", "PAM",
+                      "sgRNA_sequence", "PAM", "Original_PAM",
 
                       "Calabrese_rank", "GPP_rank", "hCRISPRa_v2_rank",
                       "Predicted_score", "Empirical_score", "Off_target_stringency", "Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source",
@@ -210,6 +210,37 @@ top_4_TF_df[overlap_with_SNP, SNP_indeterminate_columns]
 
 
 
+# Check for duplicated sgRNAs with the same TSS_ID ------------------------
+
+ID_paste_columns <- c("AltTSS_ID", "sgRNA_sequence", "hCRISPRa_v2_transcript")
+
+sgRNA_ID_vec        <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID_paste_columns[1:2]]), list(sep = "__")))
+sgRNA_strict_ID_vec <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID_paste_columns]), list(sep = "__")))
+num_occurrences_lax <- table(sgRNA_ID_vec)[sgRNA_ID_vec]
+num_occurrences_strict <- table(sgRNA_strict_ID_vec)[sgRNA_strict_ID_vec]
+
+show_columns_TSS <- c(
+  "sgRNA_ID", "PAM", "Original_PAM", "Entrez_ID", "Gene_symbol", "Original_symbol", "Source",
+  "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "hCRISPRa_v2_transcript", "Num_TSSs",
+  "Rank", "Original_rank", "GPP_rank", "hCRISPRa_v2_rank"
+)
+
+duplicated_sgRNA_IDs_df <- merged_replaced_CRISPRa_df
+duplicated_sgRNA_IDs_df[, "sgRNA_ID"] <- sgRNA_ID_vec
+are_duplicated <- num_occurrences_lax > 1
+duplicated_sgRNA_IDs_df <- duplicated_sgRNA_IDs_df[are_duplicated, ]
+new_order <- order(match(duplicated_sgRNA_IDs_df[, "AltTSS_ID"], duplicated_sgRNA_IDs_df[, "AltTSS_ID"]),
+                   duplicated_sgRNA_IDs_df[, "sgRNA_ID"]
+                   )
+duplicated_sgRNA_IDs_df <- duplicated_sgRNA_IDs_df[new_order, ]
+num_occurrences_strict_short <- num_occurrences_strict[are_duplicated][new_order]
+head(duplicated_sgRNA_IDs_df[, show_columns_TSS])
+
+duplicated_sgRNA_IDs_df[num_occurrences_strict_short > 1, show_columns_TSS]
+
+
+
+
 
 # Check for duplicated sgRNAs among the transcription factors -------------
 
@@ -270,6 +301,27 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 
 
+# Re-construct the TF sub-library in its original order -------------------
+
+ID_paste_all_columns <- c(ID_paste_columns, c("Original_PAM", "hCRISPRa_v2_rank", "Original_symbol"))
+
+TF_sgRNA_plates_df_copy <- TF_sgRNA_plates_df
+TF_sgRNA_plates_df_copy[TF_sgRNA_plates_df_copy[, "Is_control"] == "Yes", "Combined_ID"] <- "Control"
+
+randomized_guide_IDs <- do.call(paste, c(as.list(TF_sgRNA_plates_df_copy[, ID_paste_all_columns]), list(sep = "__")))
+original_guide_IDs <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID_paste_all_columns]), list(sep = "__")))
+
+were_selected <- original_guide_IDs %in% randomized_guide_IDs
+TF_sgRNA_original_order_df <- merged_replaced_CRISPRa_df[were_selected, ]
+
+TF_sgRNA_original_order_df <- data.frame("Plate_number" = NA, "Well_number" = NA, TF_sgRNA_original_order_df, stringsAsFactors = FALSE)
+randomized_matches <- match(original_guide_IDs[were_selected], randomized_guide_IDs)
+for (column_name in c("Plate_number", "Well_number")) {
+  TF_sgRNA_original_order_df[, column_name] <- TF_sgRNA_plates_df_copy[randomized_matches, column_name]
+}
+stopifnot(nrow(TF_sgRNA_original_order_df) == nrow(TF_sgRNA_plates_df))
+
+
 
 # Write CRISPRa sgRNA libraries to disk -----------------------------------
 
@@ -281,7 +333,9 @@ for (i in 1:4) {
   file_name <- paste0(file.path(TF_folder_name, "CRISPRa_TF_randomized_sg"), i)
   DfToTSV(subset_df, file_name, add_primers = TRUE)
 }
-DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRa_TF_randomized_all_4_guides"), add_primers = TRUE)
+DfToTSV(TF_sgRNA_plates_df,         file.path(TF_folder_name, "CRISPRa_TF_randomized_all_4_guides"),     add_primers = TRUE)
+DfToTSV(TF_sgRNA_original_order_df, file.path(TF_folder_name, "CRISPRa_TF_original_order_all_4_guides"), add_primers = TRUE)
+
 
 DfToTSV(replaced_curated_CRISPRa_df, file.path("Candidate genes", "CRISPRa_16_sgRNAs"), allow_curated = TRUE)
 DfToTSV(merged_replaced_candidates_CRISPRa_df, file.path("Candidate genes", "CRISPRa_20_trial_genes"))

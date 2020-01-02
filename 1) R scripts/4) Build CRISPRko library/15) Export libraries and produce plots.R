@@ -144,6 +144,29 @@ merged_TF_CRISPRko_df[(TF_are_top4 & TF_violate_Graf) %in% TRUE, "CRISPOR_Doench
 
 
 
+# Re-construct the TF sub-library in its original order -------------------
+
+randomized_guide_IDs <- paste0(ifelse(TF_sgRNA_plates_df[, "Is_control"] == "Yes", "Control", TF_sgRNA_plates_df[, "Combined_ID"]),
+                               "__", TF_sgRNA_plates_df[, "sgRNA_sequence"]
+                               )
+original_guide_IDs <- paste0(ifelse(merged_CRISPRko_df[, "Is_control"] == "Yes", "Control", merged_CRISPRko_df[, "Combined_ID"]),
+                             "__", merged_CRISPRko_df[, "sgRNA_sequence"]
+                             )
+stopifnot(!(any(duplicated(original_guide_IDs))))
+
+were_selected <- original_guide_IDs %in% randomized_guide_IDs
+TF_sgRNA_original_order_df <- merged_CRISPRko_df[were_selected, ]
+
+TF_sgRNA_original_order_df <- data.frame("Plate_number" = NA, "Well_number" = NA, TF_sgRNA_original_order_df, stringsAsFactors = FALSE)
+randomized_matches <- match(original_guide_IDs[were_selected], randomized_guide_IDs)
+for (column_name in c("Plate_number", "Well_number")) {
+  TF_sgRNA_original_order_df[, column_name] <- TF_sgRNA_plates_df[randomized_matches, column_name]
+}
+stopifnot(nrow(TF_sgRNA_original_order_df) == nrow(TF_sgRNA_plates_df))
+
+
+
+
 
 # Write CRISPRko sgRNA libraries to disk ----------------------------------
 
@@ -154,6 +177,7 @@ for (i in 1:4) {
   DfToTSV(subset_df, file_name, add_primers = TRUE)
 }
 DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides"), add_primers = TRUE)
+DfToTSV(TF_sgRNA_original_order_df, file.path(TF_folder_name, "CRISPRko_TF_original_order_all_4_guides"), add_primers = TRUE)
 
 DfToTSV(merged_TF_CRISPRko_df, "CRISPRko_transcription_factors")
 DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
