@@ -92,11 +92,11 @@ FormatForExcel <- function(my_df,
   }
 
   if (all(c("Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP") %in% colnames(my_df))) {
+    GPP_exon_vec <- my_df[, "Exon_number_GPP"]
     Brunello_exon_vec <- my_df[, "Exon_number_Brunello"]
     TKOv3_exon_vec <- my_df[, "Exon_number_TKOv3"]
-    GPP_exon_vec <- my_df[, "Exon_number_GPP"]
     my_df[, "Exon_number_Brunello"] <- vapply(seq_len(nrow(my_df)), function(x) {
-      exon_vec <- unique(c(Brunello_exon_vec[[x]], TKOv3_exon_vec[[x]], GPP_exon_vec[[x]]))
+      exon_vec <- unique(c(GPP_exon_vec[[x]], Brunello_exon_vec[[x]], TKOv3_exon_vec[[x]])) # This should match the ordering in the "Source" column
       exon_vec <- exon_vec[!(is.na(exon_vec))]
       return(paste0(exon_vec, collapse = " | "))
     }, "")
