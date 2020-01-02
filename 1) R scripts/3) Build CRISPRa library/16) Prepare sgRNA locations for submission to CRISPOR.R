@@ -27,7 +27,7 @@ CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate fil
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
-load(file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgRNA sequences after fixing 5'G substitutions.RData")) # The output of later files is not necessary
+load(file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgRNA sequences after fixing 5'G substitutions.RData")) # The output of files 12-15) is not necessary for this step
 
 
 

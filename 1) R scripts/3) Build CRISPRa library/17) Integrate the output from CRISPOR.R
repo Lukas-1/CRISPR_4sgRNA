@@ -12,7 +12,6 @@ source(file.path(general_functions_directory, "19) Using CRISPOR.R"))
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR"
@@ -21,7 +20,6 @@ general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRa", "CRISPOR")
 output_plots_directory  <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa", "Plots")
-
 
 
 

@@ -164,8 +164,6 @@ lifted_df[lifted_df[, "Combined_ID"] %in% names(any_confirmed)[!(any_confirmed)]
 
 unique(CRISPRa_df[is.na(CRISPRa_df[, "Entrez_ID"]) & have_locations, c("Original_symbol", "hCRISPRa_v2_transcript")])
 
-# View(lifted_df[!(are_confirmed), selected_columns])
-# lifted_df[lifted_df[, "Gene_symbol"] %in% "ELF1, EFL1", ]
 
 
 
@@ -184,8 +182,6 @@ per_gene_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "hCRISPRa_v
 unique(confirmed_lifted_df[confirmed_lifted_df[, "Entrez_assignment"] %in% "Ambiguous chromosome, and ambiguous overlaps", per_gene_columns])
 unique(confirmed_lifted_df[confirmed_lifted_df[, "Entrez_assignment"] %in% "Overlaps with gene", per_gene_columns])
 
-# confirmed_lifted_df[is.na(confirmed_lifted_df[, "Chromosome_liftOver"]), ]
-# locations_df[locations_df[, "Gene_symbol"] %in% "ADGRE5, ADGRE2", ]
 
 
 
@@ -256,12 +252,13 @@ CRISPRa_df[have_locations, "Original_PAM"] <- ifelse(is.na(CRISPRa_df[have_locat
 
 
 
+
 # Remove new duplicates that resulted from replacing 5' nucleotides -------
 
 if (legacy_mode) {
-  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
+  CRISPRa_df <- ResolveDuplicates(CRISPRa_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
 } else {
-  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
+  CRISPRa_df <- ResolveDuplicates(CRISPRa_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
 }
 
 

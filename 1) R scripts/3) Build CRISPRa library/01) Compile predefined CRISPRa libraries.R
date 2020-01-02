@@ -314,8 +314,6 @@ if (legacy_mode) {
 
 
 
-
-
 # Search for duplicated sgRNAs within the same gene -----------------------
 
 sgID_vec <- paste0(CRISPRa_df[, "Combined_ID"], "__", toupper(CRISPRa_df[, "sgRNA_sequence"]))

@@ -18,6 +18,7 @@ source(file.path(general_functions_directory, "02) Translating between Entrez ID
 CRISPR_root_directory   <- "~/CRISPR"
 CRISPR_input_directory  <- file.path(CRISPR_root_directory, "2) Input data")
 FANTOM5_input_directory <- file.path(CRISPR_input_directory, "Human genome", "FANTOM5_liftover")
+Ensembl_input_directory <- file.path(CRISPR_input_directory, "Human genome", "Ensembl")
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory <- file.path(RData_directory, "1) General")
 
@@ -35,17 +36,17 @@ load(file.path(general_RData_directory, "2) Map gene symbols to Entrez IDs.RData
 
 # Read in data ------------------------------------------------------------
 
-FANTOM5_ann_df  <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover+new_CAGE_peaks_phase1and2_annot.txt"),
-                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, fill = TRUE, check.names = FALSE, comment.char = ""
-                              )
+FANTOM5_ann_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover+new_CAGE_peaks_phase1and2_annot.txt"),
+                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, fill = TRUE, check.names = FALSE, comment.char = ""
+                             )
 
-FANTOM5_bed_df  <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover_CAGE_peaks_phase1and2.bed"),
-                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = FALSE, row.names = NULL
-                              )
+FANTOM5_bed_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover_CAGE_peaks_phase1and2.bed"),
+                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = FALSE, row.names = NULL
+                             )
 
-BioMart_df      <- read.table(file.path(CRISPR_input_directory, "Human genome", "ENSEMBL", "BioMart_human_2019-07-25_mart_export.txt"),
-                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
-                              )
+BioMart_df     <- read.table(file.path(CRISPR_input_directory, "Human genome", "Ensembl", "BioMart_human_2019-07-25_mart_export.txt"),
+                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
+                             )
 
 
 

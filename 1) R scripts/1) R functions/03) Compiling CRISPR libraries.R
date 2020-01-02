@@ -149,6 +149,10 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
 
 ResolveDuplicates <- function(CRISPR_df, concatenate_columns) {
 
+  if ("Rank" %in% colnames(CRISPR_df)) {
+    warning("Warning: The 'Rank' column will cause trouble, i.e., duplicates being ignored! Do not rank sgRNAs until all duplicates have been eliminated.")
+  }
+
   ### Make columns with helper vectors ###
 
   CRISPR_df[, "sgID"] <- paste0(CRISPR_df[, "Combined_ID"], "__", toupper(CRISPR_df[, "sgRNA_sequence"]))
