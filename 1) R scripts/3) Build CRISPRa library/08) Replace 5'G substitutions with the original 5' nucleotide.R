@@ -86,9 +86,11 @@ nucleotide_bag <- substr(merged_CRISPRa_df[are_Calabrese & !(are_controls), "sgR
 set.seed(1)
 new_5p_nucleotides <- sample(nucleotide_bag, sum(are_to_replace))
 
-merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"] <- paste0(new_5p_nucleotides,
-                                                              substr(merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"], 2, 20)
-                                                              )
+new_5p_nucleotides <- ifelse(new_5p_nucleotides == "G", "G", tolower(new_5p_nucleotides)) # Indicate the replacement
+
+replaced_merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"] <- paste0(new_5p_nucleotides,
+                                                                       substr(merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"], 2, 20)
+                                                                       )
 
 
 
