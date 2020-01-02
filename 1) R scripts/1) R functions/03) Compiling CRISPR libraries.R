@@ -147,7 +147,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
 
 
 
-ResolveDuplicates <- function(CRISPR_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID")) {
+ResolveDuplicates <- function(CRISPR_df, concatenate_columns) {
 
   ### Make columns with helper vectors ###
 

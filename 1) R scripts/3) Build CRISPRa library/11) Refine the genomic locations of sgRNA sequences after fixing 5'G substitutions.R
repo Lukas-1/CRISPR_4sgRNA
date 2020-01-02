@@ -3,6 +3,12 @@
 
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
 
 # Import packages and source code -----------------------------------------
 
@@ -86,6 +92,12 @@ full_merged_replaced_CRISPRa_df <- MergeTSSandGuideScan(extended_replaced_CRISPR
 head(full_merged_replaced_CRISPRa_df[is.na(full_merged_replaced_CRISPRa_df[, "Hits_start"]) & !(is.na(full_merged_replaced_CRISPRa_df[, "GuideScan_start"])), ])
 
 merged_replaced_CRISPRa_df <- AdjustPositionColumns(full_merged_replaced_CRISPRa_df, replaced_guidescan_all_genes_df)
+
+if (legacy_mode) {
+  source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
+  merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df)
+}
+
 
 
 

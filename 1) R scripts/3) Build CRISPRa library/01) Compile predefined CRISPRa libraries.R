@@ -2,6 +2,13 @@
 
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
+
 
 # Import packages and source code -----------------------------------------
 
@@ -297,7 +304,13 @@ combined_df[, "Combined_ID"] <- ifelse(combined_df[, "Is_control"] == "Yes", "Co
                                        ifelse(is.na(combined_df[, "Entrez_ID"]), toupper(combined_df[, "Original_symbol"]), combined_df[, "Entrez_ID"])
                                        )
 
-CRISPRa_df <- ResolveDuplicates(combined_df)
+if (legacy_mode) {
+  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
+} else {
+  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
+}
+
+
 
 
 

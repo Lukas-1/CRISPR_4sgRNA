@@ -3,6 +3,12 @@
 
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
 
 # Import packages and source code -----------------------------------------
 
@@ -55,6 +61,13 @@ were_confirmed <- vapply(which(mapped_by_GuideScan), function(x) {
 head(full_merged_CRISPRa_df[mapped_by_GuideScan, c("GuideScan_chromosome", "GuideScan_strand", "GuideScan_start", "GuideScan_end", "Locations_0MM")])
 
 merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all_genes_df, allow_5pG_MM = TRUE)
+
+if (legacy_mode) {
+  source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
+  merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df)
+}
+
+
 
 
 

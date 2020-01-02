@@ -3,6 +3,14 @@
 
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
+
+
 # Import packages and source code -----------------------------------------
 
 library("BSgenome.Hsapiens.UCSC.hg38")
@@ -96,10 +104,15 @@ replaced_merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"] <- paste0(new_5p_nu
 
 
 
-# Remove new duplicates that resulted from replacing 5' nucleotides -------
+# Remove new duplicates that result from replacing 5'G nucleotides --------
 
 replaced_merged_CRISPRa_df <- ResolveDuplicates(replaced_merged_CRISPRa_df[, c(colnames(CRISPRa_df), "Exchanged_5pG")])
 
+if (legacy_mode) {
+  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
+} else {
+  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
+}
 
 
 

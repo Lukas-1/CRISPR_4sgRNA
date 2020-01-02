@@ -1,6 +1,15 @@
 ### 13th December 2019 ###
 
 
+
+
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
+
 # Import packages and source code -----------------------------------------
 
 library("BSgenome.Hsapiens.UCSC.hg19")
@@ -249,7 +258,11 @@ CRISPRa_df[have_locations, "Original_PAM"] <- ifelse(is.na(CRISPRa_df[have_locat
 
 # Remove new duplicates that resulted from replacing 5' nucleotides -------
 
-CRISPRa_df <- ResolveDuplicates(CRISPRa_df)
+if (legacy_mode) {
+  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
+} else {
+  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
+}
 
 
 
