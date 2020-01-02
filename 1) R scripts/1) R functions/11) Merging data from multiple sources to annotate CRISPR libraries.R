@@ -5,14 +5,13 @@
 
 # Import packages and source code -----------------------------------------
 
+library("BSgenome.Hsapiens.UCSC.hg38")
+
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
 source(file.path(general_functions_directory, "04) Using GuideScan.R"))
-source(file.path(general_functions_directory, "05) Mapping sequences to the human genome.R"))
-source(file.path(general_functions_directory, "09) Constants and settings.R"))
-source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
 
 
 
@@ -711,7 +710,6 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
   # Final steps
   merged_CRISPR_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(merged_CRISPR_df)
-  merged_CRISPR_df <- RankCRISPRDf(merged_CRISPR_df, reorder_by_rank = reorder_by_rank, allow_5pG_MM = allow_5pG_MM)
 
 
   # Re-order the columns
