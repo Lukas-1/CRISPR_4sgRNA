@@ -210,6 +210,10 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
 
 
 ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
+  are_duplicated <- duplicated(reference_IDs)
+  if (any(are_duplicated)) {
+    stop(paste0("The following IDs were duplicated: ", paste0(reference_IDs[are_duplicated], collapse = ", "), "!"))
+  }
   summary_mat <- as.matrix(summary_df[, grep("^Num_", colnames(summary_df), value = TRUE)])
   summary_matches <- match(reference_IDs, summary_df[, "Combined_ID"])
   matched_summary_mat <- summary_mat[summary_matches, ]

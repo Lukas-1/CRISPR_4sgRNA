@@ -5,6 +5,7 @@
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R")) # For GetMinEntrez
+source(file.path(general_functions_directory, "09) Constants and settings.R")) # For GetMinEntrez
 
 
 

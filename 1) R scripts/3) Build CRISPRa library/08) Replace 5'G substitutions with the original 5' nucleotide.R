@@ -72,8 +72,6 @@ Exchange5PrimeG <- function(CRISPR_df) {
 
 
 
-
-
 # Replace artificial 5' G nucleotides from the hCRISPRa-v2 database -------
 
 replaced_merged_CRISPRa_df <- Exchange5PrimeG(merged_CRISPRa_df)
@@ -106,12 +104,10 @@ replaced_merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"] <- paste0(new_5p_nu
 
 # Remove new duplicates that result from replacing 5'G nucleotides --------
 
-replaced_merged_CRISPRa_df <- ResolveDuplicates(replaced_merged_CRISPRa_df[, c(colnames(CRISPRa_df), "Exchanged_5pG")])
-
 if (legacy_mode) {
-  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
+  replaced_merged_CRISPRa_df <- ResolveDuplicates(replaced_merged_CRISPRa_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
 } else {
-  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
+  replaced_merged_CRISPRa_df <- ResolveDuplicates(replaced_merged_CRISPRa_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
 }
 
 

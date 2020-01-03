@@ -64,7 +64,7 @@ merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all
 
 if (legacy_mode) {
   source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
-  merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df)
+  merged_CRISPRa_df <- RankCRISPRDf(merged_CRISPRa_df)
 }
 
 
