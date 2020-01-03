@@ -41,6 +41,7 @@ merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] 
 
 
 
+
 # Check for invalid 4sg combinations --------------------------------------
 
 stopifnot(!(any(merged_TF_CRISPRko_df[, "Spacing"] %in% 0)))

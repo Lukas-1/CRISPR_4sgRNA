@@ -40,6 +40,7 @@ TF_combined_IDs <- intersect(all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_
 
 
 
+
 # Prepare data frames that can be exported to .bed files ------------------
 
 TF_bed_df <- MakeBedDf(extended_CRISPRko_df, TF_combined_IDs)
