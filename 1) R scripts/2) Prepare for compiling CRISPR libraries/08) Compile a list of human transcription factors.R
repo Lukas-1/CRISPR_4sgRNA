@@ -149,8 +149,14 @@ ensembl_mappings_df[, "Consensus_entrez"] <- vapply(seq_len(nrow(ensembl_mapping
   if (!(are_NA[[x]]) && !(are_not_identical[[x]])) {
     this_vec[["BioMart_entrez"]]
   } else if (!(is.na(this_vec[["BioMart_entrez"]]))) {
-    if (identical(this_vec[["OrgHs_entrez"]], this_vec[["Symbol_to_entrez"]]) && !(identical(this_vec[["BioMart_entrez"]], this_vec[["OrgHs_entrez"]]))) { # majority vote
+    if ((!(is.na(this_vec[["OrgHs_entrez"]]))) &&
+        identical(this_vec[["OrgHs_entrez"]], this_vec[["Symbol_to_entrez"]])
+        ) { # majority vote
       this_vec[["OrgHs_entrez"]]
+    } else if ((!(is.na(this_vec[["OrgHs_entrez"]]))) &&
+                any(strsplit(this_vec[["OrgHs_entrez"]], ", ", fixed = TRUE)[[1]] %in% this_vec[["Symbol_to_entrez"]])
+               ) { # this had to be introduced to keep the number of transcription factors at 2765
+      this_vec[["Symbol_to_entrez"]]
     } else {
       this_vec[["BioMart_entrez"]]
     }
@@ -170,6 +176,21 @@ ensembl_mappings_df[, "Consensus_entrez"] <- vapply(seq_len(nrow(ensembl_mapping
     NA_character_
   }
 }, "")
+
+
+
+if (any(grepl(", ", ensembl_mappings_df[, "Consensus_entrez"]))) {
+  stop("Ambiguous Entrez ID mappings were found!")
+}
+
+# Check for duplicate mappings that would lead to fewer than 2765 entries being found in the final database!
+num_occurrences_vec <- table(ensembl_mappings_df[, "Consensus_entrez"])[ensembl_mappings_df[, "Consensus_entrez"]]
+if (any(num_occurrences_vec > 1, na.rm = TRUE)) {
+  message("\nProblematic genes:")
+  print(ensembl_mappings_df[(num_occurrences_vec > 1) %in% TRUE, ])
+  stop("Multiple ensembl IDs seemed to map to same gene or Entrez ID!")
+}
+
 
 
 final_symbols_df <- MapToEntrezs(ensembl_mappings_df[, "Consensus_entrez"], ensembl_mappings_df[, "Gene_symbol"])

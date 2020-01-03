@@ -67,19 +67,19 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
 
   ### Extract data on SNP allele frequencies from the thousand genomes project ###
   message("Filtering for high-frequency SNPs...")
-  GRanges_object_frequencies_added <- suppressWarnings(gscores(get(SNP_package_name), GRanges_object_overlapping_SNPs))
-  frequencies_added_df <- as.data.frame(GRanges_object_frequencies_added, stringsAsFactors = FALSE)
+  GPos_object_frequencies_added <- suppressWarnings(gscores(get(SNP_package_name), GRanges_object_overlapping_SNPs))
+  frequencies_added_df <- as.data.frame(mcols(GPos_object_frequencies_added), stringsAsFactors = FALSE)
 
 
   ### Filter out low-frequency minor alleles ###
   is_high_frequency <- ifelse(is.na(frequencies_added_df[, "AF"]), FALSE, frequencies_added_df[, "AF"] >= frequency_cutoff)
   high_frequencies_df <- frequencies_added_df[is_high_frequency, ]
-  GRanges_object_polymorphisms <- GRanges_object_frequencies_added[is_high_frequency, ]
+  GPos_object_polymorphisms <- GPos_object_frequencies_added[is_high_frequency, ]
 
 
   ### Compile data on SNPs that overlap with sgRNAs ###
   message("Counting high-frequency SNPs within the regions...")
-  SNP_overlap_matches_df <- as.data.frame(findOverlaps(GRanges_object_sgRNAs, GRanges_object_polymorphisms))
+  SNP_overlap_matches_df <- as.data.frame(findOverlaps(GRanges_object_sgRNAs, GPos_object_polymorphisms))
   SNP_matches_list <- split(SNP_overlap_matches_df[, 2], factor(SNP_overlap_matches_df[, 1], levels = unique(SNP_overlap_matches_df[, 1])))
 
   match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(SNP_matches_list))
