@@ -28,7 +28,7 @@ general_RData_directory <- file.path(RData_directory, "1) General")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "2) Map gene symbols to Entrez IDs.RData"))
+load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
 
 
 
@@ -225,7 +225,8 @@ BioMart_filtered_df <- BioMart_df[are_on_chromosome, ]
 
 BioMart_filtered_df <- data.frame(
   "Group"             = paste0(ifelse(is.na(BioMart_filtered_df[, "NCBI gene ID"]), "", paste0(BioMart_filtered_df[, "NCBI gene ID"], " | ")),
-                               BioMart_filtered_df[, "Gene name"], " | ",  "chr", BioMart_filtered_df[, "Chromosome/scaffold name"]
+                               BioMart_filtered_df[, "Gene name"], " | ",
+                               "chr", BioMart_filtered_df[, "Chromosome/scaffold name"]
                                ),
   "Entrez_ID"         = BioMart_filtered_df[, "NCBI gene ID"],
   "Gene_symbol"       = BioMart_filtered_df[, "Gene name"],
@@ -298,13 +299,13 @@ combined_TSS_df <- combined_TSS_df[!(are_duplicates_BioMart), ]
 
 rownames(combined_TSS_df) <- NULL
 
+
 # combined_groups_fac <- factor(combined_TSS_df[, "Group"], levels = unique(combined_TSS_df[, "Group"]))
 # FANTOM5_available_vec <- unlist(tapply(combined_TSS_df[, "Source"],
 #                                        combined_groups_fac,
 #                                        function(x) rep.int(if (any(x %in% c("FANTOM5", "FANTOM5, BioMart"))) TRUE else FALSE, length(x))
 #                                        ), use.names = FALSE
 #                                 )
-#
 # num_strands_vec <- lengths(tapply(combined_TSS_df[, "Strand"], combined_groups_fac, function(x) unique(x), simplify = FALSE))
 # combined_TSS_df[unlist(split(seq_len(nrow(combined_TSS_df)), combined_groups_fac)[num_strands_vec > 1]), ]
 

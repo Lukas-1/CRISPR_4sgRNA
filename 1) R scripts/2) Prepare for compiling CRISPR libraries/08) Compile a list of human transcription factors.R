@@ -141,7 +141,7 @@ ensembl_mappings_df <- data.frame(
   row.names              = NULL
 )
 
-are_not_identical <- !(vapply(seq_len(nrow(ensembl_mappings_df)), function(x) identical(ensembl_mappings_df[x, "OrgHs_entrez"], ensembl_mappings_df[x, "BioMart_entrez"]), logical(1)))
+are_not_identical <- !(mapply(identical, ensembl_mappings_df[, "OrgHs_entrez"], ensembl_mappings_df[, "BioMart_entrez"], USE.NAMES = FALSE))
 are_NA <- is.na(ensembl_mappings_df[, "BioMart_entrez"])
 
 ensembl_mappings_df[, "Consensus_entrez"] <- vapply(seq_len(nrow(ensembl_mappings_df)), function(x) {
@@ -176,7 +176,10 @@ final_symbols_df <- MapToEntrezs(ensembl_mappings_df[, "Consensus_entrez"], ense
 
 ensembl_mappings_df[, "Consensus_symbol"] <- ifelse(is.na(ensembl_mappings_df[, "Consensus_entrez"]), NA_character_, final_symbols_df[, "Gene_symbol"])
 ensembl_mappings_df[, "Original_symbol"] <- final_symbols_df[, "Original_symbol"]
-ensembl_mappings_df[, "Combined_ID"] <- ifelse(is.na(ensembl_mappings_df[, "Consensus_entrez"]), toupper(ensembl_mappings_df[, "Original_symbol"]), ensembl_mappings_df[, "Consensus_entrez"])
+ensembl_mappings_df[, "Combined_ID"] <- ifelse(is.na(ensembl_mappings_df[, "Consensus_entrez"]),
+                                               toupper(ensembl_mappings_df[, "Original_symbol"]),
+                                               ensembl_mappings_df[, "Consensus_entrez"]
+                                               )
 
 
 
@@ -187,7 +190,7 @@ ensembl_mappings_df[, "Combined_ID"] <- ifelse(is.na(ensembl_mappings_df[, "Cons
 
 ensembl_mappings_df[are_NA | are_not_identical, ]
 
-identical_to_original_entrez <- vapply(seq_len(nrow(ensembl_mappings_df)), function(x) identical(ensembl_mappings_df[x, "Consensus_entrez"], ensembl_mappings_df[x, "Original_Entrez_ID"]), logical(1))
+identical_to_original_entrez <- mapply(identical, ensembl_mappings_df[, "Consensus_entrez"], ensembl_mappings_df[, "Original_Entrez_ID"], USE.NAMES = FALSE)
 original_entrez_available <- !(ensembl_mappings_df[, "Original_Entrez_ID"] %in% c("Has no Entrez identifier", "None"))
 
 ensembl_mappings_df[is.na(ensembl_mappings_df[, "Consensus_entrez"]), ]
