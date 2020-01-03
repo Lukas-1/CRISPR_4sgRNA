@@ -24,6 +24,9 @@ general_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files", "
 
 # Read in data ------------------------------------------------------------
 
+# Downloaded from ftp://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz
+# on 21 July 2019
+
 NCBI_Hs_info_df <- read.table(file.path(CRISPR_input_directory, "Human genome", "NCBI", "Homo_sapiens.gene_info"),
                               sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL,
                               fill = TRUE, check.names = FALSE, comment.char = ""

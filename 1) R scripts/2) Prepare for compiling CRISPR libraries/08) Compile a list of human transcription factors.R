@@ -37,6 +37,9 @@ load(file.path(general_RData_directory, "01) Extract gene annotation data from t
 
 # Read in data ------------------------------------------------------------
 
+# Downloaded from http://humantfs.ccbr.utoronto.ca/download/v_1.01/DatabaseExtract_v_1.01.csv
+# on 3 October 2019
+
 tf_new_df <- read.csv(file.path(human_TFs_directory, "DatabaseExtract_v_1.01.csv"), stringsAsFactors = FALSE, check.names = FALSE)[, -1]
 
 

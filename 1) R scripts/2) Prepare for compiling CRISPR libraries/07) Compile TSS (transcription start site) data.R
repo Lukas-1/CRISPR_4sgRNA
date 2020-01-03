@@ -36,6 +36,9 @@ load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RDat
 
 # Read in data ------------------------------------------------------------
 
+# The two FANTOM5 files were downloaded from: https://figshare.com/articles/Re-processing_of_the_data_generated_by_the_FANTOM5_project_hg38_v3_CAGE_peaks/4880063/4
+# on 21 July 2019
+
 FANTOM5_ann_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover+new_CAGE_peaks_phase1and2_annot.txt"),
                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, fill = TRUE, check.names = FALSE, comment.char = ""
                              )
@@ -44,6 +47,7 @@ FANTOM5_bed_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover_C
                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = FALSE, row.names = NULL
                              )
 
+# The BioMart file was downloaded from https://www.ensembl.org/biomart/martview
 BioMart_df     <- read.table(file.path(CRISPR_input_directory, "Human genome", "Ensembl", "BioMart_human_2019-07-25_mart_export.txt"),
                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
                              )

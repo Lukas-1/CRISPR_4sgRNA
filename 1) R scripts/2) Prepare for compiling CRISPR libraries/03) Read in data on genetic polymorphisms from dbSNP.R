@@ -25,7 +25,10 @@ NCBI_vcf_path <- file.path(polymorphisms_directory, "common_all_20180418.vcf")
 
 # Read in data ------------------------------------------------------------
 
-vcfR_read <- read.vcfR(file = NCBI_vcf_path) # Downloaded from ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz
+# Downloaded from ftp://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh38p7/VCF/common_all_20180418.vcf.gz
+# on 5 August 2019
+
+vcfR_read <- read.vcfR(file = NCBI_vcf_path)
 
 
 

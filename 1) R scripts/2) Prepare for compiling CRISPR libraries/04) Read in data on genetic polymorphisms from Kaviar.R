@@ -26,7 +26,12 @@ Kaviar_vcf_path <- file.path(polymorphisms_directory, "Kaviar-160204-Public-hg38
 
 # Read in data ------------------------------------------------------------
 
-vcfR_read <- read.vcfR(file = Kaviar_vcf_path) # Downloaded from http://db.systemsbiology.net/kaviar/Kaviar.downloads.html
+# Downloaded from http://db.systemsbiology.net/kaviar/Kaviar.downloads.html
+# "Only variants seen > 3 times (1.1 GB each file)", GRCh38
+# Direct link: http://s3-us-west-2.amazonaws.com/kaviar-160204-public/Kaviar-160204-Public-hg38-trimACgt3.vcf.tar
+# accessed on 7 August 2019
+
+vcfR_read <- read.vcfR(file = Kaviar_vcf_path)
 
 
 
