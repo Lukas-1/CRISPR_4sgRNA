@@ -2,8 +2,6 @@
 
 
 
-
-
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
@@ -60,7 +58,6 @@ guidescan_all_genes_df <- BuildGuideScanDf(guidescan_raw_df, combined_TSS_CRISPR
 save(list = c("guidescan_all_genes_df", "guidescan_candidates_df"),
      file = file.path(CRISPRa_RData_directory, "05) Filter the output from GuideScan for TSS regions.RData")
      )
-
 
 
 

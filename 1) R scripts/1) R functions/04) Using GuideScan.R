@@ -3,6 +3,11 @@
 
 
 
+# Import packages and source code -----------------------------------------
+
+library("data.table") # For data.table::fread (optional)
+
+
 
 # Define functions --------------------------------------------------------
 
@@ -73,11 +78,17 @@ sgRNAStringForGuideScan <- function(CRISPR_df) {
 }
 
 
-ReadGuideScanOutput <- function(file_name) {
-  # Requires 'CRISPOR_files_directory' in the global workspace
-  read.csv(file.path(GuideScan_files_directory, file_name),
-           header = FALSE, row.names = NULL, quote = "\"", stringsAsFactors = FALSE, comment.char = ""
-           )
+ReadGuideScanOutput <- function(file_name, use_fread = FALSE) {
+  # This function requires 'CRISPOR_files_directory' in the global workspace.
+  # Unfortunately, use of data.table::fread does not lead to a significant
+  # speedup for this function. The main delay is not caused by reading the
+  # the file, but by the 'strsplit(string_vec, ",", fixed = TRUE)' operation,
+  # which is very time-consuming.
+  file_path <- file.path(GuideScan_files_directory, file_name)
+  results_df <- read.csv(file = file_path, header = FALSE, row.names = NULL,
+                         quote = "\"", stringsAsFactors = FALSE, comment.char = ""
+                         )
+  return(results_df)
 }
 
 
@@ -86,15 +97,15 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
 
   are_title <- apply(GuideScan_output_df, 1, function(x) all(as.character(x[2:11]) == ""))
   file_number_vec <- rep.int(NA_integer_, nrow(GuideScan_output_df))
-  file_number <- 0
+  file_number <- 0L
   for (i in seq_along(file_number_vec)) {
     if (are_title[[i]]) {
-      file_number <- file_number + 1
+      file_number <- file_number + 1L
     }
     file_number_vec[[i]] <- file_number
   }
 
-  guidescan_df_list <- tapply(seq_len(nrow(GuideScan_output_df)), file_number_vec, function(x) GuideScan_output_df[x, , drop = FALSE], simplify = FALSE)
+  guidescan_df_list <- split(GuideScan_output_df, file_number_vec)
 
   guidescan_df_list <- lapply(guidescan_df_list, function (x) {
     results_df <- x[3:nrow(x), , drop = FALSE]
@@ -132,7 +143,10 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
   ### Collect all sgRNAs in CRISPRa_df for a given region ###
 
   TSS_df[, "GuideScan_input"] <- TSSStringForGuideScan(TSS_df)
-  combined_ID_for_region <- sapply(unique(TSS_df[, "GuideScan_input"]), function(x) unique(TSS_df[TSS_df[, "GuideScan_input"] == x, "Combined_ID"]), simplify = FALSE)
+  combined_ID_for_region <- sapply(unique(TSS_df[, "GuideScan_input"]),
+                                   function(x) unique(TSS_df[TSS_df[, "GuideScan_input"] == x, "Combined_ID"]),
+                                   simplify = FALSE
+                                   )
   sgRNAs_for_region <- lapply(combined_ID_for_region, function(x) unique(toupper(CRISPR_df[CRISPR_df[, "Combined_ID"] %in% x, "sgRNA_sequence"])))
 
 

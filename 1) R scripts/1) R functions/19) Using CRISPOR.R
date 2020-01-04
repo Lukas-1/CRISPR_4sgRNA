@@ -6,7 +6,7 @@
 # Import packages and source code -----------------------------------------
 
 library("RColorBrewer")
-
+library("data.table") # For data.table::fread (optional)
 
 
 
@@ -116,12 +116,21 @@ MakeFASTAvec <- function(use_FASTA_df) {
 
 # Functions for processing output from CRISPOR ----------------------------
 
-ReadCRISPOROutput <- function(file_name) {
+ReadCRISPOROutput <- function(file_name, use_fread = TRUE) {
   # Requires 'CRISPOR_files_directory' in the global workspace
-  read.table(file.path(CRISPOR_files_directory, file_name),
-             stringsAsFactors = FALSE, header = TRUE, check.names = FALSE, row.names = NULL,
-             sep = "\t", quote = "", comment.char = ""
-             )
+  file_path <- file.path(CRISPOR_files_directory, file_name)
+  if (use_fread) {
+    results_df <- data.table::fread(file = file_path, sep = "\t",
+                                    header = TRUE, quote = "",
+                                    data.table = FALSE
+                                    )
+  } else {
+    results_df <- read.table(file_path, sep = "\t", header = TRUE,
+                             row.names = NULL, quote = "", comment.char = "",
+                             stringsAsFactors = FALSE, check.names = FALSE
+                             )
+  }
+  return(results_df)
 }
 
 
