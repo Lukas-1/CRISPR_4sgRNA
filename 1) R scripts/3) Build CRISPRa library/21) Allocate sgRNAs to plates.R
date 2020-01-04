@@ -2,6 +2,13 @@
 
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
+
 
 # Import packages and source code -----------------------------------------
 
@@ -215,6 +222,45 @@ combined_df_shuffled_list[[use_index]] <- rbind.data.frame(combined_df_shuffled_
 # Combine into a data frame -----------------------------------------------
 
 TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
+
+
+
+
+
+# Use legacy mode ---------------------------------------------------------
+
+# Due to changes in the selection of control sequences (after the sgRNAs had already been ordered),
+# it is not possible to programmatically reproduce the exact control sgRNAs and ordering of wells,
+# because the random number generator will produce different results.
+
+if (legacy_mode) {
+
+  load(file.path(CRISPRa_RData_directory, "Legacy random selection of controls and ordering of wells for CRISPRa.RData"))
+
+  are_controls <- TF_sgRNA_plates_df[, "Is_control"] == "Yes"
+
+  paste_columns <- c("Entrez_ID", "TSS_ID", "sgRNA_sequence")
+
+  legacy_ID_vec <- do.call(paste, c(as.list(legacy_targeting_TF_df[, paste_columns]), sep = " | "))
+  new_ID_vec <- do.call(paste, c(as.list(TF_sgRNA_plates_df[!(are_controls), paste_columns]), sep = " | "))
+
+  stopifnot(length(legacy_ID_vec) == length(new_ID_vec))
+  legacy_matches <- match(legacy_ID_vec, new_ID_vec)
+  stopifnot(!(anyNA(legacy_matches)))
+
+  new_plates_df <- TF_sgRNA_plates_df[!(are_controls), ][legacy_matches, ]
+  new_controls_df <- TF_sgRNA_plates_df[are_controls, ]
+
+  for (column_name in c("Plate_number", "Well_number")) {
+    new_plates_df[, column_name] <- TF_sgRNA_plates_df[!(are_controls), column_name]
+  }
+  for (column_name in colnames(legacy_controls_TF_df)) {
+    new_controls_df[, column_name] <- legacy_controls_TF_df[, column_name]
+  }
+
+  TF_sgRNA_plates_df <- rbind.data.frame(new_plates_df, new_controls_df, stringsAsFactors = FALSE, make.row.names = FALSE)
+}
+
 
 
 
