@@ -56,14 +56,14 @@ have_locations <- !(is.na(CRISPRko_df[, "TKOv3_ID"])) & (CRISPRko_df[, "Is_contr
 TKOv3_IDs_vec <- CRISPRko_df[have_locations, "TKOv3_ID"]
 
 TKOv3_IDs_splits        <- strsplit(TKOv3_IDs_vec, "_", fixed = TRUE)
-TKOv3_chromosome_splits <- strsplit(sapply(TKOv3_IDs_splits, "[", 1), ":", fixed = TRUE)
-TKOv3_range_splits      <- strsplit(sapply(TKOv3_chromosome_splits, "[", 2), "-", fixed = TRUE)
+TKOv3_chromosome_splits <- strsplit(sapply(TKOv3_IDs_splits, "[[", 1), ":", fixed = TRUE)
+TKOv3_range_splits      <- strsplit(sapply(TKOv3_chromosome_splits, "[[", 2), "-", fixed = TRUE)
 
 TKOv3_locations_df <- data.frame(
-  "Chromosome"     = sapply(TKOv3_chromosome_splits, "[", 1),
-  "Strand"         = sapply(TKOv3_IDs_splits, "[", 3),
-  "Start"          = as.integer(sapply(TKOv3_range_splits, "[", 1)),
-  "End"            = as.integer(sapply(TKOv3_range_splits, "[", 2)),
+  "Chromosome"     = sapply(TKOv3_chromosome_splits, "[[", 1),
+  "Strand"         = sapply(TKOv3_IDs_splits, "[[", 3),
+  "Start"          = as.integer(sapply(TKOv3_range_splits, "[[", 1)),
+  "End"            = as.integer(sapply(TKOv3_range_splits, "[[", 2)),
   stringsAsFactors = FALSE,
   row.names        = NULL
 )

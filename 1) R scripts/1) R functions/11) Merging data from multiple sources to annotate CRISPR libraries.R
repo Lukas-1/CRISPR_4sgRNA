@@ -265,16 +265,16 @@ GetCutLocations <- function(ranges_df) {
 LocationStringToDf <- function(location_char_vec) {
 
   chromosome_splits <- strsplit(location_char_vec, "(", fixed = TRUE)
-  strand_splits <- strsplit(sapply(chromosome_splits, "[", 2), ")", fixed = TRUE)
-  location_vec <- sapply(strand_splits, "[", 2)
+  strand_splits <- strsplit(sapply(chromosome_splits, "[[", 2), ")", fixed = TRUE)
+  location_vec <- sapply(strand_splits, "[[", 2)
   location_vec <- substr(location_vec, 2, nchar(location_vec))
   location_splits <- strsplit(location_vec, "-", fixed = TRUE)
 
   results_df <- data.frame(
-    "Chromosome" = sapply(chromosome_splits, "[", 1),
-    "Strand"     = sapply(strand_splits, "[", 1),
-    "Start"      = as.integer(sapply(location_splits, "[", 1)),
-    "End"        = as.integer(sapply(location_splits, "[", 2)),
+    "Chromosome" = sapply(chromosome_splits, "[[", 1),
+    "Strand"     = sapply(strand_splits, "[[", 1),
+    "Start"      = as.integer(sapply(location_splits, "[[", 1)),
+    "End"        = as.integer(sapply(location_splits, "[[", 2)),
     stringsAsFactors = FALSE,
     row.names = NULL
   )
@@ -354,10 +354,10 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
     assign("delete_are_this_gene", are_this_gene, envir = globalenv())
     assign("original_splits_list", splits_list, envir = globalenv())
     assign("original_this_gene_duplicates", this_gene_duplicates, envir = globalenv())
-    split_1_vec <- sapply(splits_list, "[", 1)
-    split_2_vec <- sapply(splits_list, "[", 2)
-    chromosome_1_vec <- sapply(strsplit(split_1_vec, "(", fixed = TRUE), "[", 1)
-    chromosome_2_vec <- sapply(strsplit(split_2_vec, "(", fixed = TRUE), "[", 1)
+    split_1_vec <- sapply(splits_list, "[[", 1)
+    split_2_vec <- sapply(splits_list, "[[", 2)
+    chromosome_1_vec <- sapply(strsplit(split_1_vec, "(", fixed = TRUE), "[[", 1)
+    chromosome_2_vec <- sapply(strsplit(split_2_vec, "(", fixed = TRUE), "[[", 1)
     chromosome_combo_vec <- paste0(chromosome_1_vec, "_", chromosome_2_vec)
     most_common_combo <- names(sort(table(chromosome_combo_vec), decreasing = TRUE))[[1]]
     this_gene_duplicates[this_gene_duplicates] <- chromosome_combo_vec == most_common_combo

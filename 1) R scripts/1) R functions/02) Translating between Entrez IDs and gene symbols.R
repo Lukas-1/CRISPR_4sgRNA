@@ -27,7 +27,7 @@ ExpandList <- function(my_list) {
   names(my_list) <- paste0(group_names, ".")
   multiples_unlisted <- unlist(my_list, recursive = FALSE)
   groups_unlisted <- strsplit(names(multiples_unlisted), ".", fixed = TRUE)
-  groups_unlisted <- sapply(groups_unlisted, "[", 1)
+  groups_unlisted <- sapply(groups_unlisted, "[[", 1)
   results_df <- data.frame("Value"      = multiples_unlisted,
                            "List_index" = as.integer(groups_unlisted),
                            stringsAsFactors = FALSE,

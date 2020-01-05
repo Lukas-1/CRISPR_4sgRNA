@@ -65,10 +65,10 @@ hCRISPRa_v2_IDs_vec <- CRISPRa_df[have_locations, "hCRISPRa_v2_ID"]
 
 have_two_entries <- grepl(";", hCRISPRa_v2_IDs_vec, fixed = TRUE)
 two_entries_splits <- strsplit(hCRISPRa_v2_IDs_vec[have_two_entries], "; ", fixed = TRUE)
-hCRISPRa_v2_IDs_vec[have_two_entries] <- sapply(two_entries_splits, "[", 1)
+hCRISPRa_v2_IDs_vec[have_two_entries] <- sapply(two_entries_splits, "[[", 1)
 
-hCRISPRa_v2_IDs_second_half <- sapply(strsplit(hCRISPRa_v2_IDs_vec, "_[-+]_"), "[", 2)
-hCRISPRa_v2_location_vec <- as.integer(sapply(strsplit(hCRISPRa_v2_IDs_second_half, "-", fixed = TRUE), "[", 1))
+hCRISPRa_v2_IDs_second_half <- sapply(strsplit(hCRISPRa_v2_IDs_vec, "_[-+]_"), "[[", 2)
+hCRISPRa_v2_location_vec <- as.integer(sapply(strsplit(hCRISPRa_v2_IDs_second_half, "-", fixed = TRUE), "[[", 1))
 
 hCRISPRa_v2_ID_splits <- strsplit(hCRISPRa_v2_IDs_vec, "_", fixed = TRUE)
 hCRISPRa_v2_strand_vec <- vapply(hCRISPRa_v2_ID_splits, function(x) x[x %in% c("-", "+")], "")

@@ -294,7 +294,7 @@ are_empty_columns <- vapply(seq_len(ncol(guides_df)), function(x) all(is.na(guid
 guides_df <- guides_df[, !(are_empty_columns)]
 
 symbols_mat <- do.call(cbind, unique(lapply(seq(1, ncol(guides_df), by = 2),
-                                            function(x) sapply(strsplit(guides_df[, x], "[_ ]"), "[", 1)
+                                            function(x) sapply(strsplit(guides_df[, x], "[_ ]"), "[[", 1)
                                             )
                                      )
                        )
@@ -393,7 +393,7 @@ ReadTwoStateMeltingOutput <- function(file_prefix) {
   all_files <- list.files(file.path(exchange_with_tools_directory, "2) Output from DINAMelt"))
   selected_files <- grep(file_prefix, all_files, fixed = TRUE, value = TRUE)
 
-  file_numbers <- as.integer(sub("file ", "", sapply(strsplit(selected_files, " - ", fixed = TRUE), "[", 2), fixed = TRUE))
+  file_numbers <- as.integer(sub("file ", "", sapply(strsplit(selected_files, " - ", fixed = TRUE), "[[", 2), fixed = TRUE))
   selected_files <- selected_files[order(file_numbers)]
 
   output_mat_list <- lapply(selected_files, function(x) {

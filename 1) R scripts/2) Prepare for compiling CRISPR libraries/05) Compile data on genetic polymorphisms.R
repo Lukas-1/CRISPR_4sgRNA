@@ -37,7 +37,7 @@ CharacterVecToAFList <- function(AF_char_vec, prefix) {
   AF_vec <- sub(paste0(prefix, ".,"), prefix, AF_vec, fixed = TRUE)
 
   AF_splits <- strsplit(AF_vec, ",", fixed = TRUE)
-  AF_1_vec <- as.numeric(sub(prefix, "", sapply(AF_splits, "[", 1), fixed = TRUE))
+  AF_1_vec <- as.numeric(sub(prefix, "", sapply(AF_splits, "[[", 1), fixed = TRUE))
   AF_rest <- lapply(AF_splits, function(x) if (length(x) > 1) as.numeric(x[2:length(x)]) else numeric(0))
 
   AF_list <- mapply(c, as.list(AF_1_vec), AF_rest)
@@ -53,8 +53,8 @@ AF1kGenomes_list <- CharacterVecToAFList(dbSNP_common_raw_df[, "AF_1kGenomes"], 
 TOPMED_list      <- CharacterVecToAFList(dbSNP_common_raw_df[, "AF_TOPMED"], "TOPMED=")
 Kaviar_list      <- CharacterVecToAFList(Kaviar_common_raw_df[, "AF_Kaviar"], "AF=")
 
-AF_1k_vec  <- sapply(AF1kGenomes_list, "[", 1)
-AF_TOPMED_vec <- sapply(TOPMED_list, "[", 1)
+AF_1k_vec  <- sapply(AF1kGenomes_list, "[[", 1)
+AF_TOPMED_vec <- sapply(TOPMED_list, "[[", 1)
 AF_Kaviar_vec <- vapply(Kaviar_list, function(x) 1 - sum(x), numeric(1))
 
 
