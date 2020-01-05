@@ -36,7 +36,7 @@ load(file.path(CRISPRko_RData_directory, "09) Integrate the output from CRISPOR.
 
 are_mapped <- !(is.na(merged_CRISPRko_df[, "Start"]))
 
-mapped_indices <- rep(NA_integer_, length(are_mapped))
+mapped_indices <- rep.int(NA_integer_, length(are_mapped))
 mapped_indices[are_mapped] <- seq_len(sum(are_mapped))
 
 sgRNA_polymorphisms_df <- AllPolymorphisms(merged_CRISPRko_df[are_mapped, ])
