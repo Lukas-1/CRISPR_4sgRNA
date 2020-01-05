@@ -38,8 +38,6 @@ FindIdenticalsgRNAs <- function(entrez_ID, symbol, sgRNA, CRISPR_df) {
 
 ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
 
-  assign("delete_replicates_df", replicates_df, envir = globalenv())
-
   results_df <- replicates_df
 
   unique_symbols <- replicates_df[, "Original_symbol"]
@@ -101,8 +99,6 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     }
   }
   for (column_name in concatenate_columns) {
-    assign("delete_replicates_df", replicates_df, envir = globalenv())
-    assign("delete_column_name", column_name, envir = globalenv())
     character_vec <- unique(replicates_df[, column_name])
     character_vec <- character_vec[!(is.na(character_vec))]
     if (length(character_vec) == 0) {
@@ -193,11 +189,8 @@ ResolveDuplicates <- function(CRISPR_df, concatenate_columns) {
                      )
               )
     }
-
-    assign("delete_num_replicates", num_replicates, envir = globalenv())
+    assign("delete_num_replicates",   num_replicates,   envir = globalenv())
     assign("delete_resolved_df_list", resolved_df_list, envir = globalenv())
-    assign("delete_split_df_list", split_df_list, envir = globalenv())
-
 
     ### Create the results data frame ###
 

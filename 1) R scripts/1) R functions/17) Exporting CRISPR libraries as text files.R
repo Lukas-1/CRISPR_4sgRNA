@@ -151,8 +151,6 @@ FormatForExcel <- function(my_df,
   }
 
   my_df[, "Color"] <- ones_and_zeros_vec + 1L
-
-  assign("delete_my_df", my_df, envir = globalenv())
   return(my_df)
 }
 

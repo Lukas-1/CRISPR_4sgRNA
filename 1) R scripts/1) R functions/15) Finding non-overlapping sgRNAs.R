@@ -45,12 +45,6 @@ CreateCombinations <- function(sub_df_reordered,
     are_preferred <- sub_df_reordered[, "GPP_rank"] %in% 1:10
   }
 
-  assign("delete_sub_df_reordered",     sub_df_reordered,     envir = globalenv())
-  assign("delete_were_included",        were_included,        envir = globalenv())
-  assign("delete_min_space",            min_space,            envir = globalenv())
-  assign("delete_num_sgRNAs",           num_sgRNAs,           envir = globalenv())
-  assign("delete_num_overlaps_allowed", num_overlaps_allowed, envir = globalenv())
-
   combination_indices_mat <- combn(which(were_included), num_sgRNAs)
 
   cut_sites_vec <- sub_df_reordered[, "Cut_location"]
@@ -86,12 +80,7 @@ CreateCombinations <- function(sub_df_reordered,
     }
   )
 
-  assign("delete_combinations_list", combinations_list, envir = globalenv())
-
   combinations_mat <- t(sapply(combinations_list, function(x) unlist(x[3:length(x)])))
-
-  assign("delete_combinations_mat", combinations_mat, envir = globalenv())
-
 
   meet_criteria <- !((combinations_mat[, "Num_homologies"] > 0) %in% TRUE)
   if (!(tolerate_NA_overlaps)) {
@@ -136,8 +125,6 @@ CreateCombinations <- function(sub_df_reordered,
   are_best_combo <- sub_df_reordered[, "Best_combination_rank"] %in% 1
 
   num_overlaps_vec <- rep.int(NA_integer_, nrow(sub_df_reordered))
-  assign("delete_combinations_list_2", combinations_list, envir = globalenv())
-  assign("delete_are_best_combo", are_best_combo, envir = globalenv())
   if (any(are_best_combo)) {
     num_overlaps_vec[are_best_combo] <- combinations_list[[1]][["Overlap_numbers"]]
   }
@@ -182,8 +169,6 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
     return(CRISPR_sub_df)
   }
 
-  assign("delete_CRISPR_sub_df", CRISPR_sub_df, envir = globalenv())
-
   reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df)
   sub_df_reordered <- reordered_list[["reordered_df"]]
   were_mapped <- reordered_list[["were_mapped_vec"]]
@@ -213,9 +198,6 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
     are_GPP_top_24 <- (sub_df_reordered[, "Source"] != "GPP") | (sub_df_reordered[, "GPP_rank"] %in% 1:24)
     were_included <- were_included & are_GPP_top_24
   }
-
-  assign("delete_were_included", were_included, envir = globalenv())
-  assign("delete_CRISPR_sub_df", CRISPR_sub_df, envir = globalenv())
 
   sgRNAs_found <- FALSE
   FoundsgRNA <- function(sub_df) sum(sub_df[, "Best_combination_rank"] %in% 1) >= num_sgRNAs
@@ -309,7 +291,6 @@ PrioritizeNonOverlapping <- function(CRISPR_df, ID_column = "AltTSS_ID", min_ove
                                                            )
                               )
 
-  assign("delete_reordered_df_list", reordered_df_list, envir = globalenv())
   results_df <- do.call(rbind.data.frame, c(reordered_df_list,
                                             list(controls_df),
                                             list(stringsAsFactors = FALSE, make.row.names = FALSE)

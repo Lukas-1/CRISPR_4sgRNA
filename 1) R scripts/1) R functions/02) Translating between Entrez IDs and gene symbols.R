@@ -165,10 +165,10 @@ FilterDfEntrezSymbol <- function(gene_df, entrez_IDs, symbols_as_backup) {
     return(NULL)
   } else {
     if (any(duplicated(gene_df[are_this_gene, ]))) {
-      assign("delete_gene_df", gene_df, envir = globalenv())
       assign("delete_gene_sub_df", gene_df[are_this_gene, , drop = FALSE], envir = globalenv())
-      assign("delete_are_this_gene", are_this_gene, envir = globalenv())
-      assign("delete_entrez_IDs", entrez_IDs, envir = globalenv())
+      assign("delete_gene_df",           gene_df,           envir = globalenv())
+      assign("delete_are_this_gene",     are_this_gene,     envir = globalenv())
+      assign("delete_entrez_IDs",        entrez_IDs,        envir = globalenv())
       assign("delete_symbols_as_backup", symbols_as_backup, envir = globalenv())
       stop("Duplicated rows were found by the FilterDfEntrezSymbol function!")
     }
