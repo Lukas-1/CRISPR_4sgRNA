@@ -105,7 +105,7 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
                     -(CRISPR_sub_df[, "GPP_rank"]),
                     decreasing = TRUE
                     )
-  my_rank <- match(seq_len(nrow(CRISPR_sub_df)), my_order)
+  my_rank <- match(seq_along(my_order), my_order)
   return(my_rank)
 }
 

@@ -125,6 +125,7 @@ FormatForExcel <- function(my_df,
   }
 
   if (is_CRISPRa) {
+    # This is to prevent the cell value "1/2/3" from being converted into a date by Excel
     my_df[, "Calabrese_rank"] <- gsub("/", " or ", my_df[, "Calabrese_rank"], fixed = TRUE)
     my_df[, "Calabrese_rank"] <- sub(" or ", ", ", my_df[, "Calabrese_rank"], fixed = TRUE)
   }

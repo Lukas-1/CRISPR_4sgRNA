@@ -1,6 +1,13 @@
 ### 9th September 2019 ###
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
+
 
 # Import packages and source code -----------------------------------------
 
@@ -312,10 +319,24 @@ randomized_guide_IDs <- do.call(paste, c(as.list(TF_sgRNA_plates_df_copy[, ID_pa
 original_guide_IDs <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID_paste_all_columns]), list(sep = "__")))
 
 original_matches <- match(randomized_guide_IDs, original_guide_IDs)
-if (any(is.na(original_matches))) {
-  warning("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
+
+if (legacy_mode) {
+  if (any(is.na(original_matches))) {
+    warning("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
+  }
+  source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
+  are_controls <- TF_sgRNA_plates_df[, "Is_control"] == "Yes"
+  legacy_order <- order(ifelse(are_controls, NA, original_matches),
+                        ifelse(are_controls, match(TF_sgRNA_plates_df[, "Calabrese_rank"], c("1/2/3", "4/5/6")), NA),
+                        ifelse(are_controls, match(TF_sgRNA_plates_df[, "hCRISPRa_v2_rank"], c("Top5", "Supp5")), NA)
+                        )
+  TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[legacy_order, ]
+} else {
+  if (any(is.na(original_matches))) {
+    stop("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
+  }
+  TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
 }
-TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
 
 
 
@@ -384,22 +405,6 @@ ScatterPlot(merged_replaced_candidates_CRISPRa_df[, "GuideScan_Num_3MM"], merged
             )
 dev.off()
 
-
-
-
-
-
-# old_TF_sgRNA_plates_df <- read.table(file.path("C:/Users/lukas/Desktop/CRISPRa/TF library plate layout", "CRISPRa_TF_randomized_all_4_guides_merged.tsv"),
-#                                      stringsAsFactors = FALSE, row.names = NULL, quote = "", fill = TRUE, header = TRUE, sep = "\t"
-#                                      )
-#
-# legacy_targeting_TF_df <- old_TF_sgRNA_plates_df[seq_len(nrow(old_TF_sgRNA_plates_df) - 80), c("Gene_symbol", "Entrez_ID", "TSS_ID", "sgRNA_sequence")]
-# legacy_targeting_TF_df[, "TSS_ID"] <- ifelse(legacy_targeting_TF_df[, "TSS_ID"] == "", NA_character_, legacy_targeting_TF_df[, "TSS_ID"])
-# legacy_controls_TF_df <- old_TF_sgRNA_plates_df[(nrow(old_TF_sgRNA_plates_df) - 79):nrow(old_TF_sgRNA_plates_df) , c("sgRNA_sequence", "Source", "Calabrese_rank", "hCRISPRa_v2_rank")]
-#
-# save(list = c("legacy_targeting_TF_df", "legacy_controls_TF_df"),
-#      file = file.path(CRISPRa_RData_directory, "Legacy random selection of controls and ordering of wells for CRISPRa.RData")
-#      )
 
 
 
