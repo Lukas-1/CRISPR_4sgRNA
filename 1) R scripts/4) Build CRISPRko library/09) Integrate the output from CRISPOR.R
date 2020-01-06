@@ -34,12 +34,23 @@ load(file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideSca
 
 
 
+# Identify files to read in -----------------------------------------------
+
+output_files   <- grep("^CRISPOR_output_", list.files(CRISPOR_files_directory), value = TRUE)
+are_FASTA      <- grepl("FASTA", output_files, fixed = TRUE)
+are_offtargets <- grepl("offs\\.tsv", output_files)
+
+
+
+
+
 # Read in data ------------------------------------------------------------
 
-TFs_CRISPOR_bed_df              <- ReadCRISPOROutput("Output_from_CRISPOR_CRISPRko_TFs.tsv")
-TFs_CRISPOR_FASTA_df            <- ReadCRISPOROutput("Output_from_CRISPOR_FASTA_CRISPRko_TFs.tsv")
-TFs_CRISPOR_offtargets_bed_df   <- ReadCRISPOROutput("Output_from_CRISPOR_CRISPRko_TFs_offs.tsv")
-TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutput("Output_from_CRISPOR_FASTA_CRISPRko_TFs_offs.tsv")
+TFs_CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files[(!(are_FASTA)) & !(are_offtargets)])
+TFs_CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files[are_FASTA & !(are_offtargets)])
+TFs_CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files[(!(are_FASTA)) & are_offtargets], show_messages = TRUE)
+TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files[are_FASTA & are_offtargets])
+
 
 
 

@@ -2,10 +2,19 @@
 
 
 
+# Import packages and source code -----------------------------------------
+
+general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))            # For EntrezIDsToSymbols (for the status message)
+source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria
+source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))         # For FormatFixedWidthInteger
+
+
+
 
 # Define functions --------------------------------------------------------
 
-FindProblematicEntrezs <- function(CRISPR_df, TF_summary_df) {
+FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
 
   are_top_four <- CRISPR_df[, "Rank"] %in% 1:4
 
@@ -13,10 +22,10 @@ FindProblematicEntrezs <- function(CRISPR_df, TF_summary_df) {
   meet_criteria <- MeetCriteria(CRISPR_df)
 
   are_problematic_sgRNAs <- are_top_four & (have_overlaps | !(meet_criteria))
-  submit_entrezs <- CRISPR_df[are_problematic_sgRNAs, "Entrez_ID"]
+  submit_entrezs <- unlist(strsplit(CRISPR_df[are_problematic_sgRNAs, "Entrez_ID"], ", ", fixed = TRUE))
 
-  are_problematic_genes <- !(TF_summary_df[, "Spacing"] %in% paste0(seq(4, 100, by = 4), "*50"))
-  submit_entrezs_genes <- TF_summary_df[are_problematic_genes, "Entrez_ID"]
+  are_problematic_genes <- !(overview_df[, "Spacing"] %in% paste0(seq(4, 100, by = 4), "*50"))
+  submit_entrezs_genes <- overview_df[are_problematic_genes, "Entrez_ID"]
 
   already_GPP_entrezs <- unique(CRISPR_df[grepl("GPP", CRISPR_df[, "Source"], fixed = TRUE), "Entrez_ID"])
 
@@ -72,11 +81,14 @@ BuildDfForGPP <- function(submit_entrezs) {
 
 
 
-WriteGPPDf <- function(submit_df, GPP_input_directory) {
+WriteGPPDf <- function(submit_df, chunk_ID, GPP_input_directory, input_prefix = "") {
   num_files <- length(unique(submit_df[, "File_number"]))
   for (i in seq_len(num_files)) {
     are_this_file <- submit_df[, "File_number"] == i
-    file_name <- paste0("GPP_sgRNA_designer_input_file_", submit_df[are_this_file, "File_name"][[1]], ".txt")
+    file_name <- paste0("GPPsg_", input_prefix, "input__chunk_", chunk_ID,
+                        "__file_", submit_df[are_this_file, "File_name"][[1]],
+                        ".txt"
+                        )
     write.table(submit_df[are_this_file, "Entrez_ID"],
                 file = file.path(GPP_input_directory, file_name),
                 quote = FALSE, row.names = FALSE, col.names = FALSE

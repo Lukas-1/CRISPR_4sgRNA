@@ -116,8 +116,18 @@ MakeFASTAvec <- function(use_FASTA_df) {
 
 # Functions for processing output from CRISPOR ----------------------------
 
-ReadCRISPOROutput <- function(file_name, use_fread = TRUE) {
+ReadCRISPOROutputFiles <- function(file_names, use_fread = TRUE, show_messages = FALSE) {
+  df_list <- lapply(file_names, function(x) ReadCRISPOROutput(x, use_fread, show_messages))
+  results_df <- do.call(rbind.data.frame, c(df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  return(results_df)
+}
+
+
+ReadCRISPOROutput <- function(file_name, use_fread = TRUE, show_messages = FALSE) {
   # Requires 'CRISPOR_files_directory' in the global workspace
+  if (show_messages) {
+    message(paste0("Reading the file: '", file_name, "'..."))
+  }
   file_path <- file.path(CRISPOR_files_directory, file_name)
   if (use_fread) {
     results_df <- data.table::fread(file = file_path, sep = "\t",
@@ -130,8 +140,12 @@ ReadCRISPOROutput <- function(file_name, use_fread = TRUE) {
                              stringsAsFactors = FALSE, check.names = FALSE
                              )
   }
+  if (show_messages) {
+    message("")
+  }
   return(results_df)
 }
+
 
 
 SummarizeOfftargets <- function(offtargets_df) {
@@ -260,11 +274,8 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
   for (column_name in setdiff(colnames(offtargets_df), "Location_ID")) {
     CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
   }
-
   return(CRISPR_df)
 }
-
-
 
 
 
