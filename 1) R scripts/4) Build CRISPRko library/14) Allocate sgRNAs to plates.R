@@ -33,7 +33,6 @@ load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription 
 
 
 
-
 # Define the sublibrary ---------------------------------------------------
 
 merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]

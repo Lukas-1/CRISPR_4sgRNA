@@ -33,7 +33,7 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 load(file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")) # for candidates_CRISPRa_df
 load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData"))
 
 
