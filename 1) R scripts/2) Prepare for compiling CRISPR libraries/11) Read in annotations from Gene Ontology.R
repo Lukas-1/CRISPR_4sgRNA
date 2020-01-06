@@ -10,12 +10,11 @@
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
-CRISPR_input_directory   <- file.path(CRISPR_root_directory, "2) Input data")
-general_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
+CRISPR_root_directory   <- "~/CRISPR"
+CRISPR_input_directory  <- file.path(CRISPR_root_directory, "2) Input data")
+general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
 
 
 
@@ -23,7 +22,6 @@ general_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files", "
 # Read in data ------------------------------------------------------------
 
 # Downloaded from https://www.ensembl.org/biomart/martview
-
 BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2019-08-11_Gene_Ontology.txt"),
                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE,
                             fill = TRUE
@@ -93,7 +91,7 @@ CountNumGenes("transmembrane receptor protein tyrosine kinase activity")
 # Save data ---------------------------------------------------------------
 
 save(list = "BioMart_GO_df",
-     file = file.path(general_RData_directory, "10) Read in annotations from Gene Ontology.RData")
+     file = file.path(general_RData_directory, "11) Read in annotations from Gene Ontology.RData")
      )
 
 

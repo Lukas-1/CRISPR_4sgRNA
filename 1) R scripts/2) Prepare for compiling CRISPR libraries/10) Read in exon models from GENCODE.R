@@ -23,7 +23,6 @@ general_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files", "
 
 # Downloaded from ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/gencode.v32.annotation.gff3.gz
 # on 6 September 2019
-
 GENCODE_original_df <- read.table(file.path(CRISPR_input_directory, "Human genome", "GENCODE", "gencode.v32.annotation.gff3"),
                                   sep = "\t", quote = "", stringsAsFactors = FALSE, header = FALSE, row.names = NULL,
                                   fill = TRUE, check.names = FALSE
@@ -61,7 +60,7 @@ GENCODE_df <- data.frame(GENCODE_original_df[, !(colnames(GENCODE_original_df) %
 # Save data ---------------------------------------------------------------
 
 save(list = "GENCODE_df",
-     file = file.path(general_RData_directory, "09) Read in exon models from GENCODE.RData")
+     file = file.path(general_RData_directory, "10) Read in exon models from GENCODE.RData")
      )
 
 
