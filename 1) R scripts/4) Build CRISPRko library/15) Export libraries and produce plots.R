@@ -26,7 +26,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library.RData"))
+load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "14) Allocate sgRNAs to plates.RData"))
 
 
@@ -124,7 +124,7 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 # Subset data / define sublibraries ---------------------------------------
 
-merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_summary_df[, "Combined_ID"], ]
+merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
 
 
 

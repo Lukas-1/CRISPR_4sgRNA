@@ -155,7 +155,7 @@ replaced_curated_CRISPRa_df <- merged_replaced_CRISPRa_df[is_curated, ]
 
 merged_replaced_candidates_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% candidates_CRISPRa_df[, "Combined_ID"], ]
 
-replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_summary_df[, "Combined_ID"], ]
+replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
 
 
 

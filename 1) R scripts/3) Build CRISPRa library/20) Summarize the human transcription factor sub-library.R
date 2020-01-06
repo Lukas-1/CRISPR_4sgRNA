@@ -52,19 +52,19 @@ all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[, "Combined_ID"],
 
 
 
-# Filter TF_summary_df for only bona fide transcription factors -----------
+# Filter TF_overview_df for only bona fide transcription factors ----------
 
 TF_combined_IDs <- all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_ID"]
 
-TF_summary_df <- all_TF_summary_df[all_TF_summary_df[, "Combined_ID"] %in% TF_combined_IDs, colnames(all_TF_summary_df) != "Is_TF"]
-rownames(TF_summary_df) <- NULL
+TF_overview_df <- all_TF_summary_df[all_TF_summary_df[, "Combined_ID"] %in% TF_combined_IDs, colnames(all_TF_summary_df) != "Is_TF"]
+rownames(TF_overview_df) <- NULL
 
-table(TF_summary_df[, "Num_total"] == 0)
-table(TF_summary_df[, "Num_total"] < 4)
-table(TF_summary_df[, "Num_meeting_criteria"] < 4)
+table(TF_overview_df[, "Num_total"] == 0)
+table(TF_overview_df[, "Num_total"] < 4)
+table(TF_overview_df[, "Num_meeting_criteria"] < 4)
 
-# table(TF_summary_df[(TF_summary_df[, "Num_total"] > 0) & (TF_summary_df[, "Num_meeting_criteria"] < 4), "Submitted_to_GuideScan"])
-# TF_summary_df[(TF_summary_df[, "Num_total"] > 0) & (TF_summary_df[, "Num_meeting_criteria"] < 4) & (TF_summary_df[, "Submitted_to_GuideScan"] == "No"), ]
+# table(TF_overview_df[(TF_overview_df[, "Num_total"] > 0) & (TF_overview_df[, "Num_meeting_criteria"] < 4), "Submitted_to_GuideScan"])
+# TF_overview_df[(TF_overview_df[, "Num_total"] > 0) & (TF_overview_df[, "Num_meeting_criteria"] < 4) & (TF_overview_df[, "Submitted_to_GuideScan"] == "No"), ]
 
 
 
@@ -82,7 +82,7 @@ columns_for_excel <- c(
   "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO", "Is_C2H2_ZF"
 )
 
-TF_summary_excel_df <- TF_summary_df[, columns_for_excel]
+TF_summary_excel_df <- TF_overview_df[, columns_for_excel]
 TF_summary_excel_df[, "Num_total"] <- ifelse(is.na(TF_summary_excel_df[, "Num_total"]), 0L, TF_summary_excel_df[, "Num_total"])
 
 for (i in seq_len(ncol(TF_summary_excel_df))) {
@@ -100,8 +100,8 @@ write.table(TF_summary_excel_df,
 
 # Save data ---------------------------------------------------------------
 
-save(list = "TF_summary_df",
-     file = file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library.RData")
+save(list = "TF_overview_df",
+     file = file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library - TF_overview_df.RData")
      )
 
 

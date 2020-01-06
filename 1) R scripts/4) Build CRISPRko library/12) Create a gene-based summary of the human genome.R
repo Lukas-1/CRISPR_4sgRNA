@@ -100,6 +100,16 @@ write.table(sgRNAs_overview_excel_df,
 
 
 
+# Save data ---------------------------------------------------------------
+
+save(list = "sgRNAs_overview_df",
+     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
+     )
+
+
+
+
+
 
 
 

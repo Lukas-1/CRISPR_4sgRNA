@@ -27,7 +27,7 @@ CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library.RData"))
+load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 
 
 
@@ -36,7 +36,7 @@ load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription 
 
 # Define the sublibrary ---------------------------------------------------
 
-merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_summary_df[, "Combined_ID"], ]
+merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
 
 
 
@@ -66,7 +66,7 @@ rownames(top4_df) <- NULL
 
 # Identify problematic genes that do not meet all criteria ----------------
 
-entrez_sets <- ReturnProblematicGenes(TF_summary_df)
+entrez_sets <- ReturnProblematicGenes(TF_overview_df)
 lengths(entrez_sets)
 
 
