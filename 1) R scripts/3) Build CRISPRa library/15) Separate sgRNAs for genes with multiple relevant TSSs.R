@@ -30,9 +30,11 @@ load(file.path(CRISPRa_RData_directory, "14) Find overlaps between sgRNA sequenc
 
 
 
+
 # Find combinations of non-overlapping sgRNAs -----------------------------
 
-merged_replaced_CRISPRa_df <- AllocateTSSforAllGenes(merged_replaced_CRISPRa_df)
+merged_replaced_CRISPRa_df <- AllocateTSSforAllGenes(merged_replaced_CRISPRa_df, parallel_mode = TRUE)
+
 
 
 

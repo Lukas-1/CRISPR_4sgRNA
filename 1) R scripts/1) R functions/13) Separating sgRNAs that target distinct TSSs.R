@@ -97,8 +97,6 @@ SeparateByTSS <- function(CRISPR_sub_df) {
   )
 
   new_order <- order(match(results_df[, "Allocated_TSS"], results_df[, "Allocated_TSS"]))
-                     #results_df[, "Rank"]
-                     # )
 
   result_df <- results_df[new_order, ]
   rownames(result_df) <- NULL
@@ -160,11 +158,31 @@ TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
 
 
 
-AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE) {
+AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, parallel_mode = TRUE, num_cores = NULL) {
 
   are_controls <- CRISPR_df[, "Is_control"] == "Yes"
   combined_IDs <- unique(CRISPR_df[!(are_controls), "Combined_ID"])
-  reordered_df_list <- lapply(combined_IDs, function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE]))
+
+  if (parallel_mode) {
+    if (is.null(num_cores)) {
+      num_cores <- parallel::detectCores() - 2
+    }
+    cl <- parallel::makeCluster(num_cores)
+    parallel::clusterExport(cl,
+                            varlist = c("SeparateByTSS", "MessageID", "ReorderSubDfByLocation",
+                                        "NumberTSSs", "AllocateTSSs", "CRISPR_df"
+                                        ),
+                            envir = environment()
+                            )
+    reordered_df_list <- parallel::parLapply(cl,
+                                             combined_IDs,
+                                             function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE])
+                                             )
+    parallel::stopCluster(cl)
+
+  } else {
+    reordered_df_list <- lapply(combined_IDs, function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE]))
+  }
 
   if (any(are_controls)) {
     controls_df <- CRISPR_df[are_controls, ]

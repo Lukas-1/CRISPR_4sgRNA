@@ -272,24 +272,57 @@ NonOverlappingDfForControls <- function(CRISPR_df) {
 
 GetUniqueIDs <- function(CRISPR_df, ID_column = "AltTSS_ID") {
   are_controls <- CRISPR_df[, "Is_control"] == "Yes"
-  combined_IDs <- unique(CRISPR_df[!(are_controls), ID_column])
-  return(combined_IDs)
+  unique_IDs <- unique(CRISPR_df[!(are_controls), ID_column])
+  return(unique_IDs)
 }
 
 
 
 
-PrioritizeNonOverlapping <- function(CRISPR_df, ID_column = "AltTSS_ID", min_overlaps = 0:10, min_spaces = 50L, only_top_24_GPP = TRUE) {
+PrioritizeNonOverlapping <- function(CRISPR_df,
+                                     ID_column       = "AltTSS_ID",
+                                     min_overlaps    = 0:10,
+                                     min_spaces      = 50L,
+                                     only_top_24_GPP = FALSE,
+                                     parallel_mode   = TRUE,
+                                     num_cores       = NULL
+                                     ) {
 
   unique_IDs <- GetUniqueIDs(CRISPR_df, ID_column)
   controls_df <- NonOverlappingDfForControls(CRISPR_df)
 
-  reordered_df_list <- lapply(unique_IDs,
-                              function(x) SortCombinations(CRISPR_df[CRISPR_df[, ID_column] == x, , drop = FALSE],
-                                                           min_spaces = min_spaces, only_top_24_GPP = only_top_24_GPP,
-                                                           min_overlaps = min_overlaps
-                                                           )
-                              )
+  if (parallel_mode) {
+    if (is.null(num_cores)) {
+      num_cores <- parallel::detectCores() - 2
+    }
+    cl <- parallel::makeCluster(num_cores)
+    parallel::clusterExport(cl,
+                            varlist = c("SortCombinations", "CreateCombinations", "MessageID",
+                                        "ReorderSubDfByLocation", "NumHomologousPairs", "SplitIntoSubstrings",
+                                        "CRISPR_df",
+                                        "preferred_AF_max_column", "SNP_frequency_cutoff",
+                                        "min_overlaps", "min_spaces", "only_top_24_GPP"
+                                        ),
+                            envir = environment()
+                            )
+    reordered_df_list <- parallel::parLapply(cl,
+                                             unique_IDs,
+                                             function(x) SortCombinations(CRISPR_df[CRISPR_df[, ID_column] == x, , drop = FALSE],
+                                                                          min_overlaps    = min_overlaps,
+                                                                          min_spaces      = min_spaces,
+                                                                          only_top_24_GPP = only_top_24_GPP
+                                                                          )
+                                             )
+    parallel::stopCluster(cl)
+
+  } else {
+    reordered_df_list <- lapply(unique_IDs,
+                                function(x) SortCombinations(CRISPR_df[CRISPR_df[, ID_column] == x, , drop = FALSE],
+                                                             min_spaces = min_spaces, only_top_24_GPP = only_top_24_GPP,
+                                                             min_overlaps = min_overlaps
+                                                             )
+                                )
+  }
 
   results_df <- do.call(rbind.data.frame, c(reordered_df_list,
                                             list(controls_df),
