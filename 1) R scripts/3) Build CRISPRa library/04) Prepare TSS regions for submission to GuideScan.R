@@ -46,7 +46,6 @@ candidates_GuideScan_input_vec <- unique(TSSStringForGuideScan(candidates_TSS_df
 
 
 
-
 # Convert TSS data to GuideScan input for all genes -----------------------
 
 TSS_ranges_df <- TSSRangesForGuideScan(combined_TSS_CRISPRa_df)
@@ -54,9 +53,6 @@ combined_TSS_CRISPRa_df[, "GuideScan_input"] <- TSSStringForGuideScan(combined_T
 combined_TSS_CRISPRa_df[, "Region_length"] <- TSS_ranges_df[, "End"] - TSS_ranges_df[, "Start"]
 
 unique_GuideScan_input_vec <- unique(combined_TSS_CRISPRa_df[, "GuideScan_input"])
-
-
-
 
 
 

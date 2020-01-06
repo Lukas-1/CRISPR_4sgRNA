@@ -62,22 +62,22 @@ combined_IDs <- unique(CRISPR_df[CRISPR_df[, "Is_control"] %in% "No", "Combined_
 controls_df <- NonOverlappingDfForControls(CRISPR_df)
 
 
-cl <- parallel:::makeCluster(10)
-parallel:::clusterExport(cl, list("SortCombinations", "CreateCombinations", "MessageID",
+cl <- parallel::makeCluster(10)
+parallel::clusterExport(cl, list("SortCombinations", "CreateCombinations", "MessageID",
                                   "ReorderSubDfByLocation", "NumHomologousPairs", "SplitIntoSubstrings",
                                   "CRISPR_df",
                                   "preferred_AF_max_column", "SNP_frequency_cutoff"
                                   )
                          )
-reordered_df_list <- parallel:::parLapply(cl,
-                                          combined_IDs,
-                                          function(x) SortCombinations(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE],
-                                                                       min_overlaps    = 0:10,
-                                                                       min_spaces      = 50L,
-                                                                       only_top_24_GPP = FALSE
-                                                                       )
-                                          )
-parallel:::stopCluster(cl)
+reordered_df_list <- parallel::parLapply(cl,
+                                         combined_IDs,
+                                         function(x) SortCombinations(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE],
+                                                                      min_overlaps    = 0:10,
+                                                                      min_spaces      = 50L,
+                                                                      only_top_24_GPP = FALSE
+                                                                      )
+                                         )
+parallel::stopCluster(cl)
 
 
 results_df <- do.call(rbind.data.frame, c(reordered_df_list,

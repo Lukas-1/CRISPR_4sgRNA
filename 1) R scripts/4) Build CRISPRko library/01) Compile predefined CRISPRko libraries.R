@@ -61,7 +61,10 @@ TKOv3_df <- data.frame(read_excel(CRISPRko_TKOv3_path), stringsAsFactors = FALSE
 GPP_CRISPRko_file_names <- list.files(GPP_CRISPRko_path)
 GPP_CRISPRko_df_list <- sapply(GPP_CRISPRko_file_names, function (x) {
   GPP_CRISPRko_colnames <- scan(file = file.path(GPP_CRISPRko_path, x), nlines = 1, what = "character", sep = "\t")
-  GPP_CRISPRko_df <- read.table(file.path(GPP_CRISPRko_path, x), stringsAsFactors = FALSE, sep = "\t", quote = "", header = FALSE, fill = TRUE, skip = 5)
+  GPP_CRISPRko_df <- read.table(file.path(GPP_CRISPRko_path, x),
+                                sep = "\t", quote = "", header = FALSE,
+                                fill = TRUE, skip = 5, stringsAsFactors = FALSE
+                                )
   colnames(GPP_CRISPRko_df) <- GPP_CRISPRko_colnames
   return(GPP_CRISPRko_df)
 }, simplify = FALSE)

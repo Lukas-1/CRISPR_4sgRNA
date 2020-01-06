@@ -74,7 +74,10 @@ first_trial_df <- read.table(file.path(gene_lists_directory, "Trial_genes.txt"),
 GPP_CRISPRa_file_names <- list.files(GPP_CRISPRa_path)
 GPP_CRISPRa_df_list <- sapply(GPP_CRISPRa_file_names, function (x) {
   GPP_CRISPRa_colnames <- scan(file = file.path(GPP_CRISPRa_path, x), nlines = 1, what = "character", sep = "\t")
-  GPP_CRISPRa_df <- read.table(file.path(GPP_CRISPRa_path, x), stringsAsFactors = FALSE, sep = "\t", quote = "", header = FALSE, fill = TRUE, skip = 5)
+  GPP_CRISPRa_df <- read.table(file.path(GPP_CRISPRa_path, x),
+                               sep = "\t", quote = "", header = FALSE,
+                               skip = 5, fill = TRUE, stringsAsFactors = FALSE
+                               )
   colnames(GPP_CRISPRa_df) <- GPP_CRISPRa_colnames
   return(GPP_CRISPRa_df)
 }, simplify = FALSE)
@@ -296,12 +299,17 @@ any(duplicated(new_Calabrese_df[, "sgRNA_sequence"]))
 any(is.na(new_Calabrese_df[, "Entrez_ID"]) & (new_Calabrese_df[, "Original_symbol"] == ""))
 
 combined_df <- rbind.data.frame(manual_df, new_Calabrese_df, new_hCRISPRa_v2_df, new_GPP_CRISPRa_df, stringsAsFactors = FALSE, make.row.names = FALSE)
+are_controls <- combined_df[, "Is_control"] == "Yes"
 
 control_names_map <- c("CONTROL" = "Control", "NEGATIVE_CONTROL" = "Control", "NO-TARGET" = "No-target")
-combined_df[combined_df[, "Is_control"] == "Yes", "Original_symbol"] <- control_names_map[combined_df[combined_df[, "Is_control"] == "Yes", "Original_symbol"]]
+combined_df[are_controls, "Original_symbol"] <- control_names_map[combined_df[are_controls, "Original_symbol"]]
 
-combined_df[, "Combined_ID"] <- ifelse(combined_df[, "Is_control"] == "Yes", "Control",
-                                       ifelse(is.na(combined_df[, "Entrez_ID"]), toupper(combined_df[, "Original_symbol"]), combined_df[, "Entrez_ID"])
+combined_df[, "Combined_ID"] <- ifelse(are_controls,
+                                       "Control",
+                                       ifelse(is.na(combined_df[, "Entrez_ID"]),
+                                              toupper(combined_df[, "Original_symbol"]),
+                                              combined_df[, "Entrez_ID"]
+                                              )
                                        )
 
 if (legacy_mode) {
@@ -318,7 +326,9 @@ if (legacy_mode) {
 
 sgID_vec <- paste0(CRISPRa_df[, "Combined_ID"], "__", toupper(CRISPRa_df[, "sgRNA_sequence"]))
 num_occurrences <- table(sgID_vec)[sgID_vec]
-have_duplications_sgRNA_list <- split(CRISPRa_df[num_occurrences > 1, ], factor(sgID_vec[num_occurrences > 1], levels = unique(sgID_vec[num_occurrences > 1])))
+have_duplications_sgRNA_list <- split(CRISPRa_df[num_occurrences > 1, ],
+                                      factor(sgID_vec[num_occurrences > 1], levels = unique(sgID_vec[num_occurrences > 1]))
+                                      )
 
 
 

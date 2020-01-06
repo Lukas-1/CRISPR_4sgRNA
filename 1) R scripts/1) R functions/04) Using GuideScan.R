@@ -2,13 +2,6 @@
 
 
 
-
-# Import packages and source code -----------------------------------------
-
-library("data.table") # For data.table::fread (optional)
-
-
-
 # Define functions --------------------------------------------------------
 
 TSSRangesForGuideScan <- function(TSS_df, TSS_range = 1202L, total_range = (1000L * 1000L - 2L)) {

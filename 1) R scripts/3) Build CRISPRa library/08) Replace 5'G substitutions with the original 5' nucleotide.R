@@ -59,7 +59,7 @@ Exchange5PrimeG <- function(CRISPR_df) {
     ranges   = IRanges(start = CRISPR_df[are_5prime_G, "Start"], end = CRISPR_df[are_5prime_G, "End"]),
     strand   = CRISPR_df[are_5prime_G, "Strand"]
   )
-  nucleotide_5p_vec <- substr(as.character(motifRG:::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38)), 1, 1)
+  nucleotide_5p_vec <- substr(as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38)), 1, 1)
   CRISPR_df[, "Exchanged_5pG"] <- ifelse(are_5prime_G, "Yes", CRISPR_df[, "Exchanged_5pG"])
   CRISPR_df[are_5prime_G, "sgRNA_sequence"] <- paste0(nucleotide_5p_vec,
                                                       substr(CRISPR_df[are_5prime_G, "sgRNA_sequence"], 2, nchar(CRISPR_df[are_5prime_G, "sgRNA_sequence"]))

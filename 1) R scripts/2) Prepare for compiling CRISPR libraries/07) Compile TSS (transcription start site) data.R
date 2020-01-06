@@ -409,7 +409,9 @@ BioMart_summary_df <- do.call(rbind.data.frame, c(BioMart_summary_list, list(str
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("combined_TSS_df", "BioMart_filtered_df", "FANTOM5_filtered_df", "combined_TSS_summary_df", "BioMart_summary_df", "FANTOM5_summary_df"),
+save(list = c("combined_TSS_df", "BioMart_filtered_df", "FANTOM5_filtered_df",
+              "combined_TSS_summary_df", "BioMart_summary_df", "FANTOM5_summary_df"
+              ),
      file = file.path(general_RData_directory, "07) Compile TSS (transcription start site) data.RData")
      )
 

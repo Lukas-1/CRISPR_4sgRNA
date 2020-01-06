@@ -80,7 +80,8 @@ hCRISPRa_v2_strand_vec <- vapply(hCRISPRa_v2_ID_splits, function(x) x[x %in% c("
 
 unique_entrez_ID_strings <- unique(CRISPRa_df[have_locations, "Entrez_ID"])
 expanded_entrez_IDs_df <- ExpandList(strsplit(unique_entrez_ID_strings, ", ", fixed = TRUE))
-expanded_entrez_IDs_df[, "Chromosome"] <- entrez_to_symbol_df[match(expanded_entrez_IDs_df[, "Value"], entrez_to_symbol_df[, "Entrez_ID"]), "Chromosome"]
+entrez_matches <- match(expanded_entrez_IDs_df[, "Value"], entrez_to_symbol_df[, "Entrez_ID"])
+expanded_entrez_IDs_df[, "Chromosome"] <- entrez_to_symbol_df[entrez_matches, "Chromosome"]
 chromosomes_list <- split(expanded_entrez_IDs_df[, "Chromosome"], expanded_entrez_IDs_df[, "List_index"])
 chromosomes_list <- lapply(chromosomes_list, function(x) sort(unique(unlist(strsplit(x, ", ", fixed = TRUE), use.names = FALSE))))
 
@@ -270,26 +271,6 @@ if (legacy_mode) {
 save(list = "CRISPRa_df",
      file = file.path(CRISPRa_RData_directory, "02) Extract the original sequences for sgRNAs from hCRISPRa-v2 - CRISPRa_df.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
