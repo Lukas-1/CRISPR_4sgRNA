@@ -5,6 +5,8 @@
 
 # Import packages and source code -----------------------------------------
 
+library("parallel")
+
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 
 source(file.path(general_functions_directory, "09) Constants and settings.R"))

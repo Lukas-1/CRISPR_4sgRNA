@@ -13,6 +13,7 @@ library("motifRG")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R")) # For ExpandList
 source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R"))
+source(file.path(general_functions_directory, "09) Constants and settings.R")) # For SNP_column_names
 
 
 
@@ -54,12 +55,9 @@ RetrieveSequences <- function(ranges_df) {
 
 
 GetNGGPAM <- function(ranges_df) {
-
   CheckRangesDf(ranges_df)
-
   start_vec <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 1L, ranges_df[, "Start"] - 3L)
   end_vec   <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "Start"] - 1L)
-
   GRanges_object <- GRanges(
     seqnames = ranges_df[, "Chromosome"],
     ranges   = IRanges(start = start_vec, end = end_vec),
@@ -106,11 +104,9 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
     "Num_genes"   = lengths(entrezs_list),
     stringsAsFactors = FALSE
   )
-
   if ("distance" %in% colnames(hits_df)) {
     results_df[, "Distance"] <- hits_df[unique(match(hits_df[, "queryHits"], hits_df[, "queryHits"])), "distance"]
   }
-
   match_matches_vec <- match(seq_len(num_queries), as.integer(names(entrezs_list)))
   results_df <- results_df[match_matches_vec, ]
   rownames(results_df) <- NULL
@@ -123,7 +119,6 @@ FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GR
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
   message("Finding genes that overlap with the specified genomic ranges...")
-
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
   hits_object <- findOverlaps(GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand, select = "all")
@@ -219,6 +214,7 @@ PasteIndices <- function(found_seq_df, indices_list, column_name, use_separator)
 
 
 SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_separator = "; ") {
+  # Requires the 'SNP_column_names' variable in the global environment
 
   are_0MM       <- found_seq_df[, "Num_MM"] == 0
   # are_old_MM5primeG <- !(are_0MM) & (substr(found_seq_df[, "Sequence"], 2, nchar(found_seq_df[, "Sequence"])) == substr(found_seq_df[, "Reference"], 2, nchar(found_seq_df[, "Reference"])))
@@ -293,19 +289,9 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     }
   }, integer(1))
 
+  found_SNP_column_names <- intersect(SNP_column_names, colnames(found_seq_df))
 
-  SNP_column_names <- c(
-    "SNP_IDs_vcf",     "SNP_AFs_1kGenomes", "SNP_AF_max_1kGenomes", "SNP_AF_sum_1kGenomes",
-    "SNP_AFs_TOPMED",  "SNP_AF_sum_TOPMED", "SNP_AF_max_TOPMED",
-    "SNP_AFs_Kaviar",  "SNP_AF_sum_Kaviar", "SNP_AF_max_Kaviar",
-    "SNP_IDs_1kG_ph1", "SNP_AFs_1kG_ph1",   "SNP_AF_max_1kG_ph1",   "SNP_AF_sum_1kG_ph1",
-    "SNP_IDs_1kG_ph3", "SNP_AFs_1kG_ph3",   "SNP_AF_max_1kG_ph3",   "SNP_AF_sum_1kG_ph3",
-    "SNP_IDs_gnomAD",  "SNP_AFs_gnomAD",    "SNP_AF_max_gnomAD",    "SNP_AF_sum_gnomAD"
-  )
-  SNP_column_names <- c(paste0("sgRNA_", SNP_column_names), paste0("PAM_", SNP_column_names), paste0("all23_", SNP_column_names))
-  SNP_column_names <- SNP_column_names[SNP_column_names %in% colnames(found_seq_df)]
-
-  all_column_names <- c("Chromosome", "Strand", "Start", "End", SNP_column_names)#, "PAM", )
+  all_column_names <- c("Chromosome", "Strand", "Start", "End", found_SNP_column_names)#, "PAM", )
 
   results_df <- data.frame(
     "Sequence"           = levels(references_fac),
