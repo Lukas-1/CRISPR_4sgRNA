@@ -79,7 +79,7 @@ rearranged_column_names <- c(
   "CRISPOR_Num_0MM", "CRISPOR_Num_1MM", "CRISPOR_Num_2MM", "CRISPOR_Num_3MM", "CRISPOR_Num_4MM",
   "CRISPOR_off_target_count", "CRISPOR_Num_2or3MM",
 
-  SNP_column_names, #[SNP_column_names %in% colnames(merged_CRISPRko_df)],
+  SNP_column_names,
 
   "PAM_0MM", "PAM_1MM",
 

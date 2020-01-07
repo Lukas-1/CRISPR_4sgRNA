@@ -45,7 +45,7 @@ FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
   } else {
     show_message <- paste0(show_message, " Of these, previous data from GPP were not found for ", num_new, " of them")
     if (num_new < 10) {
-      new_entrezs <- submit_entrezs[!(submit_entrezs %in% already_GPP_entrezs)]
+      new_entrezs <- setdiff(submit_entrezs, already_GPP_entrezs)
       symbols_vec <- EntrezIDsToSymbols(new_entrezs)
       show_message <- paste0(show_message, ": ", paste0(vapply(seq_along(new_entrezs), function(x) paste0(new_entrezs[[x]], " (", symbols_vec[[x]], ")"), ""), collapse = ", "))
     } else {

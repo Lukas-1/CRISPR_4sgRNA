@@ -43,7 +43,7 @@ CRISPRko_entrez_IDs <- unique(merged_CRISPRko_df[, "Entrez_ID"])
 CRISPRko_entrez_IDs <- CRISPRko_entrez_IDs[!(is.na(CRISPRko_entrez_IDs))]
 CRISPRko_entrez_IDs <- unique(unlist(strsplit(CRISPRko_entrez_IDs, ", ", fixed = TRUE)))
 
-unique_entrez_IDs <- c(collected_entrez_IDs, CRISPRko_entrez_IDs[!(CRISPRko_entrez_IDs %in% collected_entrez_IDs)])
+unique_entrez_IDs <- union(collected_entrez_IDs, CRISPRko_entrez_IDs)
 
 
 

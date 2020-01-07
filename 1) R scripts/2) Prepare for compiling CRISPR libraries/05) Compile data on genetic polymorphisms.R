@@ -68,10 +68,10 @@ shared_rsIDs_indices_dbSNP  <- match(shared_rsIDs, dbSNP_common_raw_df[, "rsID"]
 shared_rsIDs_indices_Kaviar <- match(shared_rsIDs, Kaviar_common_raw_df[, "rsID"])
 
 dbSNP_indices <- seq_len(nrow(dbSNP_common_raw_df))
-unique_indices_dbSNP <- dbSNP_indices[!(dbSNP_indices %in% shared_rsIDs_indices_dbSNP)]
+unique_indices_dbSNP <- setdiff(dbSNP_indices, shared_rsIDs_indices_dbSNP)
 
 Kaviar_indices <- seq_len(nrow(Kaviar_common_raw_df))
-unique_indices_Kaviar <- Kaviar_indices[!(Kaviar_indices %in% shared_rsIDs_indices_Kaviar)]
+unique_indices_Kaviar <- setdiff(Kaviar_indices, shared_rsIDs_indices_Kaviar)
 
 common_polymorphisms_df <- rbind.data.frame(
   data.frame(

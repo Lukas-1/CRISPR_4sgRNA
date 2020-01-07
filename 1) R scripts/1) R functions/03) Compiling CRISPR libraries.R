@@ -109,7 +109,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
   }
 
   results_df[, "sgRNA_sequence"] <- results_df[, "sgRNA_sequence"][order(results_df[, "sgRNA_sequence"] == toupper(results_df[, "sgRNA_sequence"]))][[1]]
-  other_columns <- colnames(replicates_df)[!(colnames(replicates_df) %in% c("Original_symbol", "sgRNA_sequence", "Original_index", "Original_source"))]
+  other_columns <- setdiff(colnames(replicates_df), c("Original_symbol", "sgRNA_sequence", "Original_index", "Original_source"))
 
   for (column in other_columns) {
     my_values <- unique(replicates_df[, column])

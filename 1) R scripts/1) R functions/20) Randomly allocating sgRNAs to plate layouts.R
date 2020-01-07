@@ -32,7 +32,7 @@ RandomizeAllIndices <- function(n_total = NULL, n_per_plate_vec = NULL, n_per_pl
   for (plate_number in seq_len(num_plates - 1L)) {
     this_sample <- sample(indices_pool, n_per_plate_vec[[plate_number]])
     results_list[[plate_number]] <- this_sample
-    indices_pool <- indices_pool[!(indices_pool %in% this_sample)]
+    indices_pool <- setdiff(indices_pool, this_sample)
   }
   results_list[[num_plates]] <- sample(indices_pool, n_per_plate_vec[[num_plates]])
   return(results_list)
