@@ -17,7 +17,6 @@ source(file.path(general_functions_directory, "07) Annotating mapped sequences w
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory    <- "~/CRISPR"

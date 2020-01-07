@@ -37,6 +37,7 @@ NumberTSSs <- function(locations_vec, min_space = 1001L) {
 }
 
 
+
 AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TSS_prefix = "N") {
 
   stopifnot(length(TSS_number_vec) == length(original_TSS_vec))
@@ -63,7 +64,6 @@ AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TS
       allocated_vec[are_this_number] <- original_TSS
     }
   }
-
   results_vec <- rep.int(NA_character_, length(allocated_vec))
   unique_TSSs <- unique(allocated_vec)
   unique_TSSs <- unique_TSSs[!(is.na(unique_TSSs))]
@@ -97,7 +97,6 @@ SeparateByTSS <- function(CRISPR_sub_df) {
     "Allocated_TSS"  = allocated_TSS_vec,
     stringsAsFactors = FALSE
   )
-
   new_order <- order(match(results_df[, "Allocated_TSS"], results_df[, "Allocated_TSS"]))
 
   result_df <- results_df[new_order, ]
@@ -204,7 +203,6 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, par
                                       results_df[, "Combined_ID"],
                                       paste0(results_df[, "Combined_ID"], "_", results_df[, "TSS_ID"])
                                       )
-
   if (omit_optional_columns) {
     results_df <- results_df[, !(colnames(results_df) %in% c("TSS_number", "Allocated_TSS", "TSS_ID"))]
   }
