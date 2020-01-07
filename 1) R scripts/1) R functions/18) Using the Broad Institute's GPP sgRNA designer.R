@@ -137,9 +137,9 @@ ReadGPPOutputFiles <- function(output_file_names, GPP_path) {
 CRISPRa_GPP_output_columns <- c(
   "Input", "Target Gene ID", "Target Gene Symbol",
   "Reference Sequence", "Strand of Target", "TSS Position",
-  "Strand of sgRNA", "sgRNA Cut Position",
+  "Strand of sgRNA", "sgRNA 'Cut' Position",
   "sgRNA Sequence", "sgRNA Context Sequence", "PAM Sequence",
-  "sgRNA Cut Site TSS Offset",
+  "sgRNA 'Cut' Site TSS Offset",
   "# Off-Target Tier I Match Bin I Matches",   "# Off-Target Tier II Match Bin I Matches",   "# Off-Target Tier III Match Bin I Matches",
   "# Off-Target Tier I Match Bin II Matches",  "# Off-Target Tier II Match Bin II Matches",  "# Off-Target Tier III Match Bin II Matches",
   "# Off-Target Tier I Match Bin III Matches", "# Off-Target Tier II Match Bin III Matches", "# Off-Target Tier III Match Bin III Matches",
