@@ -6,7 +6,7 @@
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
-source(file.path(general_functions_directory, "18) Preparing input for the GPP sgRNA designer.R"))
+source(file.path(general_functions_directory, "18) Using the Broad Institute's GPP sgRNA designer.R"))
 
 
 
@@ -62,11 +62,11 @@ optional_df_list <- lapply(optional_entrez_chunks_list, BuildDfForGPP)
 # Write input files for the GPP sgRNA designer to disk --------------------
 
 for (chunk_ID in names(submit_df_list)) {
-  WriteGPPDf(submit_df_list[[chunk_ID]], chunk_ID, GPP_input_files_directory)
+  WriteGPPInputDf(submit_df_list[[chunk_ID]], chunk_ID, GPP_input_files_directory)
 }
 
 for (chunk_ID in names(optional_df_list)) {
-  WriteGPPDf(optional_df_list[[chunk_ID]], chunk_ID, GPP_input_files_directory, input_prefix = "optional_")
+  WriteGPPInputDf(optional_df_list[[chunk_ID]], chunk_ID, GPP_input_files_directory, input_prefix = "optional_")
 }
 
 

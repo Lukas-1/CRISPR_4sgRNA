@@ -280,7 +280,6 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
 
 
 
-
 ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
 
   CFD_columns <- c("CRISPOR_4MM_specificity", "CRISPOR_3MM_specificity")
@@ -362,7 +361,6 @@ SpecificityScatterPlot <- function(CRISPR_df,
     }
   }
 
-
   plot(x_vec,
        y_vec,
        las  = 1,
@@ -414,8 +412,6 @@ SpecificityScatterPlot <- function(CRISPR_df,
 
 
 DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
-  # Plot CRISPOR vs. GuideScan specificity scores
-
 
   # Additional plots (not selected for PDF)
 
