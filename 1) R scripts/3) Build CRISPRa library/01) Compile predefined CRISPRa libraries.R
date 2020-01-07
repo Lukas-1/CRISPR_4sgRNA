@@ -18,6 +18,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
+source(file.path(general_functions_directory, "18) Using the Broad Institute's GPP sgRNA designer.R"))
 
 
 
@@ -72,18 +73,7 @@ first_trial_df <- read.table(file.path(gene_lists_directory, "Trial_genes.txt"),
 
 ### Read in the output from the GPP sgRNA designer tool
 GPP_CRISPRa_file_names <- list.files(GPP_CRISPRa_path)
-GPP_CRISPRa_df_list <- sapply(GPP_CRISPRa_file_names, function (x) {
-  GPP_CRISPRa_colnames <- scan(file = file.path(GPP_CRISPRa_path, x), nlines = 1, what = "character", sep = "\t")
-  GPP_CRISPRa_df <- read.table(file.path(GPP_CRISPRa_path, x),
-                               sep = "\t", quote = "", header = FALSE,
-                               skip = 5, fill = TRUE, stringsAsFactors = FALSE
-                               )
-  colnames(GPP_CRISPRa_df) <- GPP_CRISPRa_colnames
-  return(GPP_CRISPRa_df)
-}, simplify = FALSE)
-GPP_CRISPRa_all_df <- do.call(rbind.data.frame, c(GPP_CRISPRa_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-
-
+GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path)
 
 
 
@@ -122,9 +112,7 @@ Calabrese_df <- rbind.data.frame(
 
 # Process the data from the Broad Institute's GPP portal ------------------
 
-original_GPP_CRISPRa_all_df <- GPP_CRISPRa_all_df
-
-GPP_CRISPRa_df <- TidyGPPCRISPRaDf(GPP_CRISPRa_all_df)
+GPP_CRISPRa_df <- TidyGPPOutputDf(GPP_CRISPRa_all_df, CRISPRa_GPP_output_columns)
 # GPP_CRISPRa_df <- GPP_CRISPRa_df[GPP_CRISPRa_df[, "Pick Order"] %in% 1:100, ]
 
 table(GPP_CRISPRa_df[, "Pick Order"])

@@ -10,6 +10,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
+source(file.path(general_functions_directory, "18) Using the Broad Institute's GPP sgRNA designer.R"))
 
 
 
@@ -59,17 +60,7 @@ TKOv3_df <- data.frame(read_excel(CRISPRko_TKOv3_path), stringsAsFactors = FALSE
 
 ### Read in the output from the GPP sgRNA designer tool
 GPP_CRISPRko_file_names <- list.files(GPP_CRISPRko_path)
-GPP_CRISPRko_df_list <- sapply(GPP_CRISPRko_file_names, function (x) {
-  GPP_CRISPRko_colnames <- scan(file = file.path(GPP_CRISPRko_path, x), nlines = 1, what = "character", sep = "\t")
-  GPP_CRISPRko_df <- read.table(file.path(GPP_CRISPRko_path, x),
-                                sep = "\t", quote = "", header = FALSE,
-                                fill = TRUE, skip = 5, stringsAsFactors = FALSE
-                                )
-  colnames(GPP_CRISPRko_df) <- GPP_CRISPRko_colnames
-  return(GPP_CRISPRko_df)
-}, simplify = FALSE)
-GPP_CRISPRko_all_df <- do.call(rbind.data.frame, c(GPP_CRISPRko_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-
+GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path)
 
 
 
@@ -135,9 +126,7 @@ stopifnot(all(are_identical_entrezs))
 
 # Process the data from the Broad Institute's GPP portal ------------------
 
-original_GPP_CRISPRko_all_df <- GPP_CRISPRko_all_df
-
-GPP_CRISPRko_df <- TidyGPPCRISPRkoDf(GPP_CRISPRko_all_df)
+GPP_CRISPRko_df <- TidyGPPOutputDf(GPP_CRISPRko_all_df, CRISPRko_GPP_output_columns)
 GPP_CRISPRko_df <- GPP_CRISPRko_df[GPP_CRISPRko_df[, "Pick Order"] %in% 1:50, ]
 
 table(GPP_CRISPRko_df[, "Pick Order"])
