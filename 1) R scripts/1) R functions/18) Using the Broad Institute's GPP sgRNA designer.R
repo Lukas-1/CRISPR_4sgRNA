@@ -122,8 +122,9 @@ WriteGPPInputDf <- function(submit_df, chunk_ID, GPP_input_directory, input_pref
 ReadGPPOutputFiles <- function(output_file_names, GPP_path) {
   GPP_output_df_list <- sapply(output_file_names, function (x) {
     GPP_output_df <- read.table(file.path(GPP_path, x),
-                                sep = "\t", quote = "", header = TRUE,
-                                fill = TRUE, stringsAsFactors = FALSE
+                                sep = "\t", quote = "", comment.char = "",
+                                header = TRUE, check.names = FALSE, fill = TRUE,
+                                stringsAsFactors = FALSE
                                 )
     return(GPP_output_df)
   }, simplify = FALSE)
