@@ -59,7 +59,7 @@ MakeBedDf <- function(CRISPR_df, combined_IDs) {
     stringsAsFactors = FALSE
   )
   export_bed_df <- unique(export_bed_df)
-  rownames(export_bed_df) <- NULL
+  row.names(export_bed_df) <- NULL
 
   return(export_bed_df)
 }
@@ -95,7 +95,7 @@ MakeFASTADf <- function(CRISPR_df, combined_IDs) {
     row.names = NULL
   )
   results_df <- results_df[!(is.na(PAM_vec)), ]
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -186,7 +186,7 @@ ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns 
     if (is.null(CRISPR_df)) {
       demo_df <- CRISPOR_df
     } else {
-      demo_df <- cbind.data.frame(CRISPOR_df, CRISPR_df[, !(colnames(CRISPR_df) %in% colnames(CRISPOR_df))])
+      demo_df <- cbind.data.frame(CRISPOR_df, CRISPR_df[, !(names(CRISPR_df) %in% names(CRISPOR_df))])
     }
     print(demo_df[are_invalid, show_columns])
     message("\n")
@@ -218,7 +218,7 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
 
   output_matches_vec <- match(CRISPR_IDs_vec, CRISPOR_output_df[, "#seqId"])
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
-  colnames(output_matched_df) <- rename_CRISPOR_columns_vec
+  names(output_matched_df) <- rename_CRISPOR_columns_vec
 
   output_matched_df <- ResolveSpecificityOfNone(output_matched_df, CRISPR_df)
 
@@ -253,7 +253,7 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
 
   output_matches_vec <- match(sequences_vec, toupper(CRISPOR_output_df[, "targetSeq"]))
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
-  colnames(output_matched_df) <- rename_CRISPOR_columns_vec
+  names(output_matched_df) <- rename_CRISPOR_columns_vec
 
   output_matched_df <- ResolveSpecificityOfNone(output_matched_df, CRISPR_df)
 
@@ -271,7 +271,7 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
     offtargets_df <- ResolveMissingOffTargets(offtargets_df)
   }
 
-  for (column_name in setdiff(colnames(offtargets_df), "Location_ID")) {
+  for (column_name in setdiff(names(offtargets_df), "Location_ID")) {
     CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
   }
   return(CRISPR_df)

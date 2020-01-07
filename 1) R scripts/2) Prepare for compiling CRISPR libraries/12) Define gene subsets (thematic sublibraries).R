@@ -51,7 +51,7 @@ Kampmann_lib_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries",
 
 # Process the thematic sublibraries of Kampmann et al. --------------------
 
-colnames(Kampmann_lib_df) <- c("Sublibrary_ID", "Symbol")
+names(Kampmann_lib_df) <- c("Sublibrary_ID", "Symbol")
 
 shRNA_sublibrary_map <- c(
   "H01" = "Apoptosis",

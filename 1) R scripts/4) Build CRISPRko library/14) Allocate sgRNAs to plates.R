@@ -57,7 +57,7 @@ stopifnot(all(are_complete_genes))
 # Define the final selection of sgRNAs ------------------------------------
 
 top4_df <- merged_TF_CRISPRko_df[merged_TF_CRISPRko_df[, "Rank"] %in% 1:4, ]
-rownames(top4_df) <- NULL
+row.names(top4_df) <- NULL
 
 
 

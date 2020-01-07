@@ -29,7 +29,7 @@ MeetCriteria <- function(CRISPR_df, allow_curated = FALSE) {
                     !(((substr(CRISPR_df[, "PAM"], 2, 3) == "GG") %in% TRUE)) |
                     (((CRISPR_df[, "GuideScan_specificity"] < 0.2) %in% TRUE) |
                       (is.na(CRISPR_df[, "GuideScan_specificity"]) & ((CRISPR_df[, "CRISPOR_3MM_specificity"] < 0.2) %in% TRUE))) |
-                    (("Exon_number_GPP" %in% colnames(CRISPR_df)) & (CRISPR_df[, "CRISPOR_Graf_status"] %in% c("ggc", "tt")))
+                    (("Exon_number_GPP" %in% names(CRISPR_df)) & (CRISPR_df[, "CRISPOR_Graf_status"] %in% c("ggc", "tt")))
   if (!(allow_curated)) {
     are_to_exclude <- are_to_exclude | (CRISPR_df[, "Source"] == "Curated")
   }
@@ -45,7 +45,7 @@ AggregateSpecificityScores <- function(scores_vec) {
 
 SummarizeCRISPRDf <- function(CRISPR_df) {
   split_indices <- split(seq_len(nrow(CRISPR_df)), factor(CRISPR_df[, "Combined_ID"], levels = unique(CRISPR_df[, "Combined_ID"])))
-  include_top4nonoverlapping <- "Best_combination_rank" %in% colnames(CRISPR_df)
+  include_top4nonoverlapping <- "Best_combination_rank" %in% names(CRISPR_df)
   if (include_top4nonoverlapping) {
     CRISPR_df[, "Non_overlapping"] <- !(is.na(CRISPR_df[, "Best_combination_rank"]))
   } else {
@@ -57,9 +57,9 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
     CRISPR_df[, "Meet_criteria"] <- CRISPR_df[, "Meet_criteria"] & CRISPR_df[, "Non_overlapping"]
   }
   CRISPR_df[, "Are_unspecific"] <- ((CRISPR_df[, "Num_0MM"] > 1) | (CRISPR_df[, "Num_1MM"] > 0)) %in% TRUE
-  include_TSS                   <- "TSS_regions" %in% colnames(CRISPR_df)
-  include_searched_by_GuideScan <- "TSS_searched_by_GuideScan" %in% colnames(CRISPR_df)
-  include_transcripts           <- "TSS_ID" %in% colnames(CRISPR_df)
+  include_TSS                   <- "TSS_regions" %in% names(CRISPR_df)
+  include_searched_by_GuideScan <- "TSS_searched_by_GuideScan" %in% names(CRISPR_df)
+  include_transcripts           <- "TSS_ID" %in% names(CRISPR_df)
   if (include_transcripts && include_top4nonoverlapping) {
     are_incomplete <- (CRISPR_df[, "Spacing"] %in% 0) & (CRISPR_df[, "Rank"] %in% 1:4)
   }
@@ -214,24 +214,24 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
   if (any(are_duplicated)) {
     stop(paste0("The following IDs were duplicated: ", paste0(reference_IDs[are_duplicated], collapse = ", "), "!"))
   }
-  summary_mat <- as.matrix(summary_df[, grep("^Num_", colnames(summary_df), value = TRUE)])
+  summary_mat <- as.matrix(summary_df[, grep("^Num_", names(summary_df), value = TRUE)])
   summary_matches <- match(reference_IDs, summary_df[, "Combined_ID"])
   matched_summary_mat <- summary_mat[summary_matches, ]
   # matched_summary_mat[is.na(matched_summary_mat)] <- 0L
   results_df <- data.frame("Combined_ID" = reference_IDs,
                            "Gene_present" = ifelse(is.na(summary_matches), "No", "Yes"),
                            matched_summary_mat,
-                           summary_df[summary_matches, !(colnames(summary_df) %in% colnames(summary_mat))],
+                           summary_df[summary_matches, !(names(summary_df) %in% colnames(summary_mat))],
                            stringsAsFactors = FALSE,
                            row.names = NULL
                            )
-  column_index <- match("Original_symbol", colnames(summary_df))
-  colnames_before <- colnames(summary_df)[seq_len(column_index)]
-  colnames_after <- colnames(summary_df)[(column_index + 1):ncol(summary_df)]
+  column_index <- match("Original_symbol", names(summary_df))
+  colnames_before <- names(summary_df)[seq_len(column_index)]
+  colnames_after <- names(summary_df)[(column_index + 1):ncol(summary_df)]
   results_df <- results_df[, c(colnames_before, "Gene_present", colnames_after)]
 
-  include_spacing <- "Spacing" %in% colnames(results_df)
-  include_transcripts <- "TSS_ID" %in% colnames(results_df)
+  include_spacing <- "Spacing" %in% names(results_df)
+  include_transcripts <- "TSS_ID" %in% names(results_df)
   if (include_spacing) {
     have_no_space <- (results_df[, "Spacing"] %in% c("None", ">12bp")) | is.na(results_df[, "Spacing"])
     spacing_splits <- strsplit(results_df[, "Spacing"], "*", fixed = TRUE)
@@ -263,7 +263,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
     if (include_spacing) results_df[, "CRISPOR_4MM_specificity"]                                                              else NA_vec
   )
   results_df <- results_df[final_order, ]
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -298,7 +298,7 @@ FindSharedsgRNAs <- function(CRISPR_df) {
     row.names = NULL
   )
   results_df <- results_df[order(-(results_df[, "Num_top4"])), ]
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -337,7 +337,7 @@ SharedsgRNAsDf <- function(CRISPR_df) {
   results_df <- results_df[order(-results_df[, "Num_occurrences"],
                                  match(results_df[, "Sequence"], filtered_df[, "sgRNA_sequence"])
                                  ), ]
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
 
   return(results_df)
 }

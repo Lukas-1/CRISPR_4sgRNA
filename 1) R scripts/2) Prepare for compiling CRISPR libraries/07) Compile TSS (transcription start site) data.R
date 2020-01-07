@@ -105,9 +105,9 @@ ListToDf <- function(named_list) {
 
 # Make small adjustments to the data frames -------------------------------
 
-colnames(FANTOM5_ann_df)[[1]]  <- sub("#", "", colnames(FANTOM5_ann_df)[[1]], fixed = TRUE)
+names(FANTOM5_ann_df)[[1]]  <- sub("#", "", names(FANTOM5_ann_df)[[1]], fixed = TRUE)
 
-colnames(FANTOM5_bed_df) <- c(
+names(FANTOM5_bed_df) <- c(
   "Chromosome",
   "Peak_start",
   "Peak_end",
@@ -163,7 +163,7 @@ FANTOM5_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-colnames(FANTOM5_df)[colnames(FANTOM5_df) == "GeneID"] <- "Entrez_ID"
+names(FANTOM5_df)[names(FANTOM5_df) == "GeneID"] <- "Entrez_ID"
 
 stopifnot(all(grepl("chr", FANTOM5_df[, "Chromosome"], fixed = TRUE)))
 
@@ -301,7 +301,7 @@ combined_TSS_df[are_duplicates_FANTOM5, "Source"] <- "FANTOM5, BioMart"
 
 combined_TSS_df <- combined_TSS_df[!(are_duplicates_BioMart), ]
 
-rownames(combined_TSS_df) <- NULL
+row.names(combined_TSS_df) <- NULL
 
 
 # combined_groups_fac <- factor(combined_TSS_df[, "Group"], levels = unique(combined_TSS_df[, "Group"]))

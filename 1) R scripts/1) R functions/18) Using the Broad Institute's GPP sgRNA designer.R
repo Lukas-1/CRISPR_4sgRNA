@@ -112,7 +112,7 @@ WriteGPPInputDf <- function(submit_df, chunk_ID, GPP_input_directory, input_pref
 #                                 sep = "\t", quote = "", header = FALSE,
 #                                 fill = TRUE, skip = 5, stringsAsFactors = FALSE
 #                                 )
-#     colnames(GPP_output_df) <- GPP_output_colnames
+#     names(GPP_output_df) <- GPP_output_colnames
 #     return(GPP_output_df)
 #   }, simplify = FALSE)
 #   results_df <- do.call(rbind.data.frame, c(GPP_output_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
@@ -177,7 +177,7 @@ TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
   message(paste0(sum(were_not_found), " genes were not found by the Broad Institute's Genetic Perturbation Platform (GPP) sgRNA picker tool and were omitted from the data frame!"))
 
   results_df <- GPP_output_df[!(were_not_found), choose_columns]
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
   return(results_df)
 }
 

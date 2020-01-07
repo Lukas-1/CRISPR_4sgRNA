@@ -27,7 +27,7 @@ GENCODE_original_df <- read.table(file.path(CRISPR_input_directory, "Human genom
                                   sep = "\t", quote = "", stringsAsFactors = FALSE, header = FALSE, row.names = NULL,
                                   fill = TRUE, check.names = FALSE
                                   )
-colnames(GENCODE_original_df) <- c("seqid", "source", "type", "start", "end", "score", "strand", "phase", "attributes")
+names(GENCODE_original_df) <- c("seqid", "source", "type", "start", "end", "score", "strand", "phase", "attributes")
 
 
 
@@ -46,9 +46,9 @@ unique_fields <- unique(unlist(fields_list))
 expanded_split_splits <- lapply(seq_along(GENCODE_splits), function(x) entries_list[[x]][match(unique_fields, fields_list[[x]])])
 
 splits_df <- do.call(rbind.data.frame, c(expanded_split_splits, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-colnames(splits_df) <- unique_fields
+names(splits_df) <- unique_fields
 
-GENCODE_df <- data.frame(GENCODE_original_df[, !(colnames(GENCODE_original_df) %in% c("score", "attributes"))],
+GENCODE_df <- data.frame(GENCODE_original_df[, !(names(GENCODE_original_df) %in% c("score", "attributes"))],
                          splits_df,
                          stringsAsFactors = FALSE,
                          check.names = FALSE

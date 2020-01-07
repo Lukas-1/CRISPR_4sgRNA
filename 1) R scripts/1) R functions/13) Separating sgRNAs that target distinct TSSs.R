@@ -100,7 +100,7 @@ SeparateByTSS <- function(CRISPR_sub_df) {
   new_order <- order(match(results_df[, "Allocated_TSS"], results_df[, "Allocated_TSS"]))
 
   result_df <- results_df[new_order, ]
-  rownames(result_df) <- NULL
+  row.names(result_df) <- NULL
   return(results_df)
 }
 
@@ -204,7 +204,7 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, par
                                       paste0(results_df[, "Combined_ID"], "_", results_df[, "TSS_ID"])
                                       )
   if (omit_optional_columns) {
-    results_df <- results_df[, !(colnames(results_df) %in% c("TSS_number", "Allocated_TSS", "TSS_ID"))]
+    results_df <- results_df[, !(names(results_df) %in% c("TSS_number", "Allocated_TSS", "TSS_ID"))]
   }
   return(results_df)
 }

@@ -276,7 +276,7 @@ symbols_assignment_map <- c(
   "Min_NCBI_synonym"       = "Not found in org.Hs.egALIAS, but maps to multiple IDs in Homo_sapiens.gene_info; the first (lowest) ID was chosen"
 )
 
-column_indices <- match(names(symbols_assignment_map), colnames(symbols_df))
+column_indices <- match(names(symbols_assignment_map), names(symbols_df))
 
 are_available_mat <- !(apply(symbols_df[, column_indices], 2, function(x) is.na(x)))
 which_first <- apply(are_available_mat, 1, function(x) if (any(x)) which(x)[[1]] else NA_integer_)

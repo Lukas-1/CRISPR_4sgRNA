@@ -302,7 +302,7 @@ CRISPRko_df <- ResolveDuplicates(combined_df, concatenate_columns = "TKOv3_ID")
 # Make sure that sgRNAs for the same gene are on consecutive rows ---------
 
 new_CRISPRko_df <- CRISPRko_df[order(match(CRISPRko_df[, "Combined_ID"], CRISPRko_df[, "Combined_ID"])), ]
-rownames(CRISPRko_df) <- NULL
+row.names(CRISPRko_df) <- NULL
 
 
 

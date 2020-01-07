@@ -61,7 +61,7 @@ choose_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source", "hC
                     )
 
 multiplicates_df <- multiplicates_df[order(match(multiplicates_df[, "GuideScan_input_sgRNA"], multiplicates_df[, "GuideScan_input_sgRNA"])), choose_columns]
-rownames(multiplicates_df) <- NULL
+row.names(multiplicates_df) <- NULL
 
 
 

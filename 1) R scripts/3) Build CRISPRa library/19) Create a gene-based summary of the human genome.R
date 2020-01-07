@@ -59,7 +59,7 @@ sgRNAs_summary_df[!(is.na(sgRNAs_summary_df[, "Entrez_ID"])) & !(sgRNAs_summary_
 
 sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
 sgRNAs_all_genes_df[, "Entrez_ID"] <- sgRNAs_all_genes_df[, "Combined_ID"]
-sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, colnames(sgRNAs_all_genes_df) != "Combined_ID"]
+sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, names(sgRNAs_all_genes_df) != "Combined_ID"]
 
 sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df)
 

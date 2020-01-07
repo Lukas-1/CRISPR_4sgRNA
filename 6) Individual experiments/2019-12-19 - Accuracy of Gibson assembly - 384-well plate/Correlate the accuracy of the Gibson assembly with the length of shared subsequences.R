@@ -343,7 +343,7 @@ assembly_df[, "Longest_subsequence"] <- vapply(guides_list, LongestSharedSubsequ
 
 assembly_df <- assembly_df[order(assembly_df[, "Fraction_correct_4sg"], decreasing = FALSE), ]
 
-rownames(assembly_df) <- NULL
+row.names(assembly_df) <- NULL
 
 
 

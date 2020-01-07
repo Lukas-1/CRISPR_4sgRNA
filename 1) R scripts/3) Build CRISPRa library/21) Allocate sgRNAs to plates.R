@@ -78,7 +78,7 @@ replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts 
 # Define the final selection of sgRNAs ------------------------------------
 
 top4_df <- replaced_TF_CRISPRa_df[are_valid_top4, ]
-rownames(top4_df) <- NULL
+row.names(top4_df) <- NULL
 
 
 
@@ -254,7 +254,7 @@ if (legacy_mode) {
   for (column_name in c("Plate_number", "Well_number")) {
     new_plates_df[, column_name] <- TF_sgRNA_plates_df[!(are_controls), column_name]
   }
-  for (column_name in colnames(legacy_controls_TF_df)) {
+  for (column_name in names(legacy_controls_TF_df)) {
     new_controls_df[, column_name] <- legacy_controls_TF_df[, column_name]
   }
 

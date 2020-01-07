@@ -128,7 +128,7 @@ MakeControlGuidesDf <- function(control_sequences_list, controls_CRISPR_df) {
   results_df[, "Combined_ID"] <- paste0("Control_", FormatFixedWidthInteger(well_numbers_vec))
   results_df[, "Rank"] <- sg_numbers_vec
 
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -143,7 +143,7 @@ RandomlyShufflePlates <- function(plate_df_list) {
 
   plate_df_shuffled_list <- lapply(seq_along(shuffled_indices_list), function(x) {
     my_df <- plate_df_list[[x]]
-    if ("AltTSS_ID" %in% colnames(my_df)) {
+    if ("AltTSS_ID" %in% names(my_df)) {
       IDs_vec <- ifelse(my_df[, "Is_control"] == "Yes", my_df[, "Combined_ID"], my_df[, "AltTSS_ID"])
     } else {
       IDs_vec <- my_df[, "Combined_ID"]

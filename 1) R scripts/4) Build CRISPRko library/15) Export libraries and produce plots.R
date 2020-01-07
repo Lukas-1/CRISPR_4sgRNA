@@ -114,7 +114,7 @@ omit_columns <- c("Combined_ID",
                   "Spacing", "Overlaps_tolerance"
                   )
 
-omit_SNP_columns <- grep("SNP", colnames(merged_CRISPRko_df), value = TRUE)
+omit_SNP_columns <- grep("SNP", names(merged_CRISPRko_df), value = TRUE)
 omit_SNP_columns <- setdiff(omit_SNP_columns, c(preferred_rsID_column, preferred_AF_max_column))
 full_omit_columns <- c(omit_columns, omit_SNP_columns)
 

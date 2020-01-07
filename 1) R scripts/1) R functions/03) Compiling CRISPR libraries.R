@@ -55,7 +55,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
   unique_sources <- unique_sources[order(match(unique_sources, CRISPR_library_sources))]
   results_df[, "Source"] <- paste0(unique_sources, collapse = ", ")
 
-  if ("Entrez_ID_assignment" %in% colnames(replicates_df)) {
+  if ("Entrez_ID_assignment" %in% names(replicates_df)) {
     assignments_order <- c("Unambiguous",
                            "The gene symbol was ambiguous; mapped using GuideScan",
                            "The gene symbol was ambiguous; mapped by proximity to TSS",
@@ -71,7 +71,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     results_df[, "Entrez_ID_assignment"] <- paste0(unique_assignments, collapse = " / ")
   }
 
-  if ("Exchanged_5pG" %in% colnames(replicates_df)) {
+  if ("Exchanged_5pG" %in% names(replicates_df)) {
     if (any(replicates_df[, "Exchanged_5pG"] %in% "Yes")) {
       results_df[, "Exchanged_5pG"] <- "Yes"
     } else {
@@ -79,7 +79,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     }
   }
 
-  if ("GuideScan_offtarget_category" %in% colnames(replicates_df)) {
+  if ("GuideScan_offtarget_category" %in% names(replicates_df)) {
     offtarget_vec <- unique(replicates_df[, "GuideScan_offtarget_category"])
     if (length(offtarget_vec) > 1) {
       offtarget_vec <- offtarget_vec[!(offtarget_vec %in% "Unknown")]
@@ -89,7 +89,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     }
   }
 
-  for (column_name in grep("^Entrez_source_", colnames(replicates_df), value = TRUE)) {
+  for (column_name in grep("^Entrez_source_", names(replicates_df), value = TRUE)) {
     entrez_source_vec <- unique(replicates_df[, column_name])
     entrez_source_vec <- entrez_source_vec[!(is.na(entrez_source_vec))]
     if (length(entrez_source_vec) == 0) {
@@ -109,7 +109,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
   }
 
   results_df[, "sgRNA_sequence"] <- results_df[, "sgRNA_sequence"][order(results_df[, "sgRNA_sequence"] == toupper(results_df[, "sgRNA_sequence"]))][[1]]
-  other_columns <- setdiff(colnames(replicates_df), c("Original_symbol", "sgRNA_sequence", "Original_index", "Original_source"))
+  other_columns <- setdiff(names(replicates_df), c("Original_symbol", "sgRNA_sequence", "Original_index", "Original_source"))
 
   for (column in other_columns) {
     my_values <- unique(replicates_df[, column])
@@ -121,7 +121,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
   }
 
   any_resolved <- FALSE
-  are_duplicated <- duplicated(results_df[, !(colnames(results_df) %in% drop_columns)])
+  are_duplicated <- duplicated(results_df[, !(names(results_df) %in% drop_columns)])
   if (any(are_duplicated)) {
     results_df <- results_df[!(are_duplicated), ]
     any_resolved <- TRUE
@@ -145,7 +145,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
 
 ResolveDuplicates <- function(CRISPR_df, concatenate_columns) {
 
-  if ("Rank" %in% colnames(CRISPR_df)) {
+  if ("Rank" %in% names(CRISPR_df)) {
     warning("Warning: The 'Rank' column will cause trouble, i.e., duplicates being ignored! Do not rank sgRNAs until all duplicates have been eliminated.")
   }
 
@@ -197,7 +197,6 @@ ResolveDuplicates <- function(CRISPR_df, concatenate_columns) {
     split_df_list[are_multiplicates] <- resolved_df_list
     results_df <- do.call(rbind.data.frame, c(split_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
-
     ### Report results ###
     message(paste0(nrow(CRISPR_df) - nrow(results_df), " duplicate entries were combined!"))
   }
@@ -210,12 +209,11 @@ ResolveDuplicates <- function(CRISPR_df, concatenate_columns) {
                                  ifelse(results_df[, "Is_control"] == "Yes", NA, results_df[, "Original_symbol"]),
                                  results_df[, "Original_index"]
                                  ), ]
-  rownames(results_df) <- NULL
-
+  row.names(results_df) <- NULL
 
   ### Remove superfluous columns ###
 
-  results_df <- results_df[, !(colnames(results_df) %in% drop_columns)]
+  results_df <- results_df[, !(names(results_df) %in% drop_columns)]
 
   return(results_df)
 }

@@ -30,11 +30,11 @@ OnesAndZeros <- function(my_vec) {
 
 
 MoveAfterColumn <- function(my_df, after_this_column, column_to_move) {
-  stopifnot(all(c(after_this_column, column_to_move) %in% colnames(my_df)))
-  column_index <- match(after_this_column, colnames(my_df))
-  before_columns <- colnames(my_df)[seq_len(column_index - 1)]
+  stopifnot(all(c(after_this_column, column_to_move) %in% names(my_df)))
+  column_index <- match(after_this_column, names(my_df))
+  before_columns <- names(my_df)[seq_len(column_index - 1)]
   if (column_index != ncol(my_df)) {
-    after_columns <- colnames(my_df)[(column_index + 1):ncol(my_df)]
+    after_columns <- names(my_df)[(column_index + 1):ncol(my_df)]
   } else {
     after_columns <- c()
   }
@@ -55,7 +55,7 @@ FormatForExcel <- function(my_df,
                            ) {
   # Requires the object 'source_abbreviations_vec' in the global environment
 
-  is_CRISPRa <- "Calabrese_rank" %in% colnames(my_df)
+  is_CRISPRa <- "Calabrese_rank" %in% names(my_df)
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[, "Combined_ID"])
   if (convert_excluded_to_3) {
@@ -95,7 +95,7 @@ FormatForExcel <- function(my_df,
     my_df <- MoveAfterColumn(my_df, "PAM", "Sequence_with_primers")
   }
 
-  if (all(c("Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP") %in% colnames(my_df))) {
+  if (all(c("Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP") %in% names(my_df))) {
     GPP_exon_vec <- my_df[, "Exon_number_GPP"]
     Brunello_exon_vec <- my_df[, "Exon_number_Brunello"]
     TKOv3_exon_vec <- my_df[, "Exon_number_TKOv3"]
@@ -104,21 +104,21 @@ FormatForExcel <- function(my_df,
       exon_vec <- exon_vec[!(is.na(exon_vec))]
       return(paste0(exon_vec, collapse = " | "))
     }, "")
-    colnames(my_df)[colnames(my_df) == "Exon_number_Brunello"] <- "Exon_number"
-    my_df <- my_df[, colnames(my_df) != "Exon_number_TKOv3"]
-    my_df <- my_df[, colnames(my_df) != "Exon_number_GPP"]
+    names(my_df)[names(my_df) == "Exon_number_Brunello"] <- "Exon_number"
+    my_df <- my_df[, names(my_df) != "Exon_number_TKOv3"]
+    my_df <- my_df[, names(my_df) != "Exon_number_GPP"]
   }
 
-  if ("CRISPOR_Graf_status" %in% colnames(my_df)) {
+  if ("CRISPOR_Graf_status" %in% names(my_df)) {
     my_df[, "CRISPOR_Graf_status"] <- ifelse(my_df[, "CRISPOR_Graf_status"] == "GrafOK", "OK", my_df[, "CRISPOR_Graf_status"])
   }
 
   if (!(is.null(remove_columns))) {
-    my_df <- my_df[, !(colnames(my_df) %in% remove_columns)]
+    my_df <- my_df[, !(names(my_df) %in% remove_columns)]
   }
 
-  SNP_ID_column <- grep("_SNP_IDs_", colnames(my_df), fixed = TRUE)
-  SNP_AF_column <- grep("_SNP_AF_(max|sum)_", colnames(my_df))
+  SNP_ID_column <- grep("_SNP_IDs_", names(my_df), fixed = TRUE)
+  SNP_AF_column <- grep("_SNP_AF_(max|sum)_", names(my_df))
   if ((length(SNP_ID_column) == 1) && (length(SNP_AF_column) == 1)) {
     my_df[is.na(my_df[, SNP_AF_column]), SNP_ID_column] <- NA_character_
     my_df[is.na(my_df[, SNP_ID_column]), SNP_AF_column] <- NA_real_
@@ -130,7 +130,7 @@ FormatForExcel <- function(my_df,
     my_df[, "Calabrese_rank"] <- sub(" or ", ", ", my_df[, "Calabrese_rank"], fixed = TRUE)
   }
   if (probability_to_percentage) {
-    for (column_index in grep("_AF_(sum|max)_", colnames(my_df), fixed = TRUE)) {
+    for (column_index in grep("_AF_(sum|max)_", names(my_df), fixed = TRUE)) {
       my_df[, column_index] <- ifelse(is.na(my_df[, column_index]), NA_character_, paste0(my_df[, column_index] * 100, "%"))
     }
   }

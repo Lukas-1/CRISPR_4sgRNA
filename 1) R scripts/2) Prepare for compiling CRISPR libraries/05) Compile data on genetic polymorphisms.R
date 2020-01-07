@@ -106,7 +106,7 @@ common_polymorphisms_df <- common_polymorphisms_df[order(match(common_polymorphi
                                                          common_polymorphisms_df[, "Position"],
                                                          common_polymorphisms_df[, "rsID"]
                                                          ), ]
-rownames(common_polymorphisms_df) <- NULL
+row.names(common_polymorphisms_df) <- NULL
 
 
 

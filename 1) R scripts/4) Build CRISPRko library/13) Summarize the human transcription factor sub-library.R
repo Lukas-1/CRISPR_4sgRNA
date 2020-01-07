@@ -44,7 +44,7 @@ TF_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRko_TF_sgRNAs_df)
 
 reorganized_df <- ReorganizeSummaryDf(TF_sgRNAs_summary_df, all_TF_df[, "Combined_ID"])
 all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[, "Combined_ID"], all_TF_df[, "Combined_ID"]), ],
-                                reorganized_df[, !(colnames(reorganized_df) %in% colnames(all_TF_df))],
+                                reorganized_df[, !(names(reorganized_df) %in% names(all_TF_df))],
                                 stringsAsFactors = FALSE,
                                 row.names = NULL
                                 )
@@ -56,8 +56,8 @@ all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[, "Combined_ID"],
 
 TF_combined_IDs <- all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_ID"]
 
-TF_overview_df <- all_TF_summary_df[all_TF_summary_df[, "Combined_ID"] %in% TF_combined_IDs, colnames(all_TF_summary_df) != "Is_TF"]
-rownames(TF_overview_df) <- NULL
+TF_overview_df <- all_TF_summary_df[all_TF_summary_df[, "Combined_ID"] %in% TF_combined_IDs, names(all_TF_summary_df) != "Is_TF"]
+row.names(TF_overview_df) <- NULL
 
 table(TF_overview_df[, "Num_total"] == 0)
 table(TF_overview_df[, "Num_total"] < 4)

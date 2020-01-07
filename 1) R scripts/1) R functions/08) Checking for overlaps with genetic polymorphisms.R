@@ -108,7 +108,7 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
     row.names        = NULL
   )
   if (!(is.null(columns_postfix))) {
-    colnames(results_df) <- paste0(colnames(results_df), "_", columns_postfix)
+    names(results_df) <- paste0(names(results_df), "_", columns_postfix)
   }
   return(results_df)
 }
@@ -273,7 +273,7 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
       row.names = NULL
     )
 
-    SNP_column_names <- grep("_SNP_", colnames(results_df), fixed = TRUE, value = TRUE)
+    SNP_column_names <- grep("_SNP_", names(results_df), fixed = TRUE, value = TRUE)
     SNP_column_roots <- unique(sub("^(PAM|sgRNA|all23)_", "", SNP_column_names))
 
     SNP_AF_max_roots <- grep("_AF_max_", SNP_column_roots, fixed = TRUE, value = TRUE)
@@ -305,8 +305,8 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
     NGG_rsID_mat <- do.call(cbind, NGG_rsID_list)
 
     NGG_df <- data.frame(NGG_rsID_mat, NGG_AF_max_mat, stringsAsFactors = FALSE, row.names = NULL)
-    NGG_df <- NGG_df[, order(match(colnames(NGG_df), SNP_column_roots))]
-    colnames(NGG_df) <- paste0("all22_", colnames(NGG_df))
+    NGG_df <- NGG_df[, order(match(names(NGG_df), SNP_column_roots))]
+    names(NGG_df) <- paste0("all22_", names(NGG_df))
     results_df <- data.frame(results_df, NGG_df, stringsAsFactors = FALSE, row.names = NULL)
 
   } else {
@@ -340,7 +340,7 @@ AllPolymorphismsForRange <- function(ranges_df, columns_prefix = NULL, only_Kavi
   }
 
   if (!(is.null(columns_prefix))) {
-    colnames(sgRNA_polymorphisms_df) <- paste0(columns_prefix, "_", colnames(sgRNA_polymorphisms_df))
+    names(sgRNA_polymorphisms_df) <- paste0(columns_prefix, "_", names(sgRNA_polymorphisms_df))
   }
   return(sgRNA_polymorphisms_df)
 }

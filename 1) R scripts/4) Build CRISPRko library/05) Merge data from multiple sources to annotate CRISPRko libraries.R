@@ -51,7 +51,7 @@ rename_columns_vec <- c(
 )
 
 for (column_name in names(rename_columns_vec)) {
-  colnames(extended_CRISPRko_df)[colnames(extended_CRISPRko_df) == column_name] <- rename_columns_vec[[column_name]]
+  names(extended_CRISPRko_df)[names(extended_CRISPRko_df) == column_name] <- rename_columns_vec[[column_name]]
 }
 
 
@@ -163,7 +163,7 @@ for (column in c(location_columns, "PAM")) {
 # Eliminate the "5 prime G nucleotide" column -----------------------------
 
 extended_CRISPRko_df[, "Num_1MM"] <- rowSums(extended_CRISPRko_df[, c("Num_5G_MM", "Num_1MM")])
-extended_CRISPRko_df <- extended_CRISPRko_df[, colnames(extended_CRISPRko_df) != "Num_5G_MM"]
+extended_CRISPRko_df <- extended_CRISPRko_df[, names(extended_CRISPRko_df) != "Num_5G_MM"]
 
 
 

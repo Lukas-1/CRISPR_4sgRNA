@@ -48,7 +48,7 @@ num_occurrences <- table(submit_df[, "GuideScan_input_sgRNA"])[submit_df[, "Guid
 multiplicates_df <- submit_df[num_occurrences > 1, ]
 
 multiplicates_df <- multiplicates_df[order(match(multiplicates_df[, "GuideScan_input_sgRNA"], multiplicates_df[, "GuideScan_input_sgRNA"])), ]
-rownames(multiplicates_df) <- NULL
+row.names(multiplicates_df) <- NULL
 
 
 

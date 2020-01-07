@@ -23,7 +23,7 @@ ExtendWithGenomeSearch <- function(CRISPR_df, search_df, allow_5pG = FALSE) {
   genome_matches <- match(toupper(CRISPR_df[, "sgRNA_sequence"]), toupper(search_df[, "Sequence"]))
   results_df <- data.frame(
     CRISPR_df,
-    search_df[genome_matches, !(colnames(search_df) %in% c("Sequence", "Found"))],
+    search_df[genome_matches, !(names(search_df) %in% c("Sequence", "Found"))],
     stringsAsFactors = FALSE,
     row.names = NULL
   )
@@ -37,7 +37,7 @@ ExtendWithGenomeSearch <- function(CRISPR_df, search_df, allow_5pG = FALSE) {
   }
   for (column_name in c("Chromosome", "Strand", "Start", "End")) {
     results_df[, column_name] <- ifelse(have_hit, results_df[, column_name], NA)
-    colnames(results_df)[colnames(results_df) == column_name] <- paste0("Hits_", tolower(column_name))
+    names(results_df)[names(results_df) == column_name] <- paste0("Hits_", tolower(column_name))
   }
   return(results_df)
 }
@@ -88,13 +88,13 @@ MergeTSSandGuideScan <- function(CRISPR_df, guidescan_df) {
                         match(vec_for_matching_CRISPR_chromosome, vec_for_matching_GuideScan_chromosome)
                         )
 
-  colnames(extended_guidescan_df)[colnames(extended_guidescan_df) == "Entrez_ID"]   <- "GuideScan_entrez_ID"
-  colnames(extended_guidescan_df)[colnames(extended_guidescan_df) == "Gene_symbol"] <- "GuideScan_symbol"
-  colnames(extended_guidescan_df)[colnames(extended_guidescan_df) == "Strand"]      <- "Strand_of_TSS"
-  colnames(extended_guidescan_df)[colnames(extended_guidescan_df) == "Region"]      <- "GuideScan_region"
+  names(extended_guidescan_df)[names(extended_guidescan_df) == "Entrez_ID"]   <- "GuideScan_entrez_ID"
+  names(extended_guidescan_df)[names(extended_guidescan_df) == "Gene_symbol"] <- "GuideScan_symbol"
+  names(extended_guidescan_df)[names(extended_guidescan_df) == "Strand"]      <- "Strand_of_TSS"
+  names(extended_guidescan_df)[names(extended_guidescan_df) == "Region"]      <- "GuideScan_region"
 
   combined_df <- CRISPR_df
-  for (column_name in colnames(extended_guidescan_df)[colnames(extended_guidescan_df) != "Combined_ID"]) {
+  for (column_name in names(extended_guidescan_df)[names(extended_guidescan_df) != "Combined_ID"]) {
     combined_df[, column_name] <- extended_guidescan_df[matches_vec, column_name]
   }
   return(combined_df)
@@ -153,7 +153,7 @@ SplitOffTargetsSummary <- function(off_targets_summary_vec) {
 
 
 GetOffTargetCategory <- function(merged_CRISPR_df) {
-  if ("Num_5G_MM" %in% colnames(merged_CRISPR_df)) {
+  if ("Num_5G_MM" %in% names(merged_CRISPR_df)) {
     num_perfect_hits_vec <- rowSums(merged_CRISPR_df[, c("Num_0MM", "Num_5G_MM")])
   } else {
     num_perfect_hits_vec <- merged_CRISPR_df[, "Num_0MM"]
@@ -191,7 +191,7 @@ GetOffTargetCategory <- function(merged_CRISPR_df) {
   results_fac <- factor(results_vec, levels = offtarget_levels, ordered = TRUE)
   results_fac[is.na(results_fac)] <- "Unknown"
 
-  if ("TSS_searched_by_GuideScan" %in% colnames(merged_CRISPR_df)) {
+  if ("TSS_searched_by_GuideScan" %in% names(merged_CRISPR_df)) {
     were_not_scanned <- (results_fac %in% "Unknown") & (merged_CRISPR_df[, "TSS_searched_by_GuideScan"] %in% c("No", "Not this gene"))
     results_fac[were_not_scanned] <- "Not scanned"
   }
@@ -331,7 +331,7 @@ FindSingleLocationFromGene <- function(location_vec, chromosome, gene_GRanges_ob
 FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutoff = 20, min_to_map = 8) {
   # Depends on the gene models object 'human_genes_GRanges' in the global environment
 
-  use_TSS <- "Best_TSS" %in% colnames(CRISPR_df)
+  use_TSS <- "Best_TSS" %in% names(CRISPR_df)
 
   are_not_controls <- CRISPR_df[, "Is_control"] %in% "No"
   have_two_0MM <- CRISPR_df[, "Num_0MM"] == 2
@@ -422,7 +422,7 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
 
       }
 
-      for (column_name in colnames(new_locations_df)) {
+      for (column_name in names(new_locations_df)) {
         results_df[this_gene_duplicates, column_name] <- new_locations_df[, column_name]
       }
 
@@ -564,7 +564,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
   # After assigning Entrez IDs to more sgRNAs (in the previous step), perform another merge with the data from GuideScan
   remerged_CRISPR_df <- MergeTSSandGuideScan(merged_CRISPR_df, guidescan_df)
-  for (my_column in colnames(remerged_CRISPR_df)) {
+  for (my_column in names(remerged_CRISPR_df)) {
     merged_CRISPR_df[, my_column] <- remerged_CRISPR_df[, my_column]
   }
   merged_CRISPR_df <- MergeLocations(merged_CRISPR_df)
@@ -694,7 +694,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
 
   # Re-order the columns
-  results_df <- merged_CRISPR_df[, !(colnames(merged_CRISPR_df) %in% remove_columns)]
+  results_df <- merged_CRISPR_df[, !(names(merged_CRISPR_df) %in% remove_columns)]
 
   return(results_df)
 }

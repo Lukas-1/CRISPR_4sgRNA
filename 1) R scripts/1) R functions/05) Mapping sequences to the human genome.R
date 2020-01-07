@@ -178,7 +178,7 @@ FindSequences <- function(sequences_vec) {
                      )
 
   combined_results_df <- combined_results_df[new_order, ]
-  rownames(combined_results_df) <- NULL
+  row.names(combined_results_df) <- NULL
 
   return(combined_results_df)
 }

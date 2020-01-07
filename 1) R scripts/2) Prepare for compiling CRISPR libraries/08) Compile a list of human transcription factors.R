@@ -48,7 +48,7 @@ tf_new_df <- read.csv(file.path(human_TFs_directory, "DatabaseExtract_v_1.01.csv
 
 # Rename the columns ------------------------------------------------------
 
-colnames(tf_new_df) <- c(
+names(tf_new_df) <- c(
   "ENSEMBL_gene_ID",
   "Gene_symbol",
   "DNA_binding_domain",
@@ -108,7 +108,7 @@ table(tf_new_df[, "Binding_mode"], useNA = "ifany")
 # Map TF gene symbols to Entrez IDs ---------------------------------------
 
 symbol_mappings_df <- MapToEntrezs(symbols_vec = tf_new_df[, "Gene_symbol"])
-symbol_mappings_df <- symbol_mappings_df[, colnames(symbol_mappings_df) != "Original_entrez"]
+symbol_mappings_df <- symbol_mappings_df[, names(symbol_mappings_df) != "Original_entrez"]
 problematic_symbols_df <- symbol_mappings_df[!(symbol_mappings_df[, "Entrez_source"] %in% 1), ]
 
 

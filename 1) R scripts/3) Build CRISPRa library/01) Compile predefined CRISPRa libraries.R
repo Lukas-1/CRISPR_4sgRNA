@@ -59,7 +59,7 @@ load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RDat
 # Read in data ------------------------------------------------------------
 
 hCRISPRa_v2_df <- data.frame(read_excel(CRISPRa_Horlbeck2016_sgRNAs_path, skip = 7)[-1, ], stringsAsFactors = FALSE)
-colnames(hCRISPRa_v2_df) <- names(read_excel(CRISPRa_Horlbeck2016_sgRNAs_path, n_max = 1))
+names(hCRISPRa_v2_df) <- names(read_excel(CRISPRa_Horlbeck2016_sgRNAs_path, n_max = 1))
 
 hCRISPRa_v2_TSS_df <- data.frame(read_excel(CRISPRa_Horlbeck2016_TSSs_path), stringsAsFactors = FALSE, check.names = FALSE)
 
@@ -133,7 +133,7 @@ are_hCRISPRa_v2_controls <- hCRISPRa_v2_df[, "gene"] == "negative_control"
 hCRISPRa_v2_symbols_vec <- unique(hCRISPRa_v2_df[!(are_hCRISPRa_v2_controls), "gene"])
 Calabrese_symbols_entrezs_df <- unique(Calabrese_df[!(are_Calabrese_controls), c("Annotated Gene Symbol", "Annotated Gene ID")], MARGIN = 1)
 
-colnames(Calabrese_symbols_entrezs_df) <- c("Gene_symbol", "Entrez_ID")
+names(Calabrese_symbols_entrezs_df) <- c("Gene_symbol", "Entrez_ID")
 
 unique_symbols_vec <- unique(c(hCRISPRa_v2_symbols_vec, Calabrese_symbols_entrezs_df[, "Gene_symbol"][!(toupper(Calabrese_symbols_entrezs_df[, "Gene_symbol"]) %in% toupper(hCRISPRa_v2_symbols_vec))]))
 

@@ -87,7 +87,7 @@ chromosomes_list <- lapply(chromosomes_list, function(x) sort(unique(unlist(strs
 
 chromosomes_df <- ExpandList(chromosomes_list)
 chromosomes_df[, "Entrez_ID"] <- unique_entrez_ID_strings[as.integer(names(chromosomes_list)[chromosomes_df[, "List_index"]])]
-colnames(chromosomes_df)[[1]] <- "Chromosome"
+names(chromosomes_df)[[1]] <- "Chromosome"
 
 
 

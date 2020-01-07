@@ -300,7 +300,7 @@ omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRa_v2_ID", "Original_PAM",
 
                   "Annotation", "gRNA_label"
                   )
-omit_SNP_columns <- grep("SNP", colnames(merged_replaced_CRISPRa_df), value = TRUE)
+omit_SNP_columns <- grep("SNP", names(merged_replaced_CRISPRa_df), value = TRUE)
 omit_SNP_columns <- setdiff(omit_SNP_columns, c(preferred_rsID_column, preferred_AF_max_column))
 full_omit_columns <- c(omit_columns, omit_SNP_columns)
 

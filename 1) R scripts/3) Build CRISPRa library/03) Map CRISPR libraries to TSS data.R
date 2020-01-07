@@ -32,7 +32,7 @@ load(file.path(CRISPRa_RData_directory, "02) Extract the original sequences for 
 # Find all unique identifiers in CRISPRa_df -------------------------------
 
 unique_CRISPRa_df <- CRISPRa_df[!(duplicated(CRISPRa_df[, c("Entrez_ID", "Original_symbol")])), ]
-rownames(unique_CRISPRa_df) <- NULL
+row.names(unique_CRISPRa_df) <- NULL
 
 
 

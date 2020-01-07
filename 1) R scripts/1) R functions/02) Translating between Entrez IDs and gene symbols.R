@@ -133,7 +133,7 @@ MapToEntrezs <- function(entrez_IDs_vec = NULL, symbols_vec = NULL, entrez_IDs_s
 
 SymbolToEntrezDf <- function(symbols_vec) {
   results_df <- MapToEntrezs(symbols_vec = symbols_vec)
-  results_df <- results_df[, colnames(results_df) != "Original_entrez"]
+  results_df <- results_df[, names(results_df) != "Original_entrez"]
   return(results_df)
 }
 
@@ -141,7 +141,7 @@ SymbolToEntrezDf <- function(symbols_vec) {
 
 FilterDfEntrezSymbol <- function(gene_df, entrez_IDs, symbols_as_backup) {
 
-  stopifnot(all(c("Entrez_ID", "Gene_symbol") %in% colnames(gene_df)))
+  stopifnot(all(c("Entrez_ID", "Gene_symbol") %in% names(gene_df)))
 
   if (grepl(",", entrez_IDs, fixed = TRUE)) {
     entrez_IDs_splits <- strsplit(entrez_IDs, ", ", fixed = TRUE)[[1]]
@@ -198,8 +198,8 @@ GetGenes <- function(symbols_vec, CRISPR_df = CRISPRa_df) {
 
   symbol_entrez_df <- SymbolToEntrezDf(symbols_vec)
 
-  colnames(CRISPR_df)[colnames(CRISPR_df) == "Gene_symbol"] <- "New_symbol"
-  colnames(CRISPR_df)[colnames(CRISPR_df) == "Original_symbol"] <- "Gene_symbol"
+  names(CRISPR_df)[names(CRISPR_df) == "Gene_symbol"] <- "New_symbol"
+  names(CRISPR_df)[names(CRISPR_df) == "Original_symbol"] <- "Gene_symbol"
 
   combined_IDs_vec <- ifelse(is.na(symbol_entrez_df[, "Entrez_ID"]), symbol_entrez_df[, "Gene_symbol"], symbol_entrez_df[, "Entrez_ID"])
   filtered_df <- FilterAndCombineEntrezSymbol(CRISPR_df, symbol_entrez_df[, "Entrez_ID"], symbol_entrez_df[, "Original_symbol"], combined_IDs_vec)
@@ -212,10 +212,10 @@ GetGenes <- function(symbols_vec, CRISPR_df = CRISPRa_df) {
                    ))
   }
 
-  colnames(filtered_df)[colnames(filtered_df) == "Gene_symbol"] <- "Original_symbol"
-  colnames(filtered_df)[colnames(filtered_df) == "New_symbol"] <- "Gene_symbol"
+  names(filtered_df)[names(filtered_df) == "Gene_symbol"] <- "Original_symbol"
+  names(filtered_df)[names(filtered_df) == "New_symbol"] <- "Gene_symbol"
   filtered_df <- filtered_df[, 2:ncol(filtered_df)]
-  colnames(filtered_df)[[1]] <- "Combined_ID"
+  names(filtered_df)[[1]] <- "Combined_ID"
 
   return(filtered_df)
 }

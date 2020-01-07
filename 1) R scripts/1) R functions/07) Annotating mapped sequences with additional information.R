@@ -104,12 +104,12 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
     "Num_genes"   = lengths(entrezs_list),
     stringsAsFactors = FALSE
   )
-  if ("distance" %in% colnames(hits_df)) {
+  if ("distance" %in% names(hits_df)) {
     results_df[, "Distance"] <- hits_df[unique(match(hits_df[, "queryHits"], hits_df[, "queryHits"])), "distance"]
   }
   match_matches_vec <- match(seq_len(num_queries), as.integer(names(entrezs_list)))
   results_df <- results_df[match_matches_vec, ]
-  rownames(results_df) <- NULL
+  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -180,7 +180,7 @@ ReturnClearMatches <- function(found_seq_df, have_clear_match, clear_match_indic
     return(results_vec)
   })
   results_df <- do.call(data.frame, c(columns_list, list(stringsAsFactors = FALSE)))
-  colnames(results_df) <- colnames(found_seq_df)
+  names(results_df) <- names(found_seq_df)
   return(results_df)
 }
 
@@ -249,7 +249,7 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   sum_5G_MM_vec <- tapply(are_MM5primeG, references_fac, sum)
   have_clear_match <- (sum_0MM_and_PAM_vec == 1) | ((sum_0MM_and_PAM_vec == 0) & (sum_5G_MM_and_PAM_vec == 1))
 
-  use_overlapping_genes <- all(c("Overlapping_Entrez_IDs", "Overlapping_symbols") %in% colnames(found_seq_df))
+  use_overlapping_genes <- all(c("Overlapping_Entrez_IDs", "Overlapping_symbols") %in% names(found_seq_df))
   if (use_overlapping_genes) {
     entrez_column <- "Overlapping_Entrez_IDs"
     symbol_column <- "Overlapping_symbols"
@@ -289,7 +289,7 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     }
   }, integer(1))
 
-  found_SNP_column_names <- intersect(SNP_column_names, colnames(found_seq_df))
+  found_SNP_column_names <- intersect(SNP_column_names, names(found_seq_df))
 
   all_column_names <- c("Chromosome", "Strand", "Start", "End", found_SNP_column_names)#, "PAM", )
 
@@ -319,14 +319,14 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   if (use_overlapping_genes) {
     old_column_names <- c("Entrez_nearest_0MM", "Symbol_nearest_0MM", "Entrez_nearest_1MM", "Symbol_nearest_1MM")
     new_column_names <- sub("_nearest_", "_overlapping_", old_column_names, fixed = TRUE)
-    colnames(results_df)[match(old_column_names, colnames(results_df))] <- new_column_names
+    names(results_df)[match(old_column_names, names(results_df))] <- new_column_names
   }
 
   if (!(is.null(all_sequences))) {
     my_matches <- match(toupper(all_sequences), toupper(results_df[, "Sequence"]))
     results_df <- results_df[my_matches, ]
     results_df[is.na(my_matches), "Sequence"] <- all_sequences[is.na(my_matches)]
-    rownames(results_df) <- NULL
+    row.names(results_df) <- NULL
     for (my_column in c("Num_0MM", "Num_5G_MM", "Num_1MM")) {
       results_df[, my_column] <- ifelse(is.na(my_matches), 0L, results_df[, my_column])
     }
@@ -361,7 +361,7 @@ LiftOverAndAnnotate <- function(ranges_df) {
                         "end"      = "End"
                         )
   for (column_name in names(location_columns)) {
-    colnames(sgRNAs_lifted_over_df)[colnames(sgRNAs_lifted_over_df) == column_name] <- location_columns[[column_name]]
+    names(sgRNAs_lifted_over_df)[names(sgRNAs_lifted_over_df) == column_name] <- location_columns[[column_name]]
   }
 
 
@@ -380,7 +380,7 @@ LiftOverAndAnnotate <- function(ranges_df) {
   lifted_over_matches <- match(seq_len(nrow(ranges_df)), sgRNAs_lifted_over_df[, "group"])
 
   lifted_over_matched_df <- sgRNAs_lifted_over_df[lifted_over_matches, c("Sequence_liftOver", "PAM_liftOver", location_columns)]
-  colnames(lifted_over_matched_df)[3:6] <- paste0(location_columns, "_liftOver")
+  names(lifted_over_matched_df)[3:6] <- paste0(location_columns, "_liftOver")
 
   results_df <- data.frame(
     "Sequence_hg19"          = sequences_vec,

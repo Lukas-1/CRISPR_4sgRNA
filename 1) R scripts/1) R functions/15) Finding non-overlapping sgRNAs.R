@@ -36,7 +36,7 @@ CreateCombinations <- function(sub_df_reordered,
 
   are_core_library <- grepl("Calabrese|hCRISPRa-v2|Brunello|TKOv3", sub_df_reordered[, "Source"])
 
-  is_CRISPRa <- "hCRISPRa_v2_rank" %in% colnames(sub_df_reordered)
+  is_CRISPRa <- "hCRISPRa_v2_rank" %in% names(sub_df_reordered)
 
   if (is_CRISPRa) {
     are_preferred <- grepl("Calabrese", sub_df_reordered[, "Source"], fixed = TRUE) |
@@ -156,7 +156,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
 
   MessageID(CRISPR_sub_df)
 
-  if (("Num_TSSs" %in% colnames(CRISPR_sub_df)) &&
+  if (("Num_TSSs" %in% names(CRISPR_sub_df)) &&
        all(CRISPR_sub_df[, "Num_TSSs"] >= 2) &&
        all(is.na(CRISPR_sub_df[, "Start"]))
       ) {
@@ -179,7 +179,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
   are_specific       <- ((sub_df_reordered[, "GuideScan_specificity"] < 0.2) %in% FALSE) |
                          (is.na(sub_df_reordered[, "GuideScan_specificity"]) & ((sub_df_reordered[, "CRISPOR_3MM_specificity"] < 0.2) %in% FALSE))
 
-  if ("Exon_number_GPP" %in% colnames(sub_df_reordered)) { # ==> CRISPRko
+  if ("Exon_number_GPP" %in% names(sub_df_reordered)) { # ==> CRISPRko
     violate_Graf_criteria <- sub_df_reordered[, "CRISPOR_Graf_status"] %in% c("ggc", "tt")
   } else {
     violate_Graf_criteria <- rep.int(FALSE, nrow(sub_df_reordered))
@@ -246,7 +246,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
   sub_df_final[, "Rank"] <- seq_len(nrow(sub_df_final))
 
 
-  rownames(sub_df_final) <- NULL
+  row.names(sub_df_final) <- NULL
   return(sub_df_final)
 }
 

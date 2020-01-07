@@ -103,12 +103,12 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
   guidescan_df_list <- lapply(guidescan_df_list, function (x) {
     results_df <- x[3:nrow(x), , drop = FALSE]
     results_df <- data.frame("Region" = x[1, 1], results_df, stringsAsFactors = FALSE, row.names = NULL)
-    colnames(results_df)[2:ncol(results_df)] <- as.character(x[2, ])
+    names(results_df)[2:ncol(results_df)] <- as.character(x[2, ])
     return(results_df)
   })
 
   results_df <- do.call(rbind.data.frame, c(guidescan_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-  colnames(results_df) <- gsub(" ", "_", colnames(results_df), fixed = TRUE)
+  names(results_df) <- gsub(" ", "_", names(results_df), fixed = TRUE)
   return(results_df)
 }
 
@@ -176,7 +176,7 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
   ### Assemble the filtered GuideScan output ###
 
   guidescan_all_genes_df <- do.call(rbind.data.frame, c(guidescan_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-  colnames(guidescan_all_genes_df)[2:ncol(guidescan_all_genes_df)] <- gsub(" ", "_", raw_df[2, ], fixed = TRUE)
+  names(guidescan_all_genes_df)[2:ncol(guidescan_all_genes_df)] <- gsub(" ", "_", raw_df[2, ], fixed = TRUE)
 
   return(guidescan_all_genes_df)
 }
