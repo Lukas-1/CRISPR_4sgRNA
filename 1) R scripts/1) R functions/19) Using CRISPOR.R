@@ -116,6 +116,21 @@ MakeFASTAvec <- function(use_FASTA_df) {
 
 # Functions for processing output from CRISPOR ----------------------------
 
+IdentifyCRISPOROutputFiles <- function() {
+  # Requires 'CRISPOR_files_directory' in the global environment
+  output_files   <- grep("^CRISPOR_output_", list.files(CRISPOR_files_directory), value = TRUE)
+  are_FASTA      <- grepl("FASTA", output_files, fixed = TRUE)
+  are_offtargets <- grepl("offs\\.tsv", output_files)
+  results_list <- list(
+    "bed"              = output_files[(!(are_FASTA)) & !(are_offtargets)],
+    "FASTA"            = output_files[are_FASTA & !(are_offtargets)],
+    "bed_offtargets"   = output_files[(!(are_FASTA)) & are_offtargets],
+    "FASTA_offtargets" = output_files[are_FASTA & are_offtargets]
+  )
+  return(results_list)
+}
+
+
 ReadCRISPOROutputFiles <- function(file_names, use_fread = TRUE, show_messages = FALSE) {
   df_list <- lapply(file_names, function(x) ReadCRISPOROutput(x, use_fread, show_messages))
   results_df <- do.call(rbind.data.frame, c(df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
@@ -200,18 +215,25 @@ ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns 
 
 
 
+MakeBedIDsFromRangesDf <- function(ranges_df) {
+  results_vec <- paste0(ranges_df[, "Chromosome"],
+                        ":",
+                        ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "Start"], ranges_df[, "Start"] - 3L) - 1L,
+                        "-",
+                        ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "End"]),
+                        ":",
+                        ranges_df[, "Strand"]
+                        )
+  return(results_vec)
+}
+
+
+
 
 AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
 
   CRISPOR_output_df <- CRISPOR_output_df[CRISPOR_output_df[, "guideId"] %in% "21forw", ]
-  CRISPR_IDs_vec <- paste0(CRISPR_df[, "Chromosome"],
-                           ":",
-                           ifelse(CRISPR_df[, "Strand"] == "+", CRISPR_df[, "Start"], CRISPR_df[, "Start"] - 3L) - 1L,
-                           "-",
-                           ifelse(CRISPR_df[, "Strand"] == "+", CRISPR_df[, "End"] + 3L, CRISPR_df[, "End"]),
-                           ":",
-                           CRISPR_df[, "Strand"]
-                           )
+  CRISPR_IDs_vec <- MakeBedIDsFromRangesDf(CRISPR_df)
   CRISPR_IDs_vec[is.na(CRISPR_df[, "Start"])] <- NA_character_
 
   stopifnot(!(anyNA(CRISPOR_output_df[, "#seqId"])))
@@ -266,11 +288,9 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
                               stringsAsFactors = FALSE,
                               row.names = NULL
                               )
-
   if (resolve_missing_offtargets) {
     offtargets_df <- ResolveMissingOffTargets(offtargets_df)
   }
-
   for (column_name in setdiff(names(offtargets_df), "Location_ID")) {
     CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
   }
@@ -304,6 +324,38 @@ ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
 }
 
 
+
+
+
+# Filter input files to exclude sgRNAs with available CRISPOR data --------
+
+MakeBedIDsFromInputDf <- function(input_df) {
+  paste0(input_df[, "Chromosome"], ":", input_df[, "Start"], "-", input_df[, "End"], ":", input_df[, "Strand"])
+}
+
+FilterDfList <- function(use_df_list, are_done_list) {
+  postfix_vec <- vapply(are_done_list, function(x) if (all(x)) "all" else if (any(x)) "some" else "none", "")
+  results_df_list <- Map(function(x, y) if (all(y)) x else x[!(y), ], use_df_list, are_done_list)
+  names(results_df_list) <- paste0(names(results_df_list), "_", postfix_vec, "_done")
+  return(results_df_list)
+}
+
+FilterBedDfList <- function(use_bed_df_list) {
+  output_files_list <- IdentifyCRISPOROutputFiles()
+  previous_CRISPOR_bed_df <- ReadCRISPOROutputFiles(output_files_list[["bed"]])
+  were_processed_vec_list <- lapply(use_bed_df_list, function(x) MakeBedIDsFromInputDf(x) %in% previous_CRISPOR_bed_df[, "#seqId"])
+  output_bed_df_list <- FilterDfList(use_bed_df_list, were_processed_vec_list)
+  return(output_bed_df_list)
+}
+
+FilterFASTADfList <- function(use_FASTA_df_list) {
+  sequence_vec_list <- lapply(use_FASTA_df_list, function(x) paste0(x[, "sgRNA_sequence"], x[, "PAM"]))
+  output_files_list <- IdentifyCRISPOROutputFiles()
+  previous_CRISPOR_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]])
+  were_processed_vec_list <- lapply(sequence_vec_list, function(x) x %in% previous_CRISPOR_FASTA_df[, "targetSeq"])
+  output_FASTA_df_list <- FilterDfList(use_FASTA_df_list, were_processed_vec_list)
+  return(output_FASTA_df_list)
+}
 
 
 
@@ -401,7 +453,6 @@ SpecificityScatterPlot <- function(CRISPR_df,
   if (!(is.null(show_title))) {
     title(show_title, cex.main = par("cex") * 0.9)
   }
-
   par(old_par)
   return(invisible(NULL))
 }
@@ -426,7 +477,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                          point_cex                    = 0.4
                          )
 
-
   SpecificityScatterPlot(CRISPR_df,
                          x_column       = "GuideScan_Num_2or3MM",
                          y_column       = "CRISPOR_Num_2or3MM",
@@ -446,8 +496,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                          point_cex      = 0.2,
                          identical_axes = TRUE
                          )
-
-
 
 
 
@@ -471,7 +519,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            show_title     = "CRISPOR CFD score (up to 3MM) vs. GuideScan score"
                            )
 
-
     SpecificityScatterPlot(CRISPR_df,
                            y_column       = "CRISPOR_4MM_specificity",
                            y_label        = "Modified CRISPOR CFD specificity score",
@@ -481,7 +528,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            point_cex      = 0.4,
                            show_title     = "CRISPOR CFD score (unrounded) vs. GuideScan score"
                            )
-
 
     SpecificityScatterPlot(CRISPR_df,
                            x_column       = "CRISPOR_3MM_specificity",
@@ -495,13 +541,11 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            show_title     = "CRISPOR CFD scores: 3MM vs. 4MM"
                            )
 
-
     SpecificityScatterPlot(CRISPR_df,
                            point_alpha = 0.2,
                            point_cex   = 0.4,
                            show_title  = "Original CRISPOR CFD score vs. GuideScan score"
                            )
-
 
     SpecificityScatterPlot(CRISPR_df,
                            x_column           = "GuideScan_Num_2or3MM",
@@ -515,7 +559,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            show_title         = "Number of mismatches (2-3MM): CRISPOR vs. GuideScan"
                            )
 
-
     SpecificityScatterPlot(CRISPR_df,
                            x_column           = "GuideScan_Num_2or3MM",
                            y_column           = "CRISPOR_Num_2or3MM",
@@ -528,7 +571,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            show_title         = "Number of mismatches (2-3MM): CRISPOR vs. GuideScan (zoomed in)"
                            )
 
-
     SpecificityScatterPlot(CRISPR_df,
                            x_column           = "GuideScan_Num_2MM",
                            y_column           = "CRISPOR_Num_2MM",
@@ -540,7 +582,6 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            custom_axis_limits = c(0, 300),
                            show_title         = "Number of mismatches (2MM): CRISPOR vs. GuideScan"
                            )
-
 
     SpecificityScatterPlot(CRISPR_df,
                            x_column           = "GuideScan_Num_2MM",
@@ -555,12 +596,10 @@ DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
                            add_jitter         = TRUE
                            )
 
-
     if (make_PDF) {
       dev.off()
     }
   }
-
   return(invisible(NULL))
 }
 

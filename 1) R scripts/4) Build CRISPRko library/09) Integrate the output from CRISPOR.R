@@ -34,11 +34,10 @@ load(file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideSca
 
 
 
+
 # Identify files to read in -----------------------------------------------
 
-output_files   <- grep("^CRISPOR_output_", list.files(CRISPOR_files_directory), value = TRUE)
-are_FASTA      <- grepl("FASTA", output_files, fixed = TRUE)
-are_offtargets <- grepl("offs\\.tsv", output_files)
+output_files_list <- IdentifyCRISPOROutputFiles()
 
 
 
@@ -46,11 +45,10 @@ are_offtargets <- grepl("offs\\.tsv", output_files)
 
 # Read in data ------------------------------------------------------------
 
-TFs_CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files[(!(are_FASTA)) & !(are_offtargets)])
-TFs_CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files[are_FASTA & !(are_offtargets)])
-TFs_CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files[(!(are_FASTA)) & are_offtargets], show_messages = TRUE)
-TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files[are_FASTA & are_offtargets])
-
+CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files_list[["bed"]])
+CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]])
+CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files_list[["bed_offtargets"]], show_messages = TRUE)
+CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA_offtargets"]])
 
 
 
@@ -58,8 +56,8 @@ TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files[are_FASTA
 
 # Add the output from CRISPOR to the data frame ---------------------------
 
-merged_CRISPRko_df <- AddCRISPORBedData(merged_CRISPRko_df, TFs_CRISPOR_bed_df, TFs_CRISPOR_offtargets_bed_df)
-merged_CRISPRko_df <- AddCRISPORFASTAData(merged_CRISPRko_df, TFs_CRISPOR_FASTA_df, TFs_CRISPOR_offtargets_FASTA_df)
+merged_CRISPRko_df <- AddCRISPORBedData(merged_CRISPRko_df,   CRISPOR_bed_df,   CRISPOR_offtargets_bed_df)
+merged_CRISPRko_df <- AddCRISPORFASTAData(merged_CRISPRko_df, CRISPOR_FASTA_df, CRISPOR_offtargets_FASTA_df)
 
 
 

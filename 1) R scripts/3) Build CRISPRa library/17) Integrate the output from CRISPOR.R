@@ -36,9 +36,7 @@ load(file.path(CRISPRa_RData_directory, "15) Separate sgRNAs for genes with mult
 
 # Identify files to read in -----------------------------------------------
 
-output_files   <- grep("^CRISPOR_output_", list.files(CRISPOR_files_directory), value = TRUE)
-are_FASTA      <- grepl("FASTA", output_files, fixed = TRUE)
-are_offtargets <- grepl("offs\\.tsv", output_files)
+output_files_list <- IdentifyCRISPOROutputFiles()
 
 
 
@@ -46,10 +44,10 @@ are_offtargets <- grepl("offs\\.tsv", output_files)
 
 # Read in data ------------------------------------------------------------
 
-TFs_CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files[(!(are_FASTA)) & !(are_offtargets)])
-TFs_CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files[are_FASTA & !(are_offtargets)])
-TFs_CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files[(!(are_FASTA)) & are_offtargets], show_messages = TRUE)
-TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files[are_FASTA & are_offtargets])
+CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files_list[["bed"]])
+CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]])
+CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files_list[["bed_offtargets"]], show_messages = TRUE)
+CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA_offtargets"]])
 
 
 
@@ -60,15 +58,15 @@ TFs_CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files[are_FASTA
 
 # The 'missing_offtargets_df' data frame is created purely for illustrative purposes
 # (check the section 'Display sgRNAs that only have off-target scores, but for which detailed off-target information was unavailable' below)
-missing_offtargets_df <- AddCRISPORBedData(merged_replaced_CRISPRa_df, TFs_CRISPOR_bed_df, TFs_CRISPOR_offtargets_bed_df,
+missing_offtargets_df <- AddCRISPORBedData(merged_replaced_CRISPRa_df, CRISPOR_bed_df, CRISPOR_offtargets_bed_df,
                                            resolve_missing_offtargets = FALSE
                                            )
-missing_offtargets_df <- AddCRISPORFASTAData(missing_offtargets_df, TFs_CRISPOR_FASTA_df, TFs_CRISPOR_offtargets_FASTA_df,
+missing_offtargets_df <- AddCRISPORFASTAData(missing_offtargets_df, CRISPOR_FASTA_df, CRISPOR_offtargets_FASTA_df,
                                              resolve_missing_offtargets = FALSE
                                              )
 
-merged_replaced_CRISPRa_df <- AddCRISPORBedData(merged_replaced_CRISPRa_df, TFs_CRISPOR_bed_df, TFs_CRISPOR_offtargets_bed_df)
-merged_replaced_CRISPRa_df <- AddCRISPORFASTAData(merged_replaced_CRISPRa_df, TFs_CRISPOR_FASTA_df, TFs_CRISPOR_offtargets_FASTA_df)
+merged_replaced_CRISPRa_df <- AddCRISPORBedData(merged_replaced_CRISPRa_df,   CRISPOR_bed_df,   CRISPOR_offtargets_bed_df)
+merged_replaced_CRISPRa_df <- AddCRISPORFASTAData(merged_replaced_CRISPRa_df, CRISPOR_FASTA_df, CRISPOR_offtargets_FASTA_df)
 
 
 
