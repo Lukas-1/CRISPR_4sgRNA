@@ -72,10 +72,7 @@ first_trial_df <- read.table(file.path(gene_lists_directory, "Trial_genes.txt"),
 
 
 ### Read in the output from the GPP sgRNA designer tool
-<<<<<<< HEAD
 GPP_CRISPRa_file_names <- list.files(GPP_CRISPRa_path)
-=======
->>>>>>> b835e6fb4a0db89709f1c800c36a2a8690165f7a
 if (legacy_mode) {
   GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path, skip = 4)
 } else {
