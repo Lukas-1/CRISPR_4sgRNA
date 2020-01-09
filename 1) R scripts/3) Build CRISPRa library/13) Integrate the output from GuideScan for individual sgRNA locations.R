@@ -54,13 +54,14 @@ sgRNAs_input_vec <- sgRNAStringForGuideScan(merged_replaced_CRISPRa_df)
 matches_vec <- match(sgRNAs_input_vec, guidescan_sgRNAs_df[, "Region"])
 are_to_be_replaced <- (merged_replaced_CRISPRa_df[, "TSS_searched_by_GuideScan"] %in% c("No", "Not this gene")) & !(is.na(matches_vec))
 
-guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_Num_2or3MM")
 
 
 
 
 
 # Update the CRISPRa library with additional data from GuideScan ----------
+
+guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_Num_2or3MM")
 
 for (column in guidescan_columns) {
   merged_replaced_CRISPRa_df[are_to_be_replaced, column] <- tidy_guidescan_sgRNAs_df[matches_vec[are_to_be_replaced], column]
