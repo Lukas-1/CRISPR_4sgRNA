@@ -69,7 +69,7 @@ TKOv3_df <- data.frame(read_excel(CRISPRko_TKOv3_path), stringsAsFactors = FALSE
 GPP_CRISPRko_file_names <- list.files(GPP_CRISPRko_path)
 
 if (legacy_mode) {
-  GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path, skip = 4)
+  GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path, skip = 4) # This re-creates the effect of a bug whereby the first 4 sgRNAs in each of the output files from the GPP sgRNA designer tool was skipped; this affects about 1 in 200 genes
 } else {
   GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path)
 }

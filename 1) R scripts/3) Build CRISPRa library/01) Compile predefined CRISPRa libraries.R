@@ -74,7 +74,7 @@ first_trial_df <- read.table(file.path(gene_lists_directory, "Trial_genes.txt"),
 ### Read in the output from the GPP sgRNA designer tool
 GPP_CRISPRa_file_names <- list.files(GPP_CRISPRa_path)
 if (legacy_mode) {
-  GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path, skip = 4)
+  GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path, skip = 4) # This re-creates the effect of a bug whereby the first 4 sgRNAs in each of the output files from the GPP sgRNA designer tool was skipped; this affects about 1 in 200 genes
 } else {
   GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path)
 }
