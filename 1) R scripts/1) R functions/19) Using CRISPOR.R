@@ -327,7 +327,7 @@ ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
 
 
 
-# Filter input files to exclude sgRNAs with available CRISPOR data --------
+# Functions for filtering out sgRNAs with available CRISPOR data ----------
 
 MakeBedIDsFromInputDf <- function(input_df) {
   paste0(input_df[, "Chromosome"], ":", input_df[, "Start"], "-", input_df[, "End"], ":", input_df[, "Strand"])
