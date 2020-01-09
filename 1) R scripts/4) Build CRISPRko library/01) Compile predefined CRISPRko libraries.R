@@ -2,6 +2,13 @@
 
 
 
+# Legacy mode -------------------------------------------------------------
+
+legacy_mode <- TRUE
+
+
+
+
 # Import packages and source code -----------------------------------------
 
 library("readxl")
@@ -60,7 +67,13 @@ TKOv3_df <- data.frame(read_excel(CRISPRko_TKOv3_path), stringsAsFactors = FALSE
 
 ### Read in the output from the GPP sgRNA designer tool
 GPP_CRISPRko_file_names <- list.files(GPP_CRISPRko_path)
-GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path)
+
+if (legacy_mode) {
+  GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path, skip = 4)
+} else {
+  GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path)
+}
+
 
 
 
