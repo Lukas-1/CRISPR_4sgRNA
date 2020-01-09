@@ -105,33 +105,21 @@ WriteGPPInputDf <- function(submit_df, chunk_ID, GPP_input_directory, input_pref
 
 # Functions for processing output from the GPP sgRNA designer -------------
 
-# ReadGPPOutputFiles <- function(output_file_names, GPP_path) {
-#   GPP_output_df_list <- sapply(output_file_names, function (x) {
-#     GPP_output_colnames <- scan(file = file.path(GPP_path, x), nlines = 1, what = "character", sep = "\t")
-#     GPP_output_df <- read.table(file.path(GPP_path, x),
-#                                 sep = "\t", quote = "", header = FALSE,
-#                                 fill = TRUE, skip = 5, stringsAsFactors = FALSE
-#                                 )
-#     names(GPP_output_df) <- GPP_output_colnames
-#     return(GPP_output_df)
-#   }, simplify = FALSE)
-#   results_df <- do.call(rbind.data.frame, c(GPP_output_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-#   return(results_df)
-# }
-
-ReadGPPOutputFiles <- function(output_file_names, GPP_path) {
+ReadGPPOutputFiles <- function(output_file_names, GPP_path, skip = NULL) { # The skip argument is just to enable "legacy mode"
   GPP_output_df_list <- sapply(output_file_names, function (x) {
     GPP_output_df <- read.table(file.path(GPP_path, x),
                                 sep = "\t", quote = "", comment.char = "",
                                 header = TRUE, check.names = FALSE, fill = TRUE,
                                 stringsAsFactors = FALSE
                                 )
+    if (!(is.null(skip))) {
+      GPP_output_df <- GPP_output_df[-seq_len(skip), ]
+    }
     return(GPP_output_df)
   }, simplify = FALSE)
   results_df <- do.call(rbind.data.frame, c(GPP_output_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   return(results_df)
 }
-
 
 
 CRISPRa_GPP_output_columns <- c(
@@ -165,9 +153,6 @@ CRISPRko_GPP_output_columns <- c(
   "On-Target Rank", "Off-Target Rank", "Combined Rank",
   "Pick Order", "Picking Round", "Picking Notes"
 )
-
-
-
 
 
 TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
