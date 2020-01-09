@@ -77,7 +77,7 @@ for (chunk_ID in names(entrez_chunks_list)) {
   for (i in 1:2) {
     df_list <- get(c("filtered_bed_df_list", "filtered_FASTA_vec_list")[[i]])
     chunk_name <- grep(paste0("^", chunk_ID), names(df_list), value = TRUE)
-    file_name <- paste0("Input_for_CRISPOR__chunk_", chunk_name, "__CRISPRko")
+    file_name <- paste0("Input_for_CRISPOR__chunk_", chunk_name, "__CRISPRa")
     write.table(df_list[[chunk_name]],
                 file = file.path(CRISPOR_files_directory,
                                  "Input - filtered by already processed",
