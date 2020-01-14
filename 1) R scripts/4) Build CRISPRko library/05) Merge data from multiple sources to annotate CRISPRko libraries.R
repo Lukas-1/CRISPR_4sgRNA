@@ -127,7 +127,7 @@ for (column_name in c("Combined_ID", "Entrez_ID", "Gene_symbol")) {
 
 # Remove duplicate sgRNAs -------------------------------------------------
 
-extended_CRISPRko_df <- ResolveDuplicates(extended_CRISPRko_df, concatenate_columns = "TKOv3_ID")
+extended_CRISPRko_df <- ResolveDuplicates(extended_CRISPRko_df, concatenate_columns = c("TKOv3_ID", "Exon_number_GPP"))
 
 
 

@@ -168,7 +168,7 @@ CRISPRko_df[have_locations, "Original_PAM"] <- ifelse(are_identical_sequences & 
 
 # Remove new duplicates after correcting ambiguous Entrez IDs -------------
 
-CRISPRko_df <- ResolveDuplicates(CRISPRko_df, concatenate_columns = "TKOv3_ID")
+CRISPRko_df <- ResolveDuplicates(CRISPRko_df, concatenate_columns = c("TKOv3_ID", "Exon_number_GPP"))
 
 
 

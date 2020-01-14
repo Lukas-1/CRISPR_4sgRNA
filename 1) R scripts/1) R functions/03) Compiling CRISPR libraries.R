@@ -98,6 +98,9 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
       results_df[, column_name] <- min(entrez_source_vec)
     }
   }
+  if ("Exon_number_GPP" %in% concatenate_columns) {
+    results_df <- results_df[order(results_df[, "Exon_number_GPP"]), ]
+  }
   for (column_name in concatenate_columns) {
     character_vec <- unique(replicates_df[, column_name])
     character_vec <- character_vec[!(is.na(character_vec))]
@@ -122,6 +125,14 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
 
   any_resolved <- FALSE
   are_duplicated <- duplicated(results_df[, !(names(results_df) %in% drop_columns)])
+
+  if ("sgRNA_context_sequence" %in% colnames(results_df)) {
+    are_otherwise_duplicated <- !(are_duplicated) & duplicated(results_df[, !(names(results_df) %in% c("sgRNA_context_sequence", drop_columns))])
+    if (any(are_otherwise_duplicated)) {
+      results_df[, "sgRNA_context_sequence"] <- NA_character_
+      are_duplicated <- are_duplicated | are_otherwise_duplicated
+    }
+  }
   if (any(are_duplicated)) {
     results_df <- results_df[!(are_duplicated), ]
     any_resolved <- TRUE

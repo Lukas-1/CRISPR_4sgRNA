@@ -318,7 +318,7 @@ combined_df[, "Combined_ID"] <- ifelse(!(is.na(combined_df[, "Combined_ID"])),
                                               )
                                        )
 
-CRISPRko_df <- ResolveDuplicates(combined_df, concatenate_columns = "TKOv3_ID")
+CRISPRko_df <- ResolveDuplicates(combined_df, concatenate_columns = c("TKOv3_ID", "Exon_number_GPP"))
 
 
 
