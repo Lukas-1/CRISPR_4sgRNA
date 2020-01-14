@@ -31,7 +31,7 @@ general_RData_directory  <- file.path(RData_directory, "1) General")
 # Read in data ------------------------------------------------------------
 
 # Downloaded from ftp://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz
-# on 21 July 2019
+# on 13 January 2020
 NCBI_Hs_info_df <- read.table(file.path(CRISPR_input_directory, "Human genome", "NCBI", "Homo_sapiens.gene_info"),
                               sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL,
                               fill = TRUE, check.names = FALSE, comment.char = ""
@@ -39,7 +39,7 @@ NCBI_Hs_info_df <- read.table(file.path(CRISPR_input_directory, "Human genome", 
 
 
 
-# Downloaded from ftp://ftp.ensembl.org/pub/release-85/gtf/homo_sapiens/Homo_sapiens.GRCh38.85.gtf.gz
+# Downloaded from ftp://ftp.ensembl.org/pub/release-98/tsv/homo_sapiens/Homo_sapiens.GRCh38.98.entrez.tsv.gz
 # on 14 October 2019
 Ensembl_Hs_entrez_df <- read.table(file.path(CRISPR_input_directory, "Human genome", "ENSEMBL", "Homo_sapiens.GRCh38.98.entrez.tsv"),
                                    sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL,
