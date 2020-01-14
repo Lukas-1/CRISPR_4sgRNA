@@ -97,7 +97,6 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
     }
     file_number_vec[[i]] <- file_number
   }
-
   guidescan_df_list <- split(GuideScan_output_df, file_number_vec)
 
   guidescan_df_list <- lapply(guidescan_df_list, function (x) {
@@ -106,7 +105,6 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
     names(results_df)[2:ncol(results_df)] <- as.character(x[2, ])
     return(results_df)
   })
-
   results_df <- do.call(rbind.data.frame, c(guidescan_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   names(results_df) <- gsub(" ", "_", names(results_df), fixed = TRUE)
   return(results_df)
@@ -143,11 +141,9 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
   sgRNAs_for_region <- lapply(combined_ID_for_region, function(x) unique(toupper(CRISPR_df[CRISPR_df[, "Combined_ID"] %in% x, "sgRNA_sequence"])))
 
 
-
   ### Split the rows of raw_df into the individual regions ###
 
   file_number_vec <- MakeGuideScanFileNumbers(raw_df)
-
 
 
   ### Generate a list of filtered GuidesScan data frames ###
@@ -171,7 +167,6 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
       return(NULL)
     }
   })
-
 
   ### Assemble the filtered GuideScan output ###
 

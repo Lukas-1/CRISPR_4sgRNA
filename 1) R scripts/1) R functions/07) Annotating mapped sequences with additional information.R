@@ -141,7 +141,6 @@ FindNearestGenes <- function(ranges_df) {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
   message("Finding the closest genes to the specified genomic ranges...")
-
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
   hits_object <- distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all")
@@ -332,7 +331,6 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     }
     results_df[, "Found"] <- ifelse(is.na(my_matches), "No", "Yes")
   }
-
   return(results_df)
 }
 
@@ -364,7 +362,6 @@ LiftOverAndAnnotate <- function(ranges_df) {
     names(sgRNAs_lifted_over_df)[names(sgRNAs_lifted_over_df) == column_name] <- location_columns[[column_name]]
   }
 
-
   sgRNAs_lifted_over_df <- sgRNAs_lifted_over_df[sgRNAs_lifted_over_df[, "width"] == 20 , ]
 
   if (any(duplicated(sgRNAs_lifted_over_df[, "group"]))) {
@@ -374,7 +371,6 @@ LiftOverAndAnnotate <- function(ranges_df) {
   sgRNAs_lifted_over_GRanges_20mers <- RangesDfToGRangesObject(sgRNAs_lifted_over_df)
 
   sgRNAs_lifted_over_df[, "Sequence_liftOver"] <- as.character(motifRG::getSequence(sgRNAs_lifted_over_GRanges_20mers, BSgenome.Hsapiens.UCSC.hg38))
-
   sgRNAs_lifted_over_df[, "PAM_liftOver"] <- GetNGGPAM(sgRNAs_lifted_over_df)
 
   lifted_over_matches <- match(seq_len(nrow(ranges_df)), sgRNAs_lifted_over_df[, "group"])
@@ -427,7 +423,6 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
       }
     }
   }
-
   results_df <- confirmed_locations_df
 
   results_df[, "Old_Entrez"] <- results_df[, "Entrez_ID"]
