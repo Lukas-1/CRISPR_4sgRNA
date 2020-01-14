@@ -2,12 +2,6 @@
 
 
 
-# Legacy mode -------------------------------------------------------------
-
-legacy_mode <- TRUE
-
-
-
 
 # Import packages and source code -----------------------------------------
 
@@ -43,6 +37,8 @@ CRISPRko_Brunello_2018_path <- file.path(CRISPRko_datasets_directory, "Brunello"
 CRISPRko_TKOv3_path         <- file.path(CRISPRko_datasets_directory, "TKOv3",  "tkov3_guide_sequence.xlsx")
 
 GPP_CRISPRko_path           <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRko/GPP sgRNA designer/2) Output files")
+GPP_priority_CRISPRko_path  <- file.path(GPP_CRISPRko_path, "1) High-priority")
+GPP_optional_CRISPRko_path  <- file.path(GPP_CRISPRko_path, "2) Optional")
 
 
 
@@ -59,20 +55,19 @@ load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RDat
 
 # Read in data ------------------------------------------------------------
 
-Brunello_df      <- data.frame(read_excel(CRISPRko_Brunello_path), stringsAsFactors = FALSE, check.names = FALSE)[, -1]
-Brunello_2018_df <- data.frame(read_excel(CRISPRko_Brunello_2018_path, sheet = "sgRNA annotations"), stringsAsFactors = FALSE, check.names = FALSE)
+Brunello_df      <- data.frame(read_excel(CRISPRko_Brunello_path),
+                               stringsAsFactors = FALSE, check.names = FALSE
+                               )[, -1]
+Brunello_2018_df <- data.frame(read_excel(CRISPRko_Brunello_2018_path, sheet = "sgRNA annotations"),
+                               stringsAsFactors = FALSE, check.names = FALSE
+                               )
 
 TKOv3_df <- data.frame(read_excel(CRISPRko_TKOv3_path), stringsAsFactors = FALSE, check.names = FALSE)
 
 
 ### Read in the output from the GPP sgRNA designer tool
-GPP_CRISPRko_file_names <- list.files(GPP_CRISPRko_path)
-
-if (legacy_mode) {
-  GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path, skip = 4) # This re-creates the effect of a bug whereby the first 4 sgRNAs in each of the output files from the GPP sgRNA designer tool was skipped; this affects about 1 in 200 genes
-} else {
-  GPP_CRISPRko_all_df <- ReadGPPOutputFiles(GPP_CRISPRko_file_names, GPP_CRISPRko_path)
-}
+GPP_priority_CRISPRko_full_df <- ReadGPPOutputFiles(list.files(GPP_priority_CRISPRko_path), GPP_priority_CRISPRko_path)
+GPP_optional_CRISPRko_full_df <- ReadGPPOutputFiles(list.files(GPP_optional_CRISPRko_path), GPP_optional_CRISPRko_path)
 
 
 
@@ -124,13 +119,17 @@ Brunello_symbols_noNA <- Brunello_df[!(is.na(Brunello_matches)), "Target Gene Sy
 Brunello_2018_symbols <- Brunello_2018_df[Brunello_matches, "Annotated Gene Symbol"]
 Brunello_2018_symbols_noNA <- Brunello_2018_symbols[!(is.na(Brunello_matches))]
 
-are_identical_symbols <- vapply(seq_along(Brunello_symbols_noNA), function(x) identical(Brunello_symbols_noNA[[x]], Brunello_2018_symbols_noNA[[x]]), logical(1))
-Brunello_symbols_df <- data.frame("Older" = Brunello_symbols_noNA, "Newer" = Brunello_2018_symbols_noNA, stringsAsFactors = FALSE, row.names = NULL)
+are_identical_symbols <- mapply(identical, Brunello_symbols_noNA, Brunello_2018_symbols_noNA)
+Brunello_symbols_df <- data.frame("Older" = Brunello_symbols_noNA,
+                                  "Newer" = Brunello_2018_symbols_noNA,
+                                  stringsAsFactors = FALSE,
+                                  row.names = NULL
+                                  )
 Brunello_symbols_df[!(are_identical_symbols), ]
 
 Brunello_entrezs_noNA <- as.character(Brunello_df[!(is.na(Brunello_matches)), "Target Gene ID"])
 Brunello_2018_entrezs_noNA <- Brunello_2018_df[Brunello_matches[!(is.na(Brunello_matches))], "Annotated Gene ID"]
-are_identical_entrezs <- vapply(seq_along(Brunello_entrezs_noNA), function(x) identical(Brunello_entrezs_noNA[[x]], Brunello_2018_entrezs_noNA[[x]]), logical(1))
+are_identical_entrezs <- mapply(identical, Brunello_entrezs_noNA, Brunello_2018_entrezs_noNA)
 stopifnot(all(are_identical_entrezs))
 
 
@@ -139,8 +138,15 @@ stopifnot(all(are_identical_entrezs))
 
 # Process the data from the Broad Institute's GPP portal ------------------
 
-GPP_CRISPRko_df <- TidyGPPOutputDf(GPP_CRISPRko_all_df, CRISPRko_GPP_output_columns)
-GPP_CRISPRko_df <- GPP_CRISPRko_df[GPP_CRISPRko_df[, "Pick Order"] %in% 1:50, ]
+GPP_priority_CRISPRko_df <- TidyGPPOutputDf(GPP_priority_CRISPRko_full_df, CRISPRko_GPP_output_columns)
+GPP_optional_CRISPRko_df <- TidyGPPOutputDf(GPP_optional_CRISPRko_full_df, CRISPRko_GPP_output_columns)
+
+GPP_priority_CRISPRko_df <- GPP_optional_CRISPRko_df[GPP_priority_CRISPRko_df[, "Pick Order"] %in% 1:50, ]
+GPP_optional_CRISPRko_df <- GPP_optional_CRISPRko_df[GPP_optional_CRISPRko_df[, "Pick Order"] %in% 1:10, ]
+
+GPP_CRISPRko_df <- rbind.data.frame(GPP_priority_CRISPRko_df, GPP_optional_CRISPRko_df,
+                                    make.row.names = FALSE, stringsAsFactors = FALSE
+                                    )
 
 table(GPP_CRISPRko_df[, "Pick Order"])
 sort(table(GPP_CRISPRko_df[, "Target Gene Symbol"]))
@@ -156,7 +162,9 @@ Brunello_combined_symbols <- ifelse(is.na(Brunello_2018_symbols),
                                     Brunello_2018_symbols
                                     )
 
-mapped_Brunello_df <- MapToEntrezs(entrez_IDs_vec = as.character(Brunello_df[, "Target Gene ID"]), symbols_vec = Brunello_combined_symbols)
+mapped_Brunello_df <- MapToEntrezs(entrez_IDs_vec = as.character(Brunello_df[, "Target Gene ID"]),
+                                   symbols_vec = Brunello_combined_symbols
+                                   )
 
 mapped_Brunello_df[mapped_Brunello_df[, "Original_entrez"] != "", ]
 
@@ -168,7 +176,10 @@ mapped_GPP_df <- MapToEntrezs(entrez_IDs_vec = as.character(GPP_CRISPRko_df[, "T
 
 
 new_Brunello_df <- data.frame(
-  "Combined_ID"            = ifelse(is.na(mapped_Brunello_df[, "Entrez_ID"]), toupper(mapped_Brunello_df[, "Original_symbol"]), mapped_Brunello_df[, "Entrez_ID"]),
+  "Combined_ID"            = ifelse(is.na(mapped_Brunello_df[, "Entrez_ID"]),
+                                    toupper(mapped_Brunello_df[, "Original_symbol"]),
+                                    mapped_Brunello_df[, "Entrez_ID"]
+                                    ),
   "Source"                 = "Brunello",
   "Is_control"             = "No",
   mapped_Brunello_df[, 1:4],
@@ -301,11 +312,13 @@ combined_df <- rbind.data.frame(new_Brunello_df,
 
 combined_df[, "Combined_ID"] <- ifelse(!(is.na(combined_df[, "Combined_ID"])),
                                        combined_df[, "Combined_ID"],
-                                       ifelse(is.na(combined_df[, "Entrez_ID"]), toupper(combined_df[, "Original_symbol"]), combined_df[, "Entrez_ID"])
+                                       ifelse(is.na(combined_df[, "Entrez_ID"]),
+                                              toupper(combined_df[, "Original_symbol"]),
+                                              combined_df[, "Entrez_ID"]
+                                              )
                                        )
 
 CRISPRko_df <- ResolveDuplicates(combined_df, concatenate_columns = "TKOv3_ID")
-
 
 
 

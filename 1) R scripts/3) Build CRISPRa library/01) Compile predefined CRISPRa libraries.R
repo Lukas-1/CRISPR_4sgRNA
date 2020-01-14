@@ -2,14 +2,6 @@
 
 
 
-# Legacy mode -------------------------------------------------------------
-
-legacy_mode <- TRUE
-
-
-
-
-
 # Import packages and source code -----------------------------------------
 
 library("readxl")
@@ -43,7 +35,8 @@ CRISPRa_Horlbeck2016_TSSs_path   <- file.path(CRISPRa_Horlbeck2016_path, "2016 -
 CRISPRa_Doench2018_path          <- file.path(CRISPRa_datasets_directory, "Sanson, Doench - Nat Comm 2018", "2018 - Optimized libraries for CRISPR-Cas9 genetic screens - Data S5.xlsx")
 hand_picked_CRISPRa_path         <- file.path(CRISPRa_datasets_directory, "Manually curated CRISPRa gRNAs.xlsx")
 GPP_CRISPRa_path                 <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRa/GPP sgRNA designer/2) Output files")
-
+GPP_priority_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "1) High-priority")
+GPP_optional_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "2) Optional")
 
 
 
@@ -72,12 +65,8 @@ first_trial_df <- read.table(file.path(gene_lists_directory, "Trial_genes.txt"),
 
 
 ### Read in the output from the GPP sgRNA designer tool
-GPP_CRISPRa_file_names <- list.files(GPP_CRISPRa_path)
-if (legacy_mode) {
-  GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path, skip = 4) # This re-creates the effect of a bug whereby the first 4 sgRNAs in each of the output files from the GPP sgRNA designer tool was skipped; this affects about 1 in 200 genes
-} else {
-  GPP_CRISPRa_all_df <- ReadGPPOutputFiles(GPP_CRISPRa_file_names, GPP_CRISPRa_path)
-}
+GPP_priority_CRISPRa_full_df <- ReadGPPOutputFiles(list.files(GPP_priority_CRISPRa_path), GPP_priority_CRISPRa_path)
+GPP_optional_CRISPRa_full_df <- ReadGPPOutputFiles(list.files(GPP_optional_CRISPRa_path), GPP_optional_CRISPRa_path)
 
 
 
@@ -102,6 +91,7 @@ hCRISPRa_v2_df[, "TSS_source"] <- hCRISPRa_v2_TSS_df[TSS_source_matches, "TSS so
 
 
 
+
 # Combine the Calabrese data ----------------------------------------------
 
 Calabrese_df <- rbind.data.frame(
@@ -116,10 +106,16 @@ Calabrese_df <- rbind.data.frame(
 
 # Process the data from the Broad Institute's GPP portal ------------------
 
-GPP_CRISPRa_df <- TidyGPPOutputDf(GPP_CRISPRa_all_df, CRISPRa_GPP_output_columns)
-# GPP_CRISPRa_df <- GPP_CRISPRa_df[GPP_CRISPRa_df[, "Pick Order"] %in% 1:100, ]
+GPP_priority_CRISPRa_df <- TidyGPPOutputDf(GPP_priority_CRISPRa_full_df, CRISPRa_GPP_output_columns)
+GPP_optional_CRISPRa_df <- TidyGPPOutputDf(GPP_optional_CRISPRa_full_df, CRISPRa_GPP_output_columns)
 
-table(GPP_CRISPRa_df[, "Pick Order"])
+GPP_optional_CRISPRa_df <- GPP_optional_CRISPRa_df[GPP_optional_CRISPRa_df[, "Pick Order"] %in% 1:10, ]
+
+GPP_CRISPRa_df <- rbind.data.frame(GPP_priority_CRISPRa_df, GPP_optional_CRISPRa_df,
+                                   make.row.names = FALSE, stringsAsFactors = FALSE
+                                   )
+
+table(GPP_priority_CRISPRa_df[, "Pick Order"])
 sort(table(GPP_CRISPRa_df[, "Target Gene Symbol"]))
 
 
@@ -139,7 +135,10 @@ Calabrese_symbols_entrezs_df <- unique(Calabrese_df[!(are_Calabrese_controls), c
 
 names(Calabrese_symbols_entrezs_df) <- c("Gene_symbol", "Entrez_ID")
 
-unique_symbols_vec <- unique(c(hCRISPRa_v2_symbols_vec, Calabrese_symbols_entrezs_df[, "Gene_symbol"][!(toupper(Calabrese_symbols_entrezs_df[, "Gene_symbol"]) %in% toupper(hCRISPRa_v2_symbols_vec))]))
+unique_symbols_vec <- unique(c(hCRISPRa_v2_symbols_vec,
+                               Calabrese_symbols_entrezs_df[, "Gene_symbol"][!(toupper(Calabrese_symbols_entrezs_df[, "Gene_symbol"]) %in% toupper(hCRISPRa_v2_symbols_vec))]
+                               )
+                             )
 
 
 
@@ -304,11 +303,7 @@ combined_df[, "Combined_ID"] <- ifelse(are_controls,
                                               )
                                        )
 
-if (legacy_mode) {
-  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
-} else {
-  CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
-}
+CRISPRa_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
 
 
 

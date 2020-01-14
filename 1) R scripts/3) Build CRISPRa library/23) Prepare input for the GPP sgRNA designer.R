@@ -64,12 +64,20 @@ optional_df_list <- lapply(optional_entrez_chunks_list, BuildDfForGPP)
 # Write input files for the GPP sgRNA designer to disk --------------------
 
 for (chunk_ID in names(submit_df_list)) {
-  WriteGPPInputDf(submit_df_list[[chunk_ID]], chunk_ID, GPP_input_files_directory)
+  WriteGPPInputDf(submit_df_list[[chunk_ID]],
+                  chunk_ID,
+                  file.path(GPP_input_files_directory, "1) High-priority")
+                  )
 }
 
 for (chunk_ID in names(optional_df_list)) {
-  WriteGPPInputDf(optional_df_list[[chunk_ID]], chunk_ID, GPP_input_files_directory, input_prefix = "optional_")
+  WriteGPPInputDf(optional_df_list[[chunk_ID]],
+                  chunk_ID,
+                  file.path(GPP_input_files_directory, "2) Optional"),
+                  input_prefix = "optional_"
+                  )
 }
+
 
 
 
