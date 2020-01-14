@@ -73,10 +73,12 @@ extended_CRISPRko_df <- ReplaceDuplicatedGenes(extended_CRISPRko_df)
 
 are_ambiguous <- grepl(",", extended_CRISPRko_df[, "Entrez_ID"], fixed = TRUE)
 
-display_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source", "sgRNA_sequence", "Chromosome", "Entrez_overlapping_0MM", "Symbol_overlapping_0MM")
+display_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source",
+                     "sgRNA_sequence", "Chromosome", "Entrez_overlapping_0MM", "Symbol_overlapping_0MM"
+                     )
 
 ambiguous_df <- extended_CRISPRko_df[are_ambiguous, ]
-ambiguous_df[, display_columns] # There seems like there is nothing that can be done about these ambiguous Entrez IDs...
+ambiguous_df[, display_columns] # It seems like there is nothing that can be done about these ambiguous Entrez IDs...
 
 
 
@@ -126,8 +128,6 @@ for (column_name in c("Combined_ID", "Entrez_ID", "Gene_symbol")) {
 # Remove duplicate sgRNAs -------------------------------------------------
 
 extended_CRISPRko_df <- ResolveDuplicates(extended_CRISPRko_df, concatenate_columns = "TKOv3_ID")
-
-
 
 
 
