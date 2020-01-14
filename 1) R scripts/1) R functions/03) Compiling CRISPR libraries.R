@@ -127,10 +127,18 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     any_resolved <- TRUE
   }
 
-  ### Deal with triplicates (two transcripts in hCRISPRa-v2, and also found in Calabrese) ###
-  if ((nrow(results_df) == 3) && (all(c("hCRISPRa-v2", "Calabrese") %in% results_df[, "Original_source"])) && (all(results_df[, "Original_source"] %in% c("hCRISPRa-v2", "Calabrese")))) {
-    results_df <- results_df[results_df[, "Original_source"] == "hCRISPRa-v2", ]
-    any_resolved <- TRUE
+  ### Deal with triplicates (two transcripts in hCRISPRa-v2, and also found in Calabrese or GPP) ###
+  if ((nrow(results_df) == 3)) {
+    are_hCRISPRa_v2 <- results_df[, "Original_source"] == "hCRISPRa-v2"
+    is_GPP_or_Calabrese <- results_df[, "Original_source"] %in% c("GPP", "Calabrese")
+    if ((sum(are_hCRISPRa_v2) == 2) && (sum(is_GPP_or_Calabrese) == 1)) {
+      non_hCRISPRa_v2_columns <- c("Entrez_source_Calabrese", "Calabrese_rank", "GPP_rank", "Original_PAM")
+      for (column_name in non_hCRISPRa_v2_columns) {
+        results_df[, column_name] <- results_df[is_GPP_or_Calabrese, column_name]
+      }
+      results_df <- results_df[are_hCRISPRa_v2, ]
+      any_resolved <- TRUE
+    }
   }
 
   if (any_resolved) {
