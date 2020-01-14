@@ -4,7 +4,7 @@
 
 # Legacy mode -------------------------------------------------------------
 
-legacy_mode <- TRUE
+legacy_mode <- FALSE
 
 
 

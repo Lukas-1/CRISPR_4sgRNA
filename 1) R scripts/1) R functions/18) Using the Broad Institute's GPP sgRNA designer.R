@@ -105,16 +105,13 @@ WriteGPPInputDf <- function(submit_df, chunk_ID, GPP_input_directory, input_pref
 
 # Functions for processing output from the GPP sgRNA designer -------------
 
-ReadGPPOutputFiles <- function(output_file_names, GPP_path, skip = NULL) { # The skip argument is just to enable "legacy mode"
+ReadGPPOutputFiles <- function(output_file_names, GPP_path) {
   GPP_output_df_list <- sapply(output_file_names, function (x) {
     GPP_output_df <- read.table(file.path(GPP_path, x),
                                 sep = "\t", quote = "", comment.char = "",
                                 header = TRUE, check.names = FALSE, fill = TRUE,
                                 stringsAsFactors = FALSE
                                 )
-    if (!(is.null(skip))) {
-      GPP_output_df <- GPP_output_df[-seq_len(skip), ]
-    }
     return(GPP_output_df)
   }, simplify = FALSE)
   results_df <- do.call(rbind.data.frame, c(GPP_output_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
@@ -157,7 +154,8 @@ CRISPRko_GPP_output_columns <- c(
 
 TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
 
-  were_not_found <- grepl("^ERROR: Gene .+ not found", GPP_output_df[, "Picking Notes"]) & is.na(GPP_output_df[, "Quota"])
+  were_not_found <- grepl("^ERROR: Gene .+ not found", GPP_output_df[, "Picking Notes"]) &
+                    is.na(GPP_output_df[, "Quota"])
 
   message(paste0(sum(were_not_found), " genes were not found by the Broad Institute's Genetic Perturbation Platform (GPP) sgRNA picker tool and were omitted from the data frame!"))
 
