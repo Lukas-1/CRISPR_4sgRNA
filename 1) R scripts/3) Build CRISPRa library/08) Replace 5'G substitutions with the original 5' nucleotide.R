@@ -60,12 +60,9 @@ Exchange5PrimeG <- function(CRISPR_df) {
 
 
 
-
-
 # Replace artificial 5' G nucleotides from the hCRISPRa-v2 database -------
 
 replaced_merged_CRISPRa_df <- Exchange5PrimeG(merged_CRISPRa_df)
-
 
 
 
@@ -87,7 +84,6 @@ new_5p_nucleotides <- ifelse(new_5p_nucleotides == "G", "G", tolower(new_5p_nucl
 replaced_merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"] <- paste0(new_5p_nucleotides,
                                                                        substr(merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"], 2, 20)
                                                                        )
-
 
 
 
