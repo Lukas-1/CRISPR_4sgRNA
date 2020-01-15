@@ -30,17 +30,39 @@ load(file.path(CRISPRa_RData_directory, "13) Integrate the output from GuideScan
 
 
 
-
-# Search the human genome for matches to sgRNAs ---------------------------
+# Identify sgRNAs that have a defined location ----------------------------
 
 are_mapped <- !(is.na(merged_replaced_CRISPRa_df[, "Start"]))
 
 mapped_indices <- rep(NA_integer_, length(are_mapped))
 mapped_indices[are_mapped] <- seq_len(sum(are_mapped))
 
+
+
+
+
+# Search for overlaps between sgRNAs and genetic polymorphisms ------------
+
 sgRNA_polymorphisms_df <- AllPolymorphisms(merged_replaced_CRISPRa_df[are_mapped, ])
 
+
+
+
+
+# Find the nearest genes (0MM locations only) -----------------------------
+
+location_columns <- c("Chromosome", "Strand", "Start", "End")
+nearest_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Distance")
+nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[, location_columns])[, nearest_columns]
+colnames(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
+
+
+
+
+# Merge the data frame ----------------------------------------------------
+
 merged_replaced_CRISPRa_df <- data.frame(merged_replaced_CRISPRa_df,
+                                         nearest_genes_df[mapped_indices, ],
                                          sgRNA_polymorphisms_df[mapped_indices, ],
                                          stringsAsFactors = FALSE,
                                          row.names = NULL
