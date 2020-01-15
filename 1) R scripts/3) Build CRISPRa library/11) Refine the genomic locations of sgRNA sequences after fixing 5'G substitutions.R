@@ -3,13 +3,6 @@
 
 
 
-# Legacy mode -------------------------------------------------------------
-
-legacy_mode <- FALSE
-
-
-
-
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
@@ -55,13 +48,11 @@ GetCases <- function(string_vec) {
 
 
 
-
 # Integrate the results of a genome search for sgRNA sequences ------------
 
 replaced_CRISPRa_df <- replaced_merged_CRISPRa_df[, names(CRISPRa_df)]
 
 extended_replaced_CRISPRa_df <- ExtendWithGenomeSearch(replaced_CRISPRa_df, replaced_genome_search_df)
-
 
 
 
@@ -93,11 +84,6 @@ head(full_merged_replaced_CRISPRa_df[is.na(full_merged_replaced_CRISPRa_df[, "Hi
 
 merged_replaced_CRISPRa_df <- AdjustPositionColumns(full_merged_replaced_CRISPRa_df, replaced_guidescan_all_genes_df)
 
-if (legacy_mode) {
-  source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
-  merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df)
-}
-
 
 
 
@@ -109,7 +95,6 @@ message(paste0("The following combined IDs had sgRNAs that mapped to more than o
 
 selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome", "Symbol_nearest_0MM")
 unique(merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% inconsistent_IDs, selected_gene_columns])
-
 
 
 

@@ -2,14 +2,6 @@
 
 
 
-# Legacy mode -------------------------------------------------------------
-
-legacy_mode <- FALSE
-
-
-
-
-
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
@@ -40,11 +32,9 @@ load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription f
 
 
 
-
 # Define the sublibrary ---------------------------------------------------
 
 replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
-
 
 
 
@@ -108,7 +98,6 @@ sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
 
 
 
-
 # Count the number of genes chosen from each of the libraries -------------
 
 num_gene_wells <- nrow(top4_df) / 4
@@ -125,7 +114,6 @@ table(are_GPP_top4)
 
 
 
-
 # Set the number of control wells -----------------------------------------
 
 num_control_wells <- 20
@@ -136,7 +124,6 @@ num_control_wells <- 20
 
 # Set the seed ------------------------------------------------------------
 
-
 ####################
 ### Set the seed ###
 ####################
@@ -144,7 +131,6 @@ set.seed(1)
 ####################
 ####################
 ####################
-
 
 
 
@@ -180,7 +166,6 @@ controls_df <- MakeControlGuidesDf(selected_controls_list, merged_replaced_CRISP
 
 
 
-
 # Select the targeting sgRNAs ---------------------------------------------
 
 problematic_top4_df   <- top4_df[are_problematic_sgRNAs, ]
@@ -193,8 +178,6 @@ problematic_df_list   <- lapply(problematic_indices_list,   function(x) Retrieve
 unproblematic_df_list <- lapply(unproblematic_indices_list, function(x) RetrieveIndices(unproblematic_top4_df, x, "AltTSS_ID"))
 
 combined_df_list <- c(unproblematic_df_list, problematic_df_list)
-
-
 
 
 
@@ -218,50 +201,9 @@ combined_df_shuffled_list[[use_index]] <- rbind.data.frame(combined_df_shuffled_
 
 
 
-
 # Combine into a data frame -----------------------------------------------
 
 TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
-
-
-
-
-
-# Use legacy mode ---------------------------------------------------------
-
-# Due to changes in the selection of control sequences (after the sgRNAs had already been ordered),
-# it is not possible to programmatically reproduce the exact control sgRNAs and ordering of wells,
-# because the random number generator will produce different results.
-
-if (legacy_mode) {
-
-  load(file.path(CRISPRa_RData_directory, "Legacy random selection of controls and ordering of wells for CRISPRa.RData"))
-
-  are_controls <- TF_sgRNA_plates_df[, "Is_control"] == "Yes"
-
-  paste_columns <- c("Entrez_ID", "TSS_ID", "sgRNA_sequence")
-
-  legacy_ID_vec <- do.call(paste, c(as.list(legacy_targeting_TF_df[, paste_columns]), sep = " | "))
-  new_ID_vec <- do.call(paste, c(as.list(TF_sgRNA_plates_df[!(are_controls), paste_columns]), sep = " | "))
-
-  stopifnot(length(legacy_ID_vec) == length(new_ID_vec))
-  legacy_matches <- match(legacy_ID_vec, new_ID_vec)
-  stopifnot(!(anyNA(legacy_matches)))
-
-  new_plates_df <- TF_sgRNA_plates_df[!(are_controls), ][legacy_matches, ]
-  new_controls_df <- TF_sgRNA_plates_df[are_controls, ]
-
-  for (column_name in c("Plate_number", "Well_number")) {
-    new_plates_df[, column_name] <- TF_sgRNA_plates_df[!(are_controls), column_name]
-  }
-  for (column_name in names(legacy_controls_TF_df)) {
-    new_controls_df[, column_name] <- legacy_controls_TF_df[, column_name]
-  }
-
-  TF_sgRNA_plates_df <- rbind.data.frame(new_plates_df, new_controls_df, stringsAsFactors = FALSE, make.row.names = FALSE)
-}
-
-
 
 
 

@@ -1,13 +1,6 @@
 ### 9th September 2019 ###
 
 
-# Legacy mode -------------------------------------------------------------
-
-legacy_mode <- FALSE
-
-
-
-
 
 # Import packages and source code -----------------------------------------
 
@@ -320,23 +313,10 @@ original_guide_IDs <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID_p
 
 original_matches <- match(randomized_guide_IDs, original_guide_IDs)
 
-if (legacy_mode) {
-  if (any(is.na(original_matches))) {
-    warning("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
-  }
-  source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
-  are_controls <- TF_sgRNA_plates_df[, "Is_control"] == "Yes"
-  legacy_order <- order(ifelse(are_controls, NA, original_matches),
-                        ifelse(are_controls, match(TF_sgRNA_plates_df[, "Calabrese_rank"], c("1/2/3", "4/5/6")), NA),
-                        ifelse(are_controls, match(TF_sgRNA_plates_df[, "hCRISPRa_v2_rank"], c("Top5", "Supp5")), NA)
-                        )
-  TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[legacy_order, ]
-} else {
-  if (any(is.na(original_matches))) {
-    stop("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
-  }
-  TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
+if (any(is.na(original_matches))) {
+  stop("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
 }
+TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
 
 
 

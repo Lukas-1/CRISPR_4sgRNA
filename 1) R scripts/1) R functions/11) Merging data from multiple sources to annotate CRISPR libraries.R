@@ -600,11 +600,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
 
   # Eliminate duplicated sgRNAs
-  if (legacy_mode) {
-    merged_CRISPR_df <- ResolveDuplicates(merged_CRISPR_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID"))
-  } else {
-    merged_CRISPR_df <- ResolveDuplicates(merged_CRISPR_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
-  }
+  merged_CRISPR_df <- ResolveDuplicates(merged_CRISPR_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
 
   ####################################################################################################################
   ### The following section of code attempts to troubleshoot the issue of sgRNAs that were not found by GuideScan. ###
