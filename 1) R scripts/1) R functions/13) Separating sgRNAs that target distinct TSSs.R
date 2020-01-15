@@ -180,11 +180,9 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, par
                                              function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE])
                                              )
     parallel::stopCluster(cl)
-
   } else {
     reordered_df_list <- lapply(combined_IDs, function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE]))
   }
-
   if (any(are_controls)) {
     controls_df <- CRISPR_df[are_controls, ]
     controls_df[, "TSS_number"] <- NA_integer_

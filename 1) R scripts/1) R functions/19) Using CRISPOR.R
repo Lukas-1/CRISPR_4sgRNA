@@ -60,7 +60,6 @@ MakeBedDf <- function(CRISPR_df, combined_IDs) {
   )
   export_bed_df <- unique(export_bed_df)
   row.names(export_bed_df) <- NULL
-
   return(export_bed_df)
 }
 
@@ -442,7 +441,6 @@ SpecificityScatterPlot <- function(CRISPR_df,
   box()
 
   alpha_hex <- substr(rgb(1, 1, 1, point_alpha), 8, 9)
-
   points(x_vec,
          y_vec,
          col = paste0(brewer.pal(9, "Blues")[[7]], alpha_hex),
