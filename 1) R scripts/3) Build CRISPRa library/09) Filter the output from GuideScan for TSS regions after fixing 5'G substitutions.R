@@ -34,7 +34,6 @@ load(file.path(CRISPRa_RData_directory, "08) Replace 5'G substitutions with the 
 
 
 
-
 # Read in data ------------------------------------------------------------
 
 guidescan_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRa_all_genes.csv")
