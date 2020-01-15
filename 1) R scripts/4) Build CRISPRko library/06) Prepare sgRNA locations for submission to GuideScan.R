@@ -6,6 +6,7 @@
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "04) Using GuideScan.R"))
+source(file.path(general_functions_directory, "21) Splitting sgRNAs into chunks for parallel analysis.R"))
 
 
 
@@ -25,6 +26,7 @@ GuideScan_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate f
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "09) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData"))
 load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData"))
 
 
@@ -54,9 +56,22 @@ row.names(multiplicates_df) <- NULL
 
 
 
-# Define all unique chromosomal positions ---------------------------------
+# Retain only unique chromosomal positions --------------------------------
 
-GuideScan_input_vec <- unique(submit_df[, "GuideScan_input_sgRNA"])
+submit_df <- submit_df[!(duplicated(submit_df[, "GuideScan_input_sgRNA"])), ]
+chunks_list <- AppendIDsWithoutEntrezs(entrez_chunks_list, submit_df)
+
+chunks_df <- data.frame(
+  "Combined_ID" = unlist(chunks_list, use.names = FALSE),
+  "Chunk_ID"    = rep(names(chunks_list), lengths(chunks_list)),
+  stringsAsFactors = FALSE
+)
+
+chunk_matches_vec <- match(submit_df[, "Combined_ID"], chunks_df[, "Combined_ID"])
+submit_df[, "Chunk"] <- chunks_df[chunk_matches_vec, "Chunk_ID"]
+
+GuideScan_input_list <- split(submit_df[, "GuideScan_input_sgRNA"], submit_df[, "Chunk"])
+
 
 
 
@@ -64,10 +79,15 @@ GuideScan_input_vec <- unique(submit_df[, "GuideScan_input_sgRNA"])
 
 # Write GuideScan input files to disk -------------------------------------
 
-write.table(GuideScan_input_vec,
-            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_individual_CRISPRko_sgRNAs.txt"),
-            quote = FALSE, row.names = FALSE, col.names = FALSE
-            )
+for (i in seq_along(GuideScan_input_list)) {
+  file_name <- paste0("Input_for_GuideScan__chunk_", names(GuideScan_input_list)[[i]], "__CRISPRko", ".txt")
+  write.table(GuideScan_input_list[[i]],
+              file = file.path(GuideScan_files_directory, file_name),
+              quote = FALSE, row.names = FALSE, col.names = FALSE
+              )
+}
+
+
 
 
 
