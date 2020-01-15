@@ -77,37 +77,33 @@ GetNGGPAM <- function(ranges_df) {
 ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
 
   entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
-  hits_df <- as.data.frame(Hits_object)
 
-  hits_df[, "Entrez_ID"] <- entrez_IDs_vec[hits_df[, "subjectHits"]]
-  integer_entrezs <- as.integer(hits_df[, "Entrez_ID"])
-  new_order <- order(hits_df[, "queryHits"], integer_entrezs)
-  hits_df <- hits_df[new_order, ]
+  hits_entrezs_vec <-  entrez_IDs_vec[subjectHits(Hits_object)]
+  new_order <- order(queryHits(Hits_object), as.integer(hits_entrezs_vec))
+  hits_entrezs_vec <- hits_entrezs_vec[new_order]
 
-  entrez_matches <- match(hits_df[, "Entrez_ID"], entrez_to_symbol_df[, "Entrez_ID"])
-  hits_df[, "Gene_symbol"] <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
-                                     entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
-                                     entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
-                                     )
+  entrez_matches <- match(hits_entrezs_vec, entrez_to_symbol_df[, "Entrez_ID"])
+  hits_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
+                             entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
+                             entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
+                             )
 
-  query_fac <- factor(hits_df[, "queryHits"], unique(hits_df[, "queryHits"]))
+  query_vec <- queryHits(Hits_object)[new_order]
+  query_fac <- factor(query_vec, unique(query_vec))
 
-  entrezs_list <- split(hits_df[, "Entrez_ID"], query_fac)
-  entrezs_vec <- vapply(entrezs_list, function(x) paste0(x, collapse = ", "), "")
-
-  symbols_list <- split(hits_df[, "Gene_symbol"], query_fac)
-  symbols_vec <- vapply(symbols_list, function(x) paste0(x, collapse = ", "), "")
+  entrezs_vec <- tapply(hits_entrezs_vec, query_fac, function(x) paste0(x, collapse = ", "))
+  symbols_vec <- tapply(hits_symbols_vec, query_fac, function(x) paste0(x, collapse = ", "))
 
   results_df <- data.frame(
-    "Entrez_ID"   = entrezs_vec,
-    "Gene_symbol" = symbols_vec,
-    "Num_genes"   = lengths(entrezs_list),
+    "Entrez_ID"      = entrezs_vec,
+    "Gene_symbol"    = symbols_vec,
+    "Num_genes"      = as.integer(table(query_fac)),
     stringsAsFactors = FALSE
   )
-  if ("distance" %in% names(hits_df)) {
-    results_df[, "Distance"] <- hits_df[unique(match(hits_df[, "queryHits"], hits_df[, "queryHits"])), "distance"]
+  if ("distance" %in% names(mcols(Hits_object))) {
+    results_df[, "Distance"] <- mcols(Hits_object)[, "distance"][new_order][unique(match(query_vec, query_vec))]
   }
-  match_matches_vec <- match(seq_len(num_queries), as.integer(names(entrezs_list)))
+  match_matches_vec <- match(seq_len(num_queries), query_vec)
   results_df <- results_df[match_matches_vec, ]
   row.names(results_df) <- NULL
   return(results_df)
