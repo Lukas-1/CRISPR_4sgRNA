@@ -138,10 +138,10 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     any_resolved <- TRUE
   }
 
-  ### Deal with triplicates (two transcripts in hCRISPRa-v2, and also found in Calabrese or GPP) ###
-  if ((nrow(results_df) == 3)) {
+  ### Deal with CRISPRa triplicates (two transcripts in hCRISPRa-v2, and also found in Calabrese or GPP) ###
+  if ((nrow(results_df) == 3) && ("hCRISPRa_v2_rank" %in% colnames(results_df))) {
     are_hCRISPRa_v2 <- results_df[, "Original_source"] == "hCRISPRa-v2"
-    is_GPP_or_Calabrese <- results_df[, "Original_source"] %in% c("GPP", "Calabrese")
+    is_GPP_or_Calabrese <- results_df[, "Original_source"] %in% c("GPP", "Calabrese", "GPP, Calabrese")
     if ((sum(are_hCRISPRa_v2) == 2) && (sum(is_GPP_or_Calabrese) == 1)) {
       non_hCRISPRa_v2_columns <- c("Entrez_source_Calabrese", "Calabrese_rank", "GPP_rank", "Original_PAM")
       for (column_name in non_hCRISPRa_v2_columns) {
