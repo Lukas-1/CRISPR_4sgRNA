@@ -341,7 +341,7 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   nearest_columns <- c("Entrez_nearest_0MM", "Symbol_nearest_0MM", "Entrez_nearest_1MM", "Symbol_nearest_1MM")
   if (use_overlapping_genes) {
     new_column_names <- sub("_nearest_", "_overlapping_", nearest_columns, fixed = TRUE)
-    names(results_df)[match(old_column_names, names(results_df))] <- new_column_names
+    names(results_df)[match(nearest_columns, names(results_df))] <- new_column_names
   } else if (!(add_genes)) {
     results_df <- results_df[, !(colnames(results_df) %in% nearest_columns)]
   }
