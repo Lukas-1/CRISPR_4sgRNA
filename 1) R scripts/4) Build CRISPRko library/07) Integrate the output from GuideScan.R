@@ -40,7 +40,6 @@ guidescan_raw_df_list <- lapply(guidescan_output_files, ReadGuideScanOutput)
 
 
 
-
 # Process the output from GuideScan ---------------------------------------
 
 guidescan_sgRNAs_raw_df <- do.call(rbind.data.frame, c(guidescan_raw_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
