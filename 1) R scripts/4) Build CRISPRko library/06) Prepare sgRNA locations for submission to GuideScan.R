@@ -80,7 +80,7 @@ GuideScan_input_list <- split(submit_df[, "GuideScan_input_sgRNA"], submit_df[, 
 # Write GuideScan input files to disk -------------------------------------
 
 for (i in seq_along(GuideScan_input_list)) {
-  file_name <- paste0("Input_for_GuideScan__chunk_", names(GuideScan_input_list)[[i]], "__CRISPRko", ".txt")
+  file_name <- paste0("Input_for_GuideScan_CRISPRko__chunk_", names(GuideScan_input_list)[[i]], ".txt")
   write.table(GuideScan_input_list[[i]],
               file = file.path(GuideScan_files_directory, file_name),
               quote = FALSE, row.names = FALSE, col.names = FALSE

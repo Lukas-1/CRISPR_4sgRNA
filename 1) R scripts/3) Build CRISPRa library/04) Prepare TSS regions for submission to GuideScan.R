@@ -62,11 +62,11 @@ unique_GuideScan_input_vec <- unique(combined_TSS_CRISPRa_df[, "GuideScan_input"
 # Write GuideScan input files to disk -------------------------------------
 
 write.table(candidates_GuideScan_input_vec,
-            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_CRISPRa_candidates.txt"),
+            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_CRISPRa_candidate_gene_TSSs.txt"),
             quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 write.table(unique_GuideScan_input_vec,
-            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_CRISPRa_all_genes.txt"),
+            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_CRISPRa_all_TSSs.txt"),
             quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 

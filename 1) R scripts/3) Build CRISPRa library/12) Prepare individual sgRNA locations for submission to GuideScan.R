@@ -77,7 +77,7 @@ GuideScan_input_vec <- unique(submit_df[, "GuideScan_input_sgRNA"])
 # Write GuideScan input files to disk -------------------------------------
 
 write.table(GuideScan_input_vec,
-            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_individual_CRISPRa_sgRNAs.txt"),
+            file = file.path(GuideScan_files_directory, "Input_for_GuideScan_CRISPRa_individual_locations.txt"),
             quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 

@@ -32,8 +32,8 @@ load(file.path(CRISPRa_RData_directory, "03) Map CRISPR libraries to TSS data.RD
 
 # Read in data ------------------------------------------------------------
 
-guidescan_candidates_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRa_candidate_genes.csv")
-guidescan_raw_df            <- ReadGuideScanOutput("GuideScan_output_CRISPRa_all_genes.csv")
+guidescan_candidates_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRa_candidate_gene_TSSs.csv")
+guidescan_raw_df            <- ReadGuideScanOutput("GuideScan_output_CRISPRa_all_TSSs.csv")
 
 
 
