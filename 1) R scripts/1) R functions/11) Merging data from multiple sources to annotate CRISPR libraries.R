@@ -499,7 +499,7 @@ MergeLocations <- function(merged_CRISPR_df) {
     "Start"                       = !(is.na(merged_CRISPR_df[, "Hits_start"]))        & !(is.na(merged_CRISPR_df[, "GuideScan_start"]))      & (merged_CRISPR_df[, "Hits_start"] != merged_CRISPR_df[, "GuideScan_start"]),
     "End"                         = !(is.na(merged_CRISPR_df[, "Hits_end"]))          & !(is.na(merged_CRISPR_df[, "GuideScan_end"]))        & (merged_CRISPR_df[, "Hits_end"]   != merged_CRISPR_df[, "GuideScan_end"])
   )
-  merged_CRISPR_df[, "Is_discordant"] <- rowSums(discordant_mat) >= 1
+  merged_CRISPR_df[, "Discordant_locations"] <- rowSums(discordant_mat) >= 1
   is_discordant_location <- rowSums(discordant_mat[, c("Chromosome_hits_GuideScan", "Strand", "Strand", "Start", "End")]) >= 1
   stopifnot(all(!(is_discordant_location), na.rm = TRUE))
 
@@ -581,7 +581,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
   # Remove location data for sgRNAs that seem to have discrepant locations
   for (column in c("Chromosome", "Strand", "Start", "End", "PAM")) {
-    merged_CRISPR_df[merged_CRISPR_df[, "Is_discordant"], column] <- NA
+    merged_CRISPR_df[merged_CRISPR_df[, "Discordant_locations"], column] <- NA
   }
 
 
@@ -684,6 +684,10 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
   ####################################################################################################################
   ####################################################################################################################
 
+  # Remove unnecessary columns
+
+  unnecessary_columns <- c("GuideScan_entrez_ID", "GuideScan_symbol", "gRNA", "gRNA_label", "Annotation")
+  merged_CRISPR_df <- merged_CRISPR_df[, !(colnames(merged_CRISPR_df) %in% unnecessary_columns)]
 
   # Final steps
   merged_CRISPR_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(merged_CRISPR_df)
