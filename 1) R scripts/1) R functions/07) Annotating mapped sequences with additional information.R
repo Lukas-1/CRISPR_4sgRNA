@@ -192,6 +192,29 @@ MakeLocationStrings <- function(ranges_df) {
 
 
 
+TruncateLongEntries <- function(char_vec, use_sep = "; ", max_length = 10L) {
+  splits <- strsplit(char_vec, use_sep, fixed = TRUE)
+  are_too_long <- lengths(splits) > max_length
+  char_vec[are_too_long] <- vapply(splits[are_too_long], function(x) {
+    all_the_same <- length(unique(x)) == 1
+    result <- paste0("Truncated (", length(x), " entries)...")
+    if (all_the_same) {
+      result <- paste0(result, " All entries are: ", x[[1]])
+    } else {
+      first_3_the_same <- length(unique(x[1:3])) == 1
+      if (first_3_the_same) {
+        result <- paste0(result, " The first 3 are all: ", x[[1]])
+      } else {
+        result <- paste0(result, " The first 3 are: ", paste0(x[1:3], collapse = use_sep))
+      }
+    }
+    return(result)
+  }, "")
+  return(char_vec)
+}
+
+
+
 PasteIndices <- function(found_seq_df, indices_list, column_name, use_separator) {
   vapply(indices_list, function(x) {
     if (length(x) == 0) {
@@ -208,7 +231,7 @@ PasteIndices <- function(found_seq_df, indices_list, column_name, use_separator)
 }
 
 
-SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_separator = "; ") {
+SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_separator = "; ", truncate_long_entries = TRUE) {
   # Requires the 'SNP_column_names' variable in the global environment
 
   are_0MM       <- found_seq_df[, "Num_MM"] == 0
@@ -245,18 +268,22 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   have_clear_match <- (sum_0MM_and_PAM_vec == 1) | ((sum_0MM_and_PAM_vec == 0) & (sum_5G_MM_and_PAM_vec == 1))
 
   use_overlapping_genes <- all(c("Overlapping_Entrez_IDs", "Overlapping_symbols") %in% names(found_seq_df))
+  use_nearest_genes <- all(c("Nearest_Entrez_IDs", "Nearest_symbols") %in% names(found_seq_df))
+  add_genes <- use_overlapping_genes | use_nearest_genes
   if (use_overlapping_genes) {
     entrez_column <- "Overlapping_Entrez_IDs"
     symbol_column <- "Overlapping_symbols"
-  } else {
+  } else if (use_nearest_genes) {
     entrez_column <- "Nearest_Entrez_IDs"
     symbol_column <- "Nearest_symbols"
   }
 
-  entrezs_0MM_vec <- PasteIndices(found_seq_df, which_0MM_indices_list, entrez_column, use_separator)
-  symbols_0MM_vec <- PasteIndices(found_seq_df, which_0MM_indices_list, symbol_column, use_separator)
-  entrezs_1MM_vec <- PasteIndices(found_seq_df, which_1MM_indices_list, entrez_column, use_separator)
-  symbols_1MM_vec <- PasteIndices(found_seq_df, which_1MM_indices_list, symbol_column, use_separator)
+  if (add_genes) {
+    entrezs_0MM_vec <- PasteIndices(found_seq_df, which_0MM_indices_list, entrez_column, use_separator)
+    symbols_0MM_vec <- PasteIndices(found_seq_df, which_0MM_indices_list, symbol_column, use_separator)
+    entrezs_1MM_vec <- PasteIndices(found_seq_df, which_1MM_indices_list, entrez_column, use_separator)
+    symbols_1MM_vec <- PasteIndices(found_seq_df, which_1MM_indices_list, symbol_column, use_separator)
+  }
 
   # The following vector is relevant mainly for duplicated genes, which or may not all have the same PAM
   PAM_vec <- vapply(which_0MM_indices_list, function(x) {
@@ -300,21 +327,32 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     "Num_1MM_no_PAM"     = sum_5G_MM_vec - sum_1MM_and_PAM_vec,
     "PAM_0MM"            = PAM_0MM_vec,
     "Locations_0MM"      = locations_0MM_vec,
-    "Entrez_nearest_0MM" = entrezs_0MM_vec,
-    "Symbol_nearest_0MM" = symbols_0MM_vec,
+    "Entrez_nearest_0MM" = if (add_genes) entrezs_0MM_vec else NA,
+    "Symbol_nearest_0MM" = if (add_genes) symbols_0MM_vec else NA,
     "PAM_1MM"            = PAM_1MM_vec,
     "Locations_1MM"      = locations_1MM_vec,
     "Sequences_1MM"      = sequences_1MM_vec,
-    "Entrez_nearest_1MM" = entrezs_1MM_vec,
-    "Symbol_nearest_1MM" = symbols_1MM_vec,
+    "Entrez_nearest_1MM" = if (add_genes) entrezs_1MM_vec else NA,
+    "Symbol_nearest_1MM" = if (add_genes) symbols_1MM_vec else NA,
     stringsAsFactors     = FALSE,
     row.names            = NULL
   )
 
+  nearest_columns <- c("Entrez_nearest_0MM", "Symbol_nearest_0MM", "Entrez_nearest_1MM", "Symbol_nearest_1MM")
   if (use_overlapping_genes) {
-    old_column_names <- c("Entrez_nearest_0MM", "Symbol_nearest_0MM", "Entrez_nearest_1MM", "Symbol_nearest_1MM")
-    new_column_names <- sub("_nearest_", "_overlapping_", old_column_names, fixed = TRUE)
+    new_column_names <- sub("_nearest_", "_overlapping_", nearest_columns, fixed = TRUE)
     names(results_df)[match(old_column_names, names(results_df))] <- new_column_names
+  } else if (!(add_genes)) {
+    results_df <- results_df[, !(colnames(results_df) %in% nearest_columns)]
+  }
+
+  if (truncate_long_entries) {
+    truncate_columns <- c(nearest_columns, "PAM_0MM", "Locations_0MM", "PAM_1MM",
+                          "Locations_1MM", "Sequences_1MM"
+                          )
+    for (column_name in intersect(colnames(results_df), truncate_columns)) {
+      results_df[, column_name] <- TruncateLongEntries(results_df[, column_name])
+    }
   }
 
   if (!(is.null(all_sequences))) {
