@@ -7,7 +7,7 @@
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "19) Using CRISPOR.R"))
-
+source(file.path(general_functions_directory, "21) Splitting sgRNAs into chunks for parallel analysis.R"))
 
 
 
