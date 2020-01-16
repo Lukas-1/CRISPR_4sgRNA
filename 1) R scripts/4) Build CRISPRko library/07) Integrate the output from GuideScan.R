@@ -32,7 +32,8 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 # Read in data ------------------------------------------------------------
 
-guidescan_sgRNAs_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRko_individual_sgRNAs.csv")
+guidescan_output_files <- grep("^GuideScan_output_CRISPRko__", list.files(GuideScan_files_directory), value = TRUE)
+guidescan_raw_df_list <- lapply(guidescan_output_files, ReadGuideScanOutput)
 
 
 
@@ -41,6 +42,8 @@ guidescan_sgRNAs_raw_df <- ReadGuideScanOutput("GuideScan_output_CRISPRko_indivi
 
 
 # Process the output from GuideScan ---------------------------------------
+
+guidescan_sgRNAs_raw_df <- do.call(rbind.data.frame, c(guidescan_raw_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
 guidescan_sgRNAs_df <- GuideScanOutputToDf(guidescan_sgRNAs_raw_df)
 tidy_guidescan_sgRNAs_df <- TidyGuideScanColumns(guidescan_sgRNAs_df)
