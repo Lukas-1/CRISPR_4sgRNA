@@ -37,7 +37,6 @@ replaced_unique_sequences <- unique(toupper(replaced_merged_CRISPRa_df[, "sgRNA_
 new_or_not_found_sequences <- setdiff(replaced_unique_sequences, all_sequences_df[, "Reference"])
 
 rm(replaced_merged_CRISPRa_df)
-gc()
 
 # All replaced sequences should be from the hCRISPRa-v2 library and should be 20-mers.
 # However, in the future, some of the "not found" sequences may _NOT_ be 20-mers, in which case, the code would have to be modified.
@@ -77,7 +76,6 @@ replaced_all_sequences_df <- rbind.data.frame(new_sequences_df,
 
 rm(all_sequences_df)
 rm(new_sequences_df)
-gc()
 
 replaced_genome_search_df <- SummarizeFoundSequencesDf(replaced_all_sequences_df, all_sequences = replaced_unique_sequences)
 
