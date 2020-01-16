@@ -5,6 +5,7 @@
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))
 source(file.path(general_functions_directory, "08) Checking for overlaps with genetic polymorphisms.R"))
 
 
@@ -53,7 +54,7 @@ sgRNA_polymorphisms_df <- AllPolymorphisms(merged_replaced_CRISPRa_df[are_mapped
 
 location_columns <- c("Chromosome", "Strand", "Start", "End")
 nearest_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Distance")
-nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[, location_columns])[, nearest_columns]
+nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[are_mapped, location_columns])[, nearest_columns]
 colnames(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
 
 
