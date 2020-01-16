@@ -93,7 +93,7 @@ merged_replaced_CRISPRa_df <- AdjustPositionColumns(full_merged_replaced_CRISPRa
 inconsistent_IDs <- CheckForInconsistentChromosomes(merged_replaced_CRISPRa_df)
 message(paste0("The following combined IDs had sgRNAs that mapped to more than one chromosome: ", paste0(inconsistent_IDs, collapse = ", "), "!"))
 
-selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome", "Symbol_nearest_0MM")
+selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome")
 unique(merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% inconsistent_IDs, selected_gene_columns])
 
 
