@@ -52,6 +52,7 @@ bed_df_list <- lapply(chunks_list, function(x) MakeBedDf(extended_CRISPRko_df, x
 # Prepare objects that can be exported to FASTA files ---------------------
 
 FASTA_df_list <- lapply(chunks_list, function(x) MakeFASTADf(extended_CRISPRko_df, x))
+FASTA_df_list <- CombineDfChunks(FASTA_df_list)
 FASTA_vec_list <- lapply(FASTA_df_list, MakeFASTAvec)
 
 
@@ -60,15 +61,13 @@ FASTA_vec_list <- lapply(FASTA_df_list, MakeFASTAvec)
 
 # Write input files for CRISPOR to disk -----------------------------------
 
-for (chunk_ID in names(chunks_list)) {
-  for (i in 1:2) {
-    file_name <- paste0("Input_for_CRISPOR__chunk_", chunk_ID, "__CRISPRko")
-    write.table(get(c("bed_df_list", "FASTA_vec_list")[[i]])[[chunk_ID]],
-                file = file.path(CRISPOR_files_directory, paste0(file_name, c(".bed", ".fa")[[i]])),
-                quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t"
-                )
-  }
-}
+WriteCRISPORInputFiles(bed_df_list, file_ending = "__CRISPRko.bed",
+                       CRISPOR_input_directory = CRISPOR_files_directory
+                       )
+
+WriteCRISPORInputFiles(FASTA_vec_list, file_ending = "__CRISPRko.fa",
+                       CRISPOR_input_directory = CRISPOR_files_directory
+                       )
 
 
 
@@ -79,23 +78,15 @@ filtered_bed_df_list    <- FilterBedDfList(bed_df_list)
 filtered_FASTA_df_list  <- FilterFASTADfList(FASTA_df_list)
 filtered_FASTA_vec_list <- lapply(filtered_FASTA_df_list, MakeFASTAvec)
 
-for (chunk_ID in names(chunks_list)) {
-  for (i in 1:2) {
-    df_list <- get(c("filtered_bed_df_list", "filtered_FASTA_vec_list")[[i]])
-    chunk_name <- grep(paste0("^", chunk_ID), names(df_list), value = TRUE)
-    file_name <- paste0("Input_for_CRISPOR__chunk_", chunk_name, "__CRISPRko")
-    write.table(df_list[[chunk_name]],
-                file = file.path(CRISPOR_files_directory,
-                                 "Input - filtered by already processed",
-                                 paste0(file_name, c(".bed", ".fa")[[i]])
-                                 ),
-                quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t"
-                )
-  }
-}
+filtered_input_directory <- file.path(CRISPOR_files_directory, "Input - filtered by already processed")
 
+WriteCRISPORInputFiles(filtered_bed_df_list, file_ending = "__CRISPRko.bed",
+                       CRISPOR_input_directory = filtered_input_directory
+                       )
 
-
+WriteCRISPORInputFiles(filtered_FASTA_vec_list, file_ending = "__CRISPRko.fa",
+                       CRISPOR_input_directory = filtered_input_directory
+                       )
 
 
 
