@@ -343,14 +343,14 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     new_column_names <- sub("_nearest_", "_overlapping_", nearest_columns, fixed = TRUE)
     names(results_df)[match(nearest_columns, names(results_df))] <- new_column_names
   } else if (!(add_genes)) {
-    results_df <- results_df[, !(colnames(results_df) %in% nearest_columns)]
+    results_df <- results_df[, !(names(results_df) %in% nearest_columns)]
   }
 
   if (truncate_long_entries) {
     truncate_columns <- c(nearest_columns, "PAM_0MM", "Locations_0MM", "PAM_1MM",
                           "Locations_1MM", "Sequences_1MM"
                           )
-    for (column_name in intersect(colnames(results_df), truncate_columns)) {
+    for (column_name in intersect(names(results_df), truncate_columns)) {
       results_df[, column_name] <- TruncateLongEntries(results_df[, column_name])
     }
   }
