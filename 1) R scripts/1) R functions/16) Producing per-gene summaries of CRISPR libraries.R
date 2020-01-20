@@ -9,6 +9,7 @@
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "09) Constants and settings.R"))
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
+source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R")) # For RoundNumericColumns
 
 
 
@@ -19,6 +20,15 @@ source(file.path(general_functions_directory, "14) Checking for identical subseq
 
 CollapseOriginal <- function(char_vec) {
   paste0(unique(char_vec[char_vec != ""]), collapse = "")
+}
+
+
+FormatOverviewDfForExport <- function(overview_df) {
+  results_df <- RoundNumericColumns(overview_df)
+  for (i in seq_along(results_df)) {
+    results_df[, i] <- ifelse(is.na(results_df[, i]), "", as.character(results_df[, i]))
+  }
+  return(results_df)
 }
 
 

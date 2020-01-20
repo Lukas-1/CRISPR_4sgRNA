@@ -85,7 +85,9 @@ columns_for_excel <- c(
 TF_summary_excel_df <- TF_overview_df[, columns_for_excel]
 TF_summary_excel_df[, "Num_total"] <- ifelse(is.na(TF_summary_excel_df[, "Num_total"]), 0L, TF_summary_excel_df[, "Num_total"])
 
-for (i in seq_len(ncol(TF_summary_excel_df))) {
+TF_summary_excel_df <- FormatOverviewDfForExport(TF_summary_excel_df)
+
+for (i in seq_along(TF_summary_excel_df)) {
   TF_summary_excel_df[, i] <- ifelse(is.na(TF_summary_excel_df[, i]), "", as.character(TF_summary_excel_df[, i]))
 }
 

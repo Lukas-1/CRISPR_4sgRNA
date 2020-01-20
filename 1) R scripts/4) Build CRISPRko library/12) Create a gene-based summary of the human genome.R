@@ -84,11 +84,7 @@ columns_for_excel <- c(
   "Num_total", "Num_overlapping_with_SNP"
 )
 
-sgRNAs_overview_excel_df <- sgRNAs_overview_df[, columns_for_excel]
-
-for (i in seq_len(ncol(sgRNAs_overview_excel_df))) {
-  sgRNAs_overview_excel_df[, i] <- ifelse(is.na(sgRNAs_overview_excel_df[, i]), "", as.character(sgRNAs_overview_excel_df[, i]))
-}
+sgRNAs_overview_excel_df <- FormatOverviewDfForExport(sgRNAs_overview_df[, columns_for_excel])
 
 write.table(sgRNAs_overview_excel_df,
             file = file.path(file_output_directory, "Overview_CRISPRko_all_genes.tsv"),

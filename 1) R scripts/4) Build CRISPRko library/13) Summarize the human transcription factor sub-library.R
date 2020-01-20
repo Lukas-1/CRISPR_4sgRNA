@@ -84,9 +84,7 @@ TF_summary_excel_df <- TF_overview_df[, columns_for_excel]
 
 TF_summary_excel_df[, "Num_total"] <- ifelse(is.na(TF_summary_excel_df[, "Num_total"]), 0L, TF_summary_excel_df[, "Num_total"])
 
-for (i in seq_len(ncol(TF_summary_excel_df))) {
-  TF_summary_excel_df[, i] <- ifelse(is.na(TF_summary_excel_df[, i]), "", as.character(TF_summary_excel_df[, i]))
-}
+TF_summary_excel_df[, i] <- FormatOverviewDfForExport(TF_summary_excel_df)
 
 write.table(TF_summary_excel_df,
             file = file.path(file_output_directory, "Overview_CRISPRko_transcription_factors.tsv"),

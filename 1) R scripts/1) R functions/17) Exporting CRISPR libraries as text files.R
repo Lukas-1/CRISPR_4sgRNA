@@ -45,6 +45,20 @@ MoveAfterColumn <- function(my_df, after_this_column, column_to_move) {
 }
 
 
+
+RoundNumericColumns <- function(my_df, num_digits = 7) {
+  are_floats <- vapply(seq_along(my_df), function(x) is.double(my_df[, x]) , logical(1))
+  for (i in which(are_floats)) {
+    my_df[, i] <- round(my_df[, i], digits = num_digits)
+  }
+  return(my_df)
+}
+
+
+
+
+
+
 FormatForExcel <- function(my_df,
                            remove_columns            = NULL,
                            probability_to_percentage = FALSE,
@@ -62,6 +76,9 @@ FormatForExcel <- function(my_df,
     are_to_be_excluded <- !(MeetCriteria(my_df, allow_curated = allow_curated))
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
   }
+
+  my_df <- RoundNumericColumns(my_df)
+
   are_controls <- my_df[, "Is_control"] == "Yes"
   if (any(are_controls)) {
     if (convert_controls_to_4) {
@@ -134,11 +151,11 @@ FormatForExcel <- function(my_df,
       my_df[, column_index] <- ifelse(is.na(my_df[, column_index]), NA_character_, paste0(my_df[, column_index] * 100, "%"))
     }
   }
-  for (i in seq_len((ncol(my_df) - 7))) {
+  for (i in seq_len((ncol(my_df) - 6))) {
     my_df[, i] <- ifelse(is.na(my_df[, i]), "", as.character(my_df[, i]))
   }
   my_df <- AbbreviateColumns(my_df)
-  for (i in (ncol(my_df) - 6):ncol(my_df)) {
+  for (i in (ncol(my_df) - 5):ncol(my_df)) {
     my_df[, i] <- ifelse(is.na(my_df[, i]), " ", as.character(my_df[, i]))
   }
 
