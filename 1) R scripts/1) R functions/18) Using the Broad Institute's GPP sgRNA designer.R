@@ -14,6 +14,15 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 # Functions for producing input files for the GPP sgRNA designer ----------
 
+PrettyGeneString <- function(entrezs_vec) {
+  symbols_vec <- EntrezIDsToSymbols(new_entrezs)
+  result_vec <- mapply(function(x, y) paste0(x, " (", y, ")"), entrezs_vec, symbols_vec)
+  result_string <- paste0(result_vec, collapse = ", ")
+  return(result_string)
+}
+
+
+
 FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
 
   are_top_four <- CRISPR_df[, "Rank"] %in% 1:4
@@ -27,31 +36,32 @@ FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
   are_problematic_genes <- !(overview_df[, "Spacing"] %in% paste0(seq(4, 100, by = 4), "*50"))
   submit_entrezs_genes <- overview_df[are_problematic_genes, "Entrez_ID"]
 
-  already_GPP_entrezs <- unique(CRISPR_df[grepl("GPP", CRISPR_df[, "Source"], fixed = TRUE), "Entrez_ID"])
+  are_GPP <- grepl("GPP", CRISPR_df[, "Source"], fixed = TRUE)
+  are_top4 <- CRISPR_df[, "Rank"] %in% 1:4
+  top4_GPP_entrezs <- unique(CRISPR_df[are_GPP & are_top4, "Entrez_ID"])
+  have_GPP_entrezs <- unique(CRISPR_df[are_GPP, "Entrez_ID"])
 
-  submit_entrezs <- unique(c(submit_entrezs, submit_entrezs_genes, already_GPP_entrezs))
-  submit_entrezs <- submit_entrezs[!(is.na(submit_entrezs))]
+  required_entrezs <- setdiff(c(submit_entrezs, submit_entrezs_genes, top4_GPP_entrezs),
+                              NA_character_
+                              )
 
   # Re-order the Entrez IDs
-  submit_entrezs <- submit_entrezs[order(as.integer(submit_entrezs))]
+  required_entrezs <- required_entrezs[order(as.integer(required_entrezs))]
+  not_found_entrezs <- setdiff(required_entrezs, have_GPP_entrezs)
+  num_not_found <- length(not_found_entrezs)
 
-  num_all <- length(submit_entrezs)
-  num_previous <- length(already_GPP_entrezs)
-  num_new <- num_all - num_previous
-
-  show_message <- paste0(num_all, " genes (Entrez IDs) ought to be submitted to the GPP sgRNA designer.")
-  if (num_new == 0) {
+  show_message <- paste0(length(required_entrezs), " genes (Entrez IDs) ought to be submitted to the GPP sgRNA designer.")
+  if (num_not_found == 0) {
     show_message <- paste0(show_message, " SgRNAs from GPP were previously available for all of them.")
   } else {
-    show_message <- paste0(show_message, " Of these, previous data from GPP were not found for ", num_new, " of them")
-    if (num_new < 10) {
-      new_entrezs <- setdiff(submit_entrezs, already_GPP_entrezs)
-      symbols_vec <- EntrezIDsToSymbols(new_entrezs)
-      show_message <- paste0(show_message, ": ", paste0(vapply(seq_along(new_entrezs), function(x) paste0(new_entrezs[[x]], " (", symbols_vec[[x]], ")"), ""), collapse = ", "))
+    show_message <- paste0(show_message, " Of these, previous data from GPP were not found for ",
+                           num_not_found, " of them"
+                           )
+    if (num_not_found < 10) {
+      show_message <- paste0(show_message, ": ", PrettyGeneString(not_found_entrezs))
     } else {
       show_message <- paste0(show_message, ".")
     }
-
   }
   message(show_message)
 
