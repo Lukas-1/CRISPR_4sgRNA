@@ -77,7 +77,7 @@ FormatForExcel <- function(my_df,
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
   }
 
-  my_df <- RoundNumericColumns(my_df)
+  my_df <- RoundNumericColumns(my_df, num_digits = 5)
 
   are_controls <- my_df[, "Is_control"] == "Yes"
   if (any(are_controls)) {
