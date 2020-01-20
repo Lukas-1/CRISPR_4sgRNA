@@ -71,8 +71,6 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
                       "Start", "End", "Cut_location", "Distance_from_TSS",
                       "TSS_searched_by_GuideScan", "TSS_regions",
 
-                      "GuideScan_entrez_ID",
-
                       "GuideScan_efficiency", "CRISPOR_Doench_efficacy",
                       "CRISPOR_Moreno_Mateos", "CRISPOR_out_of_frame", "CRISPOR_lindel_score", "CRISPOR_Graf_status",
 
@@ -87,12 +85,14 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
 
                       SNP_column_names,
 
+                      "Nearest_Entrez_IDs", "Nearest_symbols", "Nearest_gene_distance",
+
                       "PAM_0MM", "PAM_1MM",
 
-                      "Locations_0MM", "Entrez_nearest_0MM", "Symbol_nearest_0MM",
-                      "Locations_1MM", "Sequences_1MM",
-                      "Entrez_nearest_1MM", "Symbol_nearest_1MM",
-                      "Annotation", "gRNA_label"
+                      "Locations_0MM", #"Entrez_nearest_0MM", "Symbol_nearest_0MM",
+
+                      "Locations_1MM", "Sequences_1MM"
+                      # "Entrez_nearest_1MM", "Symbol_nearest_1MM"
                       )
 
 
@@ -281,17 +281,16 @@ omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRa_v2_ID", "Original_PAM",
                   "CRISPOR_Moreno_Mateos", "CRISPOR_out_of_frame", "CRISPOR_lindel_score",
                   "CRISPOR_MIT_specificity",
                   "CRISPOR_Graf_status",
-                  # "CRISPOR_Num_0MM", "CRISPOR_Num_1MM", "CRISPOR_Num_2MM", "CRISPOR_Num_3MM", "CRISPOR_Num_4MM",
                   "CRISPOR_Num_2or3MM", "CRISPOR_off_target_count",
 
-                  "Is_control", "Entrez_ID_assignment", "GuideScan_entrez_ID",
-                  "Entrez_nearest_0MM", "Symbol_nearest_0MM", "Entrez_nearest_1MM", "Symbol_nearest_1MM", "PAM_0MM", "PAM_1MM",
+                  "Is_control", "Entrez_ID_assignment",
+                  "Nearest_Entrez_IDs", "Nearest_symbols", "Nearest_gene_distance",
+                  "Entrez_nearest_0MM", "Symbol_nearest_0MM", "Entrez_nearest_1MM", "Symbol_nearest_1MM",
+                  "PAM_0MM", "PAM_1MM",
                   "Best_TSS", "First_TSS", "Last_TSS",
                   "hCRISPRa_TSS_source", "Strand_of_TSS",
                   "Start", "End", "GuideScan_Num_2or3MM", "Original_entrez",
-                  "Entrez_source_hCRISPRa_v2", "Entrez_source_Calabrese", "Off_target_stringency",
-
-                  "Annotation", "gRNA_label"
+                  "Entrez_source_hCRISPRa_v2", "Entrez_source_Calabrese", "Off_target_stringency"
                   )
 omit_SNP_columns <- grep("SNP", names(merged_replaced_CRISPRa_df), value = TRUE)
 omit_SNP_columns <- setdiff(omit_SNP_columns, c(preferred_rsID_column, preferred_AF_max_column))
