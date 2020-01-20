@@ -199,7 +199,8 @@ SummarizeOfftargets <- function(offtargets_df) {
                          })
 
   results_df <- do.call(rbind.data.frame, c(results_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-  results_df[, "CRISPOR_Num_2or3MM"] <- rowSums(as.matrix(results_df[, c("CRISPOR_Num_2MM", "CRISPOR_Num_3MM")]))
+  assign("delete_results_df", results_df, envir = globalenv())
+  results_df[, "CRISPOR_Num_2or3MM"] <- as.integer(rowSums(as.matrix(results_df[, c("CRISPOR_Num_2MM", "CRISPOR_Num_3MM")])))
   return(results_df)
 }
 
