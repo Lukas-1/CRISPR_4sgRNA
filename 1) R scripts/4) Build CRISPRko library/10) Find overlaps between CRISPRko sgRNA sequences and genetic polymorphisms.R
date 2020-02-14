@@ -34,7 +34,7 @@ load(file.path(CRISPRko_RData_directory, "09) Integrate the output from CRISPOR.
 
 # Search the human genome for matches to sgRNAs ---------------------------
 
-are_mapped <- !(is.na(merged_CRISPRko_df[, "Start"]))
+are_mapped <- !(is.na(merged_CRISPRko_df[["Start"]]))
 
 mapped_indices <- rep.int(NA_integer_, length(are_mapped))
 mapped_indices[are_mapped] <- seq_len(sum(are_mapped))

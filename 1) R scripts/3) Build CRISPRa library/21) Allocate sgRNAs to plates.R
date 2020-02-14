@@ -34,7 +34,7 @@ load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription f
 
 # Define the sublibrary ---------------------------------------------------
 
-replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
+replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% TF_overview_df[["Combined_ID"]], ]
 
 
 
@@ -42,12 +42,12 @@ replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[
 
 # Exclude incomplete transcripts, or those with shared subsequences -------
 
-are_complete_transcripts <- AreCompleteTranscripts(replaced_TF_CRISPRa_df)
-have_zero_spacing        <- replaced_TF_CRISPRa_df[, "Spacing"] %in% 0 # "Zero" spacing means that there might be homologies / long shared subsequences among the chosen 4 guides!
-are_top4                 <- replaced_TF_CRISPRa_df[, "Rank"] %in% 1:4
-are_valid_top4           <- are_top4 & !(have_zero_spacing) & (are_complete_transcripts %in% TRUE)
+are_complete_and_spaced  <- AreCompleteTranscripts(replaced_TF_CRISPRa_df, must_be_spaced = TRUE)
+have_zero_spacing        <- replaced_TF_CRISPRa_df[["Spacing"]] %in% 0 # "Zero" spacing means that there might be homologies / long shared subsequences among the chosen 4 guides!
+are_top4                 <- replaced_TF_CRISPRa_df[["Rank"]] %in% 1:4
+are_valid_top4           <- are_top4 & !(have_zero_spacing) & (are_complete_and_spaced %in% TRUE)
 
-stopifnot(all(replaced_TF_CRISPRa_df[are_top4 & !(are_valid_top4), "Num_TSSs"] >= 2)) # If a transcript is excluded, make sure that there is at least one other valid transcript for this gene!
+stopifnot(all(replaced_TF_CRISPRa_df[["Num_TSSs"]][are_top4 & !(are_valid_top4)] >= 2)) # If a transcript is excluded, make sure that there is at least one other valid transcript for this gene!
 
 # Examine the excluded sgRNAs
 invalid_combo_show_columns <- c(
@@ -58,8 +58,8 @@ invalid_combo_show_columns <- c(
   "Best_combination_rank",
   "sgRNA_sequence", "PAM"
 )
-replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts %in% TRUE),  invalid_combo_show_columns]
-replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts %in% FALSE), invalid_combo_show_columns]
+replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_and_spaced %in% TRUE),  invalid_combo_show_columns]
+replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_and_spaced %in% FALSE), invalid_combo_show_columns]
 
 
 
@@ -70,7 +70,7 @@ replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_transcripts 
 top4_df <- replaced_TF_CRISPRa_df[are_valid_top4, ]
 row.names(top4_df) <- NULL
 
-
+table(table(top4_df[["AltTSS_ID"]]))
 
 
 
@@ -85,14 +85,14 @@ lengths(entrez_sets)
 
 # Count problematic genes -------------------------------------------------
 
-are_problematic_sgRNAs   <- top4_df[, "Entrez_ID"] %in% entrez_sets[["problematic"]]
-are_unproblematic_sgRNAs <- top4_df[, "Entrez_ID"] %in% entrez_sets[["unproblematic"]]
+are_problematic_sgRNAs   <- top4_df[["Entrez_ID"]] %in% entrez_sets[["problematic"]]
+are_unproblematic_sgRNAs <- top4_df[["Entrez_ID"]] %in% entrez_sets[["unproblematic"]]
 
 num_problematic   <- sum(are_problematic_sgRNAs)   / 4
 num_unproblematic <- sum(are_unproblematic_sgRNAs) / 4
 
-sum(top4_df[, "Combined_ID"] %in% entrez_sets[["overlap"]])       / 4
-sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
+sum(top4_df[["Combined_ID"]] %in% entrez_sets[["overlap"]])       / 4
+sum(top4_df[["Combined_ID"]] %in% entrez_sets[["fail_criteria"]]) / 4
 
 
 
@@ -102,9 +102,9 @@ sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
 
 num_gene_wells <- nrow(top4_df) / 4
 
-are_Calabrese_top4   <- grepl("Calabrese",   top4_df[, "Source"], fixed = TRUE)
-are_hCRISPRa_v2_top4 <- grepl("hCRISPRa-v2", top4_df[, "Source"], fixed = TRUE)
-are_GPP_top4         <- grepl("GPP",         top4_df[, "Source"], fixed = TRUE)
+are_Calabrese_top4   <- grepl("Calabrese",   top4_df[["Source"]], fixed = TRUE)
+are_hCRISPRa_v2_top4 <- grepl("hCRISPRa-v2", top4_df[["Source"]], fixed = TRUE)
+are_GPP_top4         <- grepl("GPP",         top4_df[["Source"]], fixed = TRUE)
 
 table(are_Calabrese_top4)
 table(are_hCRISPRa_v2_top4)
@@ -137,13 +137,13 @@ set.seed(1)
 
 # Generate a pool of 4sg controls -----------------------------------------
 
-are_Calabrese <- grepl("Calabrese",   merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
-are_hCRISPRa  <- grepl("hCRISPRa-v2", merged_replaced_CRISPRa_df[, "Source"], fixed = TRUE)
+are_Calabrese <- grepl("Calabrese",   merged_replaced_CRISPRa_df[["Source"]], fixed = TRUE)
+are_hCRISPRa  <- grepl("hCRISPRa-v2", merged_replaced_CRISPRa_df[["Source"]], fixed = TRUE)
 
 are_good_controls <- AreGoodControls(merged_replaced_CRISPRa_df)
 
-controls_Calabrese   <- merged_replaced_CRISPRa_df[are_good_controls & are_Calabrese, "sgRNA_sequence"]
-controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[are_good_controls & are_hCRISPRa,  "sgRNA_sequence"]
+controls_Calabrese   <- merged_replaced_CRISPRa_df[["sgRNA_sequence"]][are_good_controls & are_Calabrese]
+controls_hCRISPRa_v2 <- merged_replaced_CRISPRa_df[["sgRNA_sequence"]][are_good_controls & are_hCRISPRa]
 
 controls_hCRISPRa_v2_selected <- sample(controls_hCRISPRa_v2, length(controls_Calabrese))
 

@@ -49,9 +49,9 @@ CharacterVecToAFList <- function(AF_char_vec, prefix) {
 
 # Process data ------------------------------------------------------------
 
-AF1kGenomes_list <- CharacterVecToAFList(dbSNP_common_raw_df[, "AF_1kGenomes"], "CAF=")
-TOPMED_list      <- CharacterVecToAFList(dbSNP_common_raw_df[, "AF_TOPMED"], "TOPMED=")
-Kaviar_list      <- CharacterVecToAFList(Kaviar_common_raw_df[, "AF_Kaviar"], "AF=")
+AF1kGenomes_list <- CharacterVecToAFList(dbSNP_common_raw_df[["AF_1kGenomes"]], "CAF=")
+TOPMED_list      <- CharacterVecToAFList(dbSNP_common_raw_df[["AF_TOPMED"]], "TOPMED=")
+Kaviar_list      <- CharacterVecToAFList(Kaviar_common_raw_df[["AF_Kaviar"]], "AF=")
 
 AF_1k_vec  <- sapply(AF1kGenomes_list, "[[", 1)
 AF_TOPMED_vec <- sapply(TOPMED_list, "[[", 1)
@@ -62,10 +62,10 @@ AF_Kaviar_vec <- vapply(Kaviar_list, function(x) 1 - sum(x), numeric(1))
 
 # Merge and build the data frame ------------------------------------------
 
-shared_rsIDs <- intersect(dbSNP_common_raw_df[, "rsID"], Kaviar_common_raw_df[, "rsID"])
+shared_rsIDs <- intersect(dbSNP_common_raw_df[["rsID"]], Kaviar_common_raw_df[["rsID"]])
 
-shared_rsIDs_indices_dbSNP  <- match(shared_rsIDs, dbSNP_common_raw_df[, "rsID"])
-shared_rsIDs_indices_Kaviar <- match(shared_rsIDs, Kaviar_common_raw_df[, "rsID"])
+shared_rsIDs_indices_dbSNP  <- match(shared_rsIDs, dbSNP_common_raw_df[["rsID"]])
+shared_rsIDs_indices_Kaviar <- match(shared_rsIDs, Kaviar_common_raw_df[["rsID"]])
 
 dbSNP_indices <- seq_len(nrow(dbSNP_common_raw_df))
 unique_indices_dbSNP <- setdiff(dbSNP_indices, shared_rsIDs_indices_dbSNP)
@@ -102,9 +102,9 @@ common_polymorphisms_df <- rbind.data.frame(
   stringsAsFactors = FALSE
 )
 
-common_polymorphisms_df <- common_polymorphisms_df[order(match(common_polymorphisms_df[, "Chromosome"], unique(dbSNP_common_raw_df[, "Chromosome"])),
-                                                         common_polymorphisms_df[, "Position"],
-                                                         common_polymorphisms_df[, "rsID"]
+common_polymorphisms_df <- common_polymorphisms_df[order(match(common_polymorphisms_df[["Chromosome"]], unique(dbSNP_common_raw_df[["Chromosome"]])),
+                                                         common_polymorphisms_df[["Position"]],
+                                                         common_polymorphisms_df[["rsID"]]
                                                          ), ]
 row.names(common_polymorphisms_df) <- NULL
 
@@ -114,24 +114,22 @@ row.names(common_polymorphisms_df) <- NULL
 
 # Perform checks and tests ------------------------------------------------
 
-gc()
-
-dbSNP_chrom_pos_ref_vec  <- paste0(dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Chromosome"], "_",
-                                   dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Position"],   "_",
-                                   dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "Reference"]
+dbSNP_chrom_pos_ref_vec  <- paste0(dbSNP_common_raw_df[["Chromosome"]][shared_rsIDs_indices_dbSNP], "_",
+                                   dbSNP_common_raw_df[["Position"]][shared_rsIDs_indices_dbSNP],   "_",
+                                   dbSNP_common_raw_df[["Reference"]][shared_rsIDs_indices_dbSNP]
                                    )
-Kaviar_chrom_pos_ref_vec <- paste0(Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Chromosome"], "_",
-                                   Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Position"],   "_",
-                                   Kaviar_common_raw_df[shared_rsIDs_indices_Kaviar, "Reference"]
+Kaviar_chrom_pos_ref_vec <- paste0(Kaviar_common_raw_df[["Chromosome"]][shared_rsIDs_indices_Kaviar], "_",
+                                   Kaviar_common_raw_df[["Position"]][shared_rsIDs_indices_Kaviar],   "_",
+                                   Kaviar_common_raw_df[["Reference"]][shared_rsIDs_indices_Kaviar]
                                    )
 chrom_pos_ref_df <- data.frame("dbSNP"  = dbSNP_chrom_pos_ref_vec,
                                "Kaviar" = Kaviar_chrom_pos_ref_vec,
-                               "rsID"   = dbSNP_common_raw_df[shared_rsIDs_indices_dbSNP, "rsID"],
+                               "rsID"   = dbSNP_common_raw_df[["rsID"]][shared_rsIDs_indices_dbSNP],
                                stringsAsFactors = FALSE,
                                row.names = NULL
                                )
-table(chrom_pos_ref_df[, 1] != chrom_pos_ref_df[, 2])
-table(dbSNP_common_raw_df[, "rsID"] %in% Kaviar_common_raw_df[, "rsID"])
+table(chrom_pos_ref_df[[1]] != chrom_pos_ref_df[[2]])
+table(dbSNP_common_raw_df[["rsID"]] %in% Kaviar_common_raw_df[["rsID"]])
 
 
 

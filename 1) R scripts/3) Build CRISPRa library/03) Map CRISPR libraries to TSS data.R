@@ -40,21 +40,33 @@ row.names(unique_CRISPRa_df) <- NULL
 
 # Map genes to FANTOM5 TSS summaries --------------------------------------
 
-FANTOM5_CRISPRa_df <- FilterAndCombineEntrezSymbol(FANTOM5_summary_df, unique_CRISPRa_df[, "Entrez_ID"], unique_CRISPRa_df[, "Gene_symbol"], unique_CRISPRa_df[, "Combined_ID"])
+FANTOM5_CRISPRa_df <- FilterAndCombineEntrezSymbol(FANTOM5_summary_df,
+                                                   unique_CRISPRa_df[["Entrez_ID"]],
+                                                   unique_CRISPRa_df[["Gene_symbol"]],
+                                                   unique_CRISPRa_df[["Combined_ID"]]
+                                                   )
 
 
 
 
 # Map genes to BioMart TSS summaries --------------------------------------
 
-BioMart_CRISPRa_df <- FilterAndCombineEntrezSymbol(BioMart_summary_df, unique_CRISPRa_df[, "Entrez_ID"], unique_CRISPRa_df[, "Gene_symbol"], unique_CRISPRa_df[, "Combined_ID"])
+BioMart_CRISPRa_df <- FilterAndCombineEntrezSymbol(BioMart_summary_df,
+                                                   unique_CRISPRa_df[["Entrez_ID"]],
+                                                   unique_CRISPRa_df[["Gene_symbol"]],
+                                                   unique_CRISPRa_df[["Combined_ID"]]
+                                                   )
 
 
 
 
 # Map genes to combined TSS summaries -------------------------------------
 
-combined_TSS_CRISPRa_df <- FilterAndCombineEntrezSymbol(combined_TSS_summary_df, unique_CRISPRa_df[, "Entrez_ID"], unique_CRISPRa_df[, "Gene_symbol"], unique_CRISPRa_df[, "Combined_ID"])
+combined_TSS_CRISPRa_df <- FilterAndCombineEntrezSymbol(combined_TSS_summary_df,
+                                                        unique_CRISPRa_df[["Entrez_ID"]],
+                                                        unique_CRISPRa_df[["Gene_symbol"]],
+                                                        unique_CRISPRa_df[["Combined_ID"]]
+                                                        )
 
 
 

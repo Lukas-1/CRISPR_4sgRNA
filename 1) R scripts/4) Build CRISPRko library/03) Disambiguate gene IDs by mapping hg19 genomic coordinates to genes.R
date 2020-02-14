@@ -49,9 +49,9 @@ human_genes_hg19_GRanges <- genes(TxDb.Hsapiens.UCSC.hg19.knownGene)
 
 # Process the genomic locations of sgRNAs in the TKOv3 library ------------
 
-have_locations <- !(is.na(CRISPRko_df[, "TKOv3_ID"])) & (CRISPRko_df[, "Is_control"] == "No")
+have_locations <- !(is.na(CRISPRko_df[["TKOv3_ID"]])) & (CRISPRko_df[["Is_control"]] == "No")
 
-TKOv3_IDs_vec <- CRISPRko_df[have_locations, "TKOv3_ID"]
+TKOv3_IDs_vec <- CRISPRko_df[["TKOv3_ID"]][have_locations]
 
 TKOv3_IDs_splits        <- strsplit(TKOv3_IDs_vec, "_", fixed = TRUE)
 TKOv3_chromosome_splits <- strsplit(sapply(TKOv3_IDs_splits, "[[", 1), ":", fixed = TRUE)
@@ -121,32 +121,32 @@ stopifnot(all(num_sequences_hg19 == 1))
 # Disambiguate Entrez IDs (based on the location of sgRNAs) ---------------
 
 # Perform checks
-are_ambiguous <- grepl(", ", lifted_CRISPRko_df[, "Entrez_ID"], fixed = TRUE)
-stopifnot(!(any(are_ambiguous & (lifted_CRISPRko_df[, "Source"] == "Brunello"))))
-stopifnot(all(lifted_CRISPRko_df[have_locations, "sgRNA_sequence"] == lifted_CRISPRko_df[have_locations, "Sequence_hg19"]))
+are_ambiguous <- grepl(", ", lifted_CRISPRko_df[["Entrez_ID"]], fixed = TRUE)
+stopifnot(!(any(are_ambiguous & (lifted_CRISPRko_df[["Source"]] == "Brunello"))))
+stopifnot(all(lifted_CRISPRko_df[["sgRNA_sequence"]][have_locations] == lifted_CRISPRko_df[["Sequence_hg19"]][have_locations]))
 
 # Disambiguate Entrez IDs
 disambiguated_df <- ReassignEntrezsByLocations(lifted_CRISPRko_df[have_locations, ])
 
 # Check the results of disambiguation
-table(disambiguated_df[, "Entrez_assignment"])
+table(disambiguated_df[["Entrez_assignment"]])
 per_gene_columns <- c("Combined_ID", "Old_Entrez", "Entrez_ID", "Old_symbol", "Gene_symbol", "Original_symbol",
                       "Were_replaced", "Exon_number_Brunello", "Exon_number_TKOv3", "Chromosome"
                       )
-unique(disambiguated_df[disambiguated_df[, "Entrez_assignment"] %in% "Unambiguous chromosome", per_gene_columns])
-unique(disambiguated_df[disambiguated_df[, "Entrez_assignment"] %in% "Overlaps with gene", per_gene_columns])
-unique(disambiguated_df[disambiguated_df[, "Entrez_assignment"] %in% "Ambiguous chromosome, and ambiguous overlaps", per_gene_columns])
+unique(disambiguated_df[disambiguated_df[["Entrez_assignment"]] %in% "Unambiguous chromosome", per_gene_columns])
+unique(disambiguated_df[disambiguated_df[["Entrez_assignment"]] %in% "Overlaps with gene", per_gene_columns])
+unique(disambiguated_df[disambiguated_df[["Entrez_assignment"]] %in% "Ambiguous chromosome, and ambiguous overlaps", per_gene_columns])
 
 
 for (column_name in c("Entrez_ID", "Combined_ID", "Gene_symbol")) {
-  CRISPRko_df[have_locations, column_name] <- disambiguated_df[, column_name]
+  CRISPRko_df[[column_name]][have_locations] <- disambiguated_df[[column_name]]
 }
 
 
 
 # Add the genomic locations based on liftOver to hCRISPRko_df -------------
 
-are_identical_sequences <- (lifted_CRISPRko_df[have_locations, "sgRNA_sequence"] == lifted_CRISPRko_df[have_locations, "Sequence_liftOver"]) %in% TRUE
+are_identical_sequences <- (lifted_CRISPRko_df[["sgRNA_sequence"]][have_locations] == lifted_CRISPRko_df[["Sequence_liftOver"]][have_locations]) %in% TRUE
 
 liftOver_columns <- c("Chromosome_liftOver", "Strand_liftOver", "Start_liftOver", "End_liftOver")
 locations_liftOver_vec <- MakeLocationStrings(setNames(lifted_CRISPRko_df[have_locations, liftOver_columns],
@@ -155,13 +155,13 @@ locations_liftOver_vec <- MakeLocationStrings(setNames(lifted_CRISPRko_df[have_l
                                               )
 
 locations_liftOver_vec[!(are_identical_sequences)] <- NA_character_
-CRISPRko_df[, "Location_liftOver"] <- NA_character_
-CRISPRko_df[have_locations, "Location_liftOver"] <- locations_liftOver_vec
+CRISPRko_df[["Location_liftOver"]] <- NA_character_
+CRISPRko_df[["Location_liftOver"]][have_locations] <- locations_liftOver_vec
 
-CRISPRko_df[have_locations, "Original_PAM"] <- ifelse(are_identical_sequences & is.na(lifted_CRISPRko_df[have_locations, "Original_PAM"]),
-                                                      lifted_CRISPRko_df[have_locations, "PAM_liftOver"],
-                                                      lifted_CRISPRko_df[have_locations, "Original_PAM"]
-                                                      )
+CRISPRko_df[["Original_PAM"]][have_locations] <- ifelse(are_identical_sequences & is.na(lifted_CRISPRko_df[["Original_PAM"]][have_locations]),
+                                                        lifted_CRISPRko_df[["PAM_liftOver"]][have_locations],
+                                                        lifted_CRISPRko_df[["Original_PAM"]][have_locations]
+                                                        )
 
 
 

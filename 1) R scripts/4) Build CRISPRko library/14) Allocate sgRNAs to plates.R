@@ -35,7 +35,7 @@ load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription 
 
 # Define the sublibrary ---------------------------------------------------
 
-merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
+merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Combined_ID"]] %in% TF_overview_df[["Combined_ID"]], ]
 
 
 
@@ -43,10 +43,10 @@ merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] 
 
 # Check for invalid 4sg combinations --------------------------------------
 
-stopifnot(!(any(merged_TF_CRISPRko_df[, "Spacing"] %in% 0)))
+stopifnot(!(any(merged_TF_CRISPRko_df[["Spacing"]] %in% 0)))
 
-are_complete_genes <- sapply(unique(merged_TF_CRISPRko_df[, "Combined_ID"]), function(x) {
-  all(1:4 %in% merged_TF_CRISPRko_df[merged_TF_CRISPRko_df[, "Combined_ID"] == x, "Rank"])
+are_complete_genes <- sapply(unique(merged_TF_CRISPRko_df[["Combined_ID"]]), function(x) {
+  all(1:4 %in% merged_TF_CRISPRko_df[["Rank"]][merged_TF_CRISPRko_df[["Combined_ID"]] == x])
 })
 stopifnot(all(are_complete_genes))
 
@@ -56,7 +56,7 @@ stopifnot(all(are_complete_genes))
 
 # Define the final selection of sgRNAs ------------------------------------
 
-top4_df <- merged_TF_CRISPRko_df[merged_TF_CRISPRko_df[, "Rank"] %in% 1:4, ]
+top4_df <- merged_TF_CRISPRko_df[merged_TF_CRISPRko_df[["Rank"]] %in% 1:4, ]
 row.names(top4_df) <- NULL
 
 
@@ -75,14 +75,14 @@ lengths(entrez_sets)
 
 # Count problematic genes -------------------------------------------------
 
-are_problematic_sgRNAs   <- top4_df[, "Entrez_ID"] %in% entrez_sets[["problematic"]]
-are_unproblematic_sgRNAs <- top4_df[, "Entrez_ID"] %in% entrez_sets[["unproblematic"]]
+are_problematic_sgRNAs   <- top4_df[["Entrez_ID"]] %in% entrez_sets[["problematic"]]
+are_unproblematic_sgRNAs <- top4_df[["Entrez_ID"]] %in% entrez_sets[["unproblematic"]]
 
 num_problematic   <- sum(are_problematic_sgRNAs)   / 4
 num_unproblematic <- sum(are_unproblematic_sgRNAs) / 4
 
-sum(top4_df[, "Combined_ID"] %in% entrez_sets[["overlap"]])       / 4
-sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
+sum(top4_df[["Combined_ID"]] %in% entrez_sets[["overlap"]])       / 4
+sum(top4_df[["Combined_ID"]] %in% entrez_sets[["fail_criteria"]]) / 4
 
 
 
@@ -94,9 +94,9 @@ sum(top4_df[, "Combined_ID"] %in% entrez_sets[["fail_criteria"]]) / 4
 
 num_gene_wells <- nrow(top4_df) / 4
 
-are_Brunello_top4 <- grepl("Brunello", top4_df[, "Source"], fixed = TRUE)
-are_TKOv3_top4    <- grepl("TKOv3",    top4_df[, "Source"], fixed = TRUE)
-are_GPP_top4      <- grepl("GPP",      top4_df[, "Source"], fixed = TRUE)
+are_Brunello_top4 <- grepl("Brunello", top4_df[["Source"]], fixed = TRUE)
+are_TKOv3_top4    <- grepl("TKOv3",    top4_df[["Source"]], fixed = TRUE)
+are_GPP_top4      <- grepl("GPP",      top4_df[["Source"]], fixed = TRUE)
 
 table(are_Brunello_top4)
 table(are_TKOv3_top4)
@@ -133,11 +133,11 @@ set.seed(1)
 
 # Generate a pool of 4sg controls -----------------------------------------
 
-are_Brunello <- grepl("Brunello", merged_CRISPRko_df[, "Source"], fixed = TRUE)
+are_Brunello <- grepl("Brunello", merged_CRISPRko_df[["Source"]], fixed = TRUE)
 are_good_controls <- AreGoodControls(merged_CRISPRko_df)
 
 # The TKOv3 controls target EGFP, LacZ, luciferase, etc., which we may not want
-control_sequences_pool <- toupper(merged_CRISPRko_df[are_Brunello & are_good_controls, "sgRNA_sequence"])
+control_sequences_pool <- toupper(merged_CRISPRko_df[["sgRNA_sequence"]][are_Brunello & are_good_controls])
 
 control_sequences_pool_list <- Make4sgControlsList(control_sequences_pool)
 

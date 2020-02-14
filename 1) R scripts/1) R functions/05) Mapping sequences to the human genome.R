@@ -170,11 +170,11 @@ FindSequences <- function(sequences_vec) {
 
   combined_results_df <- do.call(rbind.data.frame, c(results_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
-  new_order <- order(match(combined_results_df[, "Reference"], sequences_vec),
-                     match(combined_results_df[, "Chromosome"], chromosome_names),
-                     combined_results_df[, "Start"],
-                     match(combined_results_df[, "Strand"], c("+", "-")),
-                     combined_results_df[, "End"]
+  new_order <- order(match(combined_results_df[["Reference"]], sequences_vec),
+                     match(combined_results_df[["Chromosome"]], chromosome_names),
+                     combined_results_df[["Start"]],
+                     match(combined_results_df[["Strand"]], c("+", "-")),
+                     combined_results_df[["End"]]
                      )
 
   combined_results_df <- combined_results_df[new_order, ]

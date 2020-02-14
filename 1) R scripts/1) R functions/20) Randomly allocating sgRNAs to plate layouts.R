@@ -40,8 +40,8 @@ RandomizeAllIndices <- function(n_total = NULL, n_per_plate_vec = NULL, n_per_pl
 
 
 RetrieveIndices <- function(CRISPR_df, indices_vec, ID_column) {
-  unique_combined_IDs <- unique(CRISPR_df[, ID_column])
-  combined_ID_matches <- match(CRISPR_df[, ID_column], unique_combined_IDs)
+  unique_combined_IDs <- unique(CRISPR_df[[ID_column]])
+  combined_ID_matches <- match(CRISPR_df[[ID_column]], unique_combined_IDs)
   results_df <- CRISPR_df[combined_ID_matches %in% indices_vec, ]
   return(results_df)
 }
@@ -49,35 +49,39 @@ RetrieveIndices <- function(CRISPR_df, indices_vec, ID_column) {
 
 
 
-AreCompleteTranscripts <- function(CRISPR_df) {
-  are_incomplete <- rep.int(NA, nrow(CRISPR_df))
-  unique_TSS_IDs <- unique(CRISPR_df[CRISPR_df[, "Is_control"] == "No", "AltTSS_ID"])
+AreCompleteTranscripts <- function(CRISPR_df, must_be_spaced = FALSE) {
+  are_complete <- rep.int(NA, nrow(CRISPR_df))
+  unique_TSS_IDs <- unique(CRISPR_df[["AltTSS_ID"]][CRISPR_df[["Is_control"]] == "No"])
   for (unique_TSS_ID in unique_TSS_IDs) {
-    are_this_TSS <- CRISPR_df[, "AltTSS_ID"] %in% unique_TSS_ID
-    are_unmapped_TSS <- all(CRISPR_df[are_this_TSS, "Num_TSSs"] >= 2) && all(is.na(CRISPR_df[are_this_TSS, "Start"]))
+    are_this_TSS <- CRISPR_df[["AltTSS_ID"]] %in% unique_TSS_ID
+    are_unmapped_TSS <- all(CRISPR_df[["Num_TSSs"]][are_this_TSS] >= 2) && all(is.na(CRISPR_df[["Start"]][are_this_TSS]))
     if (!(are_unmapped_TSS)) { # AltTSS_IDs corresponding to unmapped sgRNAs are left to be 'NA'
-      is_complete <- all(1:4 %in% CRISPR_df[are_this_TSS, "Rank"])
-      are_incomplete[are_this_TSS] <- is_complete
+      this_TSS_rank_vec <- CRISPR_df[["Rank"]][are_this_TSS]
+      if (must_be_spaced) {
+        this_TSS_rank_vec <- this_TSS_rank_vec[!(CRISPR_df[["Spacing"]][are_this_TSS] %in% 0)]
+      }
+      is_complete <- all(1:4 %in% this_TSS_rank_vec)
+      are_complete[are_this_TSS] <- is_complete
     }
   }
-  return(are_incomplete)
+  return(are_complete)
 }
 
 
 
 ReturnProblematicGenes <- function(library_summary_df) {
-  are_available_genes        <- library_summary_df[, "Gene_present"] == "Yes"
-  are_overlapping_genes      <- library_summary_df[, "Num_overlaps"] != 0
+  are_available_genes        <- library_summary_df[["Gene_present"]] == "Yes"
+  are_overlapping_genes      <- library_summary_df[["Num_overlaps"]] != 0
   are_overlappingNoNA_genes  <- (are_overlapping_genes %in% TRUE) | (is.na(are_overlapping_genes) & are_available_genes)
-  do_not_meet_criteria_genes <- library_summary_df[, "Num_top4_outside_criteria"] > 0
+  do_not_meet_criteria_genes <- library_summary_df[["Num_top4_outside_criteria"]] > 0
 
   are_problematic_genes <- are_overlappingNoNA_genes | do_not_meet_criteria_genes
 
   results_list <- list(
-    "problematic"   = library_summary_df[are_problematic_genes %in% TRUE,  "Entrez_ID"],
-    "unproblematic" = library_summary_df[are_problematic_genes %in% FALSE, "Entrez_ID"],
-    "overlap"       = library_summary_df[are_overlappingNoNA_genes, "Entrez_ID"],
-    "fail_criteria" = library_summary_df[do_not_meet_criteria_genes %in% TRUE, "Entrez_ID"]
+    "problematic"   = library_summary_df[["Entrez_ID"]][are_problematic_genes %in% TRUE],
+    "unproblematic" = library_summary_df[["Entrez_ID"]][are_problematic_genes %in% FALSE],
+    "overlap"       = library_summary_df[["Entrez_ID"]][are_overlappingNoNA_genes],
+    "fail_criteria" = library_summary_df[["Entrez_ID"]][do_not_meet_criteria_genes %in% TRUE]
   )
   return(results_list)
 }
@@ -86,13 +90,13 @@ ReturnProblematicGenes <- function(library_summary_df) {
 
 
 AreGoodControls <- function(CRISPR_df) {
-  are_controls <- CRISPR_df[, "Is_control"] == "Yes"
-  if (any(duplicated(toupper(CRISPR_df[are_controls, "sgRNA_sequence"])))) {
+  are_controls <- CRISPR_df[["Is_control"]] == "Yes"
+  if (any(duplicated(toupper(CRISPR_df[["sgRNA_sequence"]][are_controls])))) {
     stop("Error: Duplicated control sgRNA sequences found!")
   }
-  have_no_issues <- (CRISPR_df[, "Num_0MM"] %in% 0) &
-                    (CRISPR_df[, "Num_1MM"] %in% 0) &
-                    !(grepl("TTTT", CRISPR_df[, "sgRNA_sequence"], ignore.case = TRUE))
+  have_no_issues <- (CRISPR_df[["Num_0MM"]] %in% 0) &
+                    (CRISPR_df[["Num_1MM"]] %in% 0) &
+                    !(grepl("TTTT", CRISPR_df[["sgRNA_sequence"]], ignore.case = TRUE))
   results_vec <- are_controls & have_no_issues
   return(results_vec)
 }
@@ -100,14 +104,10 @@ AreGoodControls <- function(CRISPR_df) {
 
 
 Make4sgControlsList <- function(sequences_vec) {
-
   indices_list <- RandomizeAllIndices(n_total = length(sequences_vec), n_per_plate = 4)
   indices_list <- indices_list[lengths(indices_list) == 4]
-
   guides_pool_list <- lapply(indices_list, function(x) sequences_vec[x])
-
   num_homologies_vec <- vapply(guides_pool_list, NumHomologousPairs, integer(1))
-
   guides_pool_list <- guides_pool_list[num_homologies_vec == 0]
   return(guides_pool_list)
 }
@@ -122,11 +122,11 @@ MakeControlGuidesDf <- function(control_sequences_list, controls_CRISPR_df) {
   well_numbers_vec <- rep(seq_along(control_sequences_list), each = 4)
   sg_numbers_vec   <- rep(1:4, times = length(control_sequences_list))
 
-  guides_pool_matches <- match(toupper(sequences_vec), toupper(controls_CRISPR_df[, "sgRNA_sequence"]))
+  guides_pool_matches <- match(toupper(sequences_vec), toupper(controls_CRISPR_df[["sgRNA_sequence"]]))
   results_df <- controls_CRISPR_df[guides_pool_matches, ]
 
-  results_df[, "Combined_ID"] <- paste0("Control_", FormatFixedWidthInteger(well_numbers_vec))
-  results_df[, "Rank"] <- sg_numbers_vec
+  results_df[["Combined_ID"]] <- paste0("Control_", FormatFixedWidthInteger(well_numbers_vec))
+  results_df[["Rank"]] <- sg_numbers_vec
 
   row.names(results_df) <- NULL
   return(results_df)
@@ -142,11 +142,12 @@ RandomlyShufflePlates <- function(plate_df_list) {
   shuffled_indices_list <- lapply(plate_df_list, function(x) sample(seq_len(nrow(x) / 4)))
 
   plate_df_shuffled_list <- lapply(seq_along(shuffled_indices_list), function(x) {
+    assign("delete_x", x, envir = globalenv())
     my_df <- plate_df_list[[x]]
     if ("AltTSS_ID" %in% names(my_df)) {
-      IDs_vec <- ifelse(my_df[, "Is_control"] == "Yes", my_df[, "Combined_ID"], my_df[, "AltTSS_ID"])
+      IDs_vec <- ifelse(my_df[["Is_control"]] == "Yes", my_df[["Combined_ID"]], my_df[["AltTSS_ID"]])
     } else {
-      IDs_vec <- my_df[, "Combined_ID"]
+      IDs_vec <- my_df[["Combined_ID"]]
     }
     unique_IDs_vec <- unique(IDs_vec)
     my_indices <- shuffled_indices_list[[x]]
@@ -167,7 +168,7 @@ CombinePlateDfList <- function(plate_df_list) {
     my_df <- plate_df_list[[x]]
     results_df <- data.frame(
       "Plate_number" = x,
-      "Well_number"  = rep(seq_len(nrow(my_df) / 4), each = 4),
+      "Well_number" = rep(seq_len(nrow(my_df) / 4), each = 4),
       my_df,
       stringsAsFactors = FALSE,
       row.names = NULL
@@ -176,9 +177,8 @@ CombinePlateDfList <- function(plate_df_list) {
   plates_df <- do.call(rbind.data.frame, c(plate_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
   # Re-number the control wells
-  are_controls <- plates_df[, "Is_control"] == "Yes"
-  plates_df[are_controls, "Combined_ID"] <- paste0("Control_", rep(seq_len(sum(are_controls) / 4), each = 4))
-
+  are_controls <- plates_df[["Is_control"]] == "Yes"
+  plates_df[["Combined_ID"]][are_controls] <- paste0("Control_", rep(seq_len(sum(are_controls) / 4), each = 4))
   return(plates_df)
 }
 

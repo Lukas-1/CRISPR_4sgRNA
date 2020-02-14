@@ -35,9 +35,9 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 # Prepare the input to GuideScan ------------------------------------------
 
-submit_df <- extended_CRISPRko_df[!(is.na(extended_CRISPRko_df[, "Start"])), ]
+submit_df <- extended_CRISPRko_df[!(is.na(extended_CRISPRko_df[["Start"]])), ]
 
-submit_df[, "GuideScan_input_sgRNA"] <- sgRNAStringForGuideScan(submit_df)
+submit_df[["GuideScan_input_sgRNA"]] <- sgRNAStringForGuideScan(submit_df)
 
 
 
@@ -45,11 +45,11 @@ submit_df[, "GuideScan_input_sgRNA"] <- sgRNAStringForGuideScan(submit_df)
 # Check for duplicated chromosomal positions ------------------------------
 # (Some of these duplications are not actually duplications, instead, one sgRNA is on the + strand, and the other is on the - strand.)
 
-num_occurrences <- table(submit_df[, "GuideScan_input_sgRNA"])[submit_df[, "GuideScan_input_sgRNA"]]
+num_occurrences <- table(submit_df[["GuideScan_input_sgRNA"]])[submit_df[["GuideScan_input_sgRNA"]]]
 
 multiplicates_df <- submit_df[num_occurrences > 1, ]
 
-multiplicates_df <- multiplicates_df[order(match(multiplicates_df[, "GuideScan_input_sgRNA"], multiplicates_df[, "GuideScan_input_sgRNA"])), ]
+multiplicates_df <- multiplicates_df[order(match(multiplicates_df[["GuideScan_input_sgRNA"]], multiplicates_df[["GuideScan_input_sgRNA"]])), ]
 row.names(multiplicates_df) <- NULL
 
 
@@ -58,19 +58,19 @@ row.names(multiplicates_df) <- NULL
 
 # Retain only unique chromosomal positions --------------------------------
 
-submit_df <- submit_df[!(duplicated(submit_df[, "GuideScan_input_sgRNA"])), ]
-chunks_list <- AppendIDsWithoutEntrezs(entrez_chunks_list, submit_df)
+submit_df <- submit_df[!(duplicated(submit_df[["GuideScan_input_sgRNA"]])), ]
+chunks_list <- AppendIDsWithoutCanonicalEntrezs(entrez_chunks_list, submit_df)
 
 chunks_df <- data.frame(
   "Combined_ID" = unlist(chunks_list, use.names = FALSE),
-  "Chunk_ID"    = rep(names(chunks_list), lengths(chunks_list)),
+  "Chunk_ID" = rep(names(chunks_list), lengths(chunks_list)),
   stringsAsFactors = FALSE
 )
 
-chunk_matches_vec <- match(submit_df[, "Combined_ID"], chunks_df[, "Combined_ID"])
-submit_df[, "Chunk"] <- chunks_df[chunk_matches_vec, "Chunk_ID"]
+chunk_matches_vec <- match(submit_df[["Combined_ID"]], chunks_df[["Combined_ID"]])
+submit_df[["Chunk"]] <- chunks_df[["Chunk_ID"]][chunk_matches_vec]
 
-GuideScan_input_list <- split(submit_df[, "GuideScan_input_sgRNA"], submit_df[, "Chunk"])
+GuideScan_input_list <- split(submit_df[["GuideScan_input_sgRNA"]], submit_df[["Chunk"]])
 
 
 

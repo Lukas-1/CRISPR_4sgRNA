@@ -60,18 +60,18 @@ extended_replaced_CRISPRa_df <- ExtendWithGenomeSearch(replaced_CRISPRa_df, repl
 
 # Flip lower-/upper-case to indicate 5' G replacements --------------------
 
-first_letter_vec <- substr(extended_replaced_CRISPRa_df[, "sgRNA_sequence"], 1, 1)
+first_letter_vec <- substr(extended_replaced_CRISPRa_df[["sgRNA_sequence"]], 1, 1)
 first_letter_cases_vec  <- GetCases(first_letter_vec)
-second_letter_cases_vec <- GetCases(substr(extended_replaced_CRISPRa_df[, "sgRNA_sequence"], 2, 2))
+second_letter_cases_vec <- GetCases(substr(extended_replaced_CRISPRa_df[["sgRNA_sequence"]], 2, 2))
 are_not_discordant_vec  <- first_letter_cases_vec == second_letter_cases_vec
 
-flipped_vec <- ifelse(are_not_discordant_vec & (replaced_merged_CRISPRa_df[, "Exchanged_5pG"] %in% "Yes"),
+flipped_vec <- ifelse(are_not_discordant_vec & (replaced_merged_CRISPRa_df[["Exchanged_5pG"]] %in% "Yes"),
                       paste0(ifelse(first_letter_cases_vec == "upper", tolower(first_letter_vec), toupper(first_letter_vec)),
-                             substr(extended_replaced_CRISPRa_df[, "sgRNA_sequence"], 2, nchar(extended_replaced_CRISPRa_df[, "sgRNA_sequence"]))
+                             substr(extended_replaced_CRISPRa_df[["sgRNA_sequence"]], 2, nchar(extended_replaced_CRISPRa_df[["sgRNA_sequence"]]))
                              ),
-                      extended_replaced_CRISPRa_df[, "sgRNA_sequence"]
+                      extended_replaced_CRISPRa_df[["sgRNA_sequence"]]
                       )
-extended_replaced_CRISPRa_df[, "sgRNA_sequence"] <- flipped_vec
+extended_replaced_CRISPRa_df[["sgRNA_sequence"]] <- flipped_vec
 
 
 
@@ -80,7 +80,7 @@ extended_replaced_CRISPRa_df[, "sgRNA_sequence"] <- flipped_vec
 # Merge with GuideScan data -----------------------------------------------
 
 full_merged_replaced_CRISPRa_df <- MergeTSSandGuideScan(extended_replaced_CRISPRa_df, replaced_guidescan_all_genes_df)
-head(full_merged_replaced_CRISPRa_df[is.na(full_merged_replaced_CRISPRa_df[, "Hits_start"]) & !(is.na(full_merged_replaced_CRISPRa_df[, "GuideScan_start"])), ])
+head(full_merged_replaced_CRISPRa_df[is.na(full_merged_replaced_CRISPRa_df[["Hits_start"]]) & !(is.na(full_merged_replaced_CRISPRa_df[["GuideScan_start"]])), ])
 
 merged_replaced_CRISPRa_df <- AdjustPositionColumns(full_merged_replaced_CRISPRa_df, replaced_guidescan_all_genes_df)
 
@@ -94,7 +94,7 @@ inconsistent_IDs <- CheckForInconsistentChromosomes(merged_replaced_CRISPRa_df)
 message(paste0("The following combined IDs had sgRNAs that mapped to more than one chromosome: ", paste0(inconsistent_IDs, collapse = ", "), "!"))
 
 selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome")
-unique(merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% inconsistent_IDs, selected_gene_columns])
+unique(merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% inconsistent_IDs, selected_gene_columns])
 
 
 

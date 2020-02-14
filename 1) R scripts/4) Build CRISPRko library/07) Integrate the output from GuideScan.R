@@ -58,7 +58,7 @@ tidy_guidescan_sgRNAs_df <- TidyGuideScanColumns(guidescan_sgRNAs_df)
 
 sgRNAs_input_vec <- sgRNAStringForGuideScan(extended_CRISPRko_df)
 
-matches_vec <- match(sgRNAs_input_vec, guidescan_sgRNAs_df[, "Region"])
+matches_vec <- match(sgRNAs_input_vec, guidescan_sgRNAs_df[["Region"]])
 
 guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_Num_2or3MM")
 
@@ -70,9 +70,9 @@ guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideSc
 
 merged_CRISPRko_df <- extended_CRISPRko_df
 for (column in guidescan_columns) {
-  merged_CRISPRko_df[, column] <- tidy_guidescan_sgRNAs_df[matches_vec, column]
+  merged_CRISPRko_df[[column]] <- tidy_guidescan_sgRNAs_df[[column]][matches_vec]
 }
-merged_CRISPRko_df[, "GuideScan_offtarget_category"] <- GetOffTargetCategory(merged_CRISPRko_df)
+merged_CRISPRko_df[["GuideScan_offtarget_category"]] <- GetOffTargetCategory(merged_CRISPRko_df)
 
 
 

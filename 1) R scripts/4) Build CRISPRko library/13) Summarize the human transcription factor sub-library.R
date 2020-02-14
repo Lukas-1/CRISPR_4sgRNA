@@ -5,10 +5,7 @@
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
-source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
-source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R"))
-
 
 
 
@@ -24,10 +21,8 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 
 
-
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Hs.eg.db Bioconductor database.RData"))
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
 
@@ -35,15 +30,14 @@ load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize
 
 
 
-
 # Determine the number of available sgRNAs for TF genes -------------------
 
-CRISPRko_TF_sgRNAs_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% all_TF_df[, "Combined_ID"], ]
+CRISPRko_TF_sgRNAs_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Combined_ID"]] %in% all_TF_df[["Combined_ID"]], ]
 
 TF_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRko_TF_sgRNAs_df)
 
-reorganized_df <- ReorganizeSummaryDf(TF_sgRNAs_summary_df, all_TF_df[, "Combined_ID"])
-all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[, "Combined_ID"], all_TF_df[, "Combined_ID"]), ],
+reorganized_df <- ReorganizeSummaryDf(TF_sgRNAs_summary_df, all_TF_df[["Combined_ID"]])
+all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[["Combined_ID"]], all_TF_df[["Combined_ID"]]), ],
                                 reorganized_df[, !(names(reorganized_df) %in% names(all_TF_df))],
                                 stringsAsFactors = FALSE,
                                 row.names = NULL
@@ -54,17 +48,14 @@ all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[, "Combined_ID"],
 
 # Filter TF_overview_df for only bona fide transcription factors ----------
 
-TF_combined_IDs <- all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_ID"]
+TF_combined_IDs <- all_TF_df[["Combined_ID"]][all_TF_df[["Is_TF"]] == "Yes"]
 
-TF_overview_df <- all_TF_summary_df[all_TF_summary_df[, "Combined_ID"] %in% TF_combined_IDs, names(all_TF_summary_df) != "Is_TF"]
+TF_overview_df <- all_TF_summary_df[all_TF_summary_df[["Combined_ID"]] %in% TF_combined_IDs, names(all_TF_summary_df) != "Is_TF"]
 row.names(TF_overview_df) <- NULL
 
-table(TF_overview_df[, "Num_total"] == 0)
-table(TF_overview_df[, "Num_total"] < 4)
-table(TF_overview_df[, "Num_meeting_criteria"] < 4)
-
-# table(TF_overview_df[(TF_overview_df[, "Num_total"] > 0) & (TF_overview_df[, "Num_meeting_criteria"] < 4), "Submitted_to_GuideScan"])
-# TF_overview_df[(TF_overview_df[, "Num_total"] > 0) & (TF_overview_df[, "Num_meeting_criteria"] < 4) & (TF_overview_df[, "Submitted_to_GuideScan"] == "No"), ]
+table(TF_overview_df[["Num_total"]] == 0)
+table(TF_overview_df[["Num_total"]] < 4)
+table(TF_overview_df[["Num_meeting_criteria"]] < 4)
 
 
 
@@ -73,18 +64,16 @@ table(TF_overview_df[, "Num_meeting_criteria"] < 4)
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
-  "Gene_symbol", "ENSEMBL_gene_ID", "Entrez_ID", "Original_symbol", "Original_Entrez_ID",
-  "Num_overlaps", "Spacing", "Longest_subsequence", "GuideScan_specificity", "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
-  "Num_top4_outside_criteria", "Num_total",
+  annotation_columns, selected_metrics,
   "DNA_binding_domain", "TF_assessment", "Binding_mode",
   "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO", "Is_C2H2_ZF"
 )
 
 TF_summary_excel_df <- TF_overview_df[, columns_for_excel]
 
-TF_summary_excel_df[, "Num_total"] <- ifelse(is.na(TF_summary_excel_df[, "Num_total"]), 0L, TF_summary_excel_df[, "Num_total"])
+TF_summary_excel_df[["Num_total"]] <- ifelse(is.na(TF_summary_excel_df[["Num_total"]]), 0L, TF_summary_excel_df[["Num_total"]])
 
-TF_summary_excel_df[, i] <- FormatOverviewDfForExport(TF_summary_excel_df)
+TF_summary_excel_df <- FormatOverviewDfForExport(TF_summary_excel_df)
 
 write.table(TF_summary_excel_df,
             file = file.path(file_output_directory, "Overview_CRISPRko_transcription_factors.tsv"),

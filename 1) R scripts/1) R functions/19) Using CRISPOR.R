@@ -43,49 +43,78 @@ specificity_demo_columns <- c(
 # Functions for exporting CRISPR databases for input to CRISPOR -----------
 
 MakeBedDf <- function(CRISPR_df, combined_IDs) {
-
-  are_selected <- (CRISPR_df[, "Combined_ID"] %in% combined_IDs) &
-                  !(is.na(CRISPR_df[, "Start"]))
-
+  are_selected <- (CRISPR_df[["Combined_ID"]] %in% combined_IDs) &
+                  !(is.na(CRISPR_df[["Start"]]))
   CRISPR_bed_df <- CRISPR_df[are_selected, ]
-
   export_bed_df <- data.frame(
-    CRISPR_bed_df[, "Chromosome", drop = FALSE],
-    "Start"  = ifelse(CRISPR_bed_df[, "Strand"] == "+", CRISPR_bed_df[, "Start"], CRISPR_bed_df[, "Start"] - 3L) - 1L,
-    "End"    = ifelse(CRISPR_bed_df[, "Strand"] == "+", CRISPR_bed_df[, "End"] + 3L, CRISPR_bed_df[, "End"]),
+    CRISPR_bed_df[c("Combined_ID", "Chromosome")],
+    "Start"  = ifelse(CRISPR_bed_df[["Strand"]] == "+", CRISPR_bed_df[["Start"]],    CRISPR_bed_df[["Start"]] - 3L) - 1L,
+    "End"    = ifelse(CRISPR_bed_df[["Strand"]] == "+", CRISPR_bed_df[["End"]] + 3L, CRISPR_bed_df[["End"]]),
     "Names"  = ".",
     "Scores" = ".",
-    CRISPR_bed_df[, "Strand", drop = FALSE],
+    CRISPR_bed_df["Strand"],
     stringsAsFactors = FALSE
   )
-  export_bed_df <- unique(export_bed_df)
+  are_duplicated <- duplicated(export_bed_df[, colnames(export_bed_df) != "Combined_ID"])
+  export_bed_df <- export_bed_df[!(are_duplicated), ]
   row.names(export_bed_df) <- NULL
   return(export_bed_df)
 }
 
 
 
+MakeBedDf <- function(CRISPR_df, combined_IDs) {
+  are_selected <- (CRISPR_df[["Combined_ID"]] %in% combined_IDs) &
+                  !(is.na(CRISPR_df[["Start"]]))
+  CRISPR_bed_df <- CRISPR_df[are_selected, ]
+  export_bed_df <- data.frame(
+    CRISPR_bed_df[c("Combined_ID", "Chromosome")],
+    "Start"  = ifelse(CRISPR_bed_df[["Strand"]] == "+", CRISPR_bed_df[["Start"]],    CRISPR_bed_df[["Start"]] - 3L) - 1L,
+    "End"    = ifelse(CRISPR_bed_df[["Strand"]] == "+", CRISPR_bed_df[["End"]] + 3L, CRISPR_bed_df[["End"]]),
+    "Names"  = ".",
+    "Scores" = ".",
+    CRISPR_bed_df["Strand"],
+    stringsAsFactors = FALSE
+  )
+  are_duplicated <- duplicated(export_bed_df[, !(colnames(export_bed_df) %in% c("sgRNA_sequence", "Combined_ID"))])
+  export_bed_df <- export_bed_df[!(are_duplicated), ]
+  row.names(export_bed_df) <- NULL
+  return(export_bed_df)
+}
+
+
+BreakIntoChunks <- function(UseFunction, CRISPR_df, combined_IDs_list) {
+  export_df <- UseFunction(CRISPR_df, combined_IDs = unlist(combined_IDs_list, use.names = FALSE))
+  export_df_list <- lapply(combined_IDs_list, function(x) {
+    are_this_chunk <- export_df[["Combined_ID"]] %in% x
+    return(export_df[are_this_chunk, colnames(export_df) != "Combined_ID"])
+  })
+  return(export_df_list)
+}
+
+
+
 
 PAMorOriginalPAM <- function(CRISPR_df) {
-  are_validated_PAMs <- !(is.na(CRISPR_df[, "Original_PAM"])) &
+  are_validated_PAMs <- !(is.na(CRISPR_df[["Original_PAM"]])) &
                         mapply(function(x, y) x %in% strsplit(y, "; ", fixed = TRUE)[[1]],
-                               CRISPR_df[, "Original_PAM"],
-                               CRISPR_df[, "PAM_0MM"]
+                               CRISPR_df[["Original_PAM"]],
+                               CRISPR_df[["PAM_0MM"]]
                                )
-  PAM_vec <- ifelse(is.na(CRISPR_df[, "PAM"]),
-                    ifelse(are_validated_PAMs, CRISPR_df[, "Original_PAM"], NA_character_),
-                    CRISPR_df[, "PAM"]
+  PAM_vec <- ifelse(is.na(CRISPR_df[["PAM"]]),
+                    ifelse(are_validated_PAMs, CRISPR_df[["Original_PAM"]], NA_character_),
+                    CRISPR_df[["PAM"]]
                     )
-  return(PAM_vec)
+  return(toupper(PAM_vec))
 }
 
 
 
 MakeFASTADf <- function(CRISPR_df, combined_IDs) {
-  are_selected <- (CRISPR_df[, "Combined_ID"] %in% combined_IDs) &
-                  is.na(CRISPR_df[, "Start"])
+  are_selected <- (CRISPR_df[["Combined_ID"]] %in% combined_IDs) &
+                  is.na(CRISPR_df[["Start"]])
   results_df <- CRISPR_df[are_selected, ]
-  results_df <- results_df[results_df[, "Num_0MM"] > 0, ]
+  results_df <- results_df[results_df[["Num_0MM"]] > 0, ]
   PAM_vec <- PAMorOriginalPAM(results_df)
   results_df <- data.frame(
     results_df[, c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "sgRNA_sequence")],
@@ -94,25 +123,27 @@ MakeFASTADf <- function(CRISPR_df, combined_IDs) {
     row.names = NULL
   )
   results_df <- results_df[!(is.na(PAM_vec)), ]
+  are_duplicated <- duplicated(results_df[, c("sgRNA_sequence", "PAM")])
+  results_df <- results_df[!(are_duplicated), ]
   row.names(results_df) <- NULL
   return(results_df)
 }
 
 
 
+
+
 MakeFASTAvec <- function(use_FASTA_df) {
-  full_sequences_vec <- unique(paste0(use_FASTA_df[, "sgRNA_sequence"], use_FASTA_df[, "PAM"]))
+  full_sequences_vec <- unique(paste0(use_FASTA_df[["sgRNA_sequence"]], use_FASTA_df[["PAM"]]))
   FASTA_list <- lapply(seq_along(full_sequences_vec), function(x) c(paste0(">seq", x), full_sequences_vec[[x]], ""))
   FASTA_vec <- unlist(FASTA_list)
   return(FASTA_vec)
 }
 
 
-WriteCRISPORInputFiles <- function(CRISPOR_chunk_list, file_ending, CRISPOR_input_directory) {
+WriteCRISPORInputFiles <- function(CRISPOR_chunk_list, file_ending, CRISPOR_input_directory, file_prefix = "Input_for_CRISPOR__") {
   for (i in seq_along(CRISPOR_chunk_list)) {
-    file_name <- paste0("Input_for_CRISPOR__chunk_",
-                        names(CRISPOR_chunk_list)[[i]], file_ending
-                        )
+    file_name <- paste0(file_prefix, names(CRISPOR_chunk_list)[[i]], file_ending)
     write.table(CRISPOR_chunk_list[[i]],
                 file = file.path(CRISPOR_input_directory, file_name),
                 quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t"
@@ -130,22 +161,74 @@ WriteCRISPORInputFiles <- function(CRISPOR_chunk_list, file_ending, CRISPOR_inpu
 
 IdentifyCRISPOROutputFiles <- function() {
   # Requires 'CRISPOR_files_directory' in the global environment
-  output_files   <- grep("^CRISPOR_output_", list.files(CRISPOR_files_directory), value = TRUE)
-  are_FASTA      <- grepl("FASTA", output_files, fixed = TRUE)
-  are_offtargets <- grepl("offs\\.tsv", output_files)
+
+  output_folder_bed   <- "Output_bed"
+  output_folder_FASTA <- "Output_FASTA"
+
+  output_files_bed   <- grep("^CRISPOR_output_", list.files(file.path(CRISPOR_files_directory, output_folder_bed)),   value = TRUE)
+  output_files_FASTA <- grep("^CRISPOR_output_", list.files(file.path(CRISPOR_files_directory, output_folder_FASTA)), value = TRUE)
+
+  are_offtargets_bed   <- grepl("offs\\.tsv", output_files_bed)
+  are_offtargets_FASTA <- grepl("offs\\.tsv", output_files_FASTA)
+
   results_list <- list(
-    "bed"              = output_files[(!(are_FASTA)) & !(are_offtargets)],
-    "FASTA"            = output_files[are_FASTA & !(are_offtargets)],
-    "bed_offtargets"   = output_files[(!(are_FASTA)) & are_offtargets],
-    "FASTA_offtargets" = output_files[are_FASTA & are_offtargets]
+    "bed"              = file.path(output_folder_bed, output_files_bed[!(are_offtargets_bed)]),
+    "FASTA"            = file.path(output_folder_FASTA, output_files_FASTA[!(are_offtargets_FASTA)]),
+    "bed_offtargets"   = file.path(output_folder_bed, output_files_bed[are_offtargets_bed]),
+    "FASTA_offtargets" = file.path(output_folder_FASTA, output_files_FASTA[are_offtargets_FASTA])
   )
   return(results_list)
 }
 
 
-ReadCRISPOROutputFiles <- function(file_names, use_fread = TRUE, show_messages = FALSE) {
-  df_list <- lapply(file_names, function(x) ReadCRISPOROutput(x, use_fread, show_messages))
-  results_df <- do.call(rbind.data.frame, c(df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+
+
+
+
+ReadCRISPOROutputFiles <- function(file_names, is_FASTA, show_messages = FALSE) {
+  df_list <- lapply(file_names, function(x) ReadCRISPOROutput(x, use_fread = TRUE, show_messages = show_messages))
+  results_df <- rbindlist(df_list)
+  rm(df_list) # Save RAM
+  is_offtarget <- !("Doench '16-Score" %in% colnames(results_df))
+  if (!(is_offtarget)) { # i.e. NOT off-targets output
+    for (column_name in c("Doench '16-Score", "Moreno-Mateos-Score", "Out-of-Frame-Score", "Lindel-Score")) {
+      if (!(is.integer(results_df[[column_name]]))) {
+        are_invalid <- results_df[[column_name]] %in% "NotEnoughFlankSeq"
+        message(paste0(sum(are_invalid), " entries in the '", column_name,
+                       "' column were invalid (i.e. 'NotEnoughFlankSeq')!"
+                       )
+                )
+        results_df[[column_name]][are_invalid] <- NA_character_
+        results_df[[column_name]] <- as.integer(results_df[[column_name]])
+      }
+    }
+    for (column_name in c("mitSpecScore", "cfdSpecScore")) {
+      if (!(is.integer(results_df[[column_name]]))) {
+        are_none <- results_df[[column_name]] %in% "None"
+        message(paste0(sum(are_none), " entries in the '", column_name,
+                       "' column were invalid (i.e. 'None')!"
+                       )
+                )
+        results_df[[column_name]][are_none] <- NA_character_
+        results_df[[column_name]] <- as.integer(results_df[[column_name]])
+      }
+    }
+  }
+  use_columns <- colnames(results_df)
+  if (is_FASTA) {
+    use_columns <- setdiff(use_columns, c("seqId", "#seqId"))
+  }
+  are_duplicated <- duplicated(results_df[, ..use_columns])
+  are_forward <- results_df[["guideId"]] %in% "21forw"
+  are_to_keep <- are_forward & (!(are_duplicated))
+  if (any(are_duplicated)) {
+    message(paste0(sum(are_duplicated), " duplicated entries were excluded!"))
+    rownames(results_df) <- NULL
+  }
+  results_df <- results_df[are_to_keep, ]
+  keep_columns <- setdiff(colnames(results_df), "guideId")
+  results_df <- results_df[, ..keep_columns]
+  data.table::setDF(results_df)
   return(results_df)
 }
 
@@ -159,7 +242,7 @@ ReadCRISPOROutput <- function(file_name, use_fread = TRUE, show_messages = FALSE
   if (use_fread) {
     results_df <- data.table::fread(file = file_path, sep = "\t",
                                     header = TRUE, quote = "",
-                                    data.table = FALSE
+                                    data.table = TRUE
                                     )
   } else {
     results_df <- read.table(file_path, sep = "\t", header = TRUE,
@@ -175,21 +258,28 @@ ReadCRISPOROutput <- function(file_name, use_fread = TRUE, show_messages = FALSE
 
 
 
-SummarizeOfftargets <- function(offtargets_df) {
-  offtargets_df <- offtargets_df[offtargets_df[, "guideId"] == "21forw", ]
-  offtargets_df[, "mismatchCount"] <- as.ordered(offtargets_df[, "mismatchCount"])
-  offtargets_df[, "cfdOfftargetScore"] <- as.numeric(ifelse(offtargets_df[, "cfdOfftargetScore"] == "None", NA, offtargets_df[, "cfdOfftargetScore"]))
+SummarizeOfftargets <- function(offtargets_df, is_FASTA) {
+  offtargets_df[["mismatchCount"]] <- as.ordered(offtargets_df[["mismatchCount"]])
+  offtargets_df[["cfdOfftargetScore"]] <- as.numeric(ifelse(offtargets_df[["cfdOfftargetScore"]] == "None", NA, offtargets_df[["cfdOfftargetScore"]]))
+
+  if (is_FASTA) {
+    ID_column <- "guideSeq"
+  } else {
+    ID_column <- "seqId"
+  }
+  assign("delete_ID_column", ID_column, envir = globalenv())
+  assign("delete_offtargets_df", offtargets_df, envir = globalenv())
 
   results_list <- tapply(seq_len(nrow(offtargets_df)),
-                         factor(offtargets_df[, "seqId"], levels = unique(offtargets_df[, "seqId"])),
+                         factor(offtargets_df[[ID_column]], levels = unique(offtargets_df[[ID_column]])),
                          function(x) {
-                           mismatch_table <- as.integer(table(offtargets_df[x, "mismatchCount"]))
+                           mismatch_table <- as.integer(table(offtargets_df[["mismatchCount"]][x]))
                            names(mismatch_table) <- paste0("CRISPOR_Num_", 0:4, "MM")
-                           specificity_unrounded <- 1 / (1 + sum(offtargets_df[x, "cfdOfftargetScore"], na.rm = TRUE))
-                           specificity_upto3MM <- 1 / (1 + sum(offtargets_df[x, "cfdOfftargetScore"][offtargets_df[x, "mismatchCount"] %in% 0:3], na.rm = TRUE))
+                           specificity_unrounded <- 1 / (1 + sum(offtargets_df[["cfdOfftargetScore"]][x], na.rm = TRUE))
+                           specificity_upto3MM <- 1 / (1 + sum(offtargets_df[["cfdOfftargetScore"]][x][offtargets_df[["mismatchCount"]][x] %in% 0:3], na.rm = TRUE))
                            return(c(
-                             list("Location_ID"     = offtargets_df[x[[1]], "seqId"]),
-                             list("Target_sequence" = offtargets_df[x[[1]], "guideSeq"]),
+                             list("Target_sequence" = offtargets_df[["guideSeq"]][[x[[1]]]]),
+                             if (!(is_FASTA)) list("Location_ID" = offtargets_df[["seqId"]][[x[[1]]]]) else NULL,
                              as.list(mismatch_table),
                              list(
                                "CRISPOR_3MM_specificity" = specificity_upto3MM,
@@ -199,15 +289,16 @@ SummarizeOfftargets <- function(offtargets_df) {
                          })
 
   results_df <- do.call(rbind.data.frame, c(results_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-  assign("delete_results_df", results_df, envir = globalenv())
-  results_df[, "CRISPOR_Num_2or3MM"] <- as.integer(rowSums(as.matrix(results_df[, c("CRISPOR_Num_2MM", "CRISPOR_Num_3MM")])))
+  results_df[["CRISPOR_Num_2or3MM"]] <- as.integer(rowSums(as.matrix(results_df[, c("CRISPOR_Num_2MM", "CRISPOR_Num_3MM")])))
   return(results_df)
 }
 
 
 
-ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns = specificity_demo_columns) {
-  are_invalid <- (CRISPOR_df[, "CRISPOR_CFD_specificity"] %in% "None") | (CRISPOR_df[, "CRISPOR_MIT_specificity"] %in% "None")
+ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns = NULL) {
+  # Relies on the variable 'specificity_demo_columns' in the global environment
+
+  are_invalid <- (CRISPOR_df[["CRISPOR_CFD_specificity"]] %in% "None") | (CRISPOR_df[["CRISPOR_MIT_specificity"]] %in% "None")
   if (any(are_invalid)) {
     message("\n")
     message("The following sgRNAs had specificity scores of 'None', which were replaced by NA values:")
@@ -216,12 +307,15 @@ ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns 
     } else {
       demo_df <- cbind.data.frame(CRISPOR_df, CRISPR_df[, !(names(CRISPR_df) %in% names(CRISPOR_df))])
     }
+    if (is.null(show_columns)) {
+      show_columns <- intersect(specificity_demo_columns, colnames(demo_df))
+    }
     print(demo_df[are_invalid, show_columns])
     message("\n")
     for (column_name in c("CRISPOR_CFD_specificity", "CRISPOR_MIT_specificity")) {
-      CRISPOR_df[, column_name] <- as.integer(ifelse(are_invalid, NA_character_, CRISPOR_df[, column_name]))
+      CRISPOR_df[[column_name]] <- as.integer(ifelse(are_invalid, NA_character_, CRISPOR_df[[column_name]]))
     }
-    CRISPOR_df[are_invalid, "CRISPOR_off_target_count"] <- NA_integer_
+    CRISPOR_df[["CRISPOR_off_target_count"]][are_invalid] <- NA_integer_
   }
   return(CRISPOR_df)
 }
@@ -229,13 +323,13 @@ ResolveSpecificityOfNone <- function(CRISPOR_df, CRISPR_df = NULL, show_columns 
 
 
 MakeBedIDsFromRangesDf <- function(ranges_df) {
-  results_vec <- paste0(ranges_df[, "Chromosome"],
+  results_vec <- paste0(ranges_df[["Chromosome"]],
                         ":",
-                        ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "Start"], ranges_df[, "Start"] - 3L) - 1L,
+                        ifelse(ranges_df[["Strand"]] == "+", ranges_df[["Start"]], ranges_df[["Start"]] - 3L) - 1L,
                         "-",
-                        ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "End"]),
+                        ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 3L, ranges_df[["End"]]),
                         ":",
-                        ranges_df[, "Strand"]
+                        ranges_df[["Strand"]]
                         )
   return(results_vec)
 }
@@ -245,20 +339,19 @@ MakeBedIDsFromRangesDf <- function(ranges_df) {
 
 AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
 
-  CRISPOR_output_df <- CRISPOR_output_df[CRISPOR_output_df[, "guideId"] %in% "21forw", ]
   CRISPR_IDs_vec <- MakeBedIDsFromRangesDf(CRISPR_df)
-  CRISPR_IDs_vec[is.na(CRISPR_df[, "Start"])] <- NA_character_
+  CRISPR_IDs_vec[is.na(CRISPR_df[["Start"]])] <- NA_character_
 
-  stopifnot(!(anyNA(CRISPOR_output_df[, "#seqId"])))
+  stopifnot(!(anyNA(CRISPOR_output_df[["#seqId"]])))
 
-  output_matches_vec <- match(CRISPR_IDs_vec, CRISPOR_output_df[, "#seqId"])
+  output_matches_vec <- match(CRISPR_IDs_vec, CRISPOR_output_df[["#seqId"]])
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
   names(output_matched_df) <- rename_CRISPOR_columns_vec
 
   output_matched_df <- ResolveSpecificityOfNone(output_matched_df, CRISPR_df)
 
-  offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df)
-  offtarget_matches_vec <- match(CRISPR_IDs_vec, offtargets_results_df[, "Location_ID"])
+  offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df, is_FASTA = FALSE)
+  offtarget_matches_vec <- match(CRISPR_IDs_vec, offtargets_results_df[["Location_ID"]])
 
   results_df <- data.frame(CRISPR_df,
                            output_matched_df,
@@ -266,7 +359,7 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
                            stringsAsFactors = FALSE,
                            row.names = NULL
                            )
-  results_df[, "Location_ID"] <- CRISPR_IDs_vec
+  results_df[["Location_ID"]] <- CRISPR_IDs_vec
 
   if (resolve_missing_offtargets) {
     results_df <- ResolveMissingOffTargets(results_df)
@@ -277,24 +370,23 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
 
 
 AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
-  CRISPOR_output_df <- CRISPOR_output_df[CRISPOR_output_df[, "guideId"] %in% "21forw", ]
 
-  not_mapped <- is.na(CRISPR_df[, "Start"])
+  not_mapped <- is.na(CRISPR_df[["Start"]])
   sequences_vec <- rep(NA_character_, nrow(CRISPR_df))
-  sequences_vec[not_mapped] <- toupper(paste0(CRISPR_df[not_mapped, "sgRNA_sequence"], PAMorOriginalPAM(CRISPR_df[not_mapped, ])))
+  sequences_vec[not_mapped] <- toupper(paste0(CRISPR_df[["sgRNA_sequence"]][not_mapped], PAMorOriginalPAM(CRISPR_df[not_mapped, ])))
 
-  stopifnot(!(anyNA(CRISPOR_output_df[, "targetSeq"])))
-  stopifnot(all(is.na(CRISPR_df[not_mapped, "CRISPOR_off_target_count"])))
+  stopifnot(!(anyNA(CRISPOR_output_df[["targetSeq"]])))
+  stopifnot(all(is.na(CRISPR_df[["CRISPOR_off_target_count"]][not_mapped])))
 
-  output_matches_vec <- match(sequences_vec, toupper(CRISPOR_output_df[, "targetSeq"]))
+  output_matches_vec <- match(sequences_vec, toupper(CRISPOR_output_df[["targetSeq"]]))
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
   names(output_matched_df) <- rename_CRISPOR_columns_vec
 
   output_matched_df <- ResolveSpecificityOfNone(output_matched_df, CRISPR_df)
 
-  offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df)
-  stopifnot(!(anyNA(offtargets_results_df[, "Target_sequence"])))
-  offtarget_matches_vec <- match(toupper(sequences_vec), toupper(offtargets_results_df[, "Target_sequence"]))
+  offtargets_results_df <- SummarizeOfftargets(CRISPOR_offtargets_df, is_FASTA = TRUE)
+  stopifnot(!(anyNA(offtargets_results_df[["Target_sequence"]])))
+  offtarget_matches_vec <- match(sequences_vec, toupper(offtargets_results_df[["Target_sequence"]]))
 
   offtargets_df <- data.frame(output_matched_df,
                               offtargets_results_df[offtarget_matches_vec, ],
@@ -305,7 +397,7 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
     offtargets_df <- ResolveMissingOffTargets(offtargets_df)
   }
   for (column_name in setdiff(names(offtargets_df), "Location_ID")) {
-    CRISPR_df[not_mapped, column_name] <- offtargets_df[not_mapped, column_name]
+    CRISPR_df[[column_name]][not_mapped] <- offtargets_df[[column_name]][not_mapped]
   }
   return(CRISPR_df)
 }
@@ -317,21 +409,21 @@ ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
 
   CFD_columns <- c("CRISPOR_4MM_specificity", "CRISPOR_3MM_specificity")
 
-  lack_detailed_offtargets <- is.na(CRISPR_df[, "CRISPOR_4MM_specificity"]) &
-                              !(is.na(CRISPR_df[, "CRISPOR_CFD_specificity"]))
+  lack_detailed_offtargets <- is.na(CRISPR_df[["CRISPOR_4MM_specificity"]]) &
+                              !(is.na(CRISPR_df[["CRISPOR_CFD_specificity"]]))
 
-  have_no_offtargets <- lack_detailed_offtargets & (CRISPR_df[, "CRISPOR_CFD_specificity"] %in% 100)
+  have_no_offtargets <- lack_detailed_offtargets & (CRISPR_df[["CRISPOR_CFD_specificity"]] %in% 100)
   if (any(have_no_offtargets)) {
     for (Num_MM_column in c(paste0("CRISPOR_Num_", 0:4, "MM"), "CRISPOR_Num_2or3MM")) {
-      CRISPR_df[have_no_offtargets, Num_MM_column] <- 0L
+      CRISPR_df[[Num_MM_column]][have_no_offtargets] <- 0L
     }
   }
   for (CFD_column in CFD_columns) {
-    CRISPR_df[have_no_offtargets, CFD_column] <- 1
+    CRISPR_df[[CFD_column]][have_no_offtargets] <- 1
   }
-  too_many_offtargets <- lack_detailed_offtargets & (CRISPR_df[, "CRISPOR_CFD_specificity"] %in% 0)
+  too_many_offtargets <- lack_detailed_offtargets & (CRISPR_df[["CRISPOR_CFD_specificity"]] %in% 0)
   for (CFD_column in CFD_columns) {
-    CRISPR_df[too_many_offtargets, CFD_column] <- use_for_zero
+    CRISPR_df[[CFD_column]][too_many_offtargets] <- use_for_zero
   }
   return(CRISPR_df)
 }
@@ -343,32 +435,47 @@ ResolveMissingOffTargets <- function(CRISPR_df, use_for_zero = 0.0001) {
 # Functions for filtering out sgRNAs with available CRISPOR data ----------
 
 MakeBedIDsFromInputDf <- function(input_df) {
-  paste0(input_df[, "Chromosome"], ":", input_df[, "Start"], "-", input_df[, "End"], ":", input_df[, "Strand"])
+  paste0(input_df[["Chromosome"]], ":", input_df[["Start"]], "-", input_df[["End"]], ":", input_df[["Strand"]])
 }
+
 
 FilterDfList <- function(use_df_list, are_done_list) {
   postfix_vec <- vapply(are_done_list, function(x) if (all(x)) "all" else if (any(x)) "some" else "none", "")
   results_df_list <- Map(function(x, y) if (all(y)) x else x[!(y), ], use_df_list, are_done_list)
-  names(results_df_list) <- paste0(names(results_df_list), "_", postfix_vec, "_done")
+  names(results_df_list) <- paste0("chunk_", sub("chunk_", "", names(results_df_list)), "_", postfix_vec, "_done")
   return(results_df_list)
 }
 
+
+AddCombinedFilteredDf <- function(filtered_df_list) {
+  combined_df_list <- CombineDfChunks(filtered_df_list[!(grepl("_all_done$", names(filtered_df_list)))])
+  if (length(combined_df_list) == 1) {
+    filtered_df_list[["filtered_all_chunks_combined"]] <- combined_df_list[[1]]
+  }
+  return(filtered_df_list)
+}
+
+
 FilterBedDfList <- function(use_bed_df_list) {
   output_files_list <- IdentifyCRISPOROutputFiles()
-  previous_CRISPOR_bed_df <- ReadCRISPOROutputFiles(output_files_list[["bed"]])
-  were_processed_vec_list <- lapply(use_bed_df_list, function(x) MakeBedIDsFromInputDf(x) %in% previous_CRISPOR_bed_df[, "#seqId"])
+  previous_CRISPOR_bed_df <- ReadCRISPOROutputFiles(output_files_list[["bed"]], is_FASTA = FALSE)
+  were_processed_vec_list <- lapply(use_bed_df_list, function(x) MakeBedIDsFromInputDf(x) %in% previous_CRISPOR_bed_df[["#seqId"]])
   output_bed_df_list <- FilterDfList(use_bed_df_list, were_processed_vec_list)
+  output_bed_df_list <- AddCombinedFilteredDf(output_bed_df_list)
   return(output_bed_df_list)
 }
 
+
 FilterFASTADfList <- function(use_FASTA_df_list) {
-  sequence_vec_list <- lapply(use_FASTA_df_list, function(x) paste0(x[, "sgRNA_sequence"], x[, "PAM"]))
+  sequence_vec_list <- lapply(use_FASTA_df_list, function(x) paste0(x[["sgRNA_sequence"]], x[["PAM"]]))
   output_files_list <- IdentifyCRISPOROutputFiles()
-  previous_CRISPOR_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]])
-  were_processed_vec_list <- lapply(sequence_vec_list, function(x) x %in% previous_CRISPOR_FASTA_df[, "targetSeq"])
+  previous_CRISPOR_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]], is_FASTA = TRUE)
+  were_processed_vec_list <- lapply(sequence_vec_list, function(x) toupper(x) %in% toupper(previous_CRISPOR_FASTA_df[["targetSeq"]]))
   output_FASTA_df_list <- FilterDfList(use_FASTA_df_list, were_processed_vec_list)
+  output_FASTA_df_list <- AddCombinedFilteredDf(output_FASTA_df_list)
   return(output_FASTA_df_list)
 }
+
 
 
 
@@ -377,242 +484,6 @@ FilterFASTADfList <- function(use_FASTA_df_list) {
 
 GetProportion <- function(logical_vec) {
   sum(logical_vec) / length(logical_vec)
-}
-
-
-ConvertCFDScores <- function(numeric_vec) {
-  1 / (1 + (10000 / numeric_vec) - 100)
-}
-
-
-SpecificityScatterPlot <- function(CRISPR_df,
-                                   x_column                     = "GuideScan_specificity",
-                                   y_column                     = "CRISPOR_CFD_specificity",
-                                   x_label                      = "GuideScan specificity score",
-                                   y_label                      = "Original CRISPOR CFD specificity score",
-                                   identical_axes               = FALSE,
-                                   mark_diagonal                = identical_axes,
-                                   convert_CRISPOR_to_GuideScan = FALSE,
-                                   convert_GuideScan_to_CRISPOR = FALSE,
-                                   point_cex                    = 0.5,
-                                   point_alpha                  = 0.6,
-                                   custom_axis_limits           = NULL,
-                                   show_title                   = NULL,
-                                   add_jitter                   = FALSE
-                                   ) {
-
-  old_par <- par(mar = rep.int(5, 4))
-  x_vec <- CRISPR_df[, x_column]
-  y_vec <- CRISPR_df[, y_column]
-
-  if (add_jitter) {
-    x_vec <- jitter(x_vec, factor = 1.5)
-    y_vec <- jitter(y_vec, factor = 1.5)
-  }
-
-  if (convert_CRISPOR_to_GuideScan) {
-    y_vec <- ConvertCFDScores(y_vec)
-  }
-
-  if (convert_GuideScan_to_CRISPOR) {
-    x_vec <- (100 / (100 + ((1 / x_vec) - 1))) * 100
-  }
-
-  if (identical_axes) {
-    if (is.null(custom_axis_limits)) {
-      axis_limits <- range(c(x_vec, y_vec), na.rm = TRUE)
-    } else {
-      axis_limits <- custom_axis_limits
-    }
-  }
-
-  plot(x_vec,
-       y_vec,
-       las  = 1,
-       mgp  = c(2.7, 0.55, 0),
-       tcl  = -0.4,
-       type = "n",
-       xlab = x_label,
-       ylab = y_label,
-       xlim = if (identical_axes) axis_limits else NULL,
-       ylim = if (identical_axes) axis_limits else NULL
-       )
-
-  if (mark_diagonal) {
-    abline(a = 0, b = 1, col = "gray88", lwd = 0.5)
-  }
-
-  line_color <- "gray80"
-  line_type <- "dotted"
-  if (x_column %in% c("GuideScan_specificity", "CRISPOR_3MM_specificity")) {
-    abline(v = 0.2, col = line_color, lty = line_type)
-  }
-  if (y_column == "CRISPOR_CFD_specificity") {
-    abline(h = 80, col = line_color, lty = line_type)
-  } else if (y_column == "CRISPOR_3MM_specificity") {
-    abline(h = 0.2, col = line_color, lty = line_type)
-  }
-  box()
-
-  alpha_hex <- substr(rgb(1, 1, 1, point_alpha), 8, 9)
-  points(x_vec,
-         y_vec,
-         col = paste0(brewer.pal(9, "Blues")[[7]], alpha_hex),
-         pch = 16,
-         cex = point_cex
-         )
-
-  if (!(is.null(show_title))) {
-    title(show_title, cex.main = par("cex") * 0.9)
-  }
-  par(old_par)
-  return(invisible(NULL))
-}
-
-
-
-
-
-
-DrawAllSpecificityScatterPlots <- function(CRISPR_df, append_to_file_name) {
-
-  # Additional plots (not selected for PDF)
-
-  SpecificityScatterPlot(CRISPR_df, point_alpha = 0.2, point_cex = 0.4, convert_CRISPOR_to_GuideScan = TRUE)
-
-  SpecificityScatterPlot(CRISPR_df,
-                         x_column                     = "CRISPOR_4MM_specificity", # This is just for confirmation
-                         y_column                     = "CRISPOR_CFD_specificity",
-                         x_label                      = "Unrounded CRISPOR CFD specificity score",
-                         convert_GuideScan_to_CRISPOR = TRUE,
-                         point_alpha                  = 0.2,
-                         point_cex                    = 0.4
-                         )
-
-  SpecificityScatterPlot(CRISPR_df,
-                         x_column       = "GuideScan_Num_2or3MM",
-                         y_column       = "CRISPOR_Num_2or3MM",
-                         x_label        = "GuideScan \u2013 number of 2MM or 3MM sites",
-                         y_label        = "CRISPOR \u2013 number of 2MM or 3MM sites",
-                         point_alpha    = 0.5,
-                         point_cex      = 0.2,
-                         identical_axes = TRUE
-                         )
-
-  SpecificityScatterPlot(CRISPR_df,
-                         x_column       = "GuideScan_Num_2MM",
-                         y_column       = "CRISPOR_Num_2MM",
-                         x_label        = "GuideScan \u2013 number of 2MM sites",
-                         y_label        = "CRISPOR \u2013 number of 2MM sites",
-                         point_alpha    = 0.5,
-                         point_cex      = 0.2,
-                         identical_axes = TRUE
-                         )
-
-
-
-  # Most interesting plots -- used for PDF
-
-  for (make_PDF in c(FALSE, TRUE)) {
-
-    if (make_PDF) {
-      plot_dimensions <- 5.75
-      pdf(file = file.path(output_plots_directory, paste0("Specificity scores - CRISPOR vs. GuideScan - scatterplots - ", append_to_file_name, ".pdf")),
-          width = plot_dimensions, height = plot_dimensions
-      )
-    }
-
-    SpecificityScatterPlot(CRISPR_df,
-                           y_column       = "CRISPOR_3MM_specificity",
-                           y_label        = "CRISPOR CFD specificity score: max 3MM",
-                           identical_axes = TRUE,
-                           point_alpha    = 0.2,
-                           point_cex      = 0.4,
-                           show_title     = "CRISPOR CFD score (up to 3MM) vs. GuideScan score"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           y_column       = "CRISPOR_4MM_specificity",
-                           y_label        = "Modified CRISPOR CFD specificity score",
-                           identical_axes = TRUE,
-                           mark_diagonal  = FALSE,
-                           point_alpha    = 0.2,
-                           point_cex      = 0.4,
-                           show_title     = "CRISPOR CFD score (unrounded) vs. GuideScan score"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           x_column       = "CRISPOR_3MM_specificity",
-                           x_label        = "CRISPOR CFD specificity score: max 3MM",
-                           y_column       = "CRISPOR_4MM_specificity",
-                           y_label        = "CRISPOR CFD specificity score: max 4MM",
-                           identical_axes = TRUE,
-                           mark_diagonal  = FALSE,
-                           point_alpha    = 0.2,
-                           point_cex      = 0.4,
-                           show_title     = "CRISPOR CFD scores: 3MM vs. 4MM"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           point_alpha = 0.2,
-                           point_cex   = 0.4,
-                           show_title  = "Original CRISPOR CFD score vs. GuideScan score"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           x_column           = "GuideScan_Num_2or3MM",
-                           y_column           = "CRISPOR_Num_2or3MM",
-                           x_label            = "GuideScan \u2013 number of 2MM or 3MM sites",
-                           y_label            = "CRISPOR \u2013 number of 2MM or 3MM sites",
-                           point_alpha        = 0.4,
-                           point_cex          = 0.2,
-                           identical_axes     = TRUE,
-                           custom_axis_limits = c(0, 1000),
-                           show_title         = "Number of mismatches (2-3MM): CRISPOR vs. GuideScan"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           x_column           = "GuideScan_Num_2or3MM",
-                           y_column           = "CRISPOR_Num_2or3MM",
-                           x_label            = "GuideScan \u2013 number of 2MM or 3MM sites",
-                           y_label            = "CRISPOR \u2013 number of 2MM or 3MM sites",
-                           point_alpha        = 0.4,
-                           point_cex          = 0.2,
-                           identical_axes     = TRUE,
-                           custom_axis_limits = c(0, 200),
-                           show_title         = "Number of mismatches (2-3MM): CRISPOR vs. GuideScan (zoomed in)"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           x_column           = "GuideScan_Num_2MM",
-                           y_column           = "CRISPOR_Num_2MM",
-                           x_label            = "GuideScan \u2013 number of 2MM sites",
-                           y_label            = "CRISPOR \u2013 number of 2MM sites",
-                           point_alpha        = 0.4,
-                           point_cex          = 0.2,
-                           identical_axes     = TRUE,
-                           custom_axis_limits = c(0, 300),
-                           show_title         = "Number of mismatches (2MM): CRISPOR vs. GuideScan"
-                           )
-
-    SpecificityScatterPlot(CRISPR_df,
-                           x_column           = "GuideScan_Num_2MM",
-                           y_column           = "CRISPOR_Num_2MM",
-                           x_label            = "GuideScan \u2013 number of 2MM sites",
-                           y_label            = "CRISPOR \u2013 number of 2MM sites",
-                           point_alpha        = 0.4,
-                           point_cex          = 0.2,
-                           identical_axes     = TRUE,
-                           custom_axis_limits = c(0, 50),
-                           show_title         = "Number of mismatches (2MM): CRISPOR vs. GuideScan (zoomed in)",
-                           add_jitter         = TRUE
-                           )
-
-    if (make_PDF) {
-      dev.off()
-    }
-  }
-  return(invisible(NULL))
 }
 
 

@@ -47,9 +47,9 @@ MoveAfterColumn <- function(my_df, after_this_column, column_to_move) {
 
 
 RoundNumericColumns <- function(my_df, num_digits = 7) {
-  are_floats <- vapply(seq_along(my_df), function(x) is.double(my_df[, x]) , logical(1))
+  are_floats <- vapply(seq_along(my_df), function(x) is.double(my_df[[x]]) , logical(1))
   for (i in which(are_floats)) {
-    my_df[, i] <- round(my_df[, i], digits = num_digits)
+    my_df[[i]] <- round(my_df[[i]], digits = num_digits)
   }
   return(my_df)
 }
@@ -71,7 +71,7 @@ FormatForExcel <- function(my_df,
 
   is_CRISPRa <- "Calabrese_rank" %in% names(my_df)
 
-  ones_and_zeros_vec <- OnesAndZeros(my_df[, "Combined_ID"])
+  ones_and_zeros_vec <- OnesAndZeros(my_df[["Combined_ID"]])
   if (convert_excluded_to_3) {
     are_to_be_excluded <- !(MeetCriteria(my_df, allow_curated = allow_curated))
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
@@ -79,55 +79,54 @@ FormatForExcel <- function(my_df,
 
   my_df <- RoundNumericColumns(my_df, num_digits = 5)
 
-  are_controls <- my_df[, "Is_control"] == "Yes"
+  are_controls <- my_df[["Is_control"]] == "Yes"
   if (any(are_controls)) {
     if (convert_controls_to_4) {
-      are_valid_controls <- are_controls & (my_df[, "Num_0MM"] == 0) & (my_df[, "Num_1MM"] == 0) &
-                            !(grepl("TTTT", my_df[, "sgRNA_sequence"], ignore.case = TRUE))
+      are_valid_controls <- are_controls & (my_df[["Num_0MM"]] == 0) & (my_df[["Num_1MM"]] == 0) &
+                            !(grepl("TTTT", my_df[["sgRNA_sequence"]], ignore.case = TRUE))
       ones_and_zeros_vec[are_valid_controls] <- 3L
     }
     if (is_CRISPRa) {
-      my_df[are_controls, "hCRISPRa_v2_transcript"] <- NA_character_
+      my_df[["hCRISPRa_v2_transcript"]][are_controls] <- NA_character_
     }
-    my_df[are_controls, "Gene_symbol"] <- my_df[are_controls, "Combined_ID"]
-    my_df[are_controls, "Original_symbol"] <- ifelse(grepl("TKOv3", my_df[are_controls, "Source"], fixed = TRUE), # The TKOv3 library targets EGFP, luciferase, and LacZ
-                                                     my_df[are_controls, "Original_symbol"],
-                                                     NA_character_
-                                                     )
+    my_df[["Gene_symbol"]][are_controls] <- my_df[["Combined_ID"]][are_controls]
+    my_df[["Original_symbol"]][are_controls] <- ifelse(grepl("TKOv3", my_df[["Source"]][are_controls], fixed = TRUE), # The TKOv3 library targets EGFP, luciferase, and LacZ
+                                                       my_df[["Original_symbol"]][are_controls],
+                                                       NA_character_
+                                                       )
     if (!(add_primers)) {
-      my_df[are_controls, "Rank"] <- NA_integer_
+      my_df[["Rank"]][are_controls] <- NA_integer_
     }
-    my_df[are_controls, "GuideScan_offtarget_category"] <- NA_character_
+    my_df[["GuideScan_offtarget_category"]][are_controls] <- NA_character_
   }
 
-  my_df[, "Num_overlaps"] <- ifelse(is.na(my_df[, "Num_overlaps"]),
-                                    ifelse((my_df[, "Rank"] %in% 1:4) & (my_df[, "Is_control"] == "No"),
-                                           ifelse(my_df[, "Spacing"] %in% 12, "<8bp", "n.d."),
+  my_df[["Num_overlaps"]] <- ifelse(is.na(my_df[["Num_overlaps"]]),
+                                    ifelse((my_df[["Rank"]] %in% 1:4) & (my_df[["Is_control"]] == "No"),
+                                           ifelse(my_df[["Spacing"]] %in% 12, "<8bp", "n.d."),
                                            NA_character_
                                            ),
-                                    paste0(my_df[, "Num_overlaps"], "|", my_df[, "Spacing"], "bp")
+                                    paste0(my_df[["Num_overlaps"]], "|", my_df[["Spacing"]], "bp")
                                     )
   if (add_primers) {
-    my_df[, "Sequence_with_primers"] <- AddPrimers(my_df)
+    my_df[["Sequence_with_primers"]] <- AddPrimers(my_df)
     my_df <- MoveAfterColumn(my_df, "PAM", "Sequence_with_primers")
   }
 
   if (all(c("Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP") %in% names(my_df))) {
-    GPP_exon_vec <- my_df[, "Exon_number_GPP"]
-    Brunello_exon_vec <- my_df[, "Exon_number_Brunello"]
-    TKOv3_exon_vec <- my_df[, "Exon_number_TKOv3"]
-    my_df[, "Exon_number_Brunello"] <- vapply(seq_len(nrow(my_df)), function(x) {
+    GPP_exon_vec <- my_df[["Exon_number_GPP"]]
+    Brunello_exon_vec <- my_df[["Exon_number_Brunello"]]
+    TKOv3_exon_vec <- my_df[["Exon_number_TKOv3"]]
+    my_df[["Exon_number_Brunello"]] <- vapply(seq_len(nrow(my_df)), function(x) {
       exon_vec <- unique(c(GPP_exon_vec[[x]], Brunello_exon_vec[[x]], TKOv3_exon_vec[[x]])) # This should match the ordering in the "Source" column
       exon_vec <- exon_vec[!(is.na(exon_vec))]
       return(paste0(exon_vec, collapse = " | "))
     }, "")
     names(my_df)[names(my_df) == "Exon_number_Brunello"] <- "Exon_number"
-    my_df <- my_df[, names(my_df) != "Exon_number_TKOv3"]
-    my_df <- my_df[, names(my_df) != "Exon_number_GPP"]
+    my_df <- my_df[, !(names(my_df) %in% c("Exon_number_TKOv3", "Exon_number_GPP"))]
   }
 
   if ("CRISPOR_Graf_status" %in% names(my_df)) {
-    my_df[, "CRISPOR_Graf_status"] <- ifelse(my_df[, "CRISPOR_Graf_status"] == "GrafOK", "OK", my_df[, "CRISPOR_Graf_status"])
+    my_df[["CRISPOR_Graf_status"]] <- ifelse(my_df[["CRISPOR_Graf_status"]] == "GrafOK", "OK", my_df[["CRISPOR_Graf_status"]])
   }
 
   if (!(is.null(remove_columns))) {
@@ -137,38 +136,45 @@ FormatForExcel <- function(my_df,
   SNP_ID_column <- grep("_SNP_IDs_", names(my_df), fixed = TRUE)
   SNP_AF_column <- grep("_SNP_AF_(max|sum)_", names(my_df))
   if ((length(SNP_ID_column) == 1) && (length(SNP_AF_column) == 1)) {
-    my_df[is.na(my_df[, SNP_AF_column]), SNP_ID_column] <- NA_character_
-    my_df[is.na(my_df[, SNP_ID_column]), SNP_AF_column] <- NA_real_
+    my_df[[SNP_ID_column]][is.na(my_df[[SNP_AF_column]])] <- NA_character_
+    my_df[[SNP_AF_column]][is.na(my_df[[SNP_ID_column]])] <- NA_real_
   }
 
   if (is_CRISPRa) {
     # This is to prevent the cell value "1/2/3" from being converted into a date by Excel
-    my_df[, "Calabrese_rank"] <- gsub("/", " or ", my_df[, "Calabrese_rank"], fixed = TRUE)
-    my_df[, "Calabrese_rank"] <- sub(" or ", ", ", my_df[, "Calabrese_rank"], fixed = TRUE)
+    my_df[["Calabrese_rank"]] <- gsub("/", " or ", my_df[["Calabrese_rank"]], fixed = TRUE)
+    my_df[["Calabrese_rank"]] <- sub(" or ", ", ", my_df[["Calabrese_rank"]], fixed = TRUE)
   }
   if (probability_to_percentage) {
     for (column_index in grep("_AF_(sum|max)_", names(my_df), fixed = TRUE)) {
-      my_df[, column_index] <- ifelse(is.na(my_df[, column_index]), NA_character_, paste0(my_df[, column_index] * 100, "%"))
+      my_df[[column_index]] <- ifelse(is.na(my_df[[column_index]]), NA_character_, paste0(my_df[[column_index]] * 100, "%"))
     }
   }
   for (i in seq_len((ncol(my_df) - 6))) {
-    my_df[, i] <- ifelse(is.na(my_df[, i]), "", as.character(my_df[, i]))
+    my_df[[i]] <- ifelse(is.na(my_df[[i]]), "", as.character(my_df[[i]]))
   }
   my_df <- AbbreviateColumns(my_df)
   for (i in (ncol(my_df) - 5):ncol(my_df)) {
-    my_df[, i] <- ifelse(is.na(my_df[, i]), " ", as.character(my_df[, i]))
+    my_df[[i]] <- ifelse(is.na(my_df[[i]]), " ", as.character(my_df[[i]]))
   }
 
-  have_multiple_sources <- grepl(", ", my_df[, "Source"], fixed = TRUE)
+  have_multiple_sources <- grepl(", ", my_df[["Source"]], fixed = TRUE)
 
   for (source in names(source_abbreviations_vec)) {
-    my_df[have_multiple_sources, "Source"] <- sub(source, source_abbreviations_vec[[source]], my_df[have_multiple_sources, "Source"], fixed = TRUE)
+    my_df[["Source"]][have_multiple_sources] <- sub(source,
+                                                    source_abbreviations_vec[[source]],
+                                                    my_df[["Source"]][have_multiple_sources],
+                                                    fixed = TRUE
+                                                    )
   }
   if (!(is_CRISPRa)) {
-    my_df[, "Source"] <- ifelse(my_df[, "Source"] == "GPP, Bru, TKOv3", "GPP, Bru, tk3", my_df[, "Source"])
+    my_df[["Source"]] <- ifelse(my_df[["Source"]] == "GPP, Bru, TKOv3",
+                                "GPP, Bru, tk3",
+                                my_df[["Source"]]
+                                )
   }
 
-  my_df[, "Color"] <- ones_and_zeros_vec + 1L
+  my_df[["Color"]] <- ones_and_zeros_vec + 1L
   return(my_df)
 }
 
@@ -193,12 +199,16 @@ DfToTSV <- function(CRISPR_df,file_name, remove_columns = full_omit_columns, pro
 
 AbbreviateColumns <- function(CRISPR_df) {
   for (column_name in c("Locations_0MM", "Locations_1MM", "Sequences_1MM")) {
-    my_lengths <- lengths(strsplit(CRISPR_df[, column_name], "; ", fixed = TRUE))
+    my_lengths <- lengths(strsplit(CRISPR_df[[column_name]], "; ", fixed = TRUE))
     max_entries <- 10
     are_too_long <- my_lengths > max_entries
     if (any(are_too_long)) {
-      CRISPR_df[are_too_long, column_name] <- "too long"
-      message(paste0(sum(are_too_long), " rows in the ", column_name, " column were omitted, because they were too long (>", max_entries, " entries)."))
+      CRISPR_df[[column_name]][are_too_long] <- "too long"
+      message(paste0(sum(are_too_long), " rows in the ",
+                     column_name, " column were omitted, because they were too long (>",
+                     max_entries, " entries)."
+                     )
+              )
     }
   }
   return(CRISPR_df)
@@ -216,8 +226,8 @@ primer_sequences <- list(
 AddPrimers <- function(CRISPR_df) {
   results_vec <- rep.int(NA_character_, nrow(CRISPR_df))
   for (i in 1:4) {
-    are_this_rank <- CRISPR_df[, "Rank"] %in% i
-    new_sequences <- paste0(primer_sequences[[i]][[1]], CRISPR_df[are_this_rank, "sgRNA_sequence"], primer_sequences[[i]][[2]])
+    are_this_rank <- CRISPR_df[["Rank"]] %in% i
+    new_sequences <- paste0(primer_sequences[[i]][[1]], CRISPR_df[["sgRNA_sequence"]][are_this_rank], primer_sequences[[i]][[2]])
     if (i == 4) {
       new_sequences <- Biostrings::reverseComplement(Biostrings::DNAStringSet(new_sequences))
     }

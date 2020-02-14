@@ -59,7 +59,7 @@ for (column_name in names(rename_columns_vec)) {
 
 # Assign a single location to sgRNAs targeting duplicated genes -----------
 
-extended_CRISPRko_df[, "Entrez_chromosome"] <- EntrezIDsToChromosomes(extended_CRISPRko_df[, "Entrez_ID"])
+extended_CRISPRko_df[["Entrez_chromosome"]] <- EntrezIDsToChromosomes(extended_CRISPRko_df[["Entrez_ID"]])
 
 extended_CRISPRko_df <- ReplaceDuplicatedGenes(extended_CRISPRko_df)
 
@@ -71,7 +71,7 @@ extended_CRISPRko_df <- ReplaceDuplicatedGenes(extended_CRISPRko_df)
 
 # Examine ambiguous Entrez IDs --------------------------------------------
 
-are_ambiguous <- grepl(",", extended_CRISPRko_df[, "Entrez_ID"], fixed = TRUE)
+are_ambiguous <- grepl(",", extended_CRISPRko_df[["Entrez_ID"]], fixed = TRUE)
 
 display_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source",
                      "sgRNA_sequence", "Chromosome", "Entrez_overlapping_0MM", "Symbol_overlapping_0MM"
@@ -87,18 +87,18 @@ ambiguous_df[, display_columns] # It seems like there is nothing that can be don
 
 # Assign missing Entrez IDs using the genomic locations of sgRNAs ---------
 
-are_NA         <- is.na(extended_CRISPRko_df[, "Entrez_ID"])
-are_mapped     <- !(is.na(extended_CRISPRko_df[, "Start"]))
-are_to_replace <- are_mapped & are_NA & (extended_CRISPRko_df[, "Is_control"] == "No")
+are_NA <- is.na(extended_CRISPRko_df[["Entrez_ID"]])
+are_mapped <- !(is.na(extended_CRISPRko_df[["Start"]]))
+are_to_replace <- are_mapped & are_NA & (extended_CRISPRko_df[["Is_control"]] == "No")
 
 reassigned_df <- extended_CRISPRko_df[are_to_replace, ]
 
 replaced_entrezs <- rep(NA_character_, nrow(reassigned_df))
-overlapping_entrezs_list <- strsplit(extended_CRISPRko_df[are_to_replace, "Entrez_overlapping_0MM"], ", ", fixed = TRUE)
+overlapping_entrezs_list <- strsplit(extended_CRISPRko_df[["Entrez_overlapping_0MM"]][are_to_replace], ", ", fixed = TRUE)
 are_replaceable <- !(is.na(overlapping_entrezs_list)) & (lengths(overlapping_entrezs_list) == 1)
 
-for (combined_ID in unique(extended_CRISPRko_df[are_to_replace, "Combined_ID"][are_replaceable])) {
-  are_this_ID <- extended_CRISPRko_df[are_to_replace, "Combined_ID"] == combined_ID
+for (combined_ID in unique(extended_CRISPRko_df[["Combined_ID"]][are_to_replace][are_replaceable])) {
+  are_this_ID <- extended_CRISPRko_df[["Combined_ID"]][are_to_replace] == combined_ID
   this_list <- unique(overlapping_entrezs_list[are_this_ID])
   this_list <- this_list[!(is.na(this_list))]
   if (length(this_list) == 1) {
@@ -108,16 +108,16 @@ for (combined_ID in unique(extended_CRISPRko_df[are_to_replace, "Combined_ID"][a
 
 were_replaced <- !(is.na(replaced_entrezs))
 
-reassigned_df[were_replaced, "Entrez_ID"] <- replaced_entrezs[were_replaced]
-reassigned_df[were_replaced, "Combined_ID"] <- ifelse(is.na(reassigned_df[were_replaced, "Entrez_ID"]),
-                                                      toupper(reassigned_df[were_replaced, "Original_symbol"]),
-                                                      reassigned_df[were_replaced, "Entrez_ID"]
-                                                      )
-reassigned_df[were_replaced, "Gene_symbol"] <- MapToEntrezs(entrez_IDs_vec = reassigned_df[were_replaced, "Entrez_ID"])[, "Gene_symbol"]
+reassigned_df[["Entrez_ID"]][were_replaced] <- replaced_entrezs[were_replaced]
+reassigned_df[["Combined_ID"]][were_replaced] <- ifelse(is.na(reassigned_df[["Entrez_ID"]][were_replaced]),
+                                                        toupper(reassigned_df[["Original_symbol"]][were_replaced]),
+                                                        reassigned_df[["Entrez_ID"]][were_replaced]
+                                                        )
+reassigned_df[["Gene_symbol"]][were_replaced] <- MapToEntrezs(entrez_IDs_vec = reassigned_df[["Entrez_ID"]][were_replaced])[["Gene_symbol"]]
 
 
 for (column_name in c("Combined_ID", "Entrez_ID", "Gene_symbol")) {
-  extended_CRISPRko_df[are_to_replace, column_name] <- reassigned_df[, column_name]
+  extended_CRISPRko_df[[column_name]][are_to_replace] <- reassigned_df[[column_name]]
 }
 
 
@@ -135,7 +135,7 @@ extended_CRISPRko_df <- ResolveDuplicates(extended_CRISPRko_df, concatenate_colu
 
 # Add the cut location ----------------------------------------------------
 
-extended_CRISPRko_df[, "Cut_location"] <- GetCutLocations(extended_CRISPRko_df)
+extended_CRISPRko_df[["Cut_location"]] <- GetCutLocations(extended_CRISPRko_df)
 
 
 
@@ -143,16 +143,16 @@ extended_CRISPRko_df[, "Cut_location"] <- GetCutLocations(extended_CRISPRko_df)
 
 # Remove locations for sgRNAs with discordant chromosome mappings ---------
 
-extended_CRISPRko_df[, "Entrez_chromosome"] <- EntrezIDsToChromosomes(extended_CRISPRko_df[, "Entrez_ID"])
+extended_CRISPRko_df[["Entrez_chromosome"]] <- EntrezIDsToChromosomes(extended_CRISPRko_df[["Entrez_ID"]])
 
-are_discordant <- !(is.na(extended_CRISPRko_df[, "Chromosome"])) &
-                  !(is.na(extended_CRISPRko_df[, "Entrez_chromosome"])) &
-                  (extended_CRISPRko_df[, "Chromosome"] != extended_CRISPRko_df[, "Entrez_chromosome"])
+are_discordant <- !(is.na(extended_CRISPRko_df[["Chromosome"]])) &
+                  !(is.na(extended_CRISPRko_df[["Entrez_chromosome"]])) &
+                  (extended_CRISPRko_df[["Chromosome"]] != extended_CRISPRko_df[["Entrez_chromosome"]])
 extended_CRISPRko_df[are_discordant, ]
 
 location_columns <- c("Chromosome", "Strand", "Start", "End")
 for (column in c(location_columns, "PAM")) {
-  extended_CRISPRko_df[are_discordant, column] <- NA
+  extended_CRISPRko_df[[column]][are_discordant] <- NA
 }
 
 
@@ -162,7 +162,7 @@ for (column in c(location_columns, "PAM")) {
 
 # Eliminate the "5 prime G nucleotide" column -----------------------------
 
-extended_CRISPRko_df[, "Num_1MM"] <- rowSums(extended_CRISPRko_df[, c("Num_5G_MM", "Num_1MM")])
+extended_CRISPRko_df[["Num_1MM"]] <- rowSums(extended_CRISPRko_df[, c("Num_5G_MM", "Num_1MM")])
 extended_CRISPRko_df <- extended_CRISPRko_df[, names(extended_CRISPRko_df) != "Num_5G_MM"]
 
 
@@ -180,10 +180,17 @@ if (length(inconsistent_IDs) > 1) {
                  )
           )
   selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome", "Symbol_overlapping_0MM")
-  unique(extended_CRISPRko_df[extended_CRISPRko_df[, "Combined_ID"] %in% inconsistent_IDs, selected_gene_columns])
+  unique(extended_CRISPRko_df[extended_CRISPRko_df[["Combined_ID"]] %in% inconsistent_IDs, selected_gene_columns])
 } else {
   message("No inconsistent mappings (sgRNAs from the same gene, but located on different chromosomes) were found!")
 }
+
+
+
+
+# Truncate long 0MM locations ---------------------------------------------
+
+extended_CRISPRko_df[["Locations_0MM"]] <- TruncateLongEntries(extended_CRISPRko_df[["Locations_0MM"]])
 
 
 
@@ -194,9 +201,6 @@ if (length(inconsistent_IDs) > 1) {
 save(list = "extended_CRISPRko_df",
      file = file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData")
      )
-
-
-
 
 
 

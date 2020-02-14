@@ -29,21 +29,6 @@ human_genes_GRanges <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
 
 
 
-# General helper functions ------------------------------------------------
-
-RangesDfToGRangesObject <- function(ranges_df) {
-  CheckRangesDf(ranges_df)
-  GRanges_object <- GRanges(
-    seqnames = ranges_df[, "Chromosome"],
-    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
-    strand   = ranges_df[, "Strand"]
-  )
-  return(GRanges_object)
-}
-
-
-
-
 
 # Functions for retrieving sequences from locations -----------------------
 
@@ -56,12 +41,12 @@ RetrieveSequences <- function(ranges_df) {
 
 GetNGGPAM <- function(ranges_df) {
   CheckRangesDf(ranges_df)
-  start_vec <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 1L, ranges_df[, "Start"] - 3L)
-  end_vec   <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "Start"] - 1L)
+  start_vec <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 1L, ranges_df[["Start"]] - 3L)
+  end_vec   <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 3L, ranges_df[["Start"]] - 1L)
   GRanges_object <- GRanges(
-    seqnames = ranges_df[, "Chromosome"],
+    seqnames = ranges_df[["Chromosome"]],
     ranges   = IRanges(start = start_vec, end = end_vec),
-    strand   = ranges_df[, "Strand"]
+    strand   = ranges_df[["Strand"]]
   )
   results_vec <- as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38))
   return(results_vec)
@@ -78,19 +63,17 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
 
   entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
 
-  hits_entrezs_vec <-  entrez_IDs_vec[subjectHits(Hits_object)]
+  hits_entrezs_vec <- entrez_IDs_vec[subjectHits(Hits_object)]
   new_order <- order(queryHits(Hits_object), as.integer(hits_entrezs_vec))
   hits_entrezs_vec <- hits_entrezs_vec[new_order]
 
-  entrez_matches <- match(hits_entrezs_vec, entrez_to_symbol_df[, "Entrez_ID"])
-  hits_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
-                             entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
-                             entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
+  entrez_matches <- match(hits_entrezs_vec, entrez_to_symbol_df[["Entrez_ID"]])
+  hits_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]),
+                             entrez_to_symbol_df[["Symbol_NCBI_Hs_info"]][entrez_matches],
+                             entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]
                              )
-
   query_vec <- queryHits(Hits_object)[new_order]
-  query_fac <- factor(query_vec, unique(query_vec))
-
+  query_fac <- factor(query_vec, levels = seq_len(num_queries))
   entrezs_vec <- tapply(hits_entrezs_vec, query_fac, function(x) paste0(x, collapse = ", "))
   symbols_vec <- tapply(hits_symbols_vec, query_fac, function(x) paste0(x, collapse = ", "))
 
@@ -101,11 +84,8 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
     stringsAsFactors = FALSE
   )
   if ("distance" %in% names(mcols(Hits_object))) {
-    results_df[, "Distance"] <- mcols(Hits_object)[, "distance"][new_order][unique(match(query_vec, query_vec))]
+    results_df[["Distance"]] <- mcols(Hits_object)[, "distance"][new_order][unique(match(query_vec, query_vec))]
   }
-  match_matches_vec <- match(seq_len(num_queries), query_vec)
-  results_df <- results_df[match_matches_vec, ]
-  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -122,9 +102,9 @@ FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GR
 
   results_df <- data.frame(
     ranges_df,
-    "Overlapping_Entrez_IDs" = hits_df[, "Entrez_ID"],
-    "Overlapping_symbols"    = hits_df[, "Gene_symbol"],
-    "Num_overlapping_genes"  = hits_df[, "Num_genes"],
+    "Overlapping_Entrez_IDs" = hits_df[["Entrez_ID"]],
+    "Overlapping_symbols"    = hits_df[["Gene_symbol"]],
+    "Num_overlapping_genes"  = hits_df[["Num_genes"]],
     stringsAsFactors         = FALSE,
     row.names                = NULL
   )
@@ -144,10 +124,10 @@ FindNearestGenes <- function(ranges_df) {
 
   results_df <- data.frame(
     ranges_df,
-    "Nearest_Entrez_IDs" = hits_df[, "Entrez_ID"],
-    "Nearest_symbols"    = hits_df[, "Gene_symbol"],
-    "Distance"           = hits_df[, "Distance"],
-    "Num_nearest"        = hits_df[, "Num_genes"],
+    "Nearest_Entrez_IDs" = hits_df[["Entrez_ID"]],
+    "Nearest_symbols"    = hits_df[["Gene_symbol"]],
+    "Distance"           = hits_df[["Distance"]],
+    "Num_nearest"        = hits_df[["Num_genes"]],
     stringsAsFactors     = FALSE,
     row.names            = NULL
   )
@@ -163,15 +143,15 @@ FindNearestGenes <- function(ranges_df) {
 # Functions for summarizing mapped sequences ------------------------------
 
 ReturnClearMatches <- function(found_seq_df, have_clear_match, clear_match_indices_vec) {
-  columns_list <- lapply(seq_len(ncol(found_seq_df)), function(x) {
-    if (typeof(found_seq_df[, x]) == "integer") {
+  columns_list <- lapply(seq_along(found_seq_df), function(x) {
+    if (typeof(found_seq_df[[x]]) == "integer") {
       NA_vec <- rep.int(NA_integer_, nrow(found_seq_df))
-    } else if (typeof(found_seq_df[, x]) == "double") {
+    } else if (typeof(found_seq_df[[x]]) == "double") {
       NA_vec <- rep.int(NA_real_, nrow(found_seq_df))
-    } else if (typeof(found_seq_df[, x]) == "character") {
+    } else if (typeof(found_seq_df[[x]]) == "character") {
       NA_vec <- rep.int(NA_character_, nrow(found_seq_df))
     }
-    results_vec <- ifelse(have_clear_match, found_seq_df[clear_match_indices_vec, x], NA_vec)
+    results_vec <- ifelse(have_clear_match, found_seq_df[[x]][clear_match_indices_vec], NA_vec)
     return(results_vec)
   })
   results_df <- do.call(data.frame, c(columns_list, list(stringsAsFactors = FALSE)))
@@ -183,35 +163,14 @@ ReturnClearMatches <- function(found_seq_df, have_clear_match, clear_match_indic
 
 MakeLocationStrings <- function(ranges_df) {
   CheckRangesDf(ranges_df)
-  results_vec <- ifelse(is.na(ranges_df[, "Start"]),
+  results_vec <- ifelse(is.na(ranges_df[["Start"]]),
                         NA_character_,
-                        paste0(ranges_df[, "Chromosome"], "(", ranges_df[, "Strand"], "):", ranges_df[, "Start"], "-", ranges_df[, "End"])
+                        paste0(ranges_df[["Chromosome"]], "(", ranges_df[["Strand"]], "):", ranges_df[["Start"]], "-", ranges_df[["End"]])
                         )
   return(results_vec)
 }
 
 
-
-TruncateLongEntries <- function(char_vec, use_sep = "; ", max_length = 10L) {
-  splits <- strsplit(char_vec, use_sep, fixed = TRUE)
-  are_too_long <- lengths(splits) > max_length
-  char_vec[are_too_long] <- vapply(splits[are_too_long], function(x) {
-    all_the_same <- length(unique(x)) == 1
-    result <- paste0("Truncated (", length(x), " entries)...")
-    if (all_the_same) {
-      result <- paste0(result, " All entries are: ", x[[1]])
-    } else {
-      first_3_the_same <- length(unique(x[1:3])) == 1
-      if (first_3_the_same) {
-        result <- paste0(result, " The first 3 are all: ", x[[1]])
-      } else {
-        result <- paste0(result, " The first 3 are: ", paste0(x[1:3], collapse = use_sep))
-      }
-    }
-    return(result)
-  }, "")
-  return(char_vec)
-}
 
 
 
@@ -220,11 +179,11 @@ PasteIndices <- function(found_seq_df, indices_list, column_name, use_separator)
     if (length(x) == 0) {
       return(NA_character_)
     } else {
-      use_vec <- found_seq_df[x, column_name]
+      use_vec <- found_seq_df[[column_name]][x]
       if (all(is.na(use_vec))) {
         return(NA_character_)
       } else {
-        return(paste0(found_seq_df[x, column_name], collapse = use_separator))
+        return(paste0(found_seq_df[[column_name]][x], collapse = use_separator))
       }
     }
   }, "")
@@ -234,17 +193,16 @@ PasteIndices <- function(found_seq_df, indices_list, column_name, use_separator)
 SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_separator = "; ", truncate_long_entries = TRUE) {
   # Requires the 'SNP_column_names' variable in the global environment
 
-  are_0MM       <- found_seq_df[, "Num_MM"] == 0
-  # are_old_MM5primeG <- !(are_0MM) & (substr(found_seq_df[, "Sequence"], 2, nchar(found_seq_df[, "Sequence"])) == substr(found_seq_df[, "Reference"], 2, nchar(found_seq_df[, "Reference"])))
-  are_MM5primeG <- !(are_0MM) & (substr(found_seq_df[, "Reference"], 1, 1) == "G") &
-                   (substr(found_seq_df[, "Sequence"], 2, nchar(found_seq_df[, "Sequence"])) == substr(found_seq_df[, "Reference"], 2, nchar(found_seq_df[, "Reference"])))
-  are_1MM       <- !(are_0MM | are_MM5primeG)
+  are_0MM <- found_seq_df[["Num_MM"]] == 0
+  are_MM5primeG <- !(are_0MM) & (substr(found_seq_df[["Reference"]], 1, 1) == "G") &
+                   (substr(found_seq_df[["Sequence"]], 2, nchar(found_seq_df[["Sequence"]])) == substr(found_seq_df[["Reference"]], 2, nchar(found_seq_df[["Reference"]])))
+  are_1MM <- !(are_0MM | are_MM5primeG)
 
-  are_potential_PAM <- substr(found_seq_df[, "PAM"], 2, 3) %in% c("GG", "GA", "AG")
+  are_potential_PAM <- substr(found_seq_df[["PAM"]], 2, 3) %in% c("GG", "GA", "AG")
 
   positions_vec <- MakeLocationStrings(found_seq_df)
 
-  references_fac <- factor(found_seq_df[, "Reference"], levels = unique(found_seq_df[, "Reference"]))
+  references_fac <- factor(found_seq_df[["Reference"]], levels = unique(found_seq_df[["Reference"]]))
   indices_list <- split(seq_len(nrow(found_seq_df)), references_fac)
 
   which_0MM_list <- tapply(are_0MM & are_potential_PAM, references_fac, which, simplify = FALSE)
@@ -256,8 +214,8 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
 
   which_1MM_list <- tapply((are_1MM | are_MM5primeG) & are_potential_PAM, references_fac, which, simplify = FALSE)
   which_1MM_indices_list <- lapply(seq_len(nlevels(references_fac)), function(x) indices_list[[x]][which_1MM_list[[x]]])
-  locations_1MM_vec <- vapply(which_1MM_indices_list, function(x) if (length(x) == 0) NA_character_ else paste0(positions_vec[x],            collapse = use_separator), "")
-  sequences_1MM_vec <- vapply(which_1MM_indices_list, function(x) if (length(x) == 0) NA_character_ else paste0(found_seq_df[x, "Sequence"], collapse = use_separator), "")
+  locations_1MM_vec <- vapply(which_1MM_indices_list, function(x) if (length(x) == 0) NA_character_ else paste0(positions_vec[x],              collapse = use_separator), "")
+  sequences_1MM_vec <- vapply(which_1MM_indices_list, function(x) if (length(x) == 0) NA_character_ else paste0(found_seq_df[["Sequence"]][x], collapse = use_separator), "")
 
   sum_0MM_and_PAM_vec   <- tapply(are_0MM       & are_potential_PAM, references_fac, sum)
   sum_1MM_and_PAM_vec   <- tapply(are_1MM       & are_potential_PAM, references_fac, sum)
@@ -290,7 +248,7 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
     if (length(x) == 0) {
       return(NA_character_)
     } else {
-      unique_PAMs <- unique(found_seq_df[x, "PAM"])
+      unique_PAMs <- unique(found_seq_df[["PAM"]][x])
       if (length(unique_PAMs) > 1) {
         return(NA_character_)
       } else {
@@ -347,23 +305,24 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   }
 
   if (truncate_long_entries) {
-    truncate_columns <- c(nearest_columns, "PAM_0MM", "Locations_0MM", "PAM_1MM",
+    truncate_columns <- c(nearest_columns, "PAM_1MM",
                           "Locations_1MM", "Sequences_1MM"
+                          # "PAM_0MM", "Locations_0MM"
                           )
     for (column_name in intersect(names(results_df), truncate_columns)) {
-      results_df[, column_name] <- TruncateLongEntries(results_df[, column_name])
+      results_df[[column_name]] <- TruncateLongEntries(results_df[[column_name]])
     }
   }
 
   if (!(is.null(all_sequences))) {
-    my_matches <- match(toupper(all_sequences), toupper(results_df[, "Sequence"]))
+    my_matches <- match(toupper(all_sequences), toupper(results_df[["Sequence"]]))
     results_df <- results_df[my_matches, ]
-    results_df[is.na(my_matches), "Sequence"] <- all_sequences[is.na(my_matches)]
+    results_df[["Sequence"]][is.na(my_matches)] <- all_sequences[is.na(my_matches)]
     row.names(results_df) <- NULL
     for (my_column in c("Num_0MM", "Num_5G_MM", "Num_1MM")) {
-      results_df[, my_column] <- ifelse(is.na(my_matches), 0L, results_df[, my_column])
+      results_df[[my_column]] <- ifelse(is.na(my_matches), 0L, results_df[[my_column]])
     }
-    results_df[, "Found"] <- ifelse(is.na(my_matches), "No", "Yes")
+    results_df[["Found"]] <- ifelse(is.na(my_matches), "No", "Yes")
   }
   return(results_df)
 }
@@ -377,7 +336,7 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
 LiftOverAndAnnotate <- function(ranges_df) {
   # Depends on the object 'hg19tohg38_chain' in the global environment
 
-  stopifnot(all((ranges_df[, "End"] - ranges_df[, "Start"]) == 19))
+  stopifnot(all((ranges_df[["End"]] - ranges_df[["Start"]]) == 19))
 
   GRanges_object_sgRNAs <- RangesDfToGRangesObject(ranges_df)
 
@@ -396,18 +355,18 @@ LiftOverAndAnnotate <- function(ranges_df) {
     names(sgRNAs_lifted_over_df)[names(sgRNAs_lifted_over_df) == column_name] <- location_columns[[column_name]]
   }
 
-  sgRNAs_lifted_over_df <- sgRNAs_lifted_over_df[sgRNAs_lifted_over_df[, "width"] == 20 , ]
+  sgRNAs_lifted_over_df <- sgRNAs_lifted_over_df[sgRNAs_lifted_over_df[["width"]] == 20 , ]
 
-  if (any(duplicated(sgRNAs_lifted_over_df[, "group"]))) {
+  if (any(duplicated(sgRNAs_lifted_over_df[["group"]]))) {
     stop("Some sgRNAs mapped to multiple locations in the liftOver!")
   }
 
   sgRNAs_lifted_over_GRanges_20mers <- RangesDfToGRangesObject(sgRNAs_lifted_over_df)
 
-  sgRNAs_lifted_over_df[, "Sequence_liftOver"] <- as.character(motifRG::getSequence(sgRNAs_lifted_over_GRanges_20mers, BSgenome.Hsapiens.UCSC.hg38))
-  sgRNAs_lifted_over_df[, "PAM_liftOver"] <- GetNGGPAM(sgRNAs_lifted_over_df)
+  sgRNAs_lifted_over_df[["Sequence_liftOver"]] <- as.character(motifRG::getSequence(sgRNAs_lifted_over_GRanges_20mers, BSgenome.Hsapiens.UCSC.hg38))
+  sgRNAs_lifted_over_df[["PAM_liftOver"]] <- GetNGGPAM(sgRNAs_lifted_over_df)
 
-  lifted_over_matches <- match(seq_len(nrow(ranges_df)), sgRNAs_lifted_over_df[, "group"])
+  lifted_over_matches <- match(seq_len(nrow(ranges_df)), sgRNAs_lifted_over_df[["group"]])
 
   lifted_over_matched_df <- sgRNAs_lifted_over_df[lifted_over_matches, c("Sequence_liftOver", "PAM_liftOver", location_columns)]
   names(lifted_over_matched_df)[3:6] <- paste0(location_columns, "_liftOver")
@@ -425,24 +384,24 @@ LiftOverAndAnnotate <- function(ranges_df) {
 
 ReassignEntrezsByLocations <- function(confirmed_locations_df) {
 
-  are_ambiguous <- grepl(",", confirmed_locations_df[, "Entrez_ID"], fixed = TRUE)
+  are_ambiguous <- grepl(",", confirmed_locations_df[["Entrez_ID"]], fixed = TRUE)
 
   ambiguous_df <- confirmed_locations_df[are_ambiguous, ]
 
   new_entrezs_vec <- rep.int(NA_character_, nrow(ambiguous_df))
   assignment_vec <- rep.int(NA_character_, nrow(ambiguous_df))
 
-  for (combined_ID in unique(ambiguous_df[, "Combined_ID"])) {
-    are_this_ID <- ambiguous_df[, "Combined_ID"] == combined_ID
-    entrezs_vec <- strsplit(ambiguous_df[which(are_this_ID)[[1]], "Entrez_ID"], ", ", fixed = TRUE)[[1]]
-    chromosomes_vec <- entrez_to_symbol_df[match(entrezs_vec, entrez_to_symbol_df[, "Entrez_ID"]), "Chromosome"]
-    correct_chromosome <- unique(ambiguous_df[are_this_ID, "Chromosome"])
+  for (combined_ID in unique(ambiguous_df[["Combined_ID"]])) {
+    are_this_ID <- ambiguous_df[["Combined_ID"]] == combined_ID
+    entrezs_vec <- strsplit(ambiguous_df[["Entrez_ID"]][[which(are_this_ID)[[1]]]], ", ", fixed = TRUE)[[1]]
+    chromosomes_vec <- entrez_to_symbol_df[["Chromosome"]][match(entrezs_vec, entrez_to_symbol_df[["Entrez_ID"]])]
+    correct_chromosome <- unique(ambiguous_df[["Chromosome"]][are_this_ID])
     stopifnot(length(correct_chromosome) == 1)
     if (!(any(duplicated(chromosomes_vec))) && length(correct_chromosome == 1)) {
       new_entrezs_vec[are_this_ID] <- entrezs_vec[[match(correct_chromosome, chromosomes_vec)]]
       assignment_vec[are_this_ID] <- "Unambiguous chromosome"
     } else {
-      overlapping_entrezs <- unique(unlist(strsplit(ambiguous_df[, "Overlapping_Entrez_IDs"], ", ", fixed = TRUE), use.names = FALSE))
+      overlapping_entrezs <- unique(unlist(strsplit(ambiguous_df[["Overlapping_Entrez_IDs"]], ", ", fixed = TRUE), use.names = FALSE))
       if (all(is.na(overlapping_entrezs))) {
         assignment_vec[are_this_ID] <- "Ambiguous chromosome, and no overlaps with genes"
       } else {
@@ -459,25 +418,25 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
   }
   results_df <- confirmed_locations_df
 
-  results_df[, "Old_Entrez"] <- results_df[, "Entrez_ID"]
-  results_df[, "Old_symbol"] <- results_df[, "Gene_symbol"]
+  results_df[["Old_Entrez"]] <- results_df[["Entrez_ID"]]
+  results_df[["Old_symbol"]] <- results_df[["Gene_symbol"]]
 
   # Replace the old ambiguous Entrez IDs with the new ones
   were_replaced <- !(is.na(new_entrezs_vec))
-  results_df[are_ambiguous, "Entrez_ID"][were_replaced] <- new_entrezs_vec[were_replaced]
+  results_df[["Entrez_ID"]][are_ambiguous][were_replaced] <- new_entrezs_vec[were_replaced]
 
-  results_df[, "Were_replaced"] <- NA
-  results_df[are_ambiguous, "Were_replaced"] <- were_replaced
+  results_df[["Were_replaced"]] <- NA
+  results_df[["Were_replaced"]][are_ambiguous] <- were_replaced
 
-  results_df[, "Entrez_assignment"] <- NA_character_
-  results_df[are_ambiguous, "Entrez_assignment"] <- assignment_vec
+  results_df[["Entrez_assignment"]] <- NA_character_
+  results_df[["Entrez_assignment"]][are_ambiguous] <- assignment_vec
 
-  results_df[are_ambiguous, "Combined_ID"] <- ifelse(is.na(results_df[are_ambiguous, "Entrez_ID"]),
-                                                     toupper(results_df[are_ambiguous, "Original_symbol"]),
-                                                     results_df[are_ambiguous, "Entrez_ID"]
-                                                     )
+  results_df[["Combined_ID"]][are_ambiguous] <- ifelse(is.na(results_df[["Entrez_ID"]][are_ambiguous]),
+                                                       toupper(results_df[["Original_symbol"]][are_ambiguous]),
+                                                       results_df[["Entrez_ID"]][are_ambiguous]
+                                                       )
 
-  results_df[are_ambiguous, "Gene_symbol"][were_replaced] <- MapToEntrezs(entrez_IDs_vec = new_entrezs_vec[were_replaced])[, "Gene_symbol"]
+  results_df[["Gene_symbol"]][are_ambiguous][were_replaced] <- MapToEntrezs(entrez_IDs_vec = new_entrezs_vec[were_replaced])[["Gene_symbol"]]
 
   return(results_df)
 }

@@ -33,8 +33,8 @@ load(file.path(CRISPRa_RData_directory, "08) Replace 5'G substitutions with the 
 
 # Search the human genome for matches to sgRNAs ---------------------------
 
-replaced_unique_sequences <- unique(toupper(replaced_merged_CRISPRa_df[, "sgRNA_sequence"]))
-new_or_not_found_sequences <- setdiff(replaced_unique_sequences, all_sequences_df[, "Reference"])
+replaced_unique_sequences <- unique(toupper(replaced_merged_CRISPRa_df[["sgRNA_sequence"]]))
+new_or_not_found_sequences <- setdiff(replaced_unique_sequences, all_sequences_df[["Reference"]])
 
 rm(replaced_merged_CRISPRa_df)
 
@@ -51,7 +51,7 @@ new_sequences_df <- FindSequences(new_or_not_found_sequences)
 # Extend sequence matches with additional data (e.g. nearby genes) --------
 
 # new_sequences_df <- FindNearestGenes(new_sequences_df)
-new_sequences_df[, "PAM"] <- GetNGGPAM(new_sequences_df)
+new_sequences_df[["PAM"]] <- GetNGGPAM(new_sequences_df)
 
 
 
@@ -60,7 +60,7 @@ new_sequences_df[, "PAM"] <- GetNGGPAM(new_sequences_df)
 
 # Merge the results from the new and old previous genome searches ---------
 
-are_still_present <- all_sequences_df[, "Reference"] %in% replaced_unique_sequences
+are_still_present <- all_sequences_df[["Reference"]] %in% replaced_unique_sequences
 
 replaced_all_sequences_df <- rbind.data.frame(new_sequences_df,
                                               all_sequences_df[are_still_present, ],

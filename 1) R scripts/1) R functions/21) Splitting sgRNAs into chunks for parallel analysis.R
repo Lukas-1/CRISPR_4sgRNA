@@ -4,12 +4,12 @@
 
 # Define functions --------------------------------------------------------
 
-AppendIDsWithoutEntrezs <- function(entrez_IDs_list, CRISPR_df) {
-  have_no_entrez <- is.na(CRISPR_df[, "Entrez_ID"]) &
-                    (CRISPR_df[, "Is_control"] == "No")
+AppendIDsWithoutCanonicalEntrezs <- function(entrez_IDs_list, CRISPR_df) {
+  have_no_canonical_entrez <- (is.na(CRISPR_df[["Entrez_ID"]]) | (!(CRISPR_df[["Entrez_ID"]] %in% unlist(entrez_IDs_list, use.names = FALSE)))) &
+                              (CRISPR_df[["Is_control"]] == "No")
   IDs_list <- entrez_IDs_list
   IDs_list[[length(IDs_list)]] <- c(IDs_list[[length(IDs_list)]],
-                                    unique(CRISPR_df[have_no_entrez, "Combined_ID"])
+                                    unique(CRISPR_df[["Combined_ID"]][have_no_canonical_entrez])
                                     )
   return(IDs_list)
 }
@@ -30,6 +30,9 @@ CombineDfChunks <- function(df_list, max_num_per_chunk = 12000L) {
     chunk_vec[[i]] <- current_chunk
   }
   result_df_list <- tapply(df_list, chunk_vec, function(x) do.call(rbind.data.frame, c(x, list(stringsAsFactors = FALSE, make.row.names = FALSE))))
-  names(result_df_list) <- tapply(sub("_TF", "", names(df_list)), chunk_vec, paste0, collapse = "")
+  names(result_df_list) <- paste0("chunk_", tapply(sub("_TF", "", names(df_list)), chunk_vec, paste0, collapse = ""))
   return(result_df_list)
 }
+
+
+

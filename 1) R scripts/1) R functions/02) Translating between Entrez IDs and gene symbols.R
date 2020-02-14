@@ -65,7 +65,7 @@ MapToEntrezs <- function(entrez_IDs_vec = NULL, symbols_vec = NULL, entrez_IDs_s
       if (all(is.na(x))) {
         return(NA_character_)
       } else {
-        are_found <- x %in% entrez_to_symbol_df[, "Entrez_ID"]
+        are_found <- x %in% entrez_to_symbol_df[["Entrez_ID"]]
         if (!(any(are_found))) {
           return(NA_character_)
         } else {
@@ -74,26 +74,29 @@ MapToEntrezs <- function(entrez_IDs_vec = NULL, symbols_vec = NULL, entrez_IDs_s
       }
     }, "")
   } else {
-    result_entrezs_vec <- ifelse(is.na(entrez_IDs_vec), NA_character_, ifelse(entrez_IDs_vec %in% entrez_to_symbol_df[, "Entrez_ID"], entrez_IDs_vec, NA_character_))
+    result_entrezs_vec <- ifelse(is.na(entrez_IDs_vec),
+                                 NA_character_,
+                                 ifelse(entrez_IDs_vec %in% entrez_to_symbol_df[["Entrez_ID"]], entrez_IDs_vec, NA_character_)
+                                 )
   }
 
   symbols_to_entrezs_vec <- rep.int(NA_character_, length(symbols_vec))
   translation_method_vec <- rep.int(NA_integer_, length(symbols_vec))
 
-  to_translate <- !(is.na(symbols_vec)) & (toupper(symbols_vec) %in% toupper(symbol_to_entrez_df[, "Symbol"]))
+  to_translate <- !(is.na(symbols_vec)) & (toupper(symbols_vec) %in% toupper(symbol_to_entrez_df[["Symbol"]]))
 
-  my_matches <- match(toupper(symbols_vec[to_translate]), toupper(symbol_to_entrez_df[, "Symbol"]))
+  my_matches <- match(toupper(symbols_vec[to_translate]), toupper(symbol_to_entrez_df[["Symbol"]]))
   are_there <- !(is.na(my_matches))
   my_matches <- my_matches[are_there]
 
   translated_entrezs_vec <- rep.int(NA_character_, sum(to_translate))
   translated_methods_vec <- rep.int(NA_integer_, sum(to_translate))
-  translated_entrezs_vec[are_there] <- ifelse(as.integer(symbol_to_entrez_df[my_matches, "Chosen_via"]) %in% 1:6,
-                                              symbol_to_entrez_df[my_matches, "Chosen_entrez"],
-                                              symbol_to_entrez_df[my_matches, "Entrez_IDs_all"]
+  translated_entrezs_vec[are_there] <- ifelse(as.integer(symbol_to_entrez_df[["Chosen_via"]][my_matches]) %in% 1:6,
+                                              symbol_to_entrez_df[["Chosen_entrez"]][my_matches],
+                                              symbol_to_entrez_df[["Entrez_IDs_all"]][my_matches]
                                               )
 
-  translated_methods_vec[are_there] <- as.integer(symbol_to_entrez_df[my_matches, "Chosen_via"])
+  translated_methods_vec[are_there] <- as.integer(symbol_to_entrez_df[["Chosen_via"]][my_matches])
 
   symbols_to_entrezs_vec[to_translate] <- translated_entrezs_vec
   translation_method_vec[to_translate] <- translated_methods_vec
@@ -102,13 +105,13 @@ MapToEntrezs <- function(entrez_IDs_vec = NULL, symbols_vec = NULL, entrez_IDs_s
   result_entrezs_vec <- ifelse(is.na(result_entrezs_vec), symbols_to_entrezs_vec, result_entrezs_vec)
 
   expanded_entrezs_df <- ExpandList(strsplit(result_entrezs_vec, entrez_IDs_separator, fixed = TRUE))
-  entrez_matches <- match(expanded_entrezs_df[, "Value"], entrez_to_symbol_df[, "Entrez_ID"])
+  entrez_matches <- match(expanded_entrezs_df[["Value"]], entrez_to_symbol_df[["Entrez_ID"]])
 
-  backtranslated_symbols_vec_expanded <- ifelse(is.na(entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]),
-                                                entrez_to_symbol_df[entrez_matches, "Symbol_NCBI_Hs_info"],
-                                                entrez_to_symbol_df[entrez_matches, "Symbol_Org_Hs_eg_db"]
+  backtranslated_symbols_vec_expanded <- ifelse(is.na(entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]),
+                                                entrez_to_symbol_df[["Symbol_NCBI_Hs_info"]][entrez_matches],
+                                                entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]
                                                 )
-  backtranslated_symbols_vec <- sapply(split(backtranslated_symbols_vec_expanded, expanded_entrezs_df[, "List_index"]),
+  backtranslated_symbols_vec <- sapply(split(backtranslated_symbols_vec_expanded, expanded_entrezs_df[["List_index"]]),
                                        function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = entrez_IDs_separator)
                                        )
 
@@ -145,19 +148,19 @@ FilterDfEntrezSymbol <- function(gene_df, entrez_IDs, symbols_as_backup) {
 
   if (grepl(",", entrez_IDs, fixed = TRUE)) {
     entrez_IDs_splits <- strsplit(entrez_IDs, ", ", fixed = TRUE)[[1]]
-    are_this_entrez_list <- lapply(entrez_IDs_splits, function(x) grepl(paste0("(^|, )", x, "($|, )"), gene_df[, "Entrez_ID"]))
+    are_this_entrez_list <- lapply(entrez_IDs_splits, function(x) grepl(paste0("(^|, )", x, "($|, )"), gene_df[["Entrez_ID"]]))
     are_this_gene <- apply(do.call(cbind, are_this_entrez_list), 1, any)
   } else {
-    are_this_gene <- grepl(paste0("(^|, )", entrez_IDs, "($|, )"), gene_df[, "Entrez_ID"])
+    are_this_gene <- grepl(paste0("(^|, )", entrez_IDs, "($|, )"), gene_df[["Entrez_ID"]])
   }
 
   if (!(any(are_this_gene))) {
     if (grepl(",", symbols_as_backup, fixed = TRUE)) {
       symbols_splits <- strsplit(symbols_as_backup, ", ", fixed = TRUE)[[1]]
-      are_this_symbol_list <- lapply(symbols_splits, function(x) grepl(paste0("(^|, )", x, "($|, )"), gene_df[, "Gene_symbol"]))
+      are_this_symbol_list <- lapply(symbols_splits, function(x) grepl(paste0("(^|, )", x, "($|, )"), gene_df[["Gene_symbol"]]))
       are_this_gene <- apply(do.call(cbind, are_this_symbol_list), 1, any)
     } else {
-      are_this_gene <- grepl(paste0("(^|, )", symbols_as_backup, "($|, )"), gene_df[, "Gene_symbol"])
+      are_this_gene <- grepl(paste0("(^|, )", symbols_as_backup, "($|, )"), gene_df[["Gene_symbol"]])
     }
   }
 
@@ -197,13 +200,12 @@ FilterAndCombineEntrezSymbol <- function(gene_df, entrez_IDs_vec, symbols_as_bac
 GetGenes <- function(symbols_vec, CRISPR_df = CRISPRa_df) {
 
   symbol_entrez_df <- SymbolToEntrezDf(symbols_vec)
-
-  names(CRISPR_df)[names(CRISPR_df) == "Gene_symbol"] <- "New_symbol"
+  names(CRISPR_df)[names(CRISPR_df) == "Gene_symbol"]    <- "New_symbol"
   names(CRISPR_df)[names(CRISPR_df) == "Original_symbol"] <- "Gene_symbol"
 
-  combined_IDs_vec <- ifelse(is.na(symbol_entrez_df[, "Entrez_ID"]), symbol_entrez_df[, "Gene_symbol"], symbol_entrez_df[, "Entrez_ID"])
-  filtered_df <- FilterAndCombineEntrezSymbol(CRISPR_df, symbol_entrez_df[, "Entrez_ID"], symbol_entrez_df[, "Original_symbol"], combined_IDs_vec)
-  were_not_found <- !(combined_IDs_vec %in% filtered_df[, "Combined_ID"])
+  combined_IDs_vec <- ifelse(is.na(symbol_entrez_df[["Entrez_ID"]]), symbol_entrez_df[["Gene_symbol"]], symbol_entrez_df[["Entrez_ID"]])
+  filtered_df <- FilterAndCombineEntrezSymbol(CRISPR_df, symbol_entrez_df[["Entrez_ID"]], symbol_entrez_df[["Original_symbol"]], combined_IDs_vec)
+  were_not_found <- !(combined_IDs_vec %in% filtered_df[["Combined_ID"]])
 
   if (any(were_not_found)) {
     message(paste0("The following ",
@@ -216,7 +218,6 @@ GetGenes <- function(symbols_vec, CRISPR_df = CRISPRa_df) {
   names(filtered_df)[names(filtered_df) == "New_symbol"] <- "Gene_symbol"
   filtered_df <- filtered_df[, 2:ncol(filtered_df)]
   names(filtered_df)[[1]] <- "Combined_ID"
-
   return(filtered_df)
 }
 

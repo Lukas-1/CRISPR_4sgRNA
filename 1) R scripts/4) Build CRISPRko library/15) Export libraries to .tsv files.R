@@ -16,6 +16,7 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 CRISPR_root_directory    <- "~/CRISPR"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko")
 
@@ -25,6 +26,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "14) Allocate sgRNAs to plates.RData"))
@@ -124,8 +126,9 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 # Subset data / define sublibraries ---------------------------------------
 
-merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] %in% TF_overview_df[, "Combined_ID"], ]
+merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Combined_ID"]] %in% TF_overview_df[["Combined_ID"]], ]
 
+secretome_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Combined_ID"]] %in% secretome_df[["Combined_ID"]], ]
 
 
 
@@ -133,12 +136,12 @@ merged_TF_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[, "Combined_ID"] 
 
 # Check for sgRNAs that violate the criteria of Graf et al. ---------------
 
-TF_are_top4 <- merged_TF_CRISPRko_df[, "Rank"] %in% 1:4
-TF_violate_Graf <- merged_TF_CRISPRko_df[, "CRISPOR_Graf_status"] != "GrafOK"
+TF_are_top4 <- merged_TF_CRISPRko_df[["Rank"]] %in% 1:4
+TF_violate_Graf <- merged_TF_CRISPRko_df[["CRISPOR_Graf_status"]] != "GrafOK"
 
-table(merged_TF_CRISPRko_df[TF_are_top4, "CRISPOR_Graf_status"])
+table(merged_TF_CRISPRko_df[["CRISPOR_Graf_status"]][TF_are_top4])
 
-merged_TF_CRISPRko_df[(TF_are_top4 & TF_violate_Graf) %in% TRUE, "CRISPOR_Doench_efficacy"]
+merged_TF_CRISPRko_df[["CRISPOR_Doench_efficacy"]][(TF_are_top4 & TF_violate_Graf) %in% TRUE]
 
 
 
@@ -146,11 +149,11 @@ merged_TF_CRISPRko_df[(TF_are_top4 & TF_violate_Graf) %in% TRUE, "CRISPOR_Doench
 
 # Re-construct the TF sub-library in its original order -------------------
 
-randomized_guide_IDs <- paste0(ifelse(TF_sgRNA_plates_df[, "Is_control"] == "Yes", "Control", TF_sgRNA_plates_df[, "Combined_ID"]),
-                               "__", TF_sgRNA_plates_df[, "sgRNA_sequence"]
+randomized_guide_IDs <- paste0(ifelse(TF_sgRNA_plates_df[["Is_control"]] == "Yes", "Control", TF_sgRNA_plates_df[["Combined_ID"]]),
+                               "__", TF_sgRNA_plates_df[["sgRNA_sequence"]]
                                )
-original_guide_IDs <- paste0(ifelse(merged_CRISPRko_df[, "Is_control"] == "Yes", "Control", merged_CRISPRko_df[, "Combined_ID"]),
-                             "__", merged_CRISPRko_df[, "sgRNA_sequence"]
+original_guide_IDs <- paste0(ifelse(merged_CRISPRko_df[["Is_control"]] == "Yes", "Control", merged_CRISPRko_df[["Combined_ID"]]),
+                             "__", merged_CRISPRko_df[["sgRNA_sequence"]]
                              )
 original_matches <- match(randomized_guide_IDs, original_guide_IDs)
 if (any(is.na(original_matches))) {
@@ -166,7 +169,7 @@ TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
 
 TF_folder_name <- "TF library plate layout"
 for (i in 1:4) {
-  subset_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[, "Rank"] %in% i, ]
+  subset_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Rank"]] %in% i, ]
   file_name <- paste0(file.path(TF_folder_name, "CRISPRko_TF_randomized_sg"), i)
   DfToTSV(subset_df, file_name, add_primers = TRUE)
 }
@@ -174,13 +177,37 @@ DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRko_TF_randomized_al
 DfToTSV(TF_sgRNA_original_order_df, file.path(TF_folder_name, "CRISPRko_TF_original_order_all_4_guides"), add_primers = TRUE)
 
 DfToTSV(merged_TF_CRISPRko_df, "CRISPRko_transcription_factors")
+DfToTSV(secretome_CRISPRko_df, "CRISPRko_secretome")
+
 DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
 
 
 
 
+# Write changed wells to disk ---------------------------------------------
 
+legacy_RData_directory <- "C:/Users/lukas/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
+load(file.path(legacy_RData_directory, "14) Allocate sgRNAs to plates.RData"))
+old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
+load(file.path(CRISPRko_RData_directory, "14) Allocate sgRNAs to plates.RData"))
+
+TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
+old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]
+
+TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
+old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
+
+are_new      <- !(TF_sgRNA_plates_df[["sgRNA_sequence"]] %in% old_TF_sgRNA_plates_df[["sgRNA_sequence"]])
+are_obsolete <- !(old_TF_sgRNA_plates_df[["sgRNA_sequence"]] %in% TF_sgRNA_plates_df[["sgRNA_sequence"]])
+DfToTSV(TF_sgRNA_plates_df[are_new, ],
+        file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__new_guides"),
+        add_primers = TRUE
+        )
+DfToTSV(TF_sgRNA_plates_df[are_obsolete, ],
+        file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__obsolete_guides"),
+        add_primers = TRUE
+        )
 
 
 

@@ -33,12 +33,12 @@ load(file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgR
 
 # Prepare the input to GuideScan ------------------------------------------
 
-were_not_searched <- !(merged_replaced_CRISPRa_df[, "TSS_searched_by_GuideScan"] %in% "Yes")
-were_mapped <- !(is.na(merged_replaced_CRISPRa_df[, "Start"]))
+were_not_searched <- !(merged_replaced_CRISPRa_df[["TSS_searched_by_GuideScan"]] %in% "Yes")
+were_mapped <- !(is.na(merged_replaced_CRISPRa_df[["Start"]]))
 
 submit_df <- merged_replaced_CRISPRa_df[were_not_searched & were_mapped, ]
 
-submit_df[, "GuideScan_input_sgRNA"] <- sgRNAStringForGuideScan(submit_df)
+submit_df[["GuideScan_input_sgRNA"]] <- sgRNAStringForGuideScan(submit_df)
 
 
 
@@ -47,7 +47,7 @@ submit_df[, "GuideScan_input_sgRNA"] <- sgRNAStringForGuideScan(submit_df)
 # Check for duplicated chromosomal positions ------------------------------
 # (Some of these duplications are not actually duplications, but rather, one sgRNA is on the + strand, and the other is on the - strand.)
 
-num_occurrences <- table(submit_df[, "GuideScan_input_sgRNA"])[submit_df[, "GuideScan_input_sgRNA"]]
+num_occurrences <- table(submit_df[["GuideScan_input_sgRNA"]])[submit_df[["GuideScan_input_sgRNA"]]]
 
 multiplicates_df <- submit_df[num_occurrences > 1, ]
 
@@ -60,16 +60,15 @@ choose_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source", "hC
                     "GuideScan_input_sgRNA"
                     )
 
-multiplicates_df <- multiplicates_df[order(match(multiplicates_df[, "GuideScan_input_sgRNA"], multiplicates_df[, "GuideScan_input_sgRNA"])), choose_columns]
+multiplicates_df <- multiplicates_df[order(match(multiplicates_df[["GuideScan_input_sgRNA"]], multiplicates_df[["GuideScan_input_sgRNA"]])), choose_columns]
 row.names(multiplicates_df) <- NULL
-
 
 
 
 
 # Define all unique chromosomal positions ---------------------------------
 
-GuideScan_input_vec <- unique(submit_df[, "GuideScan_input_sgRNA"])
+GuideScan_input_vec <- unique(submit_df[["GuideScan_input_sgRNA"]])
 
 
 

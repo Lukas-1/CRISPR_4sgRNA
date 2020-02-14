@@ -83,13 +83,12 @@ AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TS
 
 
 SeparateByTSS <- function(CRISPR_sub_df) {
-
   MessageID(CRISPR_sub_df)
 
   reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df)
   reordered_df <- reordered_list[["reordered_df"]]
-  TSS_number_vec <- NumberTSSs(reordered_df[, "Cut_location"])
-  allocated_TSS_vec <- AllocateTSSs(TSS_number_vec, reordered_df[, "hCRISPRa_v2_transcript"], reordered_df[, "Cut_location"])
+  TSS_number_vec <- NumberTSSs(reordered_df[["Cut_location"]])
+  allocated_TSS_vec <- AllocateTSSs(TSS_number_vec, reordered_df[["hCRISPRa_v2_transcript"]], reordered_df[["Cut_location"]])
 
   results_df <- data.frame(
     reordered_df,
@@ -97,8 +96,7 @@ SeparateByTSS <- function(CRISPR_sub_df) {
     "Allocated_TSS"  = allocated_TSS_vec,
     stringsAsFactors = FALSE
   )
-  new_order <- order(match(results_df[, "Allocated_TSS"], results_df[, "Allocated_TSS"]))
-
+  new_order <- order(match(results_df[["Allocated_TSS"]], results_df[["Allocated_TSS"]]))
   result_df <- results_df[new_order, ]
   row.names(result_df) <- NULL
   return(results_df)
@@ -108,12 +106,12 @@ SeparateByTSS <- function(CRISPR_sub_df) {
 
 
 CountNumTSSs <- function(CRISPR_df, TSS_column = "hCRISPRa_v2_transcript") {
-  IDs_fac <- factor(CRISPR_df[, "Combined_ID"], levels = unique(CRISPR_df[, "Combined_ID"]))
+  IDs_fac <- factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]]))
   num_transcripts_list <- tapply(
     seq_len(nrow(CRISPR_df)),
     IDs_fac,
     function(x) {
-      transcripts <- CRISPR_df[x, TSS_column]
+      transcripts <- CRISPR_df[[TSS_column]][x]
       transcripts <- unique(transcripts[!(is.na(transcripts))])
       num_transcripts <- length(transcripts)
       if (num_transcripts == 0) {
@@ -131,7 +129,7 @@ CountNumTSSs <- function(CRISPR_df, TSS_column = "hCRISPRa_v2_transcript") {
 
 
 TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
-  IDs_fac <- factor(CRISPR_df[, "Combined_ID"], levels = unique(CRISPR_df[, "Combined_ID"]))
+  IDs_fac <- factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]]))
   abbr_TSS_list <- tapply(
     seq_len(nrow(CRISPR_df)),
     IDs_fac,
@@ -139,7 +137,7 @@ TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
       results_vec <- rep.int(NA_character_, length(x))
       num_TSSs <- CRISPR_df[x[[1]], "Num_TSSs"]
       if (num_TSSs > 1) {
-        TSS_IDs <- CRISPR_df[x, "Allocated_TSS"]
+        TSS_IDs <- CRISPR_df[["Allocated_TSS"]][x]
         are_standard <- TSS_IDs %in% c("P1", "P2", "P1P2", paste0("N", 1:30))
         results_vec[are_standard] <- TSS_IDs[are_standard]
         if (!(all(are_standard))) {
@@ -161,8 +159,8 @@ TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
 
 AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, parallel_mode = TRUE, num_cores = NULL) {
 
-  are_controls <- CRISPR_df[, "Is_control"] == "Yes"
-  combined_IDs <- unique(CRISPR_df[!(are_controls), "Combined_ID"])
+  are_controls <- CRISPR_df[["Is_control"]] == "Yes"
+  combined_IDs <- unique(CRISPR_df[["Combined_ID"]][!(are_controls)])
 
   if (parallel_mode) {
     if (is.null(num_cores)) {
@@ -177,16 +175,16 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, par
                             )
     reordered_df_list <- parallel::parLapply(cl,
                                              combined_IDs,
-                                             function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE])
+                                             function(x) SeparateByTSS(CRISPR_df[CRISPR_df[["Combined_ID"]] == x, , drop = FALSE])
                                              )
     parallel::stopCluster(cl)
   } else {
-    reordered_df_list <- lapply(combined_IDs, function(x) SeparateByTSS(CRISPR_df[CRISPR_df[, "Combined_ID"] == x, , drop = FALSE]))
+    reordered_df_list <- lapply(combined_IDs, function(x) SeparateByTSS(CRISPR_df[CRISPR_df[["Combined_ID"]] == x, , drop = FALSE]))
   }
   if (any(are_controls)) {
     controls_df <- CRISPR_df[are_controls, ]
-    controls_df[, "TSS_number"] <- NA_integer_
-    controls_df[, "Allocated_TSS"] <- NA_character_
+    controls_df[["TSS_number"]] <- NA_integer_
+    controls_df[["Allocated_TSS"]] <- NA_character_
   } else {
     controls_df <- NULL
   }
@@ -195,24 +193,17 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, par
                                             list(stringsAsFactors = FALSE, make.row.names = FALSE)
                                             )
                         )
-  results_df[, "Num_TSSs"] <- CountNumTSSs(results_df, TSS_column = "Allocated_TSS")
-  results_df[, "TSS_ID"] <- TSSCombinedIDs(results_df)
-  results_df[, "AltTSS_ID"] <- ifelse(is.na(results_df[, "TSS_ID"]),
-                                      results_df[, "Combined_ID"],
-                                      paste0(results_df[, "Combined_ID"], "_", results_df[, "TSS_ID"])
+  results_df[["Num_TSSs"]] <- CountNumTSSs(results_df, TSS_column = "Allocated_TSS")
+  results_df[["TSS_ID"]] <- TSSCombinedIDs(results_df)
+  results_df[["AltTSS_ID"]] <- ifelse(is.na(results_df[["TSS_ID"]]),
+                                      results_df[["Combined_ID"]],
+                                      paste0(results_df[["Combined_ID"]], "_", results_df[["TSS_ID"]])
                                       )
   if (omit_optional_columns) {
     results_df <- results_df[, !(names(results_df) %in% c("TSS_number", "Allocated_TSS", "TSS_ID"))]
   }
   return(results_df)
 }
-
-
-
-
-
-
-
 
 
 

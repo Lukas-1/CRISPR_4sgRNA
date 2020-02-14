@@ -69,9 +69,9 @@ shRNA_sublibrary_map <- c(
   "H13" = "Unassigned"
 )
 
-Kampmann_lib_df[, "Sublibrary"] <- shRNA_sublibrary_map[Kampmann_lib_df[, "Sublibrary_ID"]]
+Kampmann_lib_df[["Sublibrary"]] <- shRNA_sublibrary_map[Kampmann_lib_df[["Sublibrary_ID"]]]
 
-Kampmann_mapped_df <- MapToEntrezs(symbols_vec = Kampmann_lib_df[, "Symbol"])
+Kampmann_mapped_df <- MapToEntrezs(symbols_vec = Kampmann_lib_df[["Symbol"]])
 
 Kampmann_lib_df <- data.frame(
   Kampmann_lib_df[, c("Sublibrary_ID", "Sublibrary")],

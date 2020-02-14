@@ -52,11 +52,11 @@ Ensembl_Hs_entrez_df <- read.table(file.path(CRISPR_input_directory, "Human geno
 
 # Collect Entrez IDs from various sources ---------------------------------
 
-Ensembl_Hs_have_entrez <- !(is.na(suppressWarnings(as.integer(Ensembl_Hs_entrez_df[, "xref"]))))
-Ensembl_Hs_are_protein_coding <- Ensembl_Hs_entrez_df[, "protein_stable_id"] != "-"
+Ensembl_Hs_have_entrez <- !(is.na(suppressWarnings(as.integer(Ensembl_Hs_entrez_df[["xref"]]))))
+Ensembl_Hs_are_protein_coding <- Ensembl_Hs_entrez_df[["protein_stable_id"]] != "-"
 
-collected_entrez_IDs <- unique(c(as.character(NCBI_Hs_info_df[NCBI_Hs_info_df[, "type_of_gene"] == "protein-coding", "GeneID"]),
-                                 Ensembl_Hs_entrez_df[Ensembl_Hs_have_entrez & Ensembl_Hs_are_protein_coding, "xref"]
+collected_entrez_IDs <- unique(c(as.character(NCBI_Hs_info_df[["GeneID"]][NCBI_Hs_info_df[["type_of_gene"]] == "protein-coding"]),
+                                 Ensembl_Hs_entrez_df[["xref"]][Ensembl_Hs_have_entrez & Ensembl_Hs_are_protein_coding]
                                  )
                                )
 

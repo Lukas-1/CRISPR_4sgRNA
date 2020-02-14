@@ -33,7 +33,7 @@ load(file.path(CRISPRa_RData_directory, "13) Integrate the output from GuideScan
 
 # Identify sgRNAs that have a defined location ----------------------------
 
-are_mapped <- !(is.na(merged_replaced_CRISPRa_df[, "Start"]))
+are_mapped <- !(is.na(merged_replaced_CRISPRa_df[["Start"]]))
 
 mapped_indices <- rep(NA_integer_, length(are_mapped))
 mapped_indices[are_mapped] <- seq_len(sum(are_mapped))
@@ -54,6 +54,7 @@ sgRNA_polymorphisms_df <- AllPolymorphisms(merged_replaced_CRISPRa_df[are_mapped
 
 location_columns <- c("Chromosome", "Strand", "Start", "End")
 nearest_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Distance")
+
 nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[are_mapped, location_columns])[, nearest_columns]
 colnames(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
 
@@ -76,22 +77,6 @@ merged_replaced_CRISPRa_df <- data.frame(merged_replaced_CRISPRa_df,
 save(list = "merged_replaced_CRISPRa_df",
      file = file.path(CRISPRa_RData_directory, "14) Find overlaps between sgRNA sequences and genetic polymorphisms.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

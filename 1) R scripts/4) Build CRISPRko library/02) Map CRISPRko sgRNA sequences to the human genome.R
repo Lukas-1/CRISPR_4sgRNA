@@ -31,9 +31,9 @@ load(file.path(CRISPRko_RData_directory, "01) Compile predefined CRISPRko librar
 
 # Search the human genome for matches to sgRNAs ---------------------------
 
-unique_sequences <- unique(toupper(CRISPRko_df[, "sgRNA_sequence"]))
+unique_sequences <- unique(toupper(CRISPRko_df[["sgRNA_sequence"]]))
 
-stopifnot(!(anyNA(CRISPRko_df[, "sgRNA_sequence"])))
+stopifnot(!(anyNA(CRISPRko_df[["sgRNA_sequence"]])))
 
 are_20mers <- nchar(unique_sequences) == 20
 

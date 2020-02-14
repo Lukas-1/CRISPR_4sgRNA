@@ -56,18 +56,31 @@ LongestSharedSubsequence <- function(char_vec) {
   return(num_shared)
 }
 
+VectorizedLongestSubsequenceSingle <- function(char_vec) {
+  use_seq <- seq_along(char_vec)
+  results_vec <- vapply(use_seq, function(x) LongestSubsequenceSingle(char_vec[[x]], char_vec[use_seq[use_seq != x]]), integer(1))
+  return(results_vec)
+}
+
+LongestSubsequenceSingle <- function(single_char, char_vec) {
+  assign("delete_single_char", single_char, envir = globalenv())
+  stopifnot(length(single_char) == 1)
+  assign("delete_char_vec", char_vec, envir = globalenv())
+  longest_vec <- vapply(char_vec, function(x) LongestSharedSubsequence(c(single_char, x)), integer(1))
+  return(max(longest_vec))
+}
+
 
 
 CheckForIdenticalSubsequences <- function(CRISPR_df, substring_length = 8L, ID_column = "AltTSS_ID") {
-
-  are_not_controls <- CRISPR_df[, "Is_control"] %in% "No"
-  are_top_four <- CRISPR_df[, "Rank"] %in% 1:4
-  unique_IDs <- unique(CRISPR_df[are_not_controls & are_top_four, ID_column])
+  are_not_controls <- CRISPR_df[["Is_control"]] %in% "No"
+  are_top_four <- CRISPR_df[["Rank"]] %in% 1:4
+  unique_IDs <- unique(CRISPR_df[[ID_column]][are_not_controls & are_top_four])
   are_homologous <- rep.int(FALSE, nrow(CRISPR_df))
   for (ID in unique_IDs) {
-    are_this_ID <- (CRISPR_df[, ID_column] == ID) & are_top_four
+    are_this_ID <- (CRISPR_df[[ID_column]] == ID) & are_top_four
     if (sum(are_this_ID) > 1) {
-      is_homologous <- NumHomologousPairs(CRISPR_df[are_this_ID, "sgRNA_sequence"], substring_length = substring_length) > 0
+      is_homologous <- NumHomologousPairs(CRISPR_df[["sgRNA_sequence"]][are_this_ID], substring_length = substring_length) > 0
       if (is_homologous) {
         are_homologous[are_this_ID] <- TRUE
       }

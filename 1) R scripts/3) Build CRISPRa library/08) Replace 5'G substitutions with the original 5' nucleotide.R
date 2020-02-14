@@ -14,6 +14,7 @@ library("BSgenome.Hsapiens.UCSC.hg38")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
+source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R"))
 
 
 
@@ -39,21 +40,20 @@ load(file.path(CRISPRa_RData_directory, "07) Assign genomic locations to sgRNA s
 # Define functions --------------------------------------------------------
 
 Exchange5PrimeG <- function(CRISPR_df) {
-  are_5prime_G <- !(is.na(CRISPR_df[, "Start"])) &
-                  (CRISPR_df[, "Num_0MM"] == 0) & (CRISPR_df[, "Num_5G_MM"] == 1) &
-                  (grepl("hCRISPRa-v2", CRISPR_df[, "Source"], fixed = TRUE)) &
-                  (CRISPR_df[, "Is_control"] != "Yes") &
-                  (CRISPR_df[, "Exchanged_5pG"] %in% "No")
-  GRanges_object <- GRanges(
-    seqnames = CRISPR_df[are_5prime_G, "Chromosome"],
-    ranges   = IRanges(start = CRISPR_df[are_5prime_G, "Start"], end = CRISPR_df[are_5prime_G, "End"]),
-    strand   = CRISPR_df[are_5prime_G, "Strand"]
-  )
+  are_5prime_G <- !(is.na(CRISPR_df[["Start"]])) &
+                  (CRISPR_df[["Num_0MM"]] == 0) & (CRISPR_df[["Num_5G_MM"]] == 1) &
+                  (grepl("hCRISPRa-v2", CRISPR_df[["Source"]], fixed = TRUE)) &
+                  (CRISPR_df[["Is_control"]] != "Yes") &
+                  (CRISPR_df[["Exchanged_5pG"]] %in% "No")
+  GRanges_object <- RangesDfToGRangesObject(CRISPR_df[are_5prime_G, ])
   nucleotide_5p_vec <- substr(as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38)), 1, 1)
-  CRISPR_df[, "Exchanged_5pG"] <- ifelse(are_5prime_G, "Yes", CRISPR_df[, "Exchanged_5pG"])
-  CRISPR_df[are_5prime_G, "sgRNA_sequence"] <- paste0(nucleotide_5p_vec,
-                                                      substr(CRISPR_df[are_5prime_G, "sgRNA_sequence"], 2, nchar(CRISPR_df[are_5prime_G, "sgRNA_sequence"]))
-                                                      )
+  CRISPR_df[["Exchanged_5pG"]] <- ifelse(are_5prime_G, "Yes", CRISPR_df[["Exchanged_5pG"]])
+  CRISPR_df[["sgRNA_sequence"]][are_5prime_G] <- paste0(nucleotide_5p_vec,
+                                                        substr(CRISPR_df[["sgRNA_sequence"]][are_5prime_G],
+                                                               2,
+                                                               nchar(CRISPR_df[["sgRNA_sequence"]][are_5prime_G])
+                                                               )
+                                                        )
   return(CRISPR_df)
 }
 
@@ -69,21 +69,21 @@ replaced_merged_CRISPRa_df <- Exchange5PrimeG(merged_CRISPRa_df)
 
 # Replace 5' G nucleotides in control sgRNAs from hCRISPRa-v2 -------------
 
-are_Calabrese   <- grepl("Calabrese", merged_CRISPRa_df[, "Source"], fixed = TRUE)
-are_hCRISPRa_v2 <- grepl("hCRISPRa-v2", merged_CRISPRa_df[, "Source"], fixed = TRUE)
-are_controls    <- merged_CRISPRa_df[, "Is_control"] == "Yes"
+are_Calabrese <- grepl("Calabrese", merged_CRISPRa_df[["Source"]], fixed = TRUE)
+are_hCRISPRa_v2 <- grepl("hCRISPRa-v2", merged_CRISPRa_df[["Source"]], fixed = TRUE)
+are_controls <- merged_CRISPRa_df[["Is_control"]] == "Yes"
 are_to_replace  <- are_controls & are_hCRISPRa_v2
 
-nucleotide_bag <- substr(merged_CRISPRa_df[are_Calabrese & !(are_controls), "sgRNA_sequence"], 1, 1)
+nucleotide_bag <- substr(merged_CRISPRa_df[["sgRNA_sequence"]][are_Calabrese & !(are_controls)], 1, 1)
 
 set.seed(1)
 new_5p_nucleotides <- sample(nucleotide_bag, sum(are_to_replace))
 
 new_5p_nucleotides <- ifelse(new_5p_nucleotides == "G", "G", tolower(new_5p_nucleotides)) # Indicate the replacement
 
-replaced_merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"] <- paste0(new_5p_nucleotides,
-                                                                       substr(merged_CRISPRa_df[are_to_replace, "sgRNA_sequence"], 2, 20)
-                                                                       )
+replaced_merged_CRISPRa_df[["sgRNA_sequence"]][are_to_replace] <- paste0(new_5p_nucleotides,
+                                                                         substr(merged_CRISPRa_df[["sgRNA_sequence"]][are_to_replace], 2, 20)
+                                                                         )
 
 
 

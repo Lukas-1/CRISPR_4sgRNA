@@ -36,7 +36,7 @@ load(file.path(CRISPRa_RData_directory, "03) Map CRISPR libraries to TSS data.RD
 
 # Convert TSS data to GuideScan input for the candidate genes -------------
 
-candidates_TSS_df <- combined_TSS_CRISPRa_df[combined_TSS_CRISPRa_df[, "Combined_ID"] %in% candidates_CRISPRa_df[, "Combined_ID"], ]
+candidates_TSS_df <- combined_TSS_CRISPRa_df[combined_TSS_CRISPRa_df[["Combined_ID"]] %in% candidates_CRISPRa_df[["Combined_ID"]], ]
 
 TSS_ranges_candidates_df <- TSSRangesForGuideScan(candidates_TSS_df)
 
@@ -49,10 +49,10 @@ candidates_GuideScan_input_vec <- unique(TSSStringForGuideScan(candidates_TSS_df
 # Convert TSS data to GuideScan input for all genes -----------------------
 
 TSS_ranges_df <- TSSRangesForGuideScan(combined_TSS_CRISPRa_df)
-combined_TSS_CRISPRa_df[, "GuideScan_input"] <- TSSStringForGuideScan(combined_TSS_CRISPRa_df)
-combined_TSS_CRISPRa_df[, "Region_length"] <- TSS_ranges_df[, "End"] - TSS_ranges_df[, "Start"]
+combined_TSS_CRISPRa_df[["GuideScan_input"]] <- TSSStringForGuideScan(combined_TSS_CRISPRa_df)
+combined_TSS_CRISPRa_df[["Region_length"]] <- TSS_ranges_df[["End"]] - TSS_ranges_df[["Start"]]
 
-unique_GuideScan_input_vec <- unique(combined_TSS_CRISPRa_df[, "GuideScan_input"])
+unique_GuideScan_input_vec <- unique(combined_TSS_CRISPRa_df[["GuideScan_input"]])
 
 
 

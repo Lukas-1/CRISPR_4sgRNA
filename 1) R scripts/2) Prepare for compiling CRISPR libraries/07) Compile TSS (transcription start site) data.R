@@ -139,11 +139,11 @@ names(FANTOM5_bed_df) <- c(
 
 # Check cage peak IDs -----------------------------------------------------
 
-table(FANTOM5_ann_df[, "CAGE_Peak_ID"] %in% FANTOM5_bed_df[, "Peak_ID"])
-table(FANTOM5_bed_df[, "Peak_ID"] %in% FANTOM5_ann_df[, "CAGE_Peak_ID"])
+table(FANTOM5_ann_df[["CAGE_Peak_ID"]] %in% FANTOM5_bed_df[["Peak_ID"]])
+table(FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]])
 
-any(duplicated(FANTOM5_ann_df[, "CAGE_Peak_ID"]))
-any(duplicated(FANTOM5_bed_df[, "Peak_ID"]))
+any(duplicated(FANTOM5_ann_df[["CAGE_Peak_ID"]]))
+any(duplicated(FANTOM5_bed_df[["Peak_ID"]]))
 
 
 
@@ -153,19 +153,19 @@ any(duplicated(FANTOM5_bed_df[, "Peak_ID"]))
 
 # Build a combined FANTOM data frame --------------------------------------
 
-FANTOM_ann_matches <- match(FANTOM5_bed_df[, "Peak_ID"], FANTOM5_ann_df[, "CAGE_Peak_ID"])
+FANTOM_ann_matches <- match(FANTOM5_bed_df[["Peak_ID"]], FANTOM5_ann_df[["CAGE_Peak_ID"]])
 
 FANTOM5_df <- data.frame(
   FANTOM5_ann_df[FANTOM_ann_matches, c("CAGE_Peak_ID", "GeneID", "Gene_symbol")],
   FANTOM5_bed_df[, c("Chromosome", "Strand", "Peak_start", "Peak_end", "TSS_start", "TSS_stop")],
   FANTOM5_ann_df[FANTOM_ann_matches, "Distance", drop = FALSE],
-  FANTOM5_bed_df[, "Score", drop = FALSE],
+  FANTOM5_bed_df["Score"],
   stringsAsFactors = FALSE
 )
 
 names(FANTOM5_df)[names(FANTOM5_df) == "GeneID"] <- "Entrez_ID"
 
-stopifnot(all(grepl("chr", FANTOM5_df[, "Chromosome"], fixed = TRUE)))
+stopifnot(all(grepl("chr", FANTOM5_df[["Chromosome"]], fixed = TRUE)))
 
 
 
@@ -175,13 +175,13 @@ stopifnot(all(grepl("chr", FANTOM5_df[, "Chromosome"], fixed = TRUE)))
 
 unique_IDs_FANTOM5_df <- unique(FANTOM5_df[, c("Entrez_ID", "Gene_symbol", "Chromosome")])
 
-num_occurrences_gene_symbol <- table(unique_IDs_FANTOM5_df[, "Gene_symbol"])[unique_IDs_FANTOM5_df[, "Gene_symbol"]]
-num_occurences_entrez_ID    <- table(unique_IDs_FANTOM5_df[, "Entrez_ID"])[unique_IDs_FANTOM5_df[, "Entrez_ID"]]
+num_occurrences_gene_symbol <- table(unique_IDs_FANTOM5_df[["Gene_symbol"]])[unique_IDs_FANTOM5_df[["Gene_symbol"]]]
+num_occurences_entrez_ID    <- table(unique_IDs_FANTOM5_df[["Entrez_ID"]])[unique_IDs_FANTOM5_df[["Entrez_ID"]]]
 
 unique_IDs_FANTOM5_df[(num_occurrences_gene_symbol > 1) %in% TRUE, ]
 unique_IDs_FANTOM5_df[(num_occurences_entrez_ID > 1) %in% TRUE, ]
 
-pasted_IDs <- paste0(unique_IDs_FANTOM5_df[, "Entrez_ID"], "__", unique_IDs_FANTOM5_df[, "Gene_symbol"])
+pasted_IDs <- paste0(unique_IDs_FANTOM5_df[["Entrez_ID"]], "__", unique_IDs_FANTOM5_df[["Gene_symbol"]])
 num_occurrences_pasted_IDs <- table(pasted_IDs)[pasted_IDs]
 
 my_order <- order(pasted_IDs)
@@ -193,7 +193,7 @@ unique_IDs_FANTOM5_df[my_order, ][num_occurrences_pasted_IDs[my_order] > 1, ]
 
 # Filter and standardize the combined FANTOM5 data frame ------------------
 
-FANTOM5_filtered_df <- FANTOM5_df[!((FANTOM5_df[, "Entrez_ID"] == "") & (FANTOM5_df[, "Gene_symbol"] == "")), ]
+FANTOM5_filtered_df <- FANTOM5_df[!((FANTOM5_df[["Entrez_ID"]] == "") & (FANTOM5_df[["Gene_symbol"]] == "")), ]
 
 StandardizeIDs <- function(char_vec) {
   results_vec <- gsub(" ", ", ", char_vec, fixed = TRUE)
@@ -201,16 +201,16 @@ StandardizeIDs <- function(char_vec) {
   return(results_vec)
 }
 
-FANTOM5_filtered_df[, "Entrez_ID"] <- StandardizeIDs(FANTOM5_filtered_df[, "Entrez_ID"])
-FANTOM5_filtered_df[, "Gene_symbol"] <- StandardizeIDs(FANTOM5_filtered_df[, "Gene_symbol"])
+FANTOM5_filtered_df[["Entrez_ID"]] <- StandardizeIDs(FANTOM5_filtered_df[["Entrez_ID"]])
+FANTOM5_filtered_df[["Gene_symbol"]] <- StandardizeIDs(FANTOM5_filtered_df[["Gene_symbol"]])
 
 FANTOM5_filtered_df <- data.frame(
-  "Group" = paste0(ifelse(FANTOM5_filtered_df[, "Entrez_ID"] == "",
+  "Group" = paste0(ifelse(FANTOM5_filtered_df[["Entrez_ID"]] == "",
                           "",
-                          paste0(FANTOM5_filtered_df[, "Entrez_ID"], " | ")
+                          paste0(FANTOM5_filtered_df[["Entrez_ID"]], " | ")
                           ),
-                   FANTOM5_filtered_df[, "Gene_symbol"], " | ",
-                   FANTOM5_filtered_df[, "Chromosome"]
+                   FANTOM5_filtered_df[["Gene_symbol"]], " | ",
+                   FANTOM5_filtered_df[["Chromosome"]]
                    ),
   FANTOM5_filtered_df,
   stringsAsFactors = FALSE,
@@ -223,27 +223,27 @@ FANTOM5_filtered_df <- data.frame(
 
 # Construct a simplified BioMart data frame -------------------------------
 
-are_on_chromosome <- BioMart_df[, "Chromosome/scaffold name"] %in% c(as.character(1:22), "X", "Y")
+are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y")
 
 BioMart_filtered_df <- BioMart_df[are_on_chromosome, ]
 
 BioMart_filtered_df <- data.frame(
-  "Group"             = paste0(ifelse(is.na(BioMart_filtered_df[, "NCBI gene ID"]), "", paste0(BioMart_filtered_df[, "NCBI gene ID"], " | ")),
-                               BioMart_filtered_df[, "Gene name"], " | ",
-                               "chr", BioMart_filtered_df[, "Chromosome/scaffold name"]
+  "Group"             = paste0(ifelse(is.na(BioMart_filtered_df[["NCBI gene ID"]]), "", paste0(BioMart_filtered_df[["NCBI gene ID"]], " | ")),
+                               BioMart_filtered_df[["Gene name"]], " | ",
+                               "chr", BioMart_filtered_df[["Chromosome/scaffold name"]]
                                ),
-  "Entrez_ID"         = BioMart_filtered_df[, "NCBI gene ID"],
-  "Gene_symbol"       = BioMart_filtered_df[, "Gene name"],
-  "ENSG"              = BioMart_filtered_df[, "Gene stable ID"],
-  "ENST"              = BioMart_filtered_df[, "Transcript stable ID"],
-  "Chromosome"        = paste0("chr", BioMart_filtered_df[, "Chromosome/scaffold name"]),
-  "Strand"            = ifelse(BioMart_filtered_df[, "Strand"] == -1, "-", "+"),
-  "Gene_start"        = BioMart_filtered_df[, "Gene start (bp)"],
-  "Gene_end"          = BioMart_filtered_df[, "Gene end (bp)"],
-  "Transcript_start"  = BioMart_filtered_df[, "Transcript start (bp)"],
-  "Transcript_end"    = BioMart_filtered_df[, "Transcript end (bp)"],
-  "TSS"               = BioMart_filtered_df[, "Transcription start site (TSS)"],
-  "Transcript_length" = BioMart_filtered_df[, "Transcript length (including UTRs and CDS)"],
+  "Entrez_ID"         = BioMart_filtered_df[["NCBI gene ID"]],
+  "Gene_symbol"       = BioMart_filtered_df[["Gene name"]],
+  "ENSG"              = BioMart_filtered_df[["Gene stable ID"]],
+  "ENST"              = BioMart_filtered_df[["Transcript stable ID"]],
+  "Chromosome"        = paste0("chr", BioMart_filtered_df[["Chromosome/scaffold name"]]),
+  "Strand"            = ifelse(BioMart_filtered_df[["Strand"]] == -1, "-", "+"),
+  "Gene_start"        = BioMart_filtered_df[["Gene start (bp)"]],
+  "Gene_end"          = BioMart_filtered_df[["Gene end (bp)"]],
+  "Transcript_start"  = BioMart_filtered_df[["Transcript start (bp)"]],
+  "Transcript_end"    = BioMart_filtered_df[["Transcript end (bp)"]],
+  "TSS"               = BioMart_filtered_df[["Transcription start site (TSS)"]],
+  "Transcript_length" = BioMart_filtered_df[["Transcript length (including UTRs and CDS)"]],
   stringsAsFactors    = FALSE
 )
 
@@ -253,9 +253,9 @@ BioMart_filtered_df <- data.frame(
 
 # Merge the FANTOM5 and BioMart data frames -------------------------------
 
-length(intersect(unique(FANTOM5_filtered_df[, "Group"]), unique(BioMart_filtered_df[, "Group"])))
-length(unique(FANTOM5_filtered_df[, "Group"]))
-length(unique(BioMart_filtered_df[, "Group"]))
+length(intersect(unique(FANTOM5_filtered_df[["Group"]]), unique(BioMart_filtered_df[["Group"]])))
+length(unique(FANTOM5_filtered_df[["Group"]]))
+length(unique(BioMart_filtered_df[["Group"]]))
 
 common_columns <- c("Group", "Entrez_ID", "Gene_symbol", "Chromosome", "Strand")
 
@@ -272,7 +272,7 @@ combined_TSS_df <- rbind.data.frame(
   data.frame(
     "Source" = "FANTOM5",
     FANTOM5_filtered_df[!(are_duplicated_FANTOM5), common_columns],
-    "TSS" = FANTOM5_filtered_df[!(are_duplicated_FANTOM5), "TSS_start"],
+    "TSS" = FANTOM5_filtered_df[["TSS_start"]][!(are_duplicated_FANTOM5)],
     FANTOM5_filtered_df[!(are_duplicated_FANTOM5), "Score", drop = FALSE],
     stringsAsFactors = FALSE
   ),
@@ -287,31 +287,29 @@ combined_TSS_df <- rbind.data.frame(
 )
 
 
-combined_TSS_df <- combined_TSS_df[order(GetMinEntrez(combined_TSS_df[, "Entrez_ID"]), combined_TSS_df[, "Gene_symbol"], combined_TSS_df[, "Group"], combined_TSS_df[, "TSS"]), ]
+combined_TSS_df <- combined_TSS_df[order(GetMinEntrez(combined_TSS_df[["Entrez_ID"]]),
+                                         combined_TSS_df[["Gene_symbol"]],
+                                         combined_TSS_df[["Group"]],
+                                         combined_TSS_df[["TSS"]]
+                                         ), ]
 
 common_columns <- c(common_columns, "TSS")
 
 are_duplicates_FANTOM5 <- duplicated(combined_TSS_df[, common_columns], fromLast = TRUE)
 are_duplicates_BioMart <- duplicated(combined_TSS_df[, common_columns], fromLast = FALSE)
 
-stopifnot(all(combined_TSS_df[are_duplicates_FANTOM5, "Source"] == "FANTOM5"))
-stopifnot(all(combined_TSS_df[are_duplicates_BioMart, "Source"] == "BioMart"))
+stopifnot(all(combined_TSS_df[["Source"]][are_duplicates_FANTOM5] == "FANTOM5"))
+stopifnot(all(combined_TSS_df[["Source"]][are_duplicates_BioMart] == "BioMart"))
 
-combined_TSS_df[are_duplicates_FANTOM5, "Source"] <- "FANTOM5, BioMart"
+combined_TSS_df[["Source"]][are_duplicates_FANTOM5] <- "FANTOM5, BioMart"
 
 combined_TSS_df <- combined_TSS_df[!(are_duplicates_BioMart), ]
 
 row.names(combined_TSS_df) <- NULL
 
 
-# combined_groups_fac <- factor(combined_TSS_df[, "Group"], levels = unique(combined_TSS_df[, "Group"]))
-# FANTOM5_available_vec <- unlist(tapply(combined_TSS_df[, "Source"],
-#                                        combined_groups_fac,
-#                                        function(x) rep.int(if (any(x %in% c("FANTOM5", "FANTOM5, BioMart"))) TRUE else FALSE, length(x))
-#                                        ), use.names = FALSE
-#                                 )
-# num_strands_vec <- lengths(tapply(combined_TSS_df[, "Strand"], combined_groups_fac, function(x) unique(x), simplify = FALSE))
-# combined_TSS_df[unlist(split(seq_len(nrow(combined_TSS_df)), combined_groups_fac)[num_strands_vec > 1]), ]
+
+
 
 
 
@@ -320,18 +318,18 @@ row.names(combined_TSS_df) <- NULL
 
 combined_TSS_mat <- as.matrix(combined_TSS_df[, c("TSS", "Score")])
 
-combined_TSS_summary_list <- sapply(unique(combined_TSS_df[, "Group"]), function(x) {
+combined_TSS_summary_list <- sapply(unique(combined_TSS_df[["Group"]]), function(x) {
   print(x)
-  are_this_group <- combined_TSS_df[, "Group"] == x
+  are_this_group <- combined_TSS_df[["Group"]] == x
   sub_mat <- combined_TSS_mat[are_this_group, , drop = FALSE]
   best_index <- which.max(sub_mat[, "Score"])
   first_index <- which(are_this_group)[[1]]
   results_list <- list(
     "Group"       = x,
-    "Entrez_ID"   = combined_TSS_df[first_index, "Entrez_ID"],
-    "Gene_symbol" = combined_TSS_df[first_index, "Gene_symbol"],
-    "Chromosome"  = combined_TSS_df[first_index, "Chromosome"],
-    "Strand"      = if (length(best_index) == 1) unname(combined_TSS_df[are_this_group, , drop = FALSE][best_index, "Strand"]) else combined_TSS_df[first_index, "Strand"],
+    "Entrez_ID"   = combined_TSS_df[["Entrez_ID"]][[first_index]],
+    "Gene_symbol" = combined_TSS_df[["Gene_symbol"]][[first_index]],
+    "Chromosome"  = combined_TSS_df[["Chromosome"]][[first_index]],
+    "Strand"      = if (length(best_index) == 1) combined_TSS_df[["Strand"]][are_this_group][[best_index]] else combined_TSS_df[["Strand"]][[first_index]],
     "Best_TSS"    = if (length(best_index) == 1) unname(sub_mat[best_index, "TSS"]) else NA_integer_,
     "First_TSS"   = min(sub_mat[, "TSS"]),
     "Last_TSS"    = max(sub_mat[, "TSS"])
@@ -348,18 +346,18 @@ combined_TSS_summary_df <- do.call(rbind.data.frame, c(combined_TSS_summary_list
 
 FANTOM5_filtered_mat <- as.matrix(FANTOM5_filtered_df[, c("Peak_start", "Peak_end", "TSS_start", "Score")])
 
-FANTOM5_summary_list <- sapply(unique(FANTOM5_filtered_df[, "Group"]), function(x) {
+FANTOM5_summary_list <- sapply(unique(FANTOM5_filtered_df[["Group"]]), function(x) {
   print(x)
-  are_this_group <- FANTOM5_filtered_df[, "Group"] == x
+  are_this_group <- FANTOM5_filtered_df[["Group"]] == x
   sub_mat <- FANTOM5_filtered_mat[are_this_group, , drop = FALSE]
   best_index <- which.max(sub_mat[, "Score"])
   first_index <- which(are_this_group)[[1]]
   results_list <- list(
     "Group"       = x,
-    "Entrez_ID"   = FANTOM5_filtered_df[first_index, "Entrez_ID"],
-    "Gene_symbol" = FANTOM5_filtered_df[first_index, "Gene_symbol"],
-    "Chromosome"  = FANTOM5_filtered_df[first_index, "Chromosome"],
-    "Strand"      = unname(FANTOM5_filtered_df[are_this_group, , drop = FALSE][best_index, "Strand"]),
+    "Entrez_ID"   = FANTOM5_filtered_df[["Entrez_ID"]][[first_index]],
+    "Gene_symbol" = FANTOM5_filtered_df[["Gene_symbol"]][[first_index]],
+    "Chromosome"  = FANTOM5_filtered_df[["Chromosome"]][[first_index]],
+    "Strand"      = FANTOM5_filtered_df[["Strand"]][are_this_group][[best_index]],
     "Best_TSS"    = unname(sub_mat[best_index, "TSS_start"]),
     "First_TSS"   = min(sub_mat[, "TSS_start"]),
     "Last_TSS"    = max(sub_mat[, "TSS_start"]),
@@ -380,17 +378,17 @@ FANTOM5_summary_df
 
 BioMart_filtered_mat <- as.matrix(BioMart_filtered_df[, c("Gene_start", "Gene_end", "Transcript_start", "Transcript_end", "TSS", "Transcript_length")])
 
-BioMart_summary_list <- sapply(unique(BioMart_filtered_df[, "Group"]), function(x) {
+BioMart_summary_list <- sapply(unique(BioMart_filtered_df[["Group"]]), function(x) {
   print(x)
-  are_this_group <- BioMart_filtered_df[, "Group"] == x
+  are_this_group <- BioMart_filtered_df[["Group"]] == x
   sub_mat <- BioMart_filtered_mat[are_this_group, , drop = FALSE]
   first_index <- which(are_this_group)[[1]]
   results_list <- list(
     "Group"                  = x,
-    "Entrez_ID"              = as.character(BioMart_filtered_df[first_index, "Entrez_ID"]),
-    "Gene_symbol"            = BioMart_filtered_df[first_index, "Gene_symbol"],
-    "Chromosome"             = BioMart_filtered_df[first_index, "Chromosome"],
-    "Strand"                 = BioMart_filtered_df[first_index, "Strand"],
+    "Entrez_ID"              = as.character(BioMart_filtered_df[["Entrez_ID"]][[first_index]]),
+    "Gene_symbol"            = BioMart_filtered_df[["Gene_symbol"]][[first_index]],
+    "Chromosome"             = BioMart_filtered_df[["Chromosome"]][[first_index]],
+    "Strand"                 = BioMart_filtered_df[["Strand"]][[first_index]],
     "First_TSS"              = min(sub_mat[, "TSS"]),
     "Last_TSS"               = max(sub_mat[, "TSS"]),
     "First_transcript_start" = min(sub_mat[, "Transcript_start"]),

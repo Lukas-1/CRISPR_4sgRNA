@@ -10,18 +10,18 @@ TSSRangesForGuideScan <- function(TSS_df, TSS_range = 1202L, total_range = (1000
     stop("The TSSDfToVec function assumes that the search space around each TSS is smaller than the total permitted range!")
   }
 
-  TSS_center_vec <- rowMeans(cbind(TSS_df[, "Last_TSS"], TSS_df[, "First_TSS"]))
+  TSS_center_vec <- rowMeans(cbind(TSS_df[["Last_TSS"]], TSS_df[["First_TSS"]]))
 
   max_start_vec <- as.integer(ceiling(TSS_center_vec - (total_range / 2)))
   max_start_vec <- ifelse(max_start_vec < 0L, 0L, max_start_vec)
   max_end_vec <- as.integer(floor(TSS_center_vec + (total_range / 2)))
 
-  preferred_start_vec <- TSS_df[, "First_TSS"] - (TSS_range / 2L)
-  preferred_end_vec   <- TSS_df[, "Last_TSS"] + (TSS_range / 2L)
+  preferred_start_vec <- TSS_df[["First_TSS"]] - (TSS_range / 2L)
+  preferred_end_vec   <- TSS_df[["Last_TSS"]] + (TSS_range / 2L)
 
   exceed_range_vec <- (preferred_start_vec < max_start_vec) | (preferred_end_vec > max_end_vec)
 
-  single_TSS_vec <- ifelse(is.na(TSS_df[, "Best_TSS"]), TSS_df[, "First_TSS"], TSS_df[, "Best_TSS"])
+  single_TSS_vec <- ifelse(is.na(TSS_df[["Best_TSS"]]), TSS_df[["First_TSS"]], TSS_df[["Best_TSS"]])
 
   single_start_vec <- single_TSS_vec - (total_range / 2L)
   single_end_vec   <- single_TSS_vec + (total_range / 2L)
@@ -43,7 +43,7 @@ TSSRangesForGuideScan <- function(TSS_df, TSS_range = 1202L, total_range = (1000
   results_end_vec[exceed_range_centered]        <- single_end_vec[exceed_range_centered]
 
   results_df <- data.frame(
-    "TSS_used"       = ifelse(exceed_range_vec, ifelse(is.na(TSS_df[, "Best_TSS"]), "First", "Highest FANTOM5 score"), "All"),
+    "TSS_used"       = ifelse(exceed_range_vec, ifelse(is.na(TSS_df[["Best_TSS"]]), "First", "Highest FANTOM5 score"), "All"),
     "Is_centered"    = ifelse(!(exceed_range_vec) | exceed_range_centered, "Yes", "No"),
     "Start"          = results_start_vec,
     "End"            = results_end_vec,
@@ -56,17 +56,17 @@ TSSRangesForGuideScan <- function(TSS_df, TSS_range = 1202L, total_range = (1000
 
 TSSStringForGuideScan <- function(TSS_df, ...) {
   TSS_GuideScan_df <- TSSRangesForGuideScan(TSS_df, ...)
-  results_vec <- paste0(TSS_df[, "Chromosome"], ":", TSS_GuideScan_df[, "Start"], "-", TSS_GuideScan_df[, "End"])
+  results_vec <- paste0(TSS_df[["Chromosome"]], ":", TSS_GuideScan_df[["Start"]], "-", TSS_GuideScan_df[["End"]])
   return(results_vec)
 }
 
 
 sgRNAStringForGuideScan <- function(CRISPR_df) {
-  start_vec <- ifelse(CRISPR_df[, "Strand"] == "+", CRISPR_df[, "Start"], CRISPR_df[, "Start"] - 3L)
-  end_vec   <- ifelse(CRISPR_df[, "Strand"] == "+", CRISPR_df[, "End"] + 3L, CRISPR_df[, "End"])
+  start_vec <- ifelse(CRISPR_df[["Strand"]] == "+", CRISPR_df[["Start"]], CRISPR_df[["Start"]] - 3L)
+  end_vec <- ifelse(CRISPR_df[["Strand"]] == "+", CRISPR_df[["End"]] + 3L, CRISPR_df[["End"]])
   start_vec <- start_vec - 1L
   end_vec <- end_vec - 1L
-  results_vec <- paste0(CRISPR_df[, "Chromosome"], ":", start_vec, "-", end_vec)
+  results_vec <- paste0(CRISPR_df[["Chromosome"]], ":", start_vec, "-", end_vec)
   return(results_vec)
 }
 
@@ -87,7 +87,6 @@ ReadGuideScanOutput <- function(file_name, use_fread = FALSE) {
 
 
 GuideScanOutputToDf <- function(GuideScan_output_df) {
-
   are_title <- apply(GuideScan_output_df, 1, function(x) all(as.character(x[2:11]) == ""))
   file_number_vec <- rep.int(NA_integer_, nrow(GuideScan_output_df))
   file_number <- 0L
@@ -98,7 +97,6 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
     file_number_vec[[i]] <- file_number
   }
   guidescan_df_list <- split(GuideScan_output_df, file_number_vec)
-
   guidescan_df_list <- lapply(guidescan_df_list, function (x) {
     results_df <- x[3:nrow(x), , drop = FALSE]
     results_df <- data.frame("Region" = x[1, 1], results_df, stringsAsFactors = FALSE, row.names = NULL)
@@ -114,7 +112,7 @@ GuideScanOutputToDf <- function(GuideScan_output_df) {
 
 
 MakeGuideScanFileNumbers <- function(raw_df) {
-  are_title <- raw_df[, 2] == ""
+  are_title <- raw_df[[2]] == ""
   file_number_vec <- rep.int(NA_integer_, nrow(raw_df))
   file_number <- 0L
   for (i in seq_along(file_number_vec)) {
@@ -133,12 +131,12 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
 
   ### Collect all sgRNAs in CRISPRa_df for a given region ###
 
-  TSS_df[, "GuideScan_input"] <- TSSStringForGuideScan(TSS_df)
-  combined_ID_for_region <- sapply(unique(TSS_df[, "GuideScan_input"]),
-                                   function(x) unique(TSS_df[TSS_df[, "GuideScan_input"] == x, "Combined_ID"]),
+  TSS_df[["GuideScan_input"]] <- TSSStringForGuideScan(TSS_df)
+  combined_ID_for_region <- sapply(unique(TSS_df[["GuideScan_input"]]),
+                                   function(x) unique(TSS_df[["Combined_ID"]][TSS_df[["GuideScan_input"]] == x]),
                                    simplify = FALSE
                                    )
-  sgRNAs_for_region <- lapply(combined_ID_for_region, function(x) unique(toupper(CRISPR_df[CRISPR_df[, "Combined_ID"] %in% x, "sgRNA_sequence"])))
+  sgRNAs_for_region <- lapply(combined_ID_for_region, function(x) unique(toupper(CRISPR_df[["sgRNA_sequence"]][CRISPR_df[["Combined_ID"]] %in% x])))
 
 
   ### Split the rows of raw_df into the individual regions ###
@@ -160,7 +158,7 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
       message(paste0(x, " out of ", length(guidescan_indices_list), " locations have been processed."))
     }
     sub_df <- raw_df[guidescan_indices_list[[x]], ]
-    are_present_sgRNAs <- sub_df[, 4] %in% sgRNAs_for_region[[sgRNAs_for_region_matches[[x]]]]
+    are_present_sgRNAs <- sub_df[[4]] %in% sgRNAs_for_region[[sgRNAs_for_region_matches[[x]]]]
     if (any(are_present_sgRNAs)) {
       return(data.frame("Region" = regions_vec[[x]], sub_df[are_present_sgRNAs, ], stringsAsFactors = FALSE, row.names = NULL))
     } else {

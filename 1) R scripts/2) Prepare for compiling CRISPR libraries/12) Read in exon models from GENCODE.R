@@ -34,7 +34,7 @@ names(GENCODE_original_df) <- c("seqid", "source", "type", "start", "end", "scor
 
 # Split the .gff3 attributes column ---------------------------------------
 
-GENCODE_splits <- strsplit(GENCODE_original_df[, "attributes"], ";", fixed = TRUE)
+GENCODE_splits <- strsplit(GENCODE_original_df[["attributes"]], ";", fixed = TRUE)
 
 GENCODE_split_splits <- lapply(GENCODE_splits, function(x) strsplit(x, "=", fixed = TRUE))
 
@@ -60,7 +60,7 @@ GENCODE_df <- data.frame(GENCODE_original_df[, !(names(GENCODE_original_df) %in%
 # Save data ---------------------------------------------------------------
 
 save(list = "GENCODE_df",
-     file = file.path(general_RData_directory, "10) Read in exon models from GENCODE.RData")
+     file = file.path(general_RData_directory, "12) Read in exon models from GENCODE.RData")
      )
 
 

@@ -37,7 +37,7 @@ load(file.path(CRISPRa_RData_directory, "06) Find matches for sgRNA sequences in
 
 extended_CRISPRa_df <- ExtendWithGenomeSearch(CRISPRa_df, genome_search_df, allow_5pG = TRUE)
 
-table(extended_CRISPRa_df[extended_CRISPRa_df[, "Num_5G_MM"] > 0, "Num_5G_MM"])
+table(extended_CRISPRa_df[["Num_5G_MM"]][extended_CRISPRa_df[["Num_5G_MM"]] > 0])
 
 
 
@@ -46,14 +46,15 @@ table(extended_CRISPRa_df[extended_CRISPRa_df[, "Num_5G_MM"] > 0, "Num_5G_MM"])
 
 full_merged_CRISPRa_df <- MergeTSSandGuideScan(extended_CRISPRa_df, guidescan_all_genes_df)
 
-mapped_by_GuideScan <- is.na(full_merged_CRISPRa_df[, "Hits_start"]) & !(is.na(full_merged_CRISPRa_df[, "GuideScan_start"]))
+mapped_by_GuideScan <- is.na(full_merged_CRISPRa_df[["Hits_start"]]) & !(is.na(full_merged_CRISPRa_df[["GuideScan_start"]]))
 were_confirmed <- vapply(which(mapped_by_GuideScan), function(x) {
-  locations_vec <- strsplit(full_merged_CRISPRa_df[x, "Locations_0MM"], "; ", fixed = TRUE)[[1]]
-  full_merged_CRISPRa_df[x, "GuideScan_start"] %in% LocationStringToDf(locations_vec)[, "Start"]
+  locations_vec <- strsplit(full_merged_CRISPRa_df[["Locations_0MM"]][[x]], "; ", fixed = TRUE)[[1]]
+  full_merged_CRISPRa_df[["GuideScan_start"]][[x]] %in% LocationStringToDf(locations_vec)[["Start"]]
 }, logical(1))
 head(full_merged_CRISPRa_df[mapped_by_GuideScan, c("GuideScan_chromosome", "GuideScan_strand", "GuideScan_start", "GuideScan_end", "Locations_0MM")])
 
 merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all_genes_df, allow_5pG_MM = TRUE)
+
 
 
 

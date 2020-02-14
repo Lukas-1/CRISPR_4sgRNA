@@ -7,6 +7,7 @@
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "19) Using CRISPOR.R"))
+source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R")) # For TruncateLongEntries
 
 
 
@@ -25,14 +26,6 @@ output_plots_directory  <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 
 
-# Load data ---------------------------------------------------------------
-
-load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
-load(file.path(CRISPRa_RData_directory, "15) Separate sgRNAs for genes with multiple relevant TSSs.RData"))
-
-
-
-
 
 # Identify files to read in -----------------------------------------------
 
@@ -44,10 +37,18 @@ output_files_list <- IdentifyCRISPOROutputFiles()
 
 # Read in data ------------------------------------------------------------
 
-CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files_list[["bed"]])
-CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]])
-CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files_list[["bed_offtargets"]], show_messages = TRUE)
-CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA_offtargets"]])
+CRISPOR_bed_df              <- ReadCRISPOROutputFiles(output_files_list[["bed"]], is_FASTA = FALSE)
+CRISPOR_FASTA_df            <- ReadCRISPOROutputFiles(output_files_list[["FASTA"]], is_FASTA = TRUE)
+CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files_list[["bed_offtargets"]], is_FASTA = FALSE, show_messages = TRUE)
+CRISPOR_offtargets_FASTA_df <- ReadCRISPOROutputFiles(output_files_list[["FASTA_offtargets"]], is_FASTA = TRUE)
+
+
+
+
+# Load data ---------------------------------------------------------------
+
+load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
+load(file.path(CRISPRa_RData_directory, "15) Separate sgRNAs for genes with multiple relevant TSSs.RData"))
 
 
 
@@ -72,19 +73,25 @@ merged_replaced_CRISPRa_df <- AddCRISPORFASTAData(merged_replaced_CRISPRa_df, CR
 
 
 
+# Truncate PAM_0MM entries, now that they are no longer needed ------------
+
+merged_replaced_CRISPRa_df[["PAM_0MM"]] <- TruncateLongEntries(merged_replaced_CRISPRa_df[["PAM_0MM"]])
+
+
+
+
+
 
 # Calculate the proportions of guides that meet specificity cutoffs -------
 
-both_are_available <- !(is.na(merged_replaced_CRISPRa_df[, "CRISPOR_CFD_specificity"])) &
-                      !(is.na(merged_replaced_CRISPRa_df[, "GuideScan_specificity"]))
-both_are_available <- both_are_available & !(is.na(merged_replaced_CRISPRa_df[, "CRISPOR_3MM_specificity"]))
+both_are_available <- !(is.na(merged_replaced_CRISPRa_df[["CRISPOR_CFD_specificity"]])) &
+                      !(is.na(merged_replaced_CRISPRa_df[["GuideScan_specificity"]]))
+both_are_available <- both_are_available & !(is.na(merged_replaced_CRISPRa_df[["CRISPOR_3MM_specificity"]]))
 
-
-GetProportion(merged_replaced_CRISPRa_df[both_are_available, "CRISPOR_CFD_specificity"] >= 80)
-GetProportion(merged_replaced_CRISPRa_df[both_are_available, "GuideScan_specificity"] >= 0.2)
-GetProportion(ConvertCFDScores(merged_replaced_CRISPRa_df[both_are_available, "CRISPOR_CFD_specificity"]) >= 0.04)
-
-GetProportion(merged_replaced_CRISPRa_df[both_are_available, "CRISPOR_3MM_specificity"] >= 0.2)
+GetProportion(merged_replaced_CRISPRa_df[["CRISPOR_CFD_specificity"]][both_are_available] >= 80)
+GetProportion(merged_replaced_CRISPRa_df[["GuideScan_specificity"]][both_are_available] >= 0.2)
+GetProportion(merged_replaced_CRISPRa_df[["CRISPOR_3MM_specificity"]][both_are_available] >= 0.2)
+GetProportion(merged_replaced_CRISPRa_df[["CRISPOR_4MM_specificity"]][both_are_available] >= 0.04)
 
 
 
@@ -94,15 +101,13 @@ GetProportion(merged_replaced_CRISPRa_df[both_are_available, "CRISPOR_3MM_specif
 # Display sgRNAs that only have off-target scores -------------------------
 # ... but for which detailed off-target information was unavailable
 
-
-lack_detailed_offtargets <- is.na(missing_offtargets_df[, "CRISPOR_4MM_specificity"]) &
-                            !(is.na(missing_offtargets_df[, "CRISPOR_CFD_specificity"]))
-
+lack_detailed_offtargets <- is.na(missing_offtargets_df[["CRISPOR_4MM_specificity"]]) &
+                            !(is.na(missing_offtargets_df[["CRISPOR_CFD_specificity"]]))
 
 head(missing_offtargets_df[lack_detailed_offtargets, specificity_demo_columns])
 
-table(missing_offtargets_df[lack_detailed_offtargets, "CRISPOR_CFD_specificity"])
-hist(missing_offtargets_df[lack_detailed_offtargets, "GuideScan_specificity"],
+table(missing_offtargets_df[["CRISPOR_CFD_specificity"]][lack_detailed_offtargets])
+hist(missing_offtargets_df[["GuideScan_specificity"]][lack_detailed_offtargets],
      xlim = c(0, 1), breaks = 100, col = "black",
      las = 1, mgp = c(2.7, 0.6, 0), tcl = -0.4, cex.main = 1,
      xlab = "GuideScan specificity score",
@@ -113,29 +118,23 @@ hist(missing_offtargets_df[lack_detailed_offtargets, "GuideScan_specificity"],
 
 
 
-
 # Display sgRNAs for which only GuideScan data is available ---------------
 
-TF_combined_IDs <- all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Combined_ID"]
-CRISPRko_TF_sgRNAs_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[, "Combined_ID"] %in% TF_combined_IDs, ]
+# TF_combined_IDs <- all_TF_df[["Combined_ID"]][all_TF_df[["Is_TF"]] == "Yes"]
+# CRISPRko_TF_sgRNAs_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% TF_combined_IDs, ]
+# only_GuideScan_present <- !(is.na(CRISPRko_TF_sgRNAs_df[["GuideScan_specificity"]])) &
+#                             is.na(CRISPRko_TF_sgRNAs_df[["CRISPOR_3MM_specificity"]])
 
-only_GuideScan_present <- !(is.na(CRISPRko_TF_sgRNAs_df[, "GuideScan_specificity"])) &
-                            is.na(CRISPRko_TF_sgRNAs_df[, "CRISPOR_3MM_specificity"])
+only_GuideScan_present <- !(is.na(merged_replaced_CRISPRa_df[["GuideScan_specificity"]])) &
+                            is.na(merged_replaced_CRISPRa_df[["CRISPOR_3MM_specificity"]])
 
 if (any(only_GuideScan_present)) {
-  stop("CRISPOR specificity scores are missing for some guides for which Guidescan specificity scores are available!")
+  warning(paste0("CRISPOR specificity scores are missing for ", sum(only_GuideScan_present),
+                 " guides for which Guidescan specificity scores are available!"
+                 )
+          )
+  print(merged_replaced_CRISPRa_df[only_GuideScan_present, specificity_demo_columns])
 }
-
-
-
-
-
-
-
-# Plot CRISPOR vs. GuideScan specificity scores ---------------------------
-
-DrawAllSpecificityScatterPlots(merged_replaced_CRISPRa_df, append_to_file_name = "CRISPRa")
-
 
 
 

@@ -32,7 +32,7 @@ load(file.path(CRISPRa_RData_directory, "02) Extract the original sequences for 
 
 # Search the human genome for matches to sgRNA sequences ------------------
 
-unique_sequences <- unique(toupper(CRISPRa_df[, "sgRNA_sequence"]))
+unique_sequences <- unique(toupper(CRISPRa_df[["sgRNA_sequence"]]))
 
 are_20mers <- nchar(unique_sequences) == 20
 
@@ -49,7 +49,7 @@ all_sequences_df <- rbind.data.frame(sequences_20mers_df, sequences_not_20mers_d
 # Extend sequence matches with additional data (e.g. nearby genes) --------
 
 # all_sequences_df <- FindNearestGenes(all_sequences_df)
-all_sequences_df[, "PAM"] <- GetNGGPAM(all_sequences_df)
+all_sequences_df[["PAM"]] <- GetNGGPAM(all_sequences_df)
 
 
 
@@ -64,7 +64,7 @@ genome_search_df <- SummarizeFoundSequencesDf(all_sequences_df, all_sequences = 
 
 # Save data ---------------------------------------------------------------
 
-for (object_name in c("all_sequences_df", "genome_search_df")) {
+for (object_name in c("genome_search_df", "all_sequences_df")) {
   save(list = object_name,
        file = file.path(CRISPRa_RData_directory,
                         paste0("06) Find matches for sgRNA sequences in the human genome - ", object_name, ".RData")

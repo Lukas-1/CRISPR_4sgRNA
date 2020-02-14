@@ -1,0 +1,3 @@
+lima.0 ==> row A in the plate
+lima.1 ==> row B in the plate
+etc.

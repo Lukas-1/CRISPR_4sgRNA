@@ -5,6 +5,9 @@
 
 # Import packages and source code -----------------------------------------
 
+general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "24) Assigning genes to sublibraries.R"))
+
 
 
 
@@ -31,9 +34,8 @@ load(file.path(general_RData_directory, "08) Compile a list of human transcripti
 
 # Define the Entrez IDs to divide into chunks -----------------------------
 
-TF_entrez_IDs <- all_TF_df[all_TF_df[, "Is_TF"] == "Yes", "Entrez_ID"]
-TF_entrez_IDs <- TF_entrez_IDs[!(is.na(TF_entrez_IDs))]
-TF_entrez_IDs <- TF_entrez_IDs[order(as.integer(TF_entrez_IDs))]
+TF_entrez_IDs <- all_TF_df[["Entrez_ID"]][all_TF_df[["Is_TF"]] == "Yes"]
+TF_entrez_IDs <- TidyEntrezs(TF_entrez_IDs)
 
 not_TF_entrez_IDs <- setdiff(collected_entrez_IDs, TF_entrez_IDs)
 

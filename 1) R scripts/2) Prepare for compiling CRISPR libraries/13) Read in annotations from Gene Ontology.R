@@ -38,18 +38,22 @@ SearchGOTerms <- function(search_term, unique_terms = unique_GO_terms, fixed = F
 }
 
 CountNumGenes <- function(GO_terms) {
-  are_these_terms <- BioMart_GO_df[, "GO term name"] %in% GO_terms
-  unique_IDs <- unique(BioMart_GO_df[are_these_terms, "NCBI gene ID"])
+  are_these_terms <- BioMart_GO_df[["GO term name"]] %in% GO_terms
+  unique_IDs <- unique(BioMart_GO_df[["NCBI gene ID"]][are_these_terms])
   unique_IDs <- unique_IDs[unique_IDs != ""]
   return(length(unique_IDs))
 }
 
 
 
+# Set up global variables -------------------------------------------------
+
+unique_GO_terms <- unique(BioMart_GO_df[["GO term name"]])
+
+
 
 # Find GO terms matching certain keywords ---------------------------------
 
-unique_GO_terms <- unique(BioMart_GO_df[, "GO term name"])
 all_GO_terms_TFs          <- SearchGOTerms("transcription factor", fixed = TRUE)
 all_GO_terms_GPCRs        <- SearchGOTerms("G[- ]protein")
 all_GO_terms_kinases      <- SearchGOTerms("kinase",      fixed = TRUE)
@@ -59,8 +63,8 @@ all_GO_terms_transporters <- SearchGOTerms("transporter", fixed = TRUE)
 all_GO_terms_ubiquitin    <- SearchGOTerms("ubiquitin",   fixed = TRUE)
 
 
-all_GO_terms_receptor     <- SearchGOTerms("receptor",   fixed = TRUE)
-all_GO_terms_membrane_receptor <- SearchGOTerms("membrane receptor",   fixed = TRUE)
+all_GO_terms_receptor     <- SearchGOTerms("receptor", fixed = TRUE)
+all_GO_terms_membrane_receptor <- SearchGOTerms("membrane receptor", fixed = TRUE)
 
 
 
@@ -91,7 +95,7 @@ CountNumGenes("transmembrane receptor protein tyrosine kinase activity")
 # Save data ---------------------------------------------------------------
 
 save(list = "BioMart_GO_df",
-     file = file.path(general_RData_directory, "11) Read in annotations from Gene Ontology.RData")
+     file = file.path(general_RData_directory, "13) Read in annotations from Gene Ontology.RData")
      )
 
 

@@ -25,21 +25,21 @@ PrettyGeneString <- function(entrezs_vec) {
 
 FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
 
-  are_top_four <- CRISPR_df[, "Rank"] %in% 1:4
+  are_top_four <- CRISPR_df[["Rank"]] %in% 1:4
 
-  have_overlaps <- !(CRISPR_df[, "Num_overlaps"] %in% 0) | is.na(CRISPR_df[, "Num_overlaps"])
+  have_overlaps <- !(CRISPR_df[["Num_overlaps"]] %in% 0) | is.na(CRISPR_df[["Num_overlaps"]])
   meet_criteria <- MeetCriteria(CRISPR_df)
 
   are_problematic_sgRNAs <- are_top_four & (have_overlaps | !(meet_criteria))
-  submit_entrezs <- unlist(strsplit(CRISPR_df[are_problematic_sgRNAs, "Entrez_ID"], ", ", fixed = TRUE))
+  submit_entrezs <- unlist(strsplit(CRISPR_df[["Entrez_ID"]][are_problematic_sgRNAs], ", ", fixed = TRUE))
 
-  are_problematic_genes <- !(overview_df[, "Spacing"] %in% paste0(seq(4, 100, by = 4), "*50"))
-  submit_entrezs_genes <- overview_df[are_problematic_genes, "Entrez_ID"]
+  are_problematic_genes <- !(overview_df[["Spacing"]] %in% paste0(seq(4, 100, by = 4), "*50"))
+  submit_entrezs_genes <- overview_df[["Entrez_ID"]][are_problematic_genes]
 
-  are_GPP <- grepl("GPP", CRISPR_df[, "Source"], fixed = TRUE)
-  are_top4 <- CRISPR_df[, "Rank"] %in% 1:4
-  top4_GPP_entrezs <- unique(CRISPR_df[are_GPP & are_top4, "Entrez_ID"])
-  have_GPP_entrezs <- unique(CRISPR_df[are_GPP, "Entrez_ID"])
+  are_GPP <- CRISPR_df[["Source"]] %in% c("GPP", "Curated, GPP")
+  are_top4 <- CRISPR_df[["Rank"]] %in% 1:4
+  top4_GPP_entrezs <- unique(CRISPR_df[["Entrez_ID"]][are_GPP & are_top4])
+  have_GPP_entrezs <- unique(CRISPR_df[["Entrez_ID"]][are_GPP])
 
   required_entrezs <- setdiff(c(submit_entrezs, submit_entrezs_genes, top4_GPP_entrezs),
                               NA_character_
@@ -65,7 +65,7 @@ FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
   }
   message(show_message)
 
-  return(submit_entrezs)
+  return(required_entrezs)
 }
 
 
@@ -92,14 +92,14 @@ BuildDfForGPP <- function(submit_entrezs) {
 
 
 WriteGPPInputDf <- function(submit_df, chunk_ID, GPP_input_directory, input_prefix = "") {
-  num_files <- length(unique(submit_df[, "File_number"]))
+  num_files <- length(unique(submit_df[["File_number"]]))
   for (i in seq_len(num_files)) {
-    are_this_file <- submit_df[, "File_number"] == i
+    are_this_file <- submit_df[["File_number"]] == i
     file_name <- paste0("GPPsg_", input_prefix, "input__chunk_", chunk_ID,
-                        "__file_", submit_df[are_this_file, "File_name"][[1]],
+                        "__file_", submit_df[["File_name"]][are_this_file][[1]],
                         ".txt"
                         )
-    write.table(submit_df[are_this_file, "Entrez_ID"],
+    write.table(submit_df[["Entrez_ID"]][are_this_file],
                 file = file.path(GPP_input_directory, file_name),
                 quote = FALSE, row.names = FALSE, col.names = FALSE
                 )
@@ -115,16 +115,22 @@ WriteGPPInputDf <- function(submit_df, chunk_ID, GPP_input_directory, input_pref
 
 # Functions for processing output from the GPP sgRNA designer -------------
 
-ReadGPPOutputFiles <- function(output_file_names, GPP_path) {
-  GPP_output_df_list <- sapply(output_file_names, function (x) {
-    GPP_output_df <- read.table(file.path(GPP_path, x),
-                                sep = "\t", quote = "", comment.char = "",
+ReadGPPOutputFiles <- function(GPP_folder_paths) {
+  file_paths_vec <- unlist(lapply(GPP_folder_paths, function(x) file.path(x, list.files(x))))
+  GPP_output_df_list <- sapply(file_paths_vec, function (x) {
+    GPP_output_df <- read.table(x, sep = "\t", quote = "", comment.char = "",
                                 header = TRUE, check.names = FALSE, fill = TRUE,
                                 stringsAsFactors = FALSE
                                 )
     return(GPP_output_df)
   }, simplify = FALSE)
   results_df <- do.call(rbind.data.frame, c(GPP_output_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  are_duplicated <- duplicated(results_df)
+  if (any(are_duplicated)) {
+    message(paste0(sum(are_duplicated), " duplicate entries were omitted from the collected GPP output."))
+    results_df <- results_df[!(are_duplicated), ]
+    rownames(results_df) <- NULL
+  }
   return(results_df)
 }
 
@@ -164,10 +170,13 @@ CRISPRko_GPP_output_columns <- c(
 
 TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
 
-  were_not_found <- grepl("^ERROR: Gene .+ not found", GPP_output_df[, "Picking Notes"]) &
-                    is.na(GPP_output_df[, "Quota"])
+  were_not_found <- grepl("^ERROR: Gene .+ not found", GPP_output_df[["Picking Notes"]]) &
+                    is.na(GPP_output_df[["Quota"]])
 
-  message(paste0(sum(were_not_found), " genes were not found by the Broad Institute's Genetic Perturbation Platform (GPP) sgRNA picker tool and were omitted from the data frame!"))
+  message(paste0(sum(were_not_found), " genes were not found by the Broad Institute's ",
+                 "Genetic Perturbation Platform (GPP) sgRNA picker tool and were omitted from the data frame!"
+                 )
+          )
 
   results_df <- GPP_output_df[!(were_not_found), choose_columns]
   row.names(results_df) <- NULL
@@ -177,7 +186,32 @@ TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
 
 
 
-
+FilterGPPOutputDf <- function(GPP_output_df, problematic_genes, n_unproblematic, n_problematic = NULL, min_n = 5) {
+  split_df_list <- split(GPP_output_df, GPP_output_df[["Target Gene ID"]])
+  filtered_df_list <- lapply(split_df_list, function(x) {
+    is_problematic <- x[["Target Gene ID"]][[1]] %in% problematic_genes
+    if (is_problematic) {
+      if (is.null(n_problematic)) {
+        return(x)
+      } else {
+        use_n <- n_problematic
+      }
+    } else {
+      use_n <- n_unproblematic
+    }
+    use_seq <- seq_len(use_n)
+    use_indices <- which(x[["Pick Order"]] %in% use_seq)
+    if (length(use_indices) < use_n) {
+      use_indices <- c(use_indices, which(x[["Combined Rank"]] %in% use_seq))
+      if (length(use_indices) > use_n) {
+        use_indices <- use_indices[use_seq]
+      }
+    }
+    return(x[use_indices, ])
+  })
+  results_df <- do.call(rbind.data.frame, c(filtered_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  return(results_df)
+}
 
 
 

@@ -106,9 +106,9 @@ stopifnot(identical(symbol_to_entrez_list, OrderEntrezsList(symbol_to_entrez_lis
 # Check for conflicting mappings of Entrez IDs to gene symbols ------------
 
 any(duplicated(names(entrez_to_symbol_list)))
-any(duplicated(names(NCBI_Hs_info_df[, "GeneID"])))
+any(duplicated(names(NCBI_Hs_info_df[["GeneID"]])))
 
-unique_entrez_IDs <- unique(c(unlist(unname(symbol_to_entrez_list)), names(entrez_to_symbol_list), as.character(NCBI_Hs_info_df[, "GeneID"])))
+unique_entrez_IDs <- unique(c(unlist(unname(symbol_to_entrez_list)), names(entrez_to_symbol_list), as.character(NCBI_Hs_info_df[["GeneID"]])))
 unique_entrez_IDs <- unique_entrez_IDs[order(as.integer(unique_entrez_IDs))]
 
 chromosome_vec <- vapply(unique_entrez_IDs, function(x) {
@@ -126,18 +126,18 @@ chromosome_vec <- vapply(unique_entrez_IDs, function(x) {
 Entrez_map_df <- data.frame(
   "Entrez_ID"           = unique_entrez_IDs,
   "Symbol_Org_Hs_eg_db" = EntrezIDsToSymbols(unique_entrez_IDs),
-  "Symbol_NCBI_Hs_info" = NCBI_Hs_info_df[match(unique_entrez_IDs, NCBI_Hs_info_df[, "GeneID"]), "Symbol"],
+  "Symbol_NCBI_Hs_info" = NCBI_Hs_info_df[["Symbol"]][match(unique_entrez_IDs, NCBI_Hs_info_df[["GeneID"]])],
   "Chromosome"          = chromosome_vec,
   stringsAsFactors = FALSE
 )
 
-are_identical <- vapply(seq_len(nrow(Entrez_map_df)), function(x) identical(Entrez_map_df[x, "Symbol_Org_Hs_eg_db"], Entrez_map_df[x, "Symbol_NCBI_Hs_info"]), logical(1))
+are_identical <- mapply(identical, Entrez_map_df[["Symbol_Org_Hs_eg_db"]], Entrez_map_df[["Symbol_NCBI_Hs_info"]])
 
 Entrez_map_df[!(are_identical), ]
 
-Entrez_map_df[is.na(Entrez_map_df[, "Symbol_Org_Hs_eg_db"]) & !(is.na(Entrez_map_df[, "Symbol_NCBI_Hs_info"])), ]
+Entrez_map_df[is.na(Entrez_map_df[["Symbol_Org_Hs_eg_db"]]) & !(is.na(Entrez_map_df[["Symbol_NCBI_Hs_info"]])), ]
 
-Entrez_map_df[!(are_identical) & !(is.na(Entrez_map_df[, "Symbol_Org_Hs_eg_db"])) & !(is.na(Entrez_map_df[, "Symbol_NCBI_Hs_info"])), ]
+Entrez_map_df[!(are_identical) & !(is.na(Entrez_map_df[["Symbol_Org_Hs_eg_db"]])) & !(is.na(Entrez_map_df[["Symbol_NCBI_Hs_info"]])), ]
 
 
 
@@ -147,18 +147,17 @@ Entrez_map_df[!(are_identical) & !(is.na(Entrez_map_df[, "Symbol_Org_Hs_eg_db"])
 
 # Create a list of gene synonyms from NCBI's Hs.gene_info -----------------
 
-are_empty <- NCBI_Hs_info_df[, "Synonyms"] == "-"
+are_empty <- NCBI_Hs_info_df[["Synonyms"]] == "-"
 
-synonyms_list <- strsplit(NCBI_Hs_info_df[!(are_empty), "Synonyms"], "|", fixed = TRUE)
+synonyms_list <- strsplit(NCBI_Hs_info_df[["Synonyms"]][!(are_empty)], "|", fixed = TRUE)
 
 entrez_to_synonyms_list <- synonyms_list
-names(entrez_to_synonyms_list) <- NCBI_Hs_info_df[!(are_empty), "GeneID"]
+names(entrez_to_synonyms_list) <- NCBI_Hs_info_df[["GeneID"]][!(are_empty)]
 
 synonyms_to_entrez_list <- ReverseAndRelist(entrez_to_synonyms_list)
 
-
 # symbol_to_synonyms_list <- synonyms_list
-# names(symbol_to_synonyms_list) <- NCBI_Hs_info_df[!(are_empty), "Symbol"]
+# names(symbol_to_synonyms_list) <- NCBI_Hs_info_df[["Symbol"]][!(are_empty)]
 # synonyms_to_symbol_list <- ReverseAndRelist(symbol_to_synonyms_list)
 
 
@@ -179,7 +178,7 @@ stopifnot(identical(synonyms_to_entrez_list, OrderEntrezsList(synonyms_to_entrez
 collected_symbols <- sort(unique(c(names(symbol_to_entrez_list),
                                    names(alias_to_entrez_list),
                                    toupper(unlist(entrez_to_symbol_list, recursive = FALSE, use.names = FALSE)),
-                                   toupper(NCBI_Hs_info_df[, "Symbol"]),
+                                   toupper(NCBI_Hs_info_df[["Symbol"]]),
                                    names(synonyms_to_entrez_list)
                                    )
                                  )
@@ -215,10 +214,10 @@ intersect_OrgHs_NCBI_list <- sapply(intersect(names(alias_to_entrez_list), names
                                     )
 unique_intersect_OrgHs_NCBI_list <- intersect_OrgHs_NCBI_list[lengths(intersect_OrgHs_NCBI_list) == 1]
 
-symbols_df[, "Unique_in_OrgHs_symbol"] <- vapply(collected_symbols, function(x) if (x %in% names(unique_OrgHs_symbols_list)) unique_OrgHs_symbols_list[[x]] else NA_character_, "")
-symbols_df[, "Present_in_NCBI_symbol"] <- as.character(NCBI_Hs_info_df[match(collected_symbols, toupper(NCBI_Hs_info_df[, "Symbol"])), "GeneID"])
-symbols_df[, "Unambiguous_alias"]      <- vapply(collected_symbols, function(x) {
-  unique_OrgHs_alias_lookup   <- unique_OrgHs_alias_list[[x]]
+symbols_df[["Unique_in_OrgHs_symbol"]] <- vapply(collected_symbols, function(x) if (x %in% names(unique_OrgHs_symbols_list)) unique_OrgHs_symbols_list[[x]] else NA_character_, "")
+symbols_df[["Present_in_NCBI_symbol"]] <- as.character(NCBI_Hs_info_df[["GeneID"]][match(collected_symbols, toupper(NCBI_Hs_info_df[["Symbol"]]))])
+symbols_df[["Unambiguous_alias"]] <- vapply(collected_symbols, function(x) {
+  unique_OrgHs_alias_lookup <- unique_OrgHs_alias_list[[x]]
   unique_NCBI_synonyms_lookup <- unique_NCBI_synonyms_list[[x]]
   if (is.null(unique_OrgHs_alias_lookup) || is.null(unique_NCBI_synonyms_lookup)) {
     return(NA_character_)
@@ -232,11 +231,11 @@ symbols_df[, "Unambiguous_alias"]      <- vapply(collected_symbols, function(x) 
   }
 }, "")
 
-symbols_df[, "Unique_in_overlap"]      <- vapply(collected_symbols, function(x) if (x %in% names(unique_intersect_OrgHs_NCBI_list)) unique_intersect_OrgHs_NCBI_list[[x]] else NA_character_, "")
-symbols_df[, "Unique_in_OrgHs_alias"]  <- vapply(collected_symbols, function(x) if (x %in% names(unique_OrgHs_alias_list)) unique_OrgHs_alias_list[[x]] else NA_character_, "")
-symbols_df[, "Unique_in_NCBI_synonym"] <- vapply(collected_symbols, function(x) if (x %in% names(unique_NCBI_synonyms_list)) unique_NCBI_synonyms_list[[x]] else NA_character_, "")
+symbols_df[["Unique_in_overlap"]]      <- vapply(collected_symbols, function(x) if (x %in% names(unique_intersect_OrgHs_NCBI_list)) unique_intersect_OrgHs_NCBI_list[[x]] else NA_character_, "")
+symbols_df[["Unique_in_OrgHs_alias"]]  <- vapply(collected_symbols, function(x) if (x %in% names(unique_OrgHs_alias_list)) unique_OrgHs_alias_list[[x]] else NA_character_, "")
+symbols_df[["Unique_in_NCBI_synonym"]] <- vapply(collected_symbols, function(x) if (x %in% names(unique_NCBI_synonyms_list)) unique_NCBI_synonyms_list[[x]] else NA_character_, "")
 
-symbols_df[, "Min_OrgHs_symbol"]  <- vapply(collected_symbols, function(x) {
+symbols_df[["Min_OrgHs_symbol"]]  <- vapply(collected_symbols, function(x) {
   my_lookup <- symbol_to_entrez_list[[x]]
   if (is.null(my_lookup)) {
     return(NA_character_)
@@ -245,7 +244,7 @@ symbols_df[, "Min_OrgHs_symbol"]  <- vapply(collected_symbols, function(x) {
   }
 }, "")
 
-symbols_df[, "Min_OrgHs_alias"]  <- vapply(collected_symbols, function(x) {
+symbols_df[["Min_OrgHs_alias"]]  <- vapply(collected_symbols, function(x) {
   my_lookup <- alias_to_entrez_list[[x]]
   if (is.null(my_lookup)) {
     return(NA_character_)
@@ -254,7 +253,7 @@ symbols_df[, "Min_OrgHs_alias"]  <- vapply(collected_symbols, function(x) {
   }
 }, "")
 
-symbols_df[, "Min_NCBI_synonym"] <- vapply(collected_symbols, function(x) {
+symbols_df[["Min_NCBI_synonym"]] <- vapply(collected_symbols, function(x) {
   my_lookup <- synonyms_to_entrez_list[[x]]
   if (is.null(my_lookup)) {
     return(NA_character_)
@@ -281,12 +280,11 @@ column_indices <- match(names(symbols_assignment_map), names(symbols_df))
 are_available_mat <- !(apply(symbols_df[, column_indices], 2, function(x) is.na(x)))
 which_first <- apply(are_available_mat, 1, function(x) if (any(x)) which(x)[[1]] else NA_integer_)
 
-symbols_df[, "Chosen_via"] <- factor(unname(symbols_assignment_map[which_first]), levels = unname(symbols_assignment_map))
-symbols_df[, "Chosen_entrez"] <- vapply(seq_along(which_first), function(x) symbols_df[x, column_indices[[which_first[[x]]]]], "")
+symbols_df[["Chosen_via"]] <- factor(unname(symbols_assignment_map[which_first]), levels = unname(symbols_assignment_map))
+symbols_df[["Chosen_entrez"]] <- vapply(seq_along(which_first), function(x) symbols_df[x, column_indices[[which_first[[x]]]]], "")
 
 symbol_to_entrez_df <- symbols_df
 entrez_to_symbol_df <- Entrez_map_df
-
 
 
 

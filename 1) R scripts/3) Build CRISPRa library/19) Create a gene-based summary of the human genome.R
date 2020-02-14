@@ -39,7 +39,7 @@ load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize 
 
 # Collect all Entrez IDs from various sources -----------------------------
 
-CRISPRa_entrez_IDs <- unique(merged_replaced_CRISPRa_df[, "Entrez_ID"])
+CRISPRa_entrez_IDs <- unique(merged_replaced_CRISPRa_df[["Entrez_ID"]])
 
 CRISPRa_entrez_IDs <- CRISPRa_entrez_IDs[!(is.na(CRISPRa_entrez_IDs))]
 CRISPRa_entrez_IDs <- unique(unlist(strsplit(CRISPRa_entrez_IDs, ", ", fixed = TRUE)))
@@ -55,15 +55,15 @@ unique_entrez_IDs <- union(collected_entrez_IDs, CRISPRa_entrez_IDs)
 
 sgRNAs_summary_df <- SummarizeCRISPRDf(merged_replaced_CRISPRa_df)
 
-sgRNAs_summary_df[!(is.na(sgRNAs_summary_df[, "Entrez_ID"])) & !(sgRNAs_summary_df[, "Entrez_ID"] %in% collected_entrez_IDs), ]
+sgRNAs_summary_df[!(is.na(sgRNAs_summary_df[["Entrez_ID"]])) & !(sgRNAs_summary_df[["Entrez_ID"]] %in% collected_entrez_IDs), ]
 
 sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
-sgRNAs_all_genes_df[, "Entrez_ID"] <- sgRNAs_all_genes_df[, "Combined_ID"]
+sgRNAs_all_genes_df[["Entrez_ID"]] <- sgRNAs_all_genes_df[["Combined_ID"]]
 sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, names(sgRNAs_all_genes_df) != "Combined_ID"]
 
 sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df)
 
-sgRNAs_overview_df[sgRNAs_overview_df[, "Original_entrez"] != "", ]
+sgRNAs_overview_df[sgRNAs_overview_df[["Original_entrez"]] != "", ]
 
 
 
@@ -71,8 +71,8 @@ sgRNAs_overview_df[sgRNAs_overview_df[, "Original_entrez"] != "", ]
 
 # Count the number of genes without a full complement of sgRNAs -----------
 
-table(sgRNAs_overview_df[, "Num_total"] < 4)
-table(sgRNAs_overview_df[, "Num_meeting_criteria"] < 4)
+table(sgRNAs_overview_df[["Num_total"]] < 4)
+table(sgRNAs_overview_df[["Num_meeting_criteria"]] < 4)
 
 
 
@@ -81,8 +81,8 @@ table(sgRNAs_overview_df[, "Num_meeting_criteria"] < 4)
 
 # Count the number of sgRNAs that overlap with a SNP ----------------------
 
-were_mapped <- !(is.na(merged_replaced_CRISPRa_df[, "Cut_location"]))
-table((merged_replaced_CRISPRa_df[were_mapped, preferred_AF_max_column] > SNP_frequency_cutoff) %in% TRUE, useNA = "ifany")
+were_mapped <- !(is.na(merged_replaced_CRISPRa_df[["Cut_location"]]))
+table((merged_replaced_CRISPRa_df[[preferred_AF_max_column]][were_mapped] > SNP_frequency_cutoff) %in% TRUE, useNA = "ifany")
 
 
 

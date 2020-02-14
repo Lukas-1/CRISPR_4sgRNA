@@ -50,14 +50,8 @@ NoNAmax <- function(numeric_vec) {
 
 FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.phase1.GRCh38", frequency_cutoff = 0.001, round_frequencies = TRUE, columns_postfix = NULL) {
 
-  CheckRangesDf(ranges_df)
-
   ### Construct a GRanges object from the positions_df data frame
-  GRanges_object_sgRNAs <- GRanges(
-    seqnames = sub("chr", "", ranges_df[, "Chromosome"], fixed = TRUE),
-    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
-    strand   = ranges_df[, "Strand"]
-  )
+  GRanges_object_sgRNAs <- RangesDfToGRangesObject(ranges_df, strip_Chr = TRUE)
 
   ### Find overlaps with SNPs in the human genome ###
   message("Searching for SNPs within the indicated genomic ranges...")
@@ -72,7 +66,7 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
 
 
   ### Filter out low-frequency minor alleles ###
-  is_high_frequency <- ifelse(is.na(frequencies_added_df[, "AF"]), FALSE, frequencies_added_df[, "AF"] >= frequency_cutoff)
+  is_high_frequency <- ifelse(is.na(frequencies_added_df[["AF"]]), FALSE, frequencies_added_df[["AF"]] >= frequency_cutoff)
   high_frequencies_df <- frequencies_added_df[is_high_frequency, ]
   GPos_object_polymorphisms <- GPos_object_frequencies_added[is_high_frequency, ]
 
@@ -80,18 +74,18 @@ FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.
   ### Compile data on SNPs that overlap with sgRNAs ###
   message("Counting high-frequency SNPs within the regions...")
   SNP_overlap_matches_df <- as.data.frame(findOverlaps(GRanges_object_sgRNAs, GPos_object_polymorphisms))
-  SNP_matches_list <- split(SNP_overlap_matches_df[, 2], factor(SNP_overlap_matches_df[, 1], levels = unique(SNP_overlap_matches_df[, 1])))
+  SNP_matches_list <- split(SNP_overlap_matches_df[[2]], factor(SNP_overlap_matches_df[[1]], levels = unique(SNP_overlap_matches_df[[1]])))
 
   match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(SNP_matches_list))
   num_SNPs_vec  <- lengths(SNP_matches_list)[match_matches_vec]
   num_SNPs_vec  <- ifelse(is.na(num_SNPs_vec), 0L, num_SNPs_vec)
 
-  SNP_rsIDs_vec <- vapply(SNP_matches_list, function(x) paste0(high_frequencies_df[x, "RefSNP_id"], collapse = ", "), "")[match_matches_vec]
-  SNP_AFs_vec <- vapply(SNP_matches_list, function(x) paste0(format(high_frequencies_df[x, "AF"], scientific = FALSE), collapse = ", "), "")[match_matches_vec]
+  SNP_rsIDs_vec <- vapply(SNP_matches_list, function(x) paste0(high_frequencies_df[["RefSNP_id"]][x], collapse = ", "), "")[match_matches_vec]
+  SNP_AFs_vec <- vapply(SNP_matches_list, function(x) paste0(format(high_frequencies_df[["AF"]][x], scientific = FALSE), collapse = ", "), "")[match_matches_vec]
 
   message("Calculating the probabilities of at least one high-frequency SNP being present within the regions...")
-  max_AF_vec <- vapply(SNP_matches_list, function(x) NoNAmax(high_frequencies_df[x, "AF"]), numeric(1))[match_matches_vec]
-  sum_AFs_vec <- vapply(SNP_matches_list, function(x) cp(high_frequencies_df[x, "AF"]), numeric(1))[match_matches_vec]
+  max_AF_vec <- vapply(SNP_matches_list, function(x) NoNAmax(high_frequencies_df[["AF"]][x]), numeric(1))[match_matches_vec]
+  sum_AFs_vec <- vapply(SNP_matches_list, function(x) cp(high_frequencies_df[["AF"]][x]), numeric(1))[match_matches_vec]
 
   if (round_frequencies) {
     sum_AFs_vec <- ifelse(sum_AFs_vec >= 0.1, signif(sum_AFs_vec, digits = 2), signif(sum_AFs_vec, digits = 1))
@@ -120,43 +114,37 @@ FrequenciesFromVCFFiles <- function(ranges_df, frequency_cutoff = 0.001, round_f
 
   stopifnot("common_polymorphisms_df" %in% ls(envir = globalenv())) # requires common_polymorphisms_df in the global environment
 
-  CheckRangesDf(ranges_df)
+  GRanges_object_sgRNAs <- RangesDfToGRangesObject(ranges_df, strip_Chr = TRUE)
 
-  GRanges_object_sgRNAs <- GRanges(
-    seqnames = sub("chr", "", ranges_df[, "Chromosome"], fixed = TRUE),
-    ranges   = IRanges(start = ranges_df[, "Start"], end = ranges_df[, "End"]),
-    strand   = ranges_df[, "Strand"]
-  )
+  have_rsID_df <- common_polymorphisms_df[!(is.na(common_polymorphisms_df[["rsID"]])), ]
 
-  have_rsID_df <- common_polymorphisms_df[!(is.na(common_polymorphisms_df[, "rsID"])), ]
-
-  exceed_cutoff <- ((1 - have_rsID_df[, "AF_Kaviar"]) >= frequency_cutoff) %in% TRUE
+  exceed_cutoff <- ((1 - have_rsID_df[["AF_Kaviar"]]) >= frequency_cutoff) %in% TRUE
   if (!(only_Kaviar)) {
     exceed_cutoff <- exceed_cutoff |
-                     (((1 - have_rsID_df[, "AF_1kGenomes"]) >= frequency_cutoff) %in% TRUE) |
-                     (((1 - have_rsID_df[, "AF_TOPMED"]) >= frequency_cutoff) %in% TRUE)
+                     (((1 - have_rsID_df[["AF_1kGenomes"]]) >= frequency_cutoff) %in% TRUE) |
+                     (((1 - have_rsID_df[["AF_TOPMED"]]) >= frequency_cutoff) %in% TRUE)
   }
 
   GRanges_object_polymorphisms <- GRanges(
-    seqnames = have_rsID_df[exceed_cutoff, "Chromosome"],
-    ranges   = IRanges(start = have_rsID_df[exceed_cutoff, "Position"],
-                       end = have_rsID_df[exceed_cutoff, "Position"] + nchar(have_rsID_df[exceed_cutoff, "Reference"]) - 1L
+    seqnames = have_rsID_df[["Chromosome"]][exceed_cutoff],
+    ranges   = IRanges(start = have_rsID_df[["Position"]][exceed_cutoff],
+                       end = have_rsID_df[["Position"]][exceed_cutoff] + nchar(have_rsID_df[["Reference"]][exceed_cutoff]) - 1L
                        ),
     strand   = "*"
   )
 
-  rsIDs_source_vec <- have_rsID_df[exceed_cutoff, "rsID"]
-  AF_Kaviar_source_vec <- 1 - have_rsID_df[exceed_cutoff, "AF_Kaviar"]
+  rsIDs_source_vec <- have_rsID_df[["rsID"]][exceed_cutoff]
+  AF_Kaviar_source_vec <- 1 - have_rsID_df[["AF_Kaviar"]][exceed_cutoff]
 
   if (!(only_Kaviar)) {
-    AF_TOPMED_source_vec <- 1 - have_rsID_df[exceed_cutoff, "AF_TOPMED"]
-    AF_1k_source_vec     <- 1 - have_rsID_df[exceed_cutoff, "AF_1kGenomes"]
+    AF_TOPMED_source_vec <- 1 - have_rsID_df[["AF_TOPMED"]][exceed_cutoff]
+    AF_1k_source_vec     <- 1 - have_rsID_df[["AF_1kGenomes"]][exceed_cutoff]
   }
 
   ### Compile data on SNPs that overlap with sgRNAs ###
   message("Counting high-frequency SNPs within the regions...")
   SNP_overlap_matches_df <- as.data.frame(findOverlaps(GRanges_object_sgRNAs, GRanges_object_polymorphisms))
-  SNP_matches_list <- split(SNP_overlap_matches_df[, 2], factor(SNP_overlap_matches_df[, 1], levels = unique(SNP_overlap_matches_df[, 1])))
+  SNP_matches_list <- split(SNP_overlap_matches_df[[2]], factor(SNP_overlap_matches_df[[1]], levels = unique(SNP_overlap_matches_df[[1]])))
 
   match_matches_vec <- match(as.character(seq_len(nrow(ranges_df))), names(SNP_matches_list))
   num_SNPs_vec <- lengths(SNP_matches_list)[match_matches_vec]
@@ -245,12 +233,12 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
 
   if (!(only_23bp_only_Kaviar)) {
     PAM_ranges_df <- sgRNA_only_ranges_df
-    PAM_ranges_df[, "Start"] <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 2L, ranges_df[, "Start"] - 3L)
-    PAM_ranges_df[, "End"]   <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "Start"] - 2L)
+    PAM_ranges_df[["Start"]] <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 2L, ranges_df[["Start"]] - 3L)
+    PAM_ranges_df[["End"]]   <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 3L, ranges_df[["Start"]] - 2L)
   }
 
-  sgRNA_plus_PAM_ranges_df[, "Start"] <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "Start"], ranges_df[, "Start"] - 3L)
-  sgRNA_plus_PAM_ranges_df[, "End"]   <- ifelse(ranges_df[, "Strand"] == "+", ranges_df[, "End"] + 3L, ranges_df[, "End"])
+  sgRNA_plus_PAM_ranges_df[["Start"]] <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["Start"]], ranges_df[["Start"]] - 3L)
+  sgRNA_plus_PAM_ranges_df[["End"]]   <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 3L, ranges_df[["End"]])
 
   message("Finding overlaps between the full 23 nucleotide sequence (sgRNA + PAM) and polymorphisms in the human genome...")
   sgRNA_plus_PAM_polymorphisms_df <- AllPolymorphismsForRange(sgRNA_plus_PAM_ranges_df, columns_prefix = "all23", only_Kaviar = only_23bp_only_Kaviar)
@@ -278,8 +266,8 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
 
     SNP_AF_max_roots <- grep("_AF_max_", SNP_column_roots, fixed = TRUE, value = TRUE)
     NGG_AF_max_list <- sapply(SNP_AF_max_roots, function(root) {
-      PAM_vec <- results_df[, paste0("PAM_", root)]
-      sg_vec <- results_df[, paste0("sgRNA_", root)]
+      PAM_vec <- results_df[[paste0("PAM_", root)]]
+      sg_vec <- results_df[[paste0("sgRNA_", root)]]
       results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
         NoNAmax(c(PAM_vec[[x]], sg_vec[[x]]))
       }, numeric(1))
@@ -289,9 +277,9 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
 
     SNP_rsID_roots <- grep("SNP_IDs_", SNP_column_roots, fixed = TRUE, value = TRUE)
     NGG_rsID_list <- sapply(SNP_rsID_roots, function(root) {
-      PAM_list   <- strsplit(results_df[, paste0("PAM_", root)], ", ", fixed = TRUE)
-      sg_list    <- strsplit(results_df[, paste0("sgRNA_", root)], ", ", fixed = TRUE)
-      all23_list <- strsplit(results_df[, paste0("all23_", root)], ", ", fixed = TRUE)
+      PAM_list   <- strsplit(results_df[[paste0("PAM_", root)]], ", ", fixed = TRUE)
+      sg_list    <- strsplit(results_df[[paste0("sgRNA_", root)]], ", ", fixed = TRUE)
+      all23_list <- strsplit(results_df[[paste0("all23_", root)]], ", ", fixed = TRUE)
       results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
         rsIDs_vec <- intersect(all23_list[[x]], c(sg_list[[x]], PAM_list[[x]]))
         if (all(is.na(rsIDs_vec))) {

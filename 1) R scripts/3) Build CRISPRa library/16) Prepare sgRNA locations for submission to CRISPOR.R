@@ -35,23 +35,25 @@ load(file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgR
 
 # Include sgRNAs with missing Entrez IDs ----------------------------------
 
-chunks_list <- AppendIDsWithoutEntrezs(entrez_chunks_list, merged_replaced_CRISPRa_df)
+chunks_list <- AppendIDsWithoutCanonicalEntrezs(entrez_chunks_list, merged_replaced_CRISPRa_df)
 
 
 
 
 # Prepare data frames that can be exported to .bed files ------------------
 
-bed_df_list <- lapply(chunks_list, function(x) MakeBedDf(merged_replaced_CRISPRa_df, x))
+bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRa_df, chunks_list)
+
 
 
 
 
 # Prepare objects that can be exported to FASTA files ---------------------
 
-FASTA_df_list <- lapply(chunks_list, function(x) MakeFASTADf(merged_replaced_CRISPRa_df, x))
+FASTA_df_list <- BreakIntoChunks(MakeFASTADf, merged_replaced_CRISPRa_df, chunks_list)
 FASTA_df_list <- CombineDfChunks(FASTA_df_list)
 FASTA_vec_list <- lapply(FASTA_df_list, MakeFASTAvec)
+
 
 
 
@@ -59,11 +61,11 @@ FASTA_vec_list <- lapply(FASTA_df_list, MakeFASTAvec)
 # Write input files for CRISPOR to disk -----------------------------------
 
 WriteCRISPORInputFiles(bed_df_list, file_ending = "__CRISPRa.bed",
-                       CRISPOR_input_directory = CRISPOR_files_directory
+                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_bed")
                        )
 
 WriteCRISPORInputFiles(FASTA_vec_list, file_ending = "__CRISPRa.fa",
-                       CRISPOR_input_directory = CRISPOR_files_directory
+                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_FASTA")
                        )
 
 
@@ -74,22 +76,13 @@ filtered_bed_df_list    <- FilterBedDfList(bed_df_list)
 filtered_FASTA_df_list  <- FilterFASTADfList(FASTA_df_list)
 filtered_FASTA_vec_list <- lapply(filtered_FASTA_df_list, MakeFASTAvec)
 
-filtered_input_directory <- file.path(CRISPOR_files_directory, "Input - filtered by already processed")
-
 WriteCRISPORInputFiles(filtered_bed_df_list, file_ending = "__CRISPRa.bed",
-                       CRISPOR_input_directory = filtered_input_directory
+                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_bed_filtered")
                        )
 
 WriteCRISPORInputFiles(filtered_FASTA_vec_list, file_ending = "__CRISPRa.fa",
-                       CRISPOR_input_directory = filtered_input_directory
+                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_FASTA_filtered")
                        )
-
-
-
-
-
-
-
 
 
 
