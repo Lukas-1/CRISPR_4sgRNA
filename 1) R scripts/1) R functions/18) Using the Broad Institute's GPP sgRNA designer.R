@@ -170,15 +170,26 @@ CRISPRko_GPP_output_columns <- c(
 
 TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
 
-  were_not_found <- grepl("^ERROR: Gene .+ not found", GPP_output_df[["Picking Notes"]]) &
-                    is.na(GPP_output_df[["Quota"]])
+  are_errors <- grepl("ERROR", GPP_output_df[["Picking Notes"]], fixed = TRUE)
+
+  were_not_found <- (grepl("^ERROR: Gene .+ not found", GPP_output_df[["Picking Notes"]]) |
+                     grepl("ERROR: Unable to locate a current transcript for ", GPP_output_df[["Picking Notes"]], fixed = TRUE)
+                     ) & is.na(GPP_output_df[["Quota"]])
 
   message(paste0(sum(were_not_found), " genes were not found by the Broad Institute's ",
                  "Genetic Perturbation Platform (GPP) sgRNA picker tool and were omitted from the data frame!"
                  )
           )
 
-  results_df <- GPP_output_df[!(were_not_found), choose_columns]
+  are_other_error <- are_errors & !(were_not_found)
+  if (any(are_other_error)) {
+    message("")
+    message(paste0(sum(are_other_error), " other error messages were found and are shown below:"))
+    print(GPP_output_df[are_other_error, ])
+    message("")
+  }
+
+  results_df <- GPP_output_df[!(are_errors), choose_columns]
   row.names(results_df) <- NULL
   return(results_df)
 }
