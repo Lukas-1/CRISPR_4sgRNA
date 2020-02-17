@@ -18,7 +18,11 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 # Define constants --------------------------------------------------------
 
-annotation_columns <- c("Gene_symbol", "Ensembl_gene_ID", "Entrez_ID", "Original_symbol", "Original_Entrez_ID")
+TF_annotation_columns <- c("Gene_symbol", "Ensembl_gene_ID", "Entrez_ID", "Original_symbol", "Original_entrez")
+all_genes_annotation_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Original_entrez")
+
+CRISPRa_columns <- c("Num_hCRISPRa_v2_transcripts", "Num_transcripts", "Num_overlapping_transcripts", "Num_incomplete_transcripts")
+
 selected_metrics <- c("Num_overlaps", "Spacing", "Longest_subsequence", "GuideScan_specificity",
                       "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
                       "Num_top4_outside_criteria", "Num_total"
@@ -175,11 +179,15 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
         results_list[["GuideScan_specificity"]]   <- if (all(is.na(guidescan_spec_vec)))   NA_real_ else min(guidescan_spec_vec,   na.rm = TRUE)
         results_list[["CRISPOR_3MM_specificity"]] <- if (all(is.na(CRISPOR_3MM_spec_vec))) NA_real_ else min(CRISPOR_3MM_spec_vec, na.rm = TRUE)
         results_list[["CRISPOR_4MM_specificity"]] <- if (all(is.na(CRISPOR_4MM_spec_vec))) NA_real_ else min(CRISPOR_4MM_spec_vec, na.rm = TRUE)
-        results_list[["Longest_subsequence"]] <- max(vapply(transcripts_top4_indices,
-                                                            function(y) LongestSharedSubsequence(CRISPR_df[["sgRNA_sequence"]][x][y]),
-                                                            integer(1)
-                                                            )
-                                                     )
+        subsequence_lengths <- vapply(transcripts_top4_indices,
+                                      function(y) LongestSharedSubsequence(CRISPR_df[["sgRNA_sequence"]][x][y]),
+                                      integer(1)
+                                      )
+        if (all(is.na(subsequence_lengths))) {
+          results_list[["Longest_subsequence"]] <- NA_integer_
+        } else {
+          results_list[["Longest_subsequence"]] <- max(subsequence_lengths, na.rm = TRUE)
+        }
       } else {
         results_list[["GuideScan_specificity"]]   <- AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x[are_top_4]])
         results_list[["CRISPOR_3MM_specificity"]] <- AggregateSpecificityScores(CRISPR_df[["CRISPOR_3MM_specificity"]][x[are_top_4]])
@@ -221,7 +229,6 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
     }
     return(results_list)
   })
-
   summary_df <- do.call(rbind.data.frame, c(results_list_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   return(summary_df)
 }
@@ -263,6 +270,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
 
   final_order <- order(
     results_df[["Gene_present"]],
+    ifelse(results_df[["Num_total"]] < 4, results_df[["Num_total"]], 4L),
     if (include_spacing) !(results_df[["Spacing"]] %in% "None")                                                               else NA_vec,
     if (include_spacing) !(results_df[["Spacing"]] %in% ">12bp")                                                              else NA_vec,
     if (include_spacing && include_transcripts) -(results_df[["Num_incomplete_transcripts"]])                                 else NA_vec,
@@ -273,7 +281,6 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
     if (include_spacing) num_nonoverlapping_vec                                                                               else NA_vec,
     if (include_spacing) spacing_vec                                                                                          else NA_vec,
     if (include_spacing) -(results_df[["Num_overlaps"]])                                                                      else NA_vec,
-    ifelse(results_df[["Num_total"]] < 4, results_df[["Num_total"]], NA_integer_),
     ifelse(results_df[["Num_meeting_criteria"]] < 4, results_df[["Num_meeting_criteria"]], NA_integer_),
     if (include_spacing) !(is.na(results_df[["GuideScan_specificity"]]) & is.na(results_df[["CRISPOR_4MM_specificity"]]))     else NA_vec,
     if (include_spacing) !(is.na(results_df[["GuideScan_specificity"]]))                                                      else NA_vec,
@@ -282,6 +289,14 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
     if (include_spacing) results_df[["CRISPOR_4MM_specificity"]]                                                              else NA_vec
   )
   results_df <- results_df[final_order, ]
+  entrezs_vec <- results_df[["Entrez_ID"]]
+  are_not_present <- results_df[["Gene_present"]] == "No"
+  entrezs_vec[are_not_present] <- results_df[["Combined_ID"]][are_not_present]
+  results_df[["Annotation"]] <- collected_entrezs_df[["Category"]][match(entrezs_vec, collected_entrezs_df[["Entrez_ID"]])]
+  results_df[["Annotation"]] <- ifelse(entrezs_vec %in% collected_entrez_IDs,
+                                       results_df[["Annotation"]],
+                                       "Not protein-coding"
+                                       )
   row.names(results_df) <- NULL
   return(results_df)
 }
@@ -358,6 +373,14 @@ SharedsgRNAsDf <- function(CRISPR_df) {
 }
 
 
+
+WriteOverviewDfToDisk <- function(overview_df, file_name, use_directory = file_output_directory) {
+  write.table(FormatOverviewDfForExport(overview_df),
+              file = file.path(file_output_directory, paste0(file_name, ".tsv")),
+              quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
+              )
+  return(invisible(NULL))
+}
 
 
 

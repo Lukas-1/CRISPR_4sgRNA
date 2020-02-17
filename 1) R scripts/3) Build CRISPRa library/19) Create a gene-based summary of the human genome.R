@@ -93,19 +93,17 @@ table((merged_replaced_CRISPRa_df[[preferred_AF_max_column]][were_mapped] > SNP_
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
-  "Entrez_ID", "Gene_symbol", "Original_symbol", "Original_entrez",
+  all_genes_annotation_columns,
   "Gene_present",
-  "Num_hCRISPRa_v2_transcripts", "Num_transcripts", "Num_overlapping_transcripts", "Num_incomplete_transcripts",
-  "Spacing", "Longest_subsequence", "GuideScan_specificity", "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
-  "Num_top4_outside_criteria", "Num_total", "Num_overlapping_with_SNP"
+  CRISPRa_columns,
+  selected_metrics[selected_metrics != "Num_overlaps"],
+  "Num_overlapping_with_SNP"
 )
 
-sgRNAs_overview_excel_df <- FormatOverviewDfForExport(sgRNAs_overview_df[, columns_for_excel])
+columns_for_excel_with_comments <- c(setdiff(columns_for_excel, c("Gene_present", "Num_overlapping_with_SNP")), "Annotation")
 
-write.table(sgRNAs_overview_excel_df,
-            file = file.path(file_output_directory, "Overview_CRISPRa_all_genes.tsv"),
-            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
-            )
+WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel], file_name = "Overview_CRISPRa_all_genes")
+WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel_with_comments], file_name = "Overview_CRISPRa_all_genes_with_comments")
 
 
 

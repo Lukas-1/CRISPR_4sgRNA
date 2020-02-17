@@ -77,19 +77,16 @@ table(sgRNAs_overview_df[["Num_meeting_criteria"]] < 4)
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
-  "Entrez_ID", "Gene_symbol", "Original_symbol", "Original_entrez",
+  all_genes_annotation_columns,
   "Gene_present",
-  "Num_overlaps", "Spacing", "Longest_subsequence", "GuideScan_specificity", "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
-  "Num_top4_outside_criteria",
-  "Num_total", "Num_overlapping_with_SNP"
+  selected_metrics,
+  "Num_overlapping_with_SNP"
 )
 
-sgRNAs_overview_excel_df <- FormatOverviewDfForExport(sgRNAs_overview_df[, columns_for_excel])
+columns_for_excel_with_comments <- c(setdiff(columns_for_excel, c("Gene_present", "Num_overlapping_with_SNP")), "Annotation")
 
-write.table(sgRNAs_overview_excel_df,
-            file = file.path(file_output_directory, "Overview_CRISPRko_all_genes.tsv"),
-            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
-            )
+WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel], file_name = "Overview_CRISPRko_all_genes")
+WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel_with_comments], file_name = "Overview_CRISPRko_all_genes_with_comments")
 
 
 
@@ -101,18 +98,6 @@ write.table(sgRNAs_overview_excel_df,
 save(list = "sgRNAs_overview_df",
      file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

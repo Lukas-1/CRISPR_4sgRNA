@@ -23,6 +23,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
 
@@ -64,7 +65,8 @@ table(TF_overview_df[["Num_meeting_criteria"]] < 4)
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
-  annotation_columns, selected_metrics,
+  TF_annotation_columns,
+  selected_metrics,
   "DNA_binding_domain", "TF_assessment", "Binding_mode",
   "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO", "Is_C2H2_ZF"
 )
@@ -73,12 +75,11 @@ TF_summary_excel_df <- TF_overview_df[, columns_for_excel]
 
 TF_summary_excel_df[["Num_total"]] <- ifelse(is.na(TF_summary_excel_df[["Num_total"]]), 0L, TF_summary_excel_df[["Num_total"]])
 
-TF_summary_excel_df <- FormatOverviewDfForExport(TF_summary_excel_df)
+WriteOverviewDfToDisk(TF_summary_excel_df, file_name = "Overview_CRISPRko_transcription_factors")
 
-write.table(TF_summary_excel_df,
-            file = file.path(file_output_directory, "Overview_CRISPRko_transcription_factors.tsv"),
-            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
-            )
+
+
+
 
 
 
@@ -89,12 +90,6 @@ write.table(TF_summary_excel_df,
 save(list = "TF_overview_df",
      file = file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData")
      )
-
-
-
-
-
-
 
 
 
