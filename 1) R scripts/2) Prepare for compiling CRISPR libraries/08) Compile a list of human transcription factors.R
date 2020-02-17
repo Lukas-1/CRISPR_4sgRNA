@@ -55,7 +55,7 @@ names(tf_new_df) <- c(
   "Final_notes",
   "Final_comments",
   "Interpro_ID",
-  "Original_Entrez_ID",
+  "Original_entrez",
   "Entrez_description",
   "PBD_ID",
   "Tested_by_HT_SELEX",
@@ -87,13 +87,13 @@ names(tf_new_df) <- c(
 
 # Explore the TF databases ------------------------------------------------
 
-table(tf_new_df[["Original_Entrez_ID"]])[table(tf_new_df[["Original_Entrez_ID"]]) > 1]
+table(tf_new_df[["Original_entrez"]])[table(tf_new_df[["Original_entrez"]]) > 1]
 
-tf_new_df[tf_new_df[["Original_Entrez_ID"]] == "107984053", ]
-tf_new_df[tf_new_df[["Original_Entrez_ID"]] == "159119", ]
-tf_new_df[tf_new_df[["Original_Entrez_ID"]] == "728689", ]
-tf_new_df[tf_new_df[["Original_Entrez_ID"]] == "Has no Entrez identifier", ]
-tf_new_df[tf_new_df[["Original_Entrez_ID"]] == "None", ]
+tf_new_df[tf_new_df[["Original_entrez"]] == "107984053", ]
+tf_new_df[tf_new_df[["Original_entrez"]] == "159119", ]
+tf_new_df[tf_new_df[["Original_entrez"]] == "728689", ]
+tf_new_df[tf_new_df[["Original_entrez"]] == "Has no Entrez identifier", ]
+tf_new_df[tf_new_df[["Original_entrez"]] == "None", ]
 
 table(tf_new_df[["Binding_mode"]], useNA = "ifany")
 
@@ -117,8 +117,8 @@ ensembl_mappings_df <- MapEnsemblIDs(tf_new_df)
 
 ensembl_mappings_df[ensembl_mappings_df[["Are_problematic"]], ]
 
-identical_to_original_entrez <- mapply(identical, ensembl_mappings_df[["Consensus_entrez"]], tf_new_df[["Original_Entrez_ID"]], USE.NAMES = FALSE)
-original_entrez_available <- !(ensembl_mappings_df[["Original_Entrez_ID"]] %in% c("Has no Entrez identifier", "None"))
+identical_to_original_entrez <- mapply(identical, ensembl_mappings_df[["Consensus_entrez"]], tf_new_df[["Original_entrez"]], USE.NAMES = FALSE)
+original_entrez_available <- !(ensembl_mappings_df[["Original_entrez"]] %in% c("Has no Entrez identifier", "None"))
 
 ensembl_mappings_df[is.na(ensembl_mappings_df[["Consensus_entrez"]]), ]
 ensembl_mappings_df[(!(identical_to_original_entrez)) & original_entrez_available, ]
@@ -130,18 +130,18 @@ ensembl_mappings_df[(!(identical_to_original_entrez)) & original_entrez_availabl
 
 # Select columns for the TF data frame ------------------------------------
 
-ensembl_mappings_df[["Original_Entrez_ID"]][identical_to_original_entrez] <- ""
+ensembl_mappings_df[["Original_entrez"]][identical_to_original_entrez] <- ""
 
 all_TF_df <- data.frame(
   ensembl_mappings_df["Combined_ID"],
-  "Entrez_ID"      = ensembl_mappings_df[["Consensus_entrez"]],
-  "Gene_symbol"    = ensembl_mappings_df[["Consensus_symbol"]],
+  "Entrez_ID"       = ensembl_mappings_df[["Consensus_entrez"]],
+  "Gene_symbol"     = ensembl_mappings_df[["Consensus_symbol"]],
   ensembl_mappings_df["Original_symbol"],
-  "Original_Entrez_ID" = ifelse(identical_to_original_entrez, "", tf_new_df[["Original_Entrez_ID"]]),
+  "Original_entrez" = ifelse(identical_to_original_entrez, "", tf_new_df[["Original_entrez"]]),
   tf_new_df[, c("Ensembl_gene_ID", "Is_TF", "DNA_binding_domain", "TF_assessment", "Binding_mode", "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO")],
-  "Is_C2H2_ZF"     = c("False" = "No", "True" = "Yes")[tf_new_df[["Is_C2H2_ZF"]]],
-  stringsAsFactors = FALSE,
-  row.names        = NULL
+  "Is_C2H2_ZF"      = c("False" = "No", "True" = "Yes")[tf_new_df[["Is_C2H2_ZF"]]],
+  stringsAsFactors  = FALSE,
+  row.names         = NULL
 )
 
 
