@@ -27,9 +27,10 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")) # for candidates_CRISPRa_df
-load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRa_RData_directory, "19) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Integrate the guide choices using relaxed and strict locations.RData"))
+load(file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "24) Allocate sgRNAs to plates.RData"))
 
 
 
@@ -97,8 +98,8 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
                       # "Entrez_nearest_1MM", "Symbol_nearest_1MM"
                       )
 
-
 merged_replaced_CRISPRa_df <- merged_replaced_CRISPRa_df[, selected_columns]
+
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", selected_columns)]
 
 
@@ -324,6 +325,7 @@ TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
 
 
 
+
 # Write CRISPRa sgRNA libraries to disk -----------------------------------
 
 DfToTSV(replaced_TF_CRISPRa_df, "CRISPRa_transcription_factors")
@@ -346,6 +348,9 @@ DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes")
 
 DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes_all_SNP_databases", remove_columns = omit_columns)
 
+DfToTSV(lax_CRISPRa_df[, selected_columns], "CRISPRa_relaxed_all_genes")
+
+
 
 
 
@@ -354,7 +359,7 @@ DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes_all_SNP_databases", remov
 legacy_RData_directory <- "C:/Users/lukas/Desktop/CRISPR_legacy_freeze/3) RData files/2) CRISPRa"
 load(file.path(legacy_RData_directory, "21) Allocate sgRNAs to plates.RData"))
 old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
-load(file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRa_RData_directory, "24) Allocate sgRNAs to plates.RData"))
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 

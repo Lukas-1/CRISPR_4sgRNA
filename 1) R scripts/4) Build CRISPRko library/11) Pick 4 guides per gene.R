@@ -41,7 +41,7 @@ merged_CRISPRko_df <- RankCRISPRDf(merged_CRISPRko_df, ID_column = "Combined_ID"
 
 # Find combinations of non-overlapping sgRNAs -----------------------------
 
-# SortCombinations(merged_CRISPRko_df[merged_CRISPRko_df[, "Gene_symbol"] %in% "ARNTL", ])
+# SortCombinations(merged_CRISPRko_df[merged_CRISPRko_df[, "Gene_symbol"] %in% "LOC102723382", ])
 
 merged_CRISPRko_df <- PrioritizeNonOverlapping(merged_CRISPRko_df, ID_column = "Combined_ID", parallel_mode = TRUE)
 

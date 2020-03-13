@@ -169,8 +169,6 @@ extended_CRISPRko_df <- extended_CRISPRko_df[, names(extended_CRISPRko_df) != "N
 
 
 
-
-
 # Check for remaining inconsistent chromosome mappings --------------------
 
 inconsistent_IDs <- CheckForInconsistentChromosomes(extended_CRISPRko_df)
@@ -189,8 +187,8 @@ if (length(inconsistent_IDs) > 1) {
 
 
 # Truncate long 0MM locations ---------------------------------------------
-
-extended_CRISPRko_df[["Locations_0MM"]] <- TruncateLongEntries(extended_CRISPRko_df[["Locations_0MM"]])
+#
+# extended_CRISPRko_df[["Locations_0MM"]] <- TruncateLongEntries(extended_CRISPRko_df[["Locations_0MM"]])
 
 
 

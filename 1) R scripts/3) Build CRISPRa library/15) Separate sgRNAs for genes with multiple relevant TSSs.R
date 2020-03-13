@@ -33,6 +33,10 @@ load(file.path(CRISPRa_RData_directory, "14) Find overlaps between sgRNA sequenc
 
 # Find combinations of non-overlapping sgRNAs -----------------------------
 
+# CRISPR_sub_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Gene_symbol"]] %in% "TRIM74", ]
+# SeparateByTSS(CRISPR_sub_df)[, c("Source", "Gene_symbol", "Entrez_ID", "hCRISPRa_v2_transcript", "hCRISPRa_v2_ID", "TSS_number", "Allocated_TSS")]
+
+
 merged_replaced_CRISPRa_df <- AllocateTSSforAllGenes(merged_replaced_CRISPRa_df, parallel_mode = TRUE)
 
 

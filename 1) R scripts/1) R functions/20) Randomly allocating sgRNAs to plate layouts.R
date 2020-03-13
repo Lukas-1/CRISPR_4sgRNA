@@ -48,24 +48,80 @@ RetrieveIndices <- function(CRISPR_df, indices_vec, ID_column) {
 
 
 
+CRISPRaAreTop4Mat <- function(CRISPRa_df) {
 
-AreCompleteTranscripts <- function(CRISPR_df, must_be_spaced = FALSE) {
-  are_complete <- rep.int(NA, nrow(CRISPR_df))
-  unique_TSS_IDs <- unique(CRISPR_df[["AltTSS_ID"]][CRISPR_df[["Is_control"]] == "No"])
-  for (unique_TSS_ID in unique_TSS_IDs) {
-    are_this_TSS <- CRISPR_df[["AltTSS_ID"]] %in% unique_TSS_ID
-    are_unmapped_TSS <- all(CRISPR_df[["Num_TSSs"]][are_this_TSS] >= 2) && all(is.na(CRISPR_df[["Start"]][are_this_TSS]))
-    if (!(are_unmapped_TSS)) { # AltTSS_IDs corresponding to unmapped sgRNAs are left to be 'NA'
-      this_TSS_rank_vec <- CRISPR_df[["Rank"]][are_this_TSS]
-      if (must_be_spaced) {
-        this_TSS_rank_vec <- this_TSS_rank_vec[!(CRISPR_df[["Spacing"]][are_this_TSS] %in% 0)]
-      }
-      is_complete <- all(1:4 %in% this_TSS_rank_vec)
-      are_complete[are_this_TSS] <- is_complete
-    }
-  }
-  return(are_complete)
+  are_top4 <- CRISPRa_df[["Rank"]] %in% 1:4
+  only_one_TSS <- CRISPRa_df[["Num_TSSs"]] == 1
+  are_spaced <- !(is.na(CRISPRa_df[["Spacing"]])) & !(CRISPRa_df[["Spacing"]] %in% 0)
+
+  altTSS_IDs_fac <- factor(CRISPRa_df[["AltTSS_ID"]], levels = unique(CRISPRa_df[["AltTSS_ID"]]))
+  CheckThatFactorIsInOrder(altTSS_IDs_fac)
+  rank_splits <- split(CRISPRa_df[["Rank"]], altTSS_IDs_fac)
+  are_complete <- vapply(rank_splits, function(x) all(1:4 %in% x), logical(1))
+  have_complete_guides <- rep(are_complete, lengths(rank_splits))
+
+  are_valid_top4 <- are_top4 & are_spaced & have_complete_guides
+  are_valid_or_only_top4 <- are_valid_top4 | (are_top4 & only_one_TSS)
+
+  have_spaced_guides <- rep(tapply(are_spaced, altTSS_IDs_fac, sum) >= 4, lengths(rank_splits))
+
+  results_mat <- cbind(
+    "Are_top4"               = are_top4,
+    "Are_valid_top4"         = are_valid_top4,
+    "Are_valid_or_only_top4" = are_valid_or_only_top4,
+    "Have_complete_guides"   = have_complete_guides,
+    "Have_spaced_guides"     = have_spaced_guides,
+    "Have_valid_guides"      = have_spaced_guides & have_complete_guides
+  )
+  return(results_mat)
 }
+
+
+
+
+CRISPRkoAreTop4Mat <- function(CRISPRko_df) {
+
+  are_top4 <- CRISPRko_df[["Rank"]] %in% 1:4
+  are_spaced <- !(is.na(CRISPRko_df[["Spacing"]])) & !(CRISPRko_df[["Spacing"]] %in% 0)
+
+  combined_IDs_fac <- factor(CRISPRko_df[["Combined_ID"]], levels = unique(CRISPRko_df[["Combined_ID"]]))
+  CheckThatFactorIsInOrder(combined_IDs_fac)
+
+  rank_splits <- split(CRISPRko_df[["Rank"]], combined_IDs_fac)
+  are_complete <- vapply(rank_splits, function(x) all(1:4 %in% x), logical(1))
+  have_complete_guides <- rep(are_complete, lengths(rank_splits))
+
+  have_spaced_guides <- rep(tapply(are_spaced, combined_IDs_fac, sum) >= 4, lengths(rank_splits))
+
+  results_mat <- cbind(
+    "Are_top4"               = are_top4,
+    "Are_valid_top4"         = are_top4 & are_spaced & have_complete_guides,
+    "Have_complete_guides"   = have_complete_guides,
+    "Have_spaced_guides"     = have_spaced_guides,
+    "Have_valid_guides"      = have_spaced_guides & have_complete_guides
+  )
+  return(results_mat)
+}
+
+
+
+# AreCompleteTranscripts <- function(CRISPR_df, must_be_spaced = FALSE) {
+#   are_complete <- rep.int(NA, nrow(CRISPR_df))
+#   unique_TSS_IDs <- unique(CRISPR_df[["AltTSS_ID"]][CRISPR_df[["Is_control"]] == "No"])
+#   for (unique_TSS_ID in unique_TSS_IDs) {
+#     are_this_TSS <- CRISPR_df[["AltTSS_ID"]] %in% unique_TSS_ID
+#     are_unmapped_TSS <- all(CRISPR_df[["Num_TSSs"]][are_this_TSS] >= 2) && all(is.na(CRISPR_df[["Start"]][are_this_TSS]))
+#     if (!(are_unmapped_TSS)) { # AltTSS_IDs corresponding to unmapped sgRNAs are left to be 'NA'
+#       this_TSS_rank_vec <- CRISPR_df[["Rank"]][are_this_TSS]
+#       if (must_be_spaced) {
+#         this_TSS_rank_vec <- this_TSS_rank_vec[!(CRISPR_df[["Spacing"]][are_this_TSS] %in% 0)]
+#       }
+#       is_complete <- all(1:4 %in% this_TSS_rank_vec)
+#       are_complete[are_this_TSS] <- is_complete
+#     }
+#   }
+#   return(are_complete)
+# }
 
 
 

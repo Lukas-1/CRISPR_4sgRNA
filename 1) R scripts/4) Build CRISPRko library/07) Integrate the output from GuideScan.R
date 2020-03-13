@@ -32,7 +32,7 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 # Read in data ------------------------------------------------------------
 
-guidescan_output_files <- grep("^GuideScan_output_CRISPRko__", list.files(GuideScan_files_directory), value = TRUE)
+guidescan_output_files <- grep("^GuideScan_output_CRISPRko_", list.files(GuideScan_files_directory), value = TRUE)
 guidescan_raw_df_list <- lapply(guidescan_output_files, function(x) {
   message(paste0("Reading in the file '", x, "'..."))
   ReadGuideScanOutput(x)

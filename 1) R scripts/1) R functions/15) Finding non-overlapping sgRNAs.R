@@ -20,11 +20,11 @@ source(file.path(general_functions_directory, "14) Checking for identical subseq
 
 CreateCombinations <- function(sub_df_reordered,
                                were_included,
-                               num_overlaps_allowed  = 0L,
-                               tolerate_NA_overlaps  = FALSE,
-                               min_space             = 50L,
-                               num_sgRNAs            = 4L,
-                               meet_strict_criteria  = NULL
+                               num_overlaps_allowed           = 0L,
+                               tolerate_NA_overlaps           = FALSE,
+                               min_space                      = 50L,
+                               num_sgRNAs                     = 4L,
+                               meet_strict_criteria           = NULL
                                ) {
 
   assign("delete_sub_df_reordered", sub_df_reordered, envir = globalenv())
@@ -149,7 +149,13 @@ CreateCombinations <- function(sub_df_reordered,
 
 
 
-SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, only_top_24_GPP = FALSE, min_overlaps = 0:10) {
+SortCombinations <- function(CRISPR_sub_df,
+                             min_spaces      = 50L,
+                             num_sgRNAs      = 4L,
+                             only_top_24_GPP = FALSE,
+                             min_overlaps    = 0:10,
+                             tolerate_divergent_chromosomes = FALSE
+                             ) {
 
   MessageID(CRISPR_sub_df)
 
@@ -166,7 +172,7 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
     return(CRISPR_sub_df)
   }
 
-  reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df)
+  reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df, tolerate_divergent_chromosomes = tolerate_divergent_chromosomes)
   sub_df_reordered <- reordered_list[["reordered_df"]]
   were_mapped <- reordered_list[["were_mapped_vec"]]
 
@@ -174,7 +180,9 @@ SortCombinations <- function(CRISPR_sub_df, min_spaces = 50L, num_sgRNAs = 4L, o
   have_canonical_PAM <- (substr(sub_df_reordered[["PAM"]], 2, 3) == "GG") %in% TRUE
   are_curated        <- sub_df_reordered[["Source"]] == "Curated"
   are_specific       <- ((sub_df_reordered[["GuideScan_specificity"]] < 0.2) %in% FALSE) |
-                         (is.na(sub_df_reordered[["GuideScan_specificity"]]) & ((sub_df_reordered[["CRISPOR_3MM_specificity"]] < 0.2) %in% FALSE))
+                        (is.na(sub_df_reordered[["GuideScan_specificity"]]) &
+                         ((sub_df_reordered[["CRISPOR_3MM_specificity"]] < 0.2) %in% FALSE)
+                         )
 
   if ("Exon_number_GPP" %in% names(sub_df_reordered)) { # ==> CRISPRko
     violate_Graf_criteria <- sub_df_reordered[["CRISPOR_Graf_status"]] %in% c("ggc", "tt")
@@ -281,7 +289,8 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                      min_spaces      = 50L,
                                      only_top_24_GPP = FALSE,
                                      parallel_mode   = TRUE,
-                                     num_cores       = NULL
+                                     num_cores       = NULL,
+                                     tolerate_divergent_chromosomes = FALSE
                                      ) {
 
   unique_IDs <- GetUniqueIDs(CRISPR_df, ID_column)
@@ -295,7 +304,7 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
     parallel::clusterExport(cl,
                             varlist = c("SortCombinations", "CreateCombinations", "MessageID",
                                         "ReorderSubDfByLocation", "NumHomologousPairs", "SplitIntoSubstrings",
-                                        "CRISPR_df",
+                                        "CRISPR_df", "tolerate_divergent_chromosomes",
                                         "preferred_AF_max_column", "SNP_frequency_cutoff",
                                         "min_overlaps", "min_spaces", "only_top_24_GPP"
                                         ),
@@ -306,7 +315,8 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                              function(x) SortCombinations(CRISPR_df[CRISPR_df[[ID_column]] == x, , drop = FALSE],
                                                                           min_overlaps    = min_overlaps,
                                                                           min_spaces      = min_spaces,
-                                                                          only_top_24_GPP = only_top_24_GPP
+                                                                          only_top_24_GPP = only_top_24_GPP,
+                                                                          tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
                                                                           )
                                              )
     parallel::stopCluster(cl)
@@ -314,16 +324,19 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
   } else {
     reordered_df_list <- lapply(unique_IDs,
                                 function(x) SortCombinations(CRISPR_df[CRISPR_df[[ID_column]] == x, , drop = FALSE],
-                                                             min_spaces = min_spaces, only_top_24_GPP = only_top_24_GPP,
-                                                             min_overlaps = min_overlaps
+                                                             min_spaces      = min_spaces,
+                                                             only_top_24_GPP = only_top_24_GPP,
+                                                             min_overlaps    = min_overlaps,
+                                                             tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
                                                              )
                                 )
   }
 
-  results_df <- do.call(rbind.data.frame, c(reordered_df_list,
-                                            list(controls_df),
-                                            list(stringsAsFactors = FALSE, make.row.names = FALSE)
-                                            )
+  results_df <- do.call(rbind.data.frame,
+                        c(reordered_df_list,
+                          list(controls_df),
+                          list(stringsAsFactors = FALSE, make.row.names = FALSE)
+                          )
                         )
   return(results_df)
 }

@@ -63,7 +63,7 @@ ensembl_mappings_df <- MapEnsemblIDs(secretome_df)
 
 # Examine secretome genes with problematic mappings -----------------------
 
-View(ensembl_mappings_df[ensembl_mappings_df[["Are_problematic"]], ])
+head(ensembl_mappings_df[ensembl_mappings_df[["Are_problematic"]], ])
 
 
 

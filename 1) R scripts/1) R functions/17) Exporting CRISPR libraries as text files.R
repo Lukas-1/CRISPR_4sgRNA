@@ -7,6 +7,8 @@
 
 library("Biostrings")
 
+general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R"))
 
 
 
@@ -70,6 +72,14 @@ FormatForExcel <- function(my_df,
   # Requires the object 'source_abbreviations_vec' in the global environment
 
   is_CRISPRa <- "Calabrese_rank" %in% names(my_df)
+
+  overlapping_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Entrez_overlapping_0MM", "Symbol_overlapping_0MM")
+  for (column_name in intersect(overlapping_columns, colnames(my_df))) {
+    split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
+    split_list <- lapply(split_list, function(x) unique(x[x != "NA"]))
+    split_vec <- vapply(split_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = "; "), "")
+    my_df[[column_name]] <- split_vec
+  }
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[["Combined_ID"]])
   if (convert_excluded_to_3) {
@@ -153,6 +163,7 @@ FormatForExcel <- function(my_df,
   for (i in seq_len((ncol(my_df) - 6))) {
     my_df[[i]] <- ifelse(is.na(my_df[[i]]), "", as.character(my_df[[i]]))
   }
+  my_df[["Locations_0MM"]] <- TruncateLongEntries(my_df[["Locations_0MM"]])
   my_df <- AbbreviateColumns(my_df)
   for (i in (ncol(my_df) - 5):ncol(my_df)) {
     my_df[[i]] <- ifelse(is.na(my_df[[i]]), " ", as.character(my_df[[i]]))

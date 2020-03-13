@@ -264,13 +264,12 @@ GetCutLocations <- function(ranges_df) {
 
 
 LocationStringToDf <- function(location_char_vec) {
-
+  assign("delete_location_char_vec", location_char_vec, envir = globalenv())
   chromosome_splits <- strsplit(location_char_vec, "(", fixed = TRUE)
   strand_splits <- strsplit(sapply(chromosome_splits, "[[", 2), ")", fixed = TRUE)
   location_vec <- sapply(strand_splits, "[[", 2)
   location_vec <- substr(location_vec, 2, nchar(location_vec))
   location_splits <- strsplit(location_vec, "-", fixed = TRUE)
-
   results_df <- data.frame(
     "Chromosome" = sapply(chromosome_splits, "[[", 1),
     "Strand"     = sapply(strand_splits, "[[", 1),
@@ -283,12 +282,34 @@ LocationStringToDf <- function(location_char_vec) {
 }
 
 
-FindSingleLocationFromTSS <- function(location_vec, chromosome, TSS_location = NA) {
+
+NoMatchForChromosome <- function(force_stop) {
+  if (force_stop) {
+    stop("No hit with a matching chromosome  was found!")
+  }
+  results_df <- data.frame("Chromosome" = NA_character_,
+                           "Strand"     = NA_character_,
+                           "Start"      = NA_integer_,
+                           "End"        = NA_integer_,
+                           stringsAsFactors = FALSE
+                           )
+  return(results_df)
+}
+
+
+
+FindSingleLocationFromTSS <- function(location_vec, chromosome, TSS_location = NA, force_stop = TRUE) {
   results_df <- LocationStringToDf(location_vec)
   if (!(is.na(chromosome))) {
     are_this_chromosome <- results_df[["Chromosome"]] == chromosome
-    stopifnot(any(are_this_chromosome))
-    results_df <- results_df[are_this_chromosome, ]
+    assign("delete_location_vec", location_vec, envir = globalenv())
+    assign("delete_chromosome"  , chromosome,   envir = globalenv())
+    assign("delete_TSS_location", TSS_location, envir = globalenv())
+    if (!(any(are_this_chromosome))) {
+      return(NoMatchForChromosome(force_stop))
+    } else {
+      results_df <- results_df[are_this_chromosome, ]
+    }
   }
   if (is.na(TSS_location)) {
     results_df <- results_df[1, ]
@@ -301,12 +322,17 @@ FindSingleLocationFromTSS <- function(location_vec, chromosome, TSS_location = N
 }
 
 
-FindSingleLocationFromGene <- function(location_vec, chromosome, gene_GRanges_object) {
+
+
+FindSingleLocationFromGene <- function(location_vec, chromosome, gene_GRanges_object, force_stop = TRUE) {
   results_df <- LocationStringToDf(location_vec)
   if (!(is.na(chromosome))) {
     are_this_chromosome <- results_df[["Chromosome"]] == chromosome
-    stopifnot(any(are_this_chromosome))
-    results_df <- results_df[are_this_chromosome, ]
+    if (!(any(are_this_chromosome))) {
+      return(NoMatchForChromosome(force_stop))
+    } else {
+      results_df <- results_df[are_this_chromosome, ]
+    }
   }
   if (is.null(gene_GRanges_object)) {
     results_df <- results_df[1, ]
@@ -320,6 +346,52 @@ FindSingleLocationFromGene <- function(location_vec, chromosome, gene_GRanges_ob
       results_df <- results_df[which.min(distance_vec), ]
     }
   }
+  return(results_df)
+}
+
+
+
+
+
+Choose0MMLocation <- function(CRISPR_df, are_duplicates, use_TSS) {
+
+  splits_list <- strsplit(CRISPR_df[["Locations_0MM"]][are_duplicates], "; ", fixed = TRUE)
+
+  assign("delete_CRISPR_df",      CRISPR_df,      envir = globalenv())
+  assign("delete_are_duplicates", are_duplicates, envir = globalenv())
+  assign("delete_splits_list",    splits_list,    envir = globalenv())
+
+  entrez_chromosome <- unique(CRISPR_df[["Entrez_chromosome"]][are_duplicates])
+  if (entrez_chromosome %in% "chrX, chrY") {
+    entrez_chromosome <- "chrX"
+  }
+
+  if (use_TSS) {
+    best_TSS <- unique(GetBestTSSPositions(CRISPR_df[are_duplicates, ]))
+    assign("delete_are_duplicates",    are_duplicates,       envir = globalenv())
+    assign("delete_CRISPR_df",         CRISPR_df,            envir = globalenv())
+    assign("delete_best_TSS",          best_TSS,             envir = globalenv())
+    assign("delete_entrez_chromosome", entrez_chromosome,    envir = globalenv())
+    assign("delete_splits_list",       splits_list,          envir = globalenv())
+    locations_df_list <- lapply(splits_list, function(x) FindSingleLocationFromTSS(x, entrez_chromosome, best_TSS, force_stop = FALSE))
+  } else {
+    entrez_ID <- unique(CRISPR_df[["Entrez_ID"]][are_duplicates])
+    if (is.na(entrez_ID)) {
+      gene_GRanges_object <- NULL
+    } else {
+      are_this_entrez <- (mcols(human_genes_GRanges)[, "gene_id"] == entrez_ID) &
+                         (seqnames(human_genes_GRanges) == entrez_chromosome)
+      if (any(are_this_entrez)) {
+        gene_GRanges_object <- human_genes_GRanges[mcols(human_genes_GRanges)[, "gene_id"] == entrez_ID]
+      } else {
+        gene_GRanges_object <- NULL
+      }
+    }
+    locations_df_list <- lapply(splits_list, function(x) FindSingleLocationFromGene(x, entrez_chromosome, gene_GRanges_object, force_stop = FALSE))
+  }
+  results_df <- do.call(rbind.data.frame, c(locations_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  assign("delete_results_df", results_df, envir = globalenv())
+  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
   return(results_df)
 }
 
@@ -377,50 +449,14 @@ FindDuplicatedGenes <- function(CRISPR_df, fraction_cutoff = 0.8, absolute_cutof
     if (is_duplicated_gene) {
 
       results_df[["Is_duplicated_gene"]][this_gene_duplicates] <- TRUE
+      new_locations_df <- Choose0MMLocation(CRISPR_df, this_gene_duplicates, use_TSS)
 
-      splits_list <- strsplit(CRISPR_df[["Locations_0MM"]][this_gene_duplicates], "; ", fixed = TRUE) # The split has to be done again, since this_gene_duplicates may have changed
-
-      entrez_chromosome <- unique(CRISPR_df[["Entrez_chromosome"]][this_gene_duplicates])
-      if (entrez_chromosome %in% "chrX, chrY") {
-        entrez_chromosome <- "chrX"
-      }
-
-      if (use_TSS) {
-        best_TSS <- unique(GetBestTSSPositions(CRISPR_df[this_gene_duplicates, ]))
-        new_locations_df <- do.call(rbind.data.frame,
-                                    c(lapply(splits_list, function(x) FindSingleLocationFromTSS(x, entrez_chromosome, best_TSS)),
-                                      list(stringsAsFactors = FALSE, make.row.names = FALSE)
-                                      )
-                                    )
-      } else {
-
-        entrez_ID <- unique(CRISPR_df[["Entrez_ID"]][this_gene_duplicates])
-
-        if (is.na(entrez_ID)) {
-          gene_GRanges_object <- NULL
-        } else {
-          are_this_entrez <- (mcols(human_genes_GRanges)[, "gene_id"] == entrez_ID) &
-                             (seqnames(human_genes_GRanges) == entrez_chromosome)
-          if (any(are_this_entrez)) {
-            gene_GRanges_object <- human_genes_GRanges[mcols(human_genes_GRanges)[, "gene_id"] == entrez_ID]
-          } else {
-            gene_GRanges_object <- NULL
-          }
-        }
-
-        new_locations_df <- do.call(rbind.data.frame,
-                                    c(lapply(splits_list, function(x) FindSingleLocationFromGene(x, entrez_chromosome, gene_GRanges_object)),
-                                      list(stringsAsFactors = FALSE, make.row.names = FALSE)
-                                      )
-                                    )
-
-      }
       for (column_name in names(new_locations_df)) {
         results_df[[column_name]][this_gene_duplicates] <- new_locations_df[[column_name]]
       }
+
     }
   }
-
   return(results_df)
 }
 
@@ -443,14 +479,18 @@ ReplaceDuplicatedGenes <- function(CRISPR_df) {
 }
 
 
-# Functions for refining the genomic locations of sgRNAs ------------------
 
+# Functions for refining the genomic locations of sgRNAs ------------------
 
 ReassignTSS <- function(merged_CRISPR_df) {
   # Assigns a TSS to all sgRNAs based on the gene ID they are associated with (also to those sgRNAs which were not found on GuideScan!)
   # Depends on the data frame 'combined_TSS_CRISPRa_df' in the global environment
 
-  vec_for_matching_CRISPR <- paste0(merged_CRISPR_df[["Combined_ID"]], "__", merged_CRISPR_df[["Chromosome"]])
+  chromosome_vec <- merged_CRISPR_df[["Entrez_chromosome"]]
+  chromosome_vec <- ifelse(chromosome_vec == "chrX, chrY", "chrX", chromosome_vec)
+  chromosome_vec <- ifelse(is.na(chromosome_vec), merged_CRISPR_df[["Chromosome"]], chromosome_vec)
+
+  vec_for_matching_CRISPR <- paste0(merged_CRISPR_df[["Combined_ID"]], "__",chromosome_vec)
   vec_for_matching_TSS <- paste0(combined_TSS_CRISPRa_df[["Combined_ID"]], "__", combined_TSS_CRISPRa_df[["Chromosome"]])
   matches_vec <- match(vec_for_matching_CRISPR, vec_for_matching_TSS)
   for (column_name in c("Strand_of_TSS", "Best_TSS", "First_TSS", "Last_TSS")) {
@@ -460,9 +500,9 @@ ReassignTSS <- function(merged_CRISPR_df) {
     } else {
       TSS_column_name <- column_name
     }
-    merged_CRISPR_df[[column_name]] <- ifelse(is.na(merged_CRISPR_df[[column_name]]),
-                                              ifelse(is.na(merged_CRISPR_df[["Chromosome"]]), NA, combined_TSS_CRISPRa_df[[TSS_column_name]][matches_vec]),
-                                              merged_CRISPR_df[[column_name]]
+    merged_CRISPR_df[[column_name]] <- ifelse(is.na(matches_vec),
+                                              merged_CRISPR_df[[column_name]],
+                                              combined_TSS_CRISPRa_df[[TSS_column_name]][matches_vec]
                                               )
   }
   return(merged_CRISPR_df)
@@ -477,6 +517,17 @@ GetBestTSSPositions <- function(CRISPR_df) {
          CRISPR_df[["Best_TSS"]]
          )
 }
+
+
+
+GetDistanceFromTSS <- function(CRISPR_df) {
+  TSS_position_vec <- GetBestTSSPositions(CRISPR_df)
+  have_neg_strand_TSS <- CRISPR_df[["Strand_of_TSS"]] == "-"
+  results_vec <- (CRISPR_df[["Cut_location"]] - TSS_position_vec) * ifelse(have_neg_strand_TSS, -1L, 1L) +
+                 ifelse(have_neg_strand_TSS, +2L, -1L)
+  return(results_vec)
+}
+
 
 
 
@@ -553,7 +604,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
   }
   merged_CRISPR_df <- MergeLocations(merged_CRISPR_df)
 
-
+  assign("merged_CRISPR_df_pre_duplicated", merged_CRISPR_df, envir = globalenv())
 
   # For genes that are clearly duplicated (e.g. those that are located in the pseudo-autosomal regions of chromosomes X and Y),
   # arbitrarily assign the sgRNAs to the "first" of the two locations in the genome
@@ -575,12 +626,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
 
   ### Calculate the distance from the TSS
-  TSS_position_vec <- GetBestTSSPositions(merged_CRISPR_df)
-
-  have_neg_strand_TSS <- merged_CRISPR_df[["Strand_of_TSS"]] == "-"
-  merged_CRISPR_df[["Distance_from_TSS"]] <- (merged_CRISPR_df[["Cut_location"]] - TSS_position_vec) * ifelse(have_neg_strand_TSS, -1L, 1L) +
-                                              ifelse(have_neg_strand_TSS, +2L, -1L)
-
+  merged_CRISPR_df[["Distance_from_TSS"]] <- GetDistanceFromTSS(merged_CRISPR_df)
 
 
   # Eliminate duplicated sgRNAs
@@ -655,11 +701,11 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
   merged_CRISPR_df[["GuideScan_offtarget_category"]] <- GetOffTargetCategory(merged_CRISPR_df)
 
-  merged_CRISPR_df[["Locations_0MM"]] <- TruncateLongEntries(merged_CRISPR_df[["Locations_0MM"]])
+  # merged_CRISPR_df[["Locations_0MM"]] <- TruncateLongEntries(merged_CRISPR_df[["Locations_0MM"]])
 
 
   # Remove unnecessary columns
-  remove_columns <- c("Entrez_chromosome", "Hits_chromosome", "GuideScan_chromosome", "Hits_strand", "GuideScan_strand", "Hits_start",
+  remove_columns <- c("Hits_chromosome", "GuideScan_chromosome", "Hits_strand", "GuideScan_strand", "Hits_start",
                       "GuideScan_start", "Hits_end", "GuideScan_end",
                       "GuideScan_entrez_ID", "GuideScan_symbol", "gRNA", "gRNA_label", "Annotation"
                       )
@@ -686,6 +732,61 @@ CheckForInconsistentChromosomes <- function(CRISPR_df) {
   results_vec <- names(which(have_more_than_one_chr_vec))
   return(results_vec)
 }
+
+
+
+
+FindBest0MMLocations <- function(CRISPR_df) {
+
+  use_TSS <- "Best_TSS" %in% names(CRISPR_df)
+  are_not_controls <- CRISPR_df[["Is_control"]] %in% "No"
+  location_columns <- c("Chromosome", "Strand", "Start", "End")
+  combined_IDs_vec <- CRISPR_df[["Combined_ID"]][are_not_controls]
+  combined_IDs_fac <- factor(combined_IDs_vec, levels = unique(combined_IDs_vec))
+
+  # The following check is optional:
+  stopifnot(identical(length(unique(combined_IDs_fac)),
+                      length(rle(as.integer(combined_IDs_fac))[["lengths"]])
+                      )
+            )
+
+  split_df_list <- split(CRISPR_df[are_not_controls, ], combined_IDs_fac)
+  results_df_list <- lapply(split_df_list, function(x) {
+    have_multiple_0MM <- x[["Num_0MM"]] > 1
+    results_sub_df <- x[, location_columns]
+    if (any(have_multiple_0MM)) {
+      located_sub_df <- Choose0MMLocation(x, have_multiple_0MM, use_TSS)
+      stopifnot(identical(nrow(located_sub_df), sum(have_multiple_0MM)))
+      for (column_name in names(results_sub_df)) {
+        results_sub_df[[column_name]][have_multiple_0MM] <- located_sub_df[[column_name]]
+      }
+    }
+    stopifnot(identical(nrow(results_sub_df), nrow(x)))
+    return(results_sub_df)
+  })
+
+  lax_locations_df <- do.call(rbind.data.frame,
+                              c(results_df_list,
+                                list(CRISPR_df[!(are_not_controls), location_columns],
+                                     stringsAsFactors = FALSE, make.row.names = FALSE
+                              )))
+  colnames(lax_locations_df) <- paste0(colnames(lax_locations_df), "_lax")
+
+  results_df <- do.call(rbind.data.frame,
+                        c(split_df_list,
+                          list(CRISPR_df[!(are_not_controls), ],
+                               stringsAsFactors = FALSE, make.row.names = FALSE
+                        )))
+
+  results_df <- cbind.data.frame(results_df, lax_locations_df)
+
+  stopifnot(identical(nrow(results_df), nrow(CRISPR_df)))
+  return(results_df)
+}
+
+
+
+
 
 
 

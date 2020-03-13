@@ -38,7 +38,10 @@ ExpandList <- function(my_list) {
 
 
 GetMinEntrez <- function(entrez_IDs_vec) {
-  vapply(strsplit(entrez_IDs_vec, ", ", fixed = TRUE), function(x) min(as.integer(x)), integer(1))
+  vapply(strsplit(entrez_IDs_vec, ", ", fixed = TRUE),
+         function(x) min(as.integer(x)),
+         integer(1)
+         )
 }
 
 

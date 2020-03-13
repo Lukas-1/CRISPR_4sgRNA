@@ -448,6 +448,7 @@ FilterDfList <- function(use_df_list, are_done_list) {
 
 
 AddCombinedFilteredDf <- function(filtered_df_list) {
+  assign("fudi_filtered_df_list", filtered_df_list, envir = globalenv())
   combined_df_list <- CombineDfChunks(filtered_df_list[!(grepl("_all_done$", names(filtered_df_list)))])
   if (length(combined_df_list) == 1) {
     filtered_df_list[["filtered_all_chunks_combined"]] <- combined_df_list[[1]]

@@ -24,8 +24,10 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 
 
 
@@ -50,24 +52,25 @@ secretome_overview_df <- data.frame(secretome_df[match(reorganized_df[["Combined
 
 
 
+
+# Does the use of relaxed locations change the choice of guides? ----------
+
+are_different <- DifferUsingRelaxedLocations(secretome_overview_df[["Entrez_ID"]], merged_CRISPRko_df, lax_CRISPRko_df)
+secretome_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
+
+
+
+
+
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
-  annotation_columns[annotation_columns != "Original_Entrez_ID"],
+  setdiff(TF_annotation_columns, "Original_entrez"),
   selected_metrics,
-  "Annotated_category", "UniProt_accession"
+  "UniProt_accession", "Annotated_category"
 )
 
-secretome_overview_excel_df <- secretome_overview_df[, columns_for_excel]
-
-secretome_overview_excel_df[["Num_total"]] <- ifelse(is.na(secretome_overview_excel_df[["Num_total"]]), 0L, secretome_overview_excel_df[["Num_total"]])
-
-secretome_overview_excel_df <- FormatOverviewDfForExport(secretome_overview_excel_df)
-
-write.table(secretome_overview_excel_df,
-            file = file.path(file_output_directory, "Overview_CRISPRko_secretome.tsv"),
-            quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
-            )
+WriteOverviewDfToDisk(secretome_overview_df[, columns_for_excel], file_name = "Overview_CRISPRko_secretome")
 
 
 
@@ -77,7 +80,7 @@ write.table(secretome_overview_excel_df,
 # Save data ---------------------------------------------------------------
 
 save(list = "secretome_overview_df",
-     file = file.path(CRISPRko_RData_directory, "18) Summarize the human secretome sub-library.RData")
+     file = file.path(CRISPRko_RData_directory, "15) Summarize the human secretome sub-library.RData")
      )
 
 

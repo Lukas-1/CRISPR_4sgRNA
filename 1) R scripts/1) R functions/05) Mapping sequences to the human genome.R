@@ -13,7 +13,7 @@ library("BSgenome.Hsapiens.UCSC.hg38")
 
 # Loading global variables ------------------------------------------------
 
-chromosome_names <- paste0("chr", c(as.character(1:22), "X", "Y"))
+chromosome_names <- paste0("chr", c(as.character(1:22), "X", "Y", "M"))
 message("Loading the human genome into RAM...")
 chromosome_sequences_list <- sapply(chromosome_names, function(x) BSgenome.Hsapiens.UCSC.hg38[[x]], simplify = FALSE)
 

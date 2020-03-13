@@ -40,6 +40,7 @@ chunks_list <- AppendIDsWithoutCanonicalEntrezs(entrez_chunks_list, merged_repla
 
 
 
+
 # Prepare data frames that can be exported to .bed files ------------------
 
 bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRa_df, chunks_list)
@@ -67,6 +68,8 @@ WriteCRISPORInputFiles(bed_df_list, file_ending = "__CRISPRa.bed",
 WriteCRISPORInputFiles(FASTA_vec_list, file_ending = "__CRISPRa.fa",
                        CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_FASTA")
                        )
+
+
 
 
 

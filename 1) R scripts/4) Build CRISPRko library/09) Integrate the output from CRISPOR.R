@@ -77,15 +77,13 @@ merged_CRISPRko_df[["PAM_0MM"]] <- TruncateLongEntries(merged_CRISPRko_df[["PAM_
 # Calculate the proportions of guides that meet specificity cutoffs -------
 
 both_are_available <- !(is.na(merged_CRISPRko_df[["CRISPOR_CFD_specificity"]])) &
-                      !(is.na(merged_CRISPRko_df[["GuideScan_specificity"]]))
-both_are_available <- both_are_available & !(is.na(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]]))
-
+                      !(is.na(merged_CRISPRko_df[["GuideScan_specificity"]])) &
+                      !(is.na(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]]))
 
 GetProportion(merged_CRISPRko_df[["CRISPOR_CFD_specificity"]][both_are_available] >= 80)
 GetProportion(merged_CRISPRko_df[["GuideScan_specificity"]][both_are_available] >= 0.2)
-GetProportion(ConvertCFDScores(merged_CRISPRko_df[["CRISPOR_CFD_specificity"]][both_are_available]) >= 0.04)
-
 GetProportion(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]][both_are_available] >= 0.2)
+GetProportion(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]][both_are_available] >= 0.04)
 
 
 

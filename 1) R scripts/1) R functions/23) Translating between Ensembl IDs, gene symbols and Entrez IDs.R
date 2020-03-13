@@ -15,24 +15,25 @@ source(file.path(general_functions_directory, "02) Translating between Entrez ID
 
 # Define functions --------------------------------------------------------
 
-MapEnsemblIDs <- function(input_df) {
+MapEnsemblIDs <- function(input_df, warn = TRUE) {
 
   stopifnot(all(c("Gene_symbol", "Ensembl_gene_ID") %in% colnames(input_df)))
 
   ## Map TF gene symbols to Entrez IDs
   symbol_mappings_df <- MapToEntrezs(symbols_vec = input_df[["Gene_symbol"]])
   symbol_mappings_df <- symbol_mappings_df[, names(symbol_mappings_df) != "Original_entrez"]
-  problematic_symbols_df <- symbol_mappings_df[!(symbol_mappings_df[["Entrez_source"]] %in% 1), ]
-
+  # problematic_symbols_df <- symbol_mappings_df[!(symbol_mappings_df[["Entrez_source"]] %in% 1), ]
 
   ## Create an Ensembl-Entrez mapping using BioMart
-  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl", host = "useast.ensembl.org"))
+  message("Attempting to look up Ensembl-Entrez mappings in Ensembl's BioMart (requires an internet connection...)")
+  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))# host = "useast.ensembl.org"
   ensembl_to_entrez_df <- getBM(
     filters = "ensembl_gene_id",
     attributes = c("ensembl_gene_id", "entrezgene_id"),
     values = input_df[["Ensembl_gene_ID"]],
     mart = mart
   )
+  message("The BioMart lookup was successful.")
 
   ## Map TF Ensembl IDs to Entrez IDs
   ensembl_mappings_df <- data.frame(
@@ -97,7 +98,12 @@ MapEnsemblIDs <- function(input_df) {
   if (any(num_occurrences_vec > 1, na.rm = TRUE)) {
     message("\nProblematic genes:")
     print(ensembl_mappings_df[(num_occurrences_vec > 1) %in% TRUE, ])
-    warning("Multiple ensembl IDs seemed to map to same gene or Entrez ID!")
+    warning_text <- "Multiple ensembl IDs seemed to map to same gene or Entrez ID!"
+    if (warn) {
+      warning(warning_text)
+    } else {
+      message(warning_text)
+    }
   }
 
   final_symbols_df <- MapToEntrezs(ensembl_mappings_df[["Consensus_entrez"]], ensembl_mappings_df[["Gene_symbol"]])

@@ -125,8 +125,10 @@ FrequenciesFromVCFFiles <- function(ranges_df, frequency_cutoff = 0.001, round_f
                      (((1 - have_rsID_df[["AF_TOPMED"]]) >= frequency_cutoff) %in% TRUE)
   }
 
+  chromosomes_vec <- have_rsID_df[["Chromosome"]][exceed_cutoff]
+  chromosomes_vec <- ifelse(chromosomes_vec == "M", "MT", chromosomes_vec)
   GRanges_object_polymorphisms <- GRanges(
-    seqnames = have_rsID_df[["Chromosome"]][exceed_cutoff],
+    seqnames = chromosomes_vec,
     ranges   = IRanges(start = have_rsID_df[["Position"]][exceed_cutoff],
                        end = have_rsID_df[["Position"]][exceed_cutoff] + nchar(have_rsID_df[["Reference"]][exceed_cutoff]) - 1L
                        ),
@@ -277,8 +279,8 @@ AllPolymorphisms <- function(ranges_df, only_23bp_only_Kaviar = FALSE) {
 
     SNP_rsID_roots <- grep("SNP_IDs_", SNP_column_roots, fixed = TRUE, value = TRUE)
     NGG_rsID_list <- sapply(SNP_rsID_roots, function(root) {
-      PAM_list   <- strsplit(results_df[[paste0("PAM_", root)]], ", ", fixed = TRUE)
-      sg_list    <- strsplit(results_df[[paste0("sgRNA_", root)]], ", ", fixed = TRUE)
+      PAM_list <- strsplit(results_df[[paste0("PAM_", root)]], ", ", fixed = TRUE)
+      sg_list <- strsplit(results_df[[paste0("sgRNA_", root)]], ", ", fixed = TRUE)
       all23_list <- strsplit(results_df[[paste0("all23_", root)]], ", ", fixed = TRUE)
       results_vec <- vapply(seq_len(nrow(results_df)), function(x) {
         rsIDs_vec <- intersect(all23_list[[x]], c(sg_list[[x]], PAM_list[[x]]))

@@ -31,35 +31,25 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 
 
 
 
 
 
-# Collect all Entrez IDs from various sources -----------------------------
+# Create an overview data frame -------------------------------------------
 
-CRISPRko_entrez_IDs <- unique(merged_CRISPRko_df[["Entrez_ID"]])
-CRISPRko_entrez_IDs <- CRISPRko_entrez_IDs[!(is.na(CRISPRko_entrez_IDs))]
-CRISPRko_entrez_IDs <- unique(unlist(strsplit(CRISPRko_entrez_IDs, ", ", fixed = TRUE)))
-
-unique_entrez_IDs <- union(collected_entrez_IDs, CRISPRko_entrez_IDs)
+sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df, lax_CRISPRko_df)
 
 
 
 
 
-# Create an sgRNA overview data frame, with one row per gene --------------
+# Create an overview data frame for relaxed locations ---------------------
 
-sgRNAs_summary_df <- SummarizeCRISPRDf(merged_CRISPRko_df)
-sgRNAs_summary_df[!(is.na(sgRNAs_summary_df[["Entrez_ID"]])) & !(sgRNAs_summary_df[["Entrez_ID"]] %in% collected_entrez_IDs), ]
+sgRNAs_lax_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df, lax_CRISPRko_df, use_lax_df = TRUE)
 
-sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
-sgRNAs_all_genes_df[["Entrez_ID"]] <- sgRNAs_all_genes_df[["Combined_ID"]]
-sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, names(sgRNAs_all_genes_df) != "Combined_ID"]
-
-sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df)
-sgRNAs_overview_df[sgRNAs_overview_df[["Original_entrez"]] != "", ]
 
 
 
@@ -78,16 +68,31 @@ table(sgRNAs_overview_df[["Num_meeting_criteria"]] < 4)
 
 columns_for_excel <- c(
   all_genes_annotation_columns,
-  "Gene_present",
-  selected_metrics,
-  "Num_overlapping_with_SNP"
+  selected_metrics
 )
 
-columns_for_excel_with_comments <- c(setdiff(columns_for_excel, c("Gene_present", "Num_overlapping_with_SNP")), "Annotation")
+untargetable_annotations <- c("Not protein-coding", "Only annotated on alternate loci", "Not in current annotation release")
 
-WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel], file_name = "Overview_CRISPRko_all_genes")
-WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel_with_comments], file_name = "Overview_CRISPRko_all_genes_with_comments")
+are_targetable <- !(sgRNAs_overview_df[["Gene_annotation_status"]] %in% untargetable_annotations)
 
+WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel],
+                      file_name = "Overview_CRISPRko_all_genes"
+                      )
+WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
+                      file_name = "Overview_CRISPRko_all_targetable_genes"
+                      )
+
+
+
+
+
+# Write the summary to disk for relaxed locations -------------------------
+
+are_targetable <- !(sgRNAs_lax_overview_df[["Gene_annotation_status"]] %in% untargetable_annotations)
+
+WriteOverviewDfToDisk(sgRNAs_lax_overview_df[are_targetable, columns_for_excel],
+                      file_name = "Overview_CRISPRko_relaxed_all_targetable_genes"
+                      )
 
 
 
@@ -95,9 +100,17 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel_with_comments], fil
 
 # Save data ---------------------------------------------------------------
 
-save(list = "sgRNAs_overview_df",
-     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
+save(list = c("sgRNAs_overview_df", "sgRNAs_lax_overview_df"),
+     file = file.path(CRISPRko_RData_directory, "13) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
      )
+
+
+
+
+
+
+
+
 
 
 

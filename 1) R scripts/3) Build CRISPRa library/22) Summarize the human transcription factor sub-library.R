@@ -25,7 +25,8 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
-load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
+load(file.path(CRISPRa_RData_directory, "19) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Integrate the guide choices using relaxed and strict locations.RData"))
 
 
 
@@ -63,20 +64,28 @@ table(TF_overview_df[["Num_meeting_criteria"]] < 4)
 
 
 
+# Does the use of relaxed locations change the choice of guides? ----------
+
+are_different <- DifferUsingRelaxedLocations(TF_overview_df[["Entrez_ID"]], merged_replaced_CRISPRa_df, lax_CRISPRa_df)
+TF_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
+
+
+
+
+
+
+
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
   TF_annotation_columns,
   CRISPRa_columns,
-  selected_metrics[selected_metrics != "Num_overlaps"],
+  setdiff(selected_metrics, "Num_overlaps"),
   "DNA_binding_domain", "TF_assessment", "Binding_mode",
   "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO", "Is_C2H2_ZF"
 )
 
-TF_summary_excel_df <- TF_overview_df[, columns_for_excel]
-TF_summary_excel_df[["Num_total"]] <- ifelse(is.na(TF_summary_excel_df[["Num_total"]]), 0L, TF_summary_excel_df[["Num_total"]])
-
-WriteOverviewDfToDisk(TF_summary_excel_df, file_name = "Overview_CRISPRa_transcription_factors")
+WriteOverviewDfToDisk(TF_overview_df[, columns_for_excel], file_name = "Overview_CRISPRa_transcription_factors")
 
 
 
@@ -84,7 +93,7 @@ WriteOverviewDfToDisk(TF_summary_excel_df, file_name = "Overview_CRISPRa_transcr
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_overview_df",
-     file = file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library - TF_overview_df.RData")
+     file = file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData")
      )
 
 

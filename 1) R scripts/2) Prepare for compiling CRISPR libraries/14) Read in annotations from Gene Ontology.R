@@ -22,7 +22,7 @@ general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1
 # Read in data ------------------------------------------------------------
 
 # Downloaded from https://www.ensembl.org/biomart/martview
-BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2019-08-11_Gene_Ontology.txt"),
+BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2020-03-11_Gene_Ontology.txt"),
                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE,
                             fill = TRUE
                             )
@@ -31,7 +31,7 @@ BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "G
 
 # Define functions --------------------------------------------------------
 
-SearchGOTerms <- function(search_term, unique_terms = unique_GO_terms, fixed = FALSE) {
+FindGOTerms <- function(search_term, unique_terms = unique_GO_terms, fixed = FALSE) {
   results_vec <- grep(search_term, unique_terms, fixed = fixed, value = TRUE)
   results_vec <- results_vec[order(nchar(results_vec), results_vec)]
   return(results_vec)
@@ -46,25 +46,26 @@ CountNumGenes <- function(GO_terms) {
 
 
 
+
 # Set up global variables -------------------------------------------------
 
 unique_GO_terms <- unique(BioMart_GO_df[["GO term name"]])
 
 
 
+
 # Find GO terms matching certain keywords ---------------------------------
 
-all_GO_terms_TFs          <- SearchGOTerms("transcription factor", fixed = TRUE)
-all_GO_terms_GPCRs        <- SearchGOTerms("G[- ]protein")
-all_GO_terms_kinases      <- SearchGOTerms("kinase",      fixed = TRUE)
-all_GO_terms_phosphatases <- SearchGOTerms("phosphatase", fixed = TRUE)
-all_GO_terms_ion_channels <- SearchGOTerms("ion channel", fixed = TRUE)
-all_GO_terms_transporters <- SearchGOTerms("transporter", fixed = TRUE)
-all_GO_terms_ubiquitin    <- SearchGOTerms("ubiquitin",   fixed = TRUE)
+all_GO_terms_TFs          <- FindGOTerms("transcription factor", fixed = TRUE)
+all_GO_terms_GPCRs        <- FindGOTerms("G[- ]protein")
+all_GO_terms_kinases      <- FindGOTerms("kinase",      fixed = TRUE)
+all_GO_terms_phosphatases <- FindGOTerms("phosphatase", fixed = TRUE)
+all_GO_terms_ion_channels <- FindGOTerms("ion channel", fixed = TRUE)
+all_GO_terms_transporters <- FindGOTerms("transporter", fixed = TRUE)
+all_GO_terms_ubiquitin    <- FindGOTerms("ubiquitin",   fixed = TRUE)
 
-
-all_GO_terms_receptor     <- SearchGOTerms("receptor", fixed = TRUE)
-all_GO_terms_membrane_receptor <- SearchGOTerms("membrane receptor", fixed = TRUE)
+all_GO_terms_receptor     <- FindGOTerms("receptor", fixed = TRUE)
+all_GO_terms_membrane_receptor <- FindGOTerms("membrane receptor", fixed = TRUE)
 
 
 
@@ -95,7 +96,7 @@ CountNumGenes("transmembrane receptor protein tyrosine kinase activity")
 # Save data ---------------------------------------------------------------
 
 save(list = "BioMart_GO_df",
-     file = file.path(general_RData_directory, "13) Read in annotations from Gene Ontology.RData")
+     file = file.path(general_RData_directory, "14) Read in annotations from Gene Ontology.RData")
      )
 
 

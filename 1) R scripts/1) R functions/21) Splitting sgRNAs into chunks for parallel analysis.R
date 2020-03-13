@@ -16,6 +16,9 @@ AppendIDsWithoutCanonicalEntrezs <- function(entrez_IDs_list, CRISPR_df) {
 
 
 CombineDfChunks <- function(df_list, max_num_per_chunk = 12000L) {
+  if (length(df_list) == 1) {
+    return(df_list)
+  }
   current_sum <- nrow(df_list[[1]])
   current_chunk <- 1L
   chunk_vec <- c(1L, rep(NA_integer_, length(df_list) - 1))

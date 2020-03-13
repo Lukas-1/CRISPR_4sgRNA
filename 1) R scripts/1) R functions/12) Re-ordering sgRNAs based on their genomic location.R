@@ -12,8 +12,7 @@ MessageID <- function(CRISPR_sub_df) {
 
 
 
-ReorderSubDfByLocation <- function(CRISPR_sub_df) {
-
+ReorderSubDfByLocation <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE) {
   were_mapped <- !(apply(do.call(cbind,
                                  sapply(c("Chromosome", "Strand", "Start", "End"),
                                         function(x) is.na(CRISPR_sub_df[[x]]),
@@ -33,7 +32,11 @@ ReorderSubDfByLocation <- function(CRISPR_sub_df) {
                      )
               )
     } else {
-      stop("The sgRNAs mapped to more than one chromosome, and this inconsistency could not be resolved!")
+      if (tolerate_divergent_chromosomes) {
+        were_mapped <- rep.int(FALSE, nrow(CRISPR_sub_df))
+      } else {
+        stop("The sgRNAs mapped to more than one chromosome, and this inconsistency could not be resolved!")
+      }
     }
   }
   new_order <- order(CRISPR_sub_df[["Start"]])

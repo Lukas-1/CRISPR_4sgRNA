@@ -17,6 +17,7 @@ source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to
 
 CRISPR_root_directory   <- "~/CRISPR"
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 
@@ -25,8 +26,37 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(CRISPRa_RData_directory, "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Integrate the guide choices using relaxed and strict locations.RData"))
+load(file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "23) Summarize the human secretome sub-library.RData"))
+
+
+
+
+
+# Exclude genes that are not protein-coding -------------------------------
+
+TF_entrezs <- TF_overview_df[["Entrez_ID"]][!(is.na(TF_overview_df[["Num_total"]]))]
+secretome_entrezs <- secretome_overview_df[["Entrez_ID"]][!(is.na(secretome_overview_df[["Num_total"]]))]
+all_entrezs <- unique(c(collected_entrez_IDs, TF_entrezs, secretome_entrezs))
+
+all_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Entrez_ID"]] %in% all_entrezs, ]
+
+
+
+
+# Exclude incomplete transcripts, or those with shared subsequences -------
+
+are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
+
+
+
+
+
+# Examine problematic genes -----------------------------------------------
+
+all_CRISPRa_df[are_top4_mat[, "Are_valid_or_only_top4"] & !(are_top4_mat[, "Have_complete_guides"]), invalid_combo_show_columns]
 
 
 
@@ -34,22 +64,20 @@ load(file.path(CRISPRa_RData_directory, "20) Summarize the human transcription f
 
 # Define the sublibrary ---------------------------------------------------
 
-replaced_TF_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% TF_overview_df[["Combined_ID"]], ]
+are_TF <- all_CRISPRa_df[["Combined_ID"]] %in% TF_overview_df[["Combined_ID"]]
+
+replaced_TF_CRISPRa_df <- all_CRISPRa_df[are_TF, ]
+TF_are_top4_mat <- are_top4_mat[are_TF, ]
 
 
 
 
 
-# Exclude incomplete transcripts, or those with shared subsequences -------
+# Exclude unspaced/incomplete TF sgRNAs -----------------------------------
 
-are_complete_and_spaced  <- AreCompleteTranscripts(replaced_TF_CRISPRa_df, must_be_spaced = TRUE)
-have_zero_spacing        <- replaced_TF_CRISPRa_df[["Spacing"]] %in% 0 # "Zero" spacing means that there might be homologies / long shared subsequences among the chosen 4 guides!
-are_top4                 <- replaced_TF_CRISPRa_df[["Rank"]] %in% 1:4
-are_valid_top4           <- are_top4 & !(have_zero_spacing) & (are_complete_and_spaced %in% TRUE)
+are_valid_top4 <- TF_are_top4_mat[, "Are_top4"] & TF_are_top4_mat[, "Have_valid_guides"]
+are_invalid_top4 <- TF_are_top4_mat[, "Are_top4"] & !(are_valid_top4)
 
-stopifnot(all(replaced_TF_CRISPRa_df[["Num_TSSs"]][are_top4 & !(are_valid_top4)] >= 2)) # If a transcript is excluded, make sure that there is at least one other valid transcript for this gene!
-
-# Examine the excluded sgRNAs
 invalid_combo_show_columns <- c(
   "Gene_symbol", "Source", "Chromosome", "Cut_location",
   "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
@@ -58,8 +86,10 @@ invalid_combo_show_columns <- c(
   "Best_combination_rank",
   "sgRNA_sequence", "PAM"
 )
-replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_and_spaced %in% TRUE),  invalid_combo_show_columns]
-replaced_TF_CRISPRa_df[are_top4 & have_zero_spacing & (are_complete_and_spaced %in% FALSE), invalid_combo_show_columns]
+
+# Examine the excluded TF sgRNAs
+replaced_TF_CRISPRa_df[are_invalid_top4, invalid_combo_show_columns]
+
 
 
 
@@ -71,6 +101,8 @@ top4_df <- replaced_TF_CRISPRa_df[are_valid_top4, ]
 row.names(top4_df) <- NULL
 
 table(table(top4_df[["AltTSS_ID"]]))
+
+
 
 
 
@@ -212,7 +244,7 @@ TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_sgRNA_plates_df",
-     file = file.path(CRISPRa_RData_directory, "21) Allocate sgRNAs to plates.RData")
+     file = file.path(CRISPRa_RData_directory, "24) Allocate sgRNAs to plates.RData")
      )
 
 

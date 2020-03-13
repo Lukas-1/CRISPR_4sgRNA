@@ -90,7 +90,9 @@ replaced_merged_CRISPRa_df[["sgRNA_sequence"]][are_to_replace] <- paste0(new_5p_
 
 # Remove new duplicates that result from replacing 5'G nucleotides --------
 
-replaced_merged_CRISPRa_df <- ResolveDuplicates(replaced_merged_CRISPRa_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
+replaced_merged_CRISPRa_df <- ResolveDuplicates(replaced_merged_CRISPRa_df,
+                                                concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source")
+                                                )
 
 
 

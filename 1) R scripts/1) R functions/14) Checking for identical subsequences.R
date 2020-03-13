@@ -3,7 +3,20 @@
 
 
 
-# Define functions --------------------------------------------------------
+# Unrelated helper functions ----------------------------------------------
+
+CheckThatFactorIsInOrder <- function(my_factor) {
+  stopifnot(identical(length(unique(my_factor)),
+                      length(rle(as.integer(my_factor))[["lengths"]])
+                      )
+            )
+}
+
+
+
+
+
+# Functions for finding identical subsequences ----------------------------
 
 SplitIntoSubstrings <- function(string, substring_length = 8L) {
   if (nchar(string) <= substring_length) {

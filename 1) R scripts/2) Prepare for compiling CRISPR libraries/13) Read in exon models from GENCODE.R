@@ -60,7 +60,7 @@ GENCODE_df <- data.frame(GENCODE_original_df[, !(names(GENCODE_original_df) %in%
 # Save data ---------------------------------------------------------------
 
 save(list = "GENCODE_df",
-     file = file.path(general_RData_directory, "12) Read in exon models from GENCODE.RData")
+     file = file.path(general_RData_directory, "13) Read in exon models from GENCODE.RData")
      )
 
 

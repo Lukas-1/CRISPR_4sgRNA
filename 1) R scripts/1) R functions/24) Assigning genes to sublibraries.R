@@ -17,8 +17,8 @@ TidyEntrezs <- function(entrez_IDs_vec) {
 # Define mappings ---------------------------------------------------------
 
 hCRISPRa_v2_sublibrary_map <- c(
-  "h1" = "Kinases/Phosphatases/Drug Targets",
   "h6" = "Membrane Proteins",
+  "h1" = "Kinases/Phosphatases/Drug Targets",
   "h4" = "Mitochondria/Trafficking/Motility",
   "h3" = "Stress/Proteostasis",
   "h2" = "Cancer/Apoptosis",

@@ -128,7 +128,7 @@ collected_entrezs_df[["Category"]] <- vapply(seq_along(collected_entrez_IDs), fu
   is_in_NCBI_info <- collected_entrezs_df[["Is_in_NCBI_Hs_info"]][[x]]
   is_in_Ensembl <- collected_entrezs_df[["Is_in_Ensembl"]][[x]]
   if (!(is_in_NCBI_info)) {
-    return("Ensembl only")
+    return("Ensembl only (not in NCBI)")
   } else if (!(collected_entrezs_df[["Is_in_NCBI_gene"]][[x]])) {
     if (is_in_Ensembl) {
       return("Not in NCBI Gene, but in Ensembl")
@@ -143,9 +143,9 @@ collected_entrezs_df[["Category"]] <- vapply(seq_along(collected_entrez_IDs), fu
     return("Only annotated on alternate loci")
   } else {
     if (is_in_Ensembl) {
-      return("Unproblematic")
+      return("Present in NCBI and Ensembl")
     } else {
-      return("NCBI only")
+      return("NCBI only (not in Ensembl)")
     }
   }
 }, "")

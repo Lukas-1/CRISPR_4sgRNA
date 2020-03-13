@@ -114,7 +114,7 @@ unique_entrez_IDs <- unique_entrez_IDs[order(as.integer(unique_entrez_IDs))]
 chromosome_vec <- vapply(unique_entrez_IDs, function(x) {
   if (x %in% names(entrez_to_chromosome_list)) {
     chromosome_vec <- ifelse(entrez_to_chromosome_list[[x]] == "MT",
-                             "ChrM",
+                             "chrM",
                              ifelse(entrez_to_chromosome_list[[x]] == "Un", NA_character_, paste0("chr", entrez_to_chromosome_list[[x]]))
                              )
     return(paste0(chromosome_vec, collapse = ", "))

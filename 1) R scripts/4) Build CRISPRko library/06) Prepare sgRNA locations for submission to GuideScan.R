@@ -88,6 +88,13 @@ for (i in seq_along(GuideScan_input_list)) {
 }
 
 
+file_name <- "Input_for_GuideScan_CRISPRko_all_guides.txt"
+write.table(submit_df[["GuideScan_input_sgRNA"]],
+            file = file.path(GuideScan_files_directory, file_name),
+            quote = FALSE, row.names = FALSE, col.names = FALSE
+            )
+
+
 
 
 

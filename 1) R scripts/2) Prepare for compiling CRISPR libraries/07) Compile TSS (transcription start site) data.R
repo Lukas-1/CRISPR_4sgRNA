@@ -223,14 +223,22 @@ FANTOM5_filtered_df <- data.frame(
 
 # Construct a simplified BioMart data frame -------------------------------
 
-are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y")
+are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y", "MT")
 
 BioMart_filtered_df <- BioMart_df[are_on_chromosome, ]
 
+BioMart_filtered_df[["Chromosome/scaffold name"]] <- ifelse(BioMart_filtered_df[["Chromosome/scaffold name"]] == "MT",
+                                                            "M",
+                                                            BioMart_filtered_df[["Chromosome/scaffold name"]]
+                                                            )
+
 BioMart_filtered_df <- data.frame(
-  "Group"             = paste0(ifelse(is.na(BioMart_filtered_df[["NCBI gene ID"]]), "", paste0(BioMart_filtered_df[["NCBI gene ID"]], " | ")),
-                               BioMart_filtered_df[["Gene name"]], " | ",
-                               "chr", BioMart_filtered_df[["Chromosome/scaffold name"]]
+  "Group"             = paste0(ifelse(is.na(BioMart_filtered_df[["NCBI gene ID"]]),
+                                      "",
+                                      paste0(BioMart_filtered_df[["NCBI gene ID"]], " | ")
+                                      ),
+                               BioMart_filtered_df[["Gene name"]], " | ", "chr",
+                               BioMart_filtered_df[["Chromosome/scaffold name"]]
                                ),
   "Entrez_ID"         = BioMart_filtered_df[["NCBI gene ID"]],
   "Gene_symbol"       = BioMart_filtered_df[["Gene name"]],
@@ -286,9 +294,10 @@ combined_TSS_df <- rbind.data.frame(
   make.row.names = FALSE
 )
 
+entrez_to_symbols_vec <- MapToEntrezs(entrez_IDs_vec = combined_TSS_df[["Entrez_ID"]])[["Gene_symbol"]]
 
 combined_TSS_df <- combined_TSS_df[order(GetMinEntrez(combined_TSS_df[["Entrez_ID"]]),
-                                         combined_TSS_df[["Gene_symbol"]],
+                                         !(mapply(identical, entrez_to_symbols_vec, combined_TSS_df[["Gene_symbol"]])),
                                          combined_TSS_df[["Group"]],
                                          combined_TSS_df[["TSS"]]
                                          ), ]
@@ -370,7 +379,6 @@ FANTOM5_summary_list <- sapply(unique(FANTOM5_filtered_df[["Group"]]), function(
 
 FANTOM5_summary_df <- do.call(rbind.data.frame, c(FANTOM5_summary_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
-FANTOM5_summary_df
 
 
 
@@ -412,6 +420,7 @@ save(list = c("combined_TSS_df", "BioMart_filtered_df", "FANTOM5_filtered_df",
               ),
      file = file.path(general_RData_directory, "07) Compile TSS (transcription start site) data.RData")
      )
+
 
 
 

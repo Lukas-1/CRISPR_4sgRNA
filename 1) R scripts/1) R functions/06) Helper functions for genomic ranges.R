@@ -17,6 +17,7 @@ CheckRangesDf <- function(ranges_df) {
 RangesDfToGRangesObject <- function(ranges_df, strip_Chr = FALSE) {
   if (strip_Chr) {
     ranges_df[["Chromosome"]] <- sub("chr", "", ranges_df[["Chromosome"]], fixed = TRUE)
+    ranges_df[["Chromosome"]] <- ifelse(ranges_df[["Chromosome"]] == "M", "MT", ranges_df[["Chromosome"]])
   }
   GRanges_object <- GRanges(
     seqnames = ranges_df[["Chromosome"]],

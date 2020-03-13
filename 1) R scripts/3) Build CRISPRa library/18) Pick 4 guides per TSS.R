@@ -30,7 +30,6 @@ load(file.path(CRISPRa_RData_directory, "17) Integrate the output from CRISPOR.R
 
 
 
-
 # Rank sgRNAs -------------------------------------------------------------
 
 merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df, ID_column = "AltTSS_ID")
@@ -53,7 +52,7 @@ merged_replaced_CRISPRa_df <- PrioritizeNonOverlapping(merged_replaced_CRISPRa_d
 
 save(list = "merged_replaced_CRISPRa_df",
      file = file.path(CRISPRa_RData_directory,
-                      "18) Re-order the library to prioritize non-overlapping sgRNAs.RData"
+                      "18) Pick 4 guides per TSS.RData"
                       )
      )
 

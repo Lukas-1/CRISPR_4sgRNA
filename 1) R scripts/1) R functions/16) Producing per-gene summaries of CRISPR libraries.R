@@ -15,36 +15,24 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 
 
-
 # Define constants --------------------------------------------------------
 
-TF_annotation_columns <- c("Gene_symbol", "Ensembl_gene_ID", "Entrez_ID", "Original_symbol", "Original_entrez")
-all_genes_annotation_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Original_entrez")
+TF_annotation_columns <- c("Gene_symbol", "Ensembl_gene_ID", "Entrez_ID", "Original_symbol", "Original_entrez", "Sources")
+all_genes_annotation_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Original_entrez", "Sources")
 
 CRISPRa_columns <- c("Num_hCRISPRa_v2_transcripts", "Num_transcripts", "Num_overlapping_transcripts", "Num_incomplete_transcripts")
 
 selected_metrics <- c("Num_overlaps", "Spacing", "Longest_subsequence", "GuideScan_specificity",
                       "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
-                      "Num_top4_outside_criteria", "Num_total"
+                      "Num_top4_outside_criteria", "Num_total",
+                      "Specific_guides_available", "Num_no_perfect_match", "Gene_annotation_status",
+                      "Lax_locations_differ"
                       )
 
 
 
-# Define functions --------------------------------------------------------
 
-CollapseOriginal <- function(char_vec) {
-  paste0(unique(char_vec[char_vec != ""]), collapse = "")
-}
-
-
-FormatOverviewDfForExport <- function(overview_df) {
-  results_df <- RoundNumericColumns(overview_df)
-  for (i in seq_along(results_df)) {
-    results_df[[i]] <- ifelse(is.na(results_df[[i]]), "", as.character(results_df[[i]]))
-  }
-  return(results_df)
-}
-
+# General-use helper functions --------------------------------------------
 
 MeetCriteria <- function(CRISPR_df, allow_curated = FALSE) {
   are_to_exclude <- ((CRISPR_df[[preferred_AF_max_column]] > SNP_frequency_cutoff) %in% TRUE) |
@@ -67,7 +55,75 @@ AggregateSpecificityScores <- function(scores_vec) {
 }
 
 
+
+
+# Functions for re-formatting library source information ------------------
+
+libraries_order <- c(
+  "Calabrese",
+  "hCRISPRa-v2",
+  "Brunello",
+  "TKOv3",
+  "GPP"
+)
+
+libraries_two_letters <- c(
+  "Calabrese"   = "Ca",
+  "hCRISPRa-v2" = "v2",
+  "Brunello"    = "B",
+  "TKOv3"       = "T",
+  "GPP"         = "G"
+)
+
+
+ReformatSourceToFactor <- function(source_vec, strip_curated = TRUE) {
+  if (strip_curated) {
+    source_vec <- sub("Curated, ", "", source_vec, fixed = TRUE)
+  }
+  unique_sources <- unique(source_vec)
+  reordered_unique_sources <- vapply(strsplit(unique_sources, ", ", fixed = TRUE),
+                                     function(x) paste0(x[order(x == "GPP")], collapse = ", "),
+                                     ""
+                                     )
+  for (i in which(unique_sources != reordered_unique_sources)) {
+    source_vec[source_vec == unique_sources[[i]]] <- reordered_unique_sources[[i]]
+  }
+  levels_present <- libraries_order[libraries_order %in% source_vec]
+  stopifnot(length(levels_present) == 3)
+  levels_expanded <- c(apply(combn(levels_present, 2), 2, paste0, collapse = ", "),
+                       paste0(levels_present, collapse = ", ")
+                       )
+  source_fac <- factor(source_vec, levels = c(levels_present, levels_expanded))
+  return(source_fac)
+}
+
+
+SummarizeSources <- function(source_sub_vec) {
+  unique_sources <- unique(unlist(strsplit(source_sub_vec, ", ", fixed = TRUE)))
+  unique_sources <- unique_sources[order(match(unique_sources, names(libraries_two_letters)))]
+  unique_sources_abbr <- libraries_two_letters[match(unique_sources, names(libraries_two_letters))]
+  result_string <- paste0(unique_sources_abbr, collapse = ", ")
+  return(result_string)
+}
+
+
+
+
+
+# Functions for generating overview tables --------------------------------
+
+CollapseOriginal <- function(char_vec) {
+  paste0(unique(char_vec[char_vec != ""]), collapse = "")
+}
+
+
 SummarizeCRISPRDf <- function(CRISPR_df) {
+
+  are_curated <- CRISPR_df[["Source"]] == "Curated"
+  if (any(are_curated)) {
+    CRISPR_df <- CRISPR_df[!(are_curated), ]
+  }
+
   split_indices <- split(seq_len(nrow(CRISPR_df)), factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]])))
   include_top4nonoverlapping <- "Best_combination_rank" %in% names(CRISPR_df)
   if (include_top4nonoverlapping) {
@@ -94,6 +150,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       "Gene_symbol"                 = unique(CRISPR_df[["Gene_symbol"]][x]),
       "Original_entrez"             = CollapseOriginal(CRISPR_df[["Original_entrez"]][x]),
       "Original_symbol"             = CollapseOriginal(CRISPR_df[["Original_symbol"]][x]),
+      "Sources"                     = SummarizeSources(CRISPR_df[["Source"]][x]),
       "Num_hCRISPRa_v2_transcripts" = NA_integer_,
       "Num_transcripts"             = NA_integer_,
       "Num_overlapping_transcripts" = NA_integer_,
@@ -105,12 +162,15 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       "CRISPOR_4MM_specificity"     = NA_real_,
       "Longest_subsequence"         = NA_integer_,
       "Num_total"                   = length(x),
-      "Num_overlaps"                = NULL,
-      "Num_top4_outside_criteria"   = NULL,
+      "Num_overlaps"                = NA_integer_,
+      "Num_top4_outside_criteria"   = NA_integer_,
       "Num_meeting_criteria"        = sum(CRISPR_df[["Meet_criteria"]][x]),
       "Num_without_GuideScan"       = sum(is.na(CRISPR_df[["GuideScan_specificity"]][x])),
       "Num_unspecific"              = sum(CRISPR_df[["Are_unspecific"]][x]),
       "Num_overlapping_with_SNP"    = sum(CRISPR_df[["Overlap_with_SNP"]][x]),
+      "Num_no_perfect_match"        = sum(CRISPR_df[["Num_0MM"]][x] == 0),
+      "Num_top4_no_perfect_match"   = NA_integer_,
+      "Specific_guides_available"   = ifelse(all(is.na(CRISPR_df[["Start"]][x]) & (CRISPR_df[["Num_0MM"]][x] != 1)), "No", "Yes"),
       "Submitted_to_GuideScan"      = NA_character_,
       "TSS_regions"                 = NA_character_
       )
@@ -163,6 +223,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       are_top_4 <- CRISPR_df[["Rank"]][x] %in% 1:4
       results_list[["Num_overlaps"]] <- sum(CRISPR_df[["Num_overlaps"]][x[are_top_4]])
       results_list[["Num_top4_outside_criteria"]] <- sum(are_top_4) - sum(CRISPR_df[["Meet_criteria"]][x[are_top_4]])
+      results_list[["Num_top4_no_perfect_match"]] <- sum(CRISPR_df[["Num_0MM"]][x][are_top_4] == 0)
       if (include_transcripts) {
         guidescan_spec_vec <- vapply(transcripts_top4_indices,
                                      function(y) AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x][y]),
@@ -292,17 +353,48 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
   entrezs_vec <- results_df[["Entrez_ID"]]
   are_not_present <- results_df[["Gene_present"]] == "No"
   entrezs_vec[are_not_present] <- results_df[["Combined_ID"]][are_not_present]
-  results_df[["Annotation"]] <- collected_entrezs_df[["Category"]][match(entrezs_vec, collected_entrezs_df[["Entrez_ID"]])]
-  results_df[["Annotation"]] <- ifelse(entrezs_vec %in% collected_entrez_IDs,
-                                       results_df[["Annotation"]],
-                                       "Not protein-coding"
-                                       )
+  results_df[["Gene_annotation_status"]] <- collected_entrezs_df[["Category"]][match(entrezs_vec, collected_entrezs_df[["Entrez_ID"]])]
+  results_df[["Gene_annotation_status"]] <- ifelse(entrezs_vec %in% collected_entrez_IDs,
+                                                   results_df[["Gene_annotation_status"]],
+                                                   "Not protein-coding"
+                                                   )
   row.names(results_df) <- NULL
   return(results_df)
 }
 
 
 
+
+ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_lax_df = FALSE) {
+  ## requires 'collected_entrez_IDs' in the global environment
+
+  ## Collect all Entrez IDs from various sources
+  CRISPR_df_entrez_IDs <- unique(strict_CRISPR_df[["Entrez_ID"]])
+  CRISPR_df_entrez_IDs <- CRISPR_df_entrez_IDs[!(is.na(CRISPR_df_entrez_IDs))]
+  CRISPR_df_entrez_IDs <- unique(unlist(strsplit(CRISPR_df_entrez_IDs, ", ", fixed = TRUE)))
+  unique_entrez_IDs <- union(collected_entrez_IDs, CRISPR_df_entrez_IDs)
+
+  ## Create an sgRNA overview data frame, with one row per gene
+  if (use_lax_df) {
+    sgRNAs_summary_df <- SummarizeCRISPRDf(lax_CRISPR_df)
+  } else {
+    sgRNAs_summary_df <- SummarizeCRISPRDf(strict_CRISPR_df)
+  }
+  sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
+  sgRNAs_all_genes_df[["Entrez_ID"]] <- sgRNAs_all_genes_df[["Combined_ID"]]
+  sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, names(sgRNAs_all_genes_df) != "Combined_ID"]
+  sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df)
+  if (!(is.null(lax_CRISPR_df))) {
+    are_different <- DifferUsingRelaxedLocations(sgRNAs_overview_df[["Entrez_ID"]], strict_CRISPR_df, lax_CRISPR_df)
+    sgRNAs_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
+  }
+  return(sgRNAs_overview_df)
+}
+
+
+
+
+# Functions for exporting overview tables ---------------------------------
 
 FixSymbolsForSummaryDf <- function(reorganized_df) {
   have_no_symbol <- is.na(reorganized_df[["Gene_symbol"]])
@@ -316,9 +408,40 @@ FixSymbolsForSummaryDf <- function(reorganized_df) {
 }
 
 
+FormatOverviewDfForExport <- function(overview_df) {
+  for (column_name in intersect(c("Num_no_perfect_match", "Num_top4_no_perfect_match"), colnames(overview_df))) {
+    overview_df[[column_name]] <- ifelse(overview_df[[column_name]] == 0,
+                                         "",
+                                         as.character(overview_df[[column_name]])
+                                         )
+  }
+  if ("Lax_locations_differ" %in% colnames(overview_df)) {
+    overview_df[["Lax_locations_differ"]] <- ifelse(is.na(overview_df[["Num_total"]]), NA_character_, overview_df[["Lax_locations_differ"]])
+  }
+  overview_df[["Num_total"]] <- ifelse(is.na(overview_df[["Num_total"]]), 0L, overview_df[["Num_total"]])
+  results_df <- RoundNumericColumns(overview_df)
+  for (i in seq_along(results_df)) {
+    results_df[[i]] <- ifelse(is.na(results_df[[i]]), "", as.character(results_df[[i]]))
+  }
+  return(results_df)
+}
+
+
+WriteOverviewDfToDisk <- function(overview_df, file_name, use_directory = file_output_directory) {
+  write.table(FormatOverviewDfForExport(overview_df),
+              file = file.path(file_output_directory, paste0(file_name, ".tsv")),
+              quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
+              )
+  return(invisible(NULL))
+}
 
 
 
+
+
+
+
+# Functions for identifying sgRNAs that are shared between genes ----------
 
 FindSharedsgRNAs <- function(CRISPR_df) {
   all_shared_guides_df <- SharedsgRNAsDf(CRISPR_df)
@@ -338,13 +461,10 @@ FindSharedsgRNAs <- function(CRISPR_df) {
 
 
 
-
-
 SharedsgRNAsDf <- function(CRISPR_df) {
 
   all_sequences <- toupper(CRISPR_df[["sgRNA_sequence"]])
   num_occurrences <- table(all_sequences)
-
   multiples_vec <- num_occurrences[num_occurrences >= 2]
 
   results_df <- data.frame(
@@ -374,31 +494,39 @@ SharedsgRNAsDf <- function(CRISPR_df) {
 
 
 
-WriteOverviewDfToDisk <- function(overview_df, file_name, use_directory = file_output_directory) {
-  write.table(FormatOverviewDfForExport(overview_df),
-              file = file.path(file_output_directory, paste0(file_name, ".tsv")),
-              quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
-              )
-  return(invisible(NULL))
+
+
+
+# Functions for finding genes affected by relaxed/strict locations --------
+
+DifferUsingRelaxedLocations <- function(combined_IDs, strict_df, lax_df, filter_for_top4 = TRUE) {
+
+  results_vec <- rep(NA, length(combined_IDs))
+  are_not_NA <- !(is.na(combined_IDs))
+  combined_IDs <- combined_IDs[are_not_NA]
+
+  if (any(duplicated(combined_IDs))) {
+    stop("Duplicated entries are not allowed for the 'combined_IDs' parameter!")
+  }
+
+  are_included_lax <- lax_df[["Combined_ID"]] %in% combined_IDs
+  are_included_strict <- strict_df[["Combined_ID"]] %in% combined_IDs
+
+  if (filter_for_top4) {
+    are_included_lax <- are_included_lax & lax_df[["Rank"]] %in% 1:4
+    are_included_strict <- are_included_strict & strict_df[["Rank"]] %in% 1:4
+  }
+
+  lax_df <- lax_df[are_included_lax, ]
+  strict_df <- strict_df[are_included_strict, ]
+
+  lax_seq_list <- split(lax_df[["sgRNA_sequence"]], factor(lax_df[["Combined_ID"]], levels = combined_IDs))
+  strict_seq_list <- split(strict_df[["sgRNA_sequence"]], factor(strict_df[["Combined_ID"]], levels = combined_IDs))
+
+  are_identical <- mapply(identical, lax_seq_list, strict_seq_list)
+  results_vec[are_not_NA] <- !(are_identical)
+  return(results_vec)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

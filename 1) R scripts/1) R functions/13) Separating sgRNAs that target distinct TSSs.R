@@ -39,7 +39,6 @@ NumberTSSs <- function(locations_vec, min_space = 1001L) {
 
 
 AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TSS_prefix = "N") {
-
   stopifnot(length(TSS_number_vec) == length(original_TSS_vec))
   allocated_vec <- rep.int(NA_character_, length(TSS_number_vec))
   TSS_numbers <- unique(TSS_number_vec)
@@ -82,10 +81,10 @@ AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TS
 
 
 
-SeparateByTSS <- function(CRISPR_sub_df) {
+SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE) {
   MessageID(CRISPR_sub_df)
 
-  reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df)
+  reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df, tolerate_divergent_chromosomes = tolerate_divergent_chromosomes)
   reordered_df <- reordered_list[["reordered_df"]]
   TSS_number_vec <- NumberTSSs(reordered_df[["Cut_location"]])
   allocated_TSS_vec <- AllocateTSSs(TSS_number_vec, reordered_df[["hCRISPRa_v2_transcript"]], reordered_df[["Cut_location"]])
@@ -157,7 +156,12 @@ TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
 
 
 
-AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, parallel_mode = TRUE, num_cores = NULL) {
+AllocateTSSforAllGenes <- function(CRISPR_df,
+                                   omit_optional_columns          = FALSE,
+                                   parallel_mode                  = TRUE,
+                                   num_cores                      = NULL,
+                                   tolerate_divergent_chromosomes = FALSE
+                                   ) {
 
   are_controls <- CRISPR_df[["Is_control"]] == "Yes"
   combined_IDs <- unique(CRISPR_df[["Combined_ID"]][!(are_controls)])
@@ -169,17 +173,24 @@ AllocateTSSforAllGenes <- function(CRISPR_df, omit_optional_columns = FALSE, par
     cl <- parallel::makeCluster(num_cores)
     parallel::clusterExport(cl,
                             varlist = c("SeparateByTSS", "MessageID", "ReorderSubDfByLocation",
-                                        "NumberTSSs", "AllocateTSSs", "CRISPR_df"
+                                        "NumberTSSs", "AllocateTSSs",
+                                        "CRISPR_df", "tolerate_divergent_chromosomes"
                                         ),
                             envir = environment()
                             )
     reordered_df_list <- parallel::parLapply(cl,
                                              combined_IDs,
-                                             function(x) SeparateByTSS(CRISPR_df[CRISPR_df[["Combined_ID"]] == x, , drop = FALSE])
+                                             function(x) SeparateByTSS(CRISPR_df[CRISPR_df[["Combined_ID"]] == x, , drop = FALSE],
+                                                                       tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
+                                                                       )
                                              )
     parallel::stopCluster(cl)
   } else {
-    reordered_df_list <- lapply(combined_IDs, function(x) SeparateByTSS(CRISPR_df[CRISPR_df[["Combined_ID"]] == x, , drop = FALSE]))
+    reordered_df_list <- lapply(combined_IDs,
+                                function(x) SeparateByTSS(CRISPR_df[CRISPR_df[["Combined_ID"]] == x, , drop = FALSE],
+                                                          tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
+                                                          )
+                                )
   }
   if (any(are_controls)) {
     controls_df <- CRISPR_df[are_controls, ]

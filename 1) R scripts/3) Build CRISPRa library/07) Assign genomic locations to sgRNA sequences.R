@@ -59,27 +59,12 @@ merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all
 
 
 
+
 # Save data ---------------------------------------------------------------
 
 save(list = "merged_CRISPRa_df",
      file = file.path(CRISPRa_RData_directory, "07) Assign genomic locations to sgRNA sequences.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

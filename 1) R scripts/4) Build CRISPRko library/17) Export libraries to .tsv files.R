@@ -28,8 +28,9 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRko_RData_directory, "14) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
+load(file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData"))
 
 
 
@@ -50,7 +51,7 @@ source_abbreviations_vec <- c(
 # Re-arrange the columns --------------------------------------------------
 
 rearranged_column_names <- c(
-  "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entrez", "Original_symbol",
+  "Combined_ID", "Entrez_ID", "Entrez_overlapping_0MM", "Gene_symbol", "Symbol_overlapping_0MM", "Original_entrez", "Original_symbol",
 
   "Entrez_source_Brunello", "Entrez_source_TKOv3", "Is_control",
   "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP", "Transcript_ID", "Genomic_sequence_ID",
@@ -85,7 +86,7 @@ rearranged_column_names <- c(
 
   "PAM_0MM", "PAM_1MM",
 
-  "Locations_0MM", "Entrez_overlapping_0MM", "Symbol_overlapping_0MM",
+  "Locations_0MM", #"Entrez_overlapping_0MM", "Symbol_overlapping_0MM",
   "Locations_1MM", "Sequences_1MM", "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
 )
 
@@ -102,7 +103,8 @@ omit_columns <- c("Combined_ID",
                   "Is_control",
                   "Original_order",
                   "Original_PAM", "sgRNA_context_sequence", "Original_cut_position", "Original_orientation",
-                  "Entrez_overlapping_0MM", "Symbol_overlapping_0MM", "Entrez_overlapping_1MM", "Symbol_overlapping_1MM", "PAM_0MM", "PAM_1MM",
+                  # "Entrez_overlapping_0MM", "Symbol_overlapping_0MM",
+                  "Entrez_overlapping_1MM", "Symbol_overlapping_1MM", "PAM_0MM", "PAM_1MM",
                   "Start", "End", "GuideScan_Num_2or3MM", "Original_entrez", "Entrez_source_Brunello", "Entrez_source_TKOv3", "Off_target_stringency",
 
                   # "CRISPOR_Num_0MM", "CRISPOR_Num_1MM",  "CRISPOR_Num_2MM", "CRISPOR_Num_3MM", "CRISPOR_Num_4MM",
@@ -181,6 +183,8 @@ DfToTSV(secretome_CRISPRko_df, "CRISPRko_secretome")
 
 DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
+DfToTSV(lax_CRISPRko_df[, rearranged_column_names], "CRISPRko_relaxed_all_genes")
+
 
 
 
@@ -190,7 +194,7 @@ DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 legacy_RData_directory <- "C:/Users/lukas/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
 load(file.path(legacy_RData_directory, "14) Allocate sgRNAs to plates.RData"))
 old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
-load(file.path(CRISPRko_RData_directory, "14) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData"))
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]
@@ -208,6 +212,9 @@ DfToTSV(TF_sgRNA_plates_df[are_obsolete, ],
         file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__obsolete_guides"),
         add_primers = TRUE
         )
+
+
+
 
 
 
