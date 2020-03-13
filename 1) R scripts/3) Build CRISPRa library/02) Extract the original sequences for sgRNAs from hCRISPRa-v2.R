@@ -50,6 +50,7 @@ human_genes_hg19_GRanges <- genes(TxDb.Hsapiens.UCSC.hg19.knownGene)
 
 
 
+
 # Process the genomic locations of sgRNAs from hCRISPRa-v2 ----------------
 
 have_locations <- !(is.na(CRISPRa_df[["hCRISPRa_v2_ID"]])) & (CRISPRa_df[["Is_control"]] == "No")
