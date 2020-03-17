@@ -73,11 +73,16 @@ FormatForExcel <- function(my_df,
 
   is_CRISPRa <- "Calabrese_rank" %in% names(my_df)
 
-  overlapping_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Entrez_overlapping_0MM", "Symbol_overlapping_0MM")
+  overlapping_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols",
+                           "Entrez_overlapping_0MM", "Symbol_overlapping_0MM",
+                           "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
+                           )
   for (column_name in intersect(overlapping_columns, colnames(my_df))) {
     split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
     split_list <- lapply(split_list, function(x) unique(x[x != "NA"]))
     split_vec <- vapply(split_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = "; "), "")
+
+    split_vec <- TruncateLongEntries(split_vec, max_length = 20)
     my_df[[column_name]] <- split_vec
   }
 
