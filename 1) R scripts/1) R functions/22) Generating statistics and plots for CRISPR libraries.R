@@ -483,7 +483,12 @@ FilterCompleteTop4 <- function(CRISPR_df) {
 
 
 
-FilterTop4 <- function(expanded_CRISPR_df, filter_complete_genes = TRUE, filter_complete_scores = FALSE, data_column = NULL) {
+FilterTop4 <- function(expanded_CRISPR_df,
+                       filter_complete_genes  = TRUE,
+                       filter_complete_scores = FALSE,
+                       data_column            = NULL,
+                       show_sublibraries      = FALSE
+                       ) {
 
   assign("delete_expanded_CRISPR_df",     expanded_CRISPR_df,     envir = globalenv())
   assign("delete_filter_complete_genes",  filter_complete_genes,  envir = globalenv())
@@ -504,13 +509,10 @@ FilterTop4 <- function(expanded_CRISPR_df, filter_complete_genes = TRUE, filter_
   have_entrez <- (expanded_CRISPR_df[["Entrez_ID"]] == expanded_CRISPR_df[["Combined_ID"]]) %in% TRUE
   are_protein_coding <- expanded_CRISPR_df[["Entrez_ID"]] %in% collected_entrez_IDs
   are_eligible <- have_entrez & are_protein_coding
-  # if (is_CRISPRa) {
-    # have_one_transcript_entrezs <- (sgRNAs_overview_df[["Num_hCRISPRa_v2_transcripts"]] %in% 1) &
-    #                                (sgRNAs_overview_df[["Num_transcripts"]] %in% 1) &
-    #                                (!(is.na(sgRNAs_overview_df[["Entrez_ID"]])))
-    # have_one_transcript <- expanded_CRISPR_df[["Entrez_ID"]] %in% sgRNAs_overview_df[["Entrez_ID"]][have_one_transcript_entrezs]
-    # are_eligible <- are_eligible & have_one_transcript
-  # }
+
+  if (is_CRISPRa && show_sublibraries) {
+    are_eligible <- are_eligible & !(expanded_CRISPR_df[["Subgroup"]] == "hCRISPRa-v2_6to10") # Otherwise, a tiny group of "supp 5" genes is displayed in the plot
+  }
   eligible_entrezs_vec <- expanded_CRISPR_df[["Entrez_ID"]][are_eligible]
 
 
@@ -1210,9 +1212,10 @@ ViolinBox_Sources <- function(CRISPR_df,
 
   if (filter_top4) {
     plot_df <- FilterTop4(plot_df,
-                          filter_complete_genes = filter_complete_genes,
+                          filter_complete_genes  = filter_complete_genes,
                           filter_complete_scores = filter_complete_scores,
-                          data_column = y_column
+                          data_column            = y_column,
+                          show_sublibraries      = show_sublibraries
                           )
   }
   assign("delete_plot_df", plot_df, envir = globalenv())
@@ -1778,8 +1781,11 @@ BarPlot_Sources <- function(CRISPR_df,
   plot_df[[new_column]] <- categorical_list[["logical_vec"]]
 
   if (filter_top4) {
-    plot_df <- FilterTop4(plot_df, filter_complete_genes = filter_complete_genes,
-                          filter_complete_scores = filter_complete_scores, data_column = new_column
+    plot_df <- FilterTop4(plot_df,
+                          filter_complete_genes  = filter_complete_genes,
+                          filter_complete_scores = filter_complete_scores,
+                          data_column            = new_column,
+                          show_sublibraries      = show_sublibraries
                           )
   }
   colors_df <- FilterOriginalColorsDf(SubgroupColorsDf(), plot_df, show_rest_v_4sg = show_rest_v_4sg)
