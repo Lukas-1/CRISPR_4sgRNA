@@ -133,14 +133,6 @@ extended_CRISPRko_df <- ResolveDuplicates(extended_CRISPRko_df, concatenate_colu
 
 
 
-# Add the cut location ----------------------------------------------------
-
-extended_CRISPRko_df[["Cut_location"]] <- GetCutLocations(extended_CRISPRko_df)
-
-
-
-
-
 # Remove locations for sgRNAs with discordant chromosome mappings ---------
 
 extended_CRISPRko_df[["Entrez_chromosome"]] <- EntrezIDsToChromosomes(extended_CRISPRko_df[["Entrez_ID"]])
@@ -154,6 +146,15 @@ location_columns <- c("Chromosome", "Strand", "Start", "End")
 for (column in c(location_columns, "PAM")) {
   extended_CRISPRko_df[[column]][are_discordant] <- NA
 }
+
+
+
+
+
+
+# Add the cut location ----------------------------------------------------
+
+extended_CRISPRko_df[["Cut_location"]] <- GetCutLocations(extended_CRISPRko_df)
 
 
 
