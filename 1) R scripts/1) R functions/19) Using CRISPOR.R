@@ -105,6 +105,7 @@ PAMorOriginalPAM <- function(CRISPR_df) {
                     ifelse(are_validated_PAMs, CRISPR_df[["Original_PAM"]], NA_character_),
                     CRISPR_df[["PAM"]]
                     )
+  PAM_vec <- ifelse(substr(PAM_vec, 2, 3) == "GG", PAM_vec, NA_character_)
   return(toupper(PAM_vec))
 }
 
@@ -448,10 +449,14 @@ FilterDfList <- function(use_df_list, are_done_list) {
 
 
 AddCombinedFilteredDf <- function(filtered_df_list) {
-  assign("fudi_filtered_df_list", filtered_df_list, envir = globalenv())
-  combined_df_list <- CombineDfChunks(filtered_df_list[!(grepl("_all_done$", names(filtered_df_list)))])
-  if (length(combined_df_list) == 1) {
-    filtered_df_list[["filtered_all_chunks_combined"]] <- combined_df_list[[1]]
+  are_to_combine <- !(grepl("_all_done$", names(filtered_df_list)))
+  if (any(are_to_combine)) {
+    combined_df_list <- CombineDfChunks(filtered_df_list[!(grepl("_all_done$", names(filtered_df_list)))])
+    if (length(combined_df_list) == 1) {
+      filtered_df_list[["filtered_all_chunks_combined"]] <- combined_df_list[[1]]
+    }
+  } else {
+    message("CRISPOR scores for all entries are already available!")
   }
   return(filtered_df_list)
 }
