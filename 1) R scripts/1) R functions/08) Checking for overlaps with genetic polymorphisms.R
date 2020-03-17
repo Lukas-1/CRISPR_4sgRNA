@@ -338,4 +338,29 @@ AllPolymorphismsForRange <- function(ranges_df, columns_prefix = NULL, only_Kavi
 
 
 
+SNPDataForCRISPRdf <- function(CRISPR_df) {
+
+  are_mapped <- !(is.na(CRISPR_df[["Start"]]))
+
+  mapped_indices <- rep.int(NA_integer_, length(are_mapped))
+  mapped_indices[are_mapped] <- seq_len(sum(are_mapped))
+
+  sgRNA_polymorphisms_df <- AllPolymorphisms(CRISPR_df[are_mapped, ])
+
+  results_df <- data.frame(CRISPR_df,
+                           sgRNA_polymorphisms_df[mapped_indices, ],
+                           stringsAsFactors = FALSE,
+                           row.names = NULL
+                           )
+  return(results_df)
+}
+
+
+
+
+
+
+
+
+
 
