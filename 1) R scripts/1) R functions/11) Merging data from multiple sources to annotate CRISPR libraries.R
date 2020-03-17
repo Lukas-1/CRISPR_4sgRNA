@@ -786,6 +786,42 @@ FindBest0MMLocations <- function(CRISPR_df) {
 
 
 
+ReorderLaxColumns <- function(lax_CRISPR_df) {
+
+  location_columns <- c("Chromosome", "Strand", "Start", "End")
+  columns_vec <- colnames(lax_CRISPR_df)
+
+  are_strict_columns <- columns_vec %in% location_columns
+  are_relaxed_columns <- columns_vec %in% paste0(location_columns, "_lax")
+
+  columns_vec[are_strict_columns] <- paste0(location_columns, "_lax")
+  columns_vec[are_relaxed_columns] <- location_columns
+
+  lax_CRISPR_df <- lax_CRISPR_df[, columns_vec]
+
+  are_strict_columns <- columns_vec %in% location_columns
+  are_relaxed_columns <- columns_vec %in% paste0(location_columns, "_lax")
+
+  colnames(lax_CRISPR_df)[are_strict_columns] <- paste0(location_columns, "_strict")
+  colnames(lax_CRISPR_df)[are_relaxed_columns] <- location_columns
+
+  drop_columns <- c("TSS_number", "Allocated_TSS", "Num_TSSs", "TSS_ID", "AltTSS_ID")
+
+  lax_CRISPR_df <- lax_CRISPR_df[, !(colnames(lax_CRISPR_df) %in% drop_columns)]
+  colnames(lax_CRISPR_df) <- sub("_lax$", "", colnames(lax_CRISPR_df))
+  return(lax_CRISPR_df)
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
