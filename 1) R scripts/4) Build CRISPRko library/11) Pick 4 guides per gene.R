@@ -24,6 +24,7 @@ CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "05) Compile data on genetic polymorphisms.RData"))
 load(file.path(CRISPRko_RData_directory, "10) Find overlaps between CRISPRko sgRNA sequences and genetic polymorphisms.RData"))
 
 
@@ -53,7 +54,7 @@ merged_CRISPRko_df <- PrioritizeNonOverlapping(merged_CRISPRko_df, ID_column = "
 
 save(list = "merged_CRISPRko_df",
      file = file.path(CRISPRko_RData_directory,
-                      "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"
+                      "11) Pick 4 guides per gene.RData"
                       )
      )
 

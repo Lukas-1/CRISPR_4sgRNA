@@ -46,13 +46,12 @@ CRISPRa_secretome_overview_df <- secretome_overview_df
 
 rm(sgRNAs_overview_df)
 
-load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 
-load(file.path(CRISPRa_RData_directory, "19) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
-load(file.path(CRISPRa_RData_directory, "20) Integrate the guide choices using relaxed and strict locations.RData"))
+load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
+load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - lax_CRISPRa_df.RData"))
 
-
+load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 
 
 
@@ -319,11 +318,10 @@ all_CRISPRko_df[CRISPRko_are_top4_mat[, "Are_top4"] & !(CRISPRko_are_top4_mat[, 
 
 # Count the number of wells -----------------------------------------------
 
-
 ## Guides picked using strict locations
 unique_IDs_CRISPRa_strict     <- unique(all_CRISPRa_df[["Combined_ID"]][CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
-unique_TSS_IDs_CRISPRa_strict <- unique(all_CRISPRa_df[["Combined_ID"]][CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
-unique_IDs_CRISPRko_strict    <- unique(all_CRISPRko_df[["AltTSS_ID"]][CRISPRko_are_top4_mat[, "Are_top4"]])
+unique_TSS_IDs_CRISPRa_strict <- unique(all_CRISPRa_df[["AltTSS_ID"]][CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
+unique_IDs_CRISPRko_strict    <- unique(all_CRISPRko_df[["Combined_ID"]][CRISPRko_are_top4_mat[, "Are_top4"]])
 length(unique_IDs_CRISPRa_strict)
 length(unique_TSS_IDs_CRISPRa_strict)
 length(unique_IDs_CRISPRko_strict)

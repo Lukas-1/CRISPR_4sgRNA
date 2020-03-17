@@ -27,7 +27,7 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
-load(file.path(CRISPRa_RData_directory, "20) Integrate the guide choices using relaxed and strict locations.RData"))
+load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
 load(file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRa_RData_directory, "23) Summarize the human secretome sub-library.RData"))
 
@@ -56,6 +56,15 @@ are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
 
 # Examine problematic genes -----------------------------------------------
 
+invalid_combo_show_columns <- c(
+  "Gene_symbol", "Source", "Chromosome", "Cut_location",
+  "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
+  "Rank", "Original_rank",
+  "Num_overlaps",  "Overlaps_tolerance", "Spacing",
+  "Best_combination_rank",
+  "sgRNA_sequence", "PAM"
+)
+
 all_CRISPRa_df[are_top4_mat[, "Are_valid_or_only_top4"] & !(are_top4_mat[, "Have_complete_guides"]), invalid_combo_show_columns]
 
 
@@ -78,14 +87,6 @@ TF_are_top4_mat <- are_top4_mat[are_TF, ]
 are_valid_top4 <- TF_are_top4_mat[, "Are_top4"] & TF_are_top4_mat[, "Have_valid_guides"]
 are_invalid_top4 <- TF_are_top4_mat[, "Are_top4"] & !(are_valid_top4)
 
-invalid_combo_show_columns <- c(
-  "Gene_symbol", "Source", "Chromosome", "Cut_location",
-  "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
-  "Rank", "Original_rank",
-  "Num_overlaps",  "Overlaps_tolerance", "Spacing",
-  "Best_combination_rank",
-  "sgRNA_sequence", "PAM"
-)
 
 # Examine the excluded TF sgRNAs
 replaced_TF_CRISPRa_df[are_invalid_top4, invalid_combo_show_columns]

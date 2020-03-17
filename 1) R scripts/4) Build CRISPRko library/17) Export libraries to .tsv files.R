@@ -27,8 +27,8 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
-load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick the top 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
+load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 load(file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData"))
 

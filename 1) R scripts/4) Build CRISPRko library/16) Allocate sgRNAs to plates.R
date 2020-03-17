@@ -26,8 +26,8 @@ CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(CRISPRko_RData_directory, "11) Re-order the library to prioritize non-overlapping sgRNAs.RData"))
-load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
+load(file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 
 
 
