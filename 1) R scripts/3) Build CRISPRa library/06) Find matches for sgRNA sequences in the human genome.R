@@ -29,7 +29,6 @@ load(file.path(CRISPRa_RData_directory, "02) Extract the original sequences for 
 
 
 
-
 # Search the human genome for matches to sgRNA sequences ------------------
 
 unique_sequences <- unique(toupper(CRISPRa_df[["sgRNA_sequence"]]))
