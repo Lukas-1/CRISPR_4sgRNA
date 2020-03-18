@@ -10,10 +10,12 @@
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR"
 general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
+
 
 
 
@@ -115,11 +117,11 @@ row.names(common_polymorphisms_df) <- NULL
 # Perform checks and tests ------------------------------------------------
 
 dbSNP_chrom_pos_ref_vec  <- paste0(dbSNP_common_raw_df[["Chromosome"]][shared_rsIDs_indices_dbSNP], "_",
-                                   dbSNP_common_raw_df[["Position"]][shared_rsIDs_indices_dbSNP],   "_",
+                                   dbSNP_common_raw_df[["Position"]][shared_rsIDs_indices_dbSNP], "_",
                                    dbSNP_common_raw_df[["Reference"]][shared_rsIDs_indices_dbSNP]
                                    )
 Kaviar_chrom_pos_ref_vec <- paste0(Kaviar_common_raw_df[["Chromosome"]][shared_rsIDs_indices_Kaviar], "_",
-                                   Kaviar_common_raw_df[["Position"]][shared_rsIDs_indices_Kaviar],   "_",
+                                   Kaviar_common_raw_df[["Position"]][shared_rsIDs_indices_Kaviar], "_",
                                    Kaviar_common_raw_df[["Reference"]][shared_rsIDs_indices_Kaviar]
                                    )
 chrom_pos_ref_df <- data.frame("dbSNP"  = dbSNP_chrom_pos_ref_vec,
