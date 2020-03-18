@@ -45,7 +45,7 @@ GPP_optional_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "2) Optional")
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
-load(file.path(CRISPRa_RData_directory, "23) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
+load(file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
 
 
 
