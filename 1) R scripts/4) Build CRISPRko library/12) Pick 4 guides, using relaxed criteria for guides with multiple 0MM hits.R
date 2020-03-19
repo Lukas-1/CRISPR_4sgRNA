@@ -108,7 +108,7 @@ for (column_name in position_columns) {
 
 lax_CRISPRko_df <- rbind.data.frame(
   lax_CRISPRko_changed_df,
-  strict_CRISPRko_df[!(strict_CRISPRko_df[["Combined_ID"]] %in% changed_IDs), colnames(lax_CRISPRko_df)],
+  strict_CRISPRko_df[!(strict_CRISPRko_df[["Combined_ID"]] %in% changed_IDs), colnames(lax_CRISPRko_changed_df)],
   stringsAsFactors = FALSE,
   make.row.names = FALSE
 )
