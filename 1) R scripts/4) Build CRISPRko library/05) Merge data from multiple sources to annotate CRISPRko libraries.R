@@ -187,11 +187,6 @@ if (length(inconsistent_IDs) > 1) {
 
 
 
-# Truncate long 0MM locations ---------------------------------------------
-#
-# extended_CRISPRko_df[["Locations_0MM"]] <- TruncateLongEntries(extended_CRISPRko_df[["Locations_0MM"]])
-
-
 
 
 
