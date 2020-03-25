@@ -34,6 +34,8 @@ CreateCombinations <- function(sub_df_reordered,
     meet_strict_criteria <- rep.int(TRUE, nrow(sub_df_reordered))
   }
 
+  have_one_0MM <- sub_df_reordered[["Num_0MM"]] == 1L
+
   are_core_library <- grepl("Calabrese|hCRISPRa-v2|Brunello|TKOv3", sub_df_reordered[["Source"]])
 
   is_CRISPRa <- "hCRISPRa_v2_rank" %in% names(sub_df_reordered)
@@ -71,9 +73,10 @@ CreateCombinations <- function(sub_df_reordered,
         "GuideScan_specificity"    = 1 / (1 + sum((1 / sub_df_reordered[["GuideScan_specificity"]][indices_vec]) - 1)),
         "CRISPOR_4MM_specificity"  = 1 / (1 + sum((1 / sub_df_reordered[["CRISPOR_4MM_specificity"]][indices_vec]) - 1)),
         "Num_meet_strict_criteria" = sum(meet_strict_criteria[indices_vec]),
+        "Num_exactly_one_match"    = sum(have_one_0MM[indices_vec]),
         "Num_core_library"         = sum(are_core_library[indices_vec]),
         "Num_preferred"            = sum(are_preferred[indices_vec])
-      )
+        )
       return(results_list)
     }
   )
@@ -88,6 +91,7 @@ CreateCombinations <- function(sub_df_reordered,
   combinations_list <- combinations_list[meet_criteria]
 
   combinations_order <- order(combinations_mat[, "Num_meet_strict_criteria"],
+                              combinations_mat[, "Num_exactly_one_match"],
                               -(combinations_mat[, "Total_overlaps"]),
                               combinations_mat[, "Num_core_library"],
                               combinations_mat[, "Num_preferred"],
