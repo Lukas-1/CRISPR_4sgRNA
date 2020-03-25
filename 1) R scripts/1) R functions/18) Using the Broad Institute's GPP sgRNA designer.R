@@ -29,8 +29,9 @@ FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
 
   have_overlaps <- !(CRISPR_df[["Num_overlaps"]] %in% 0) | is.na(CRISPR_df[["Num_overlaps"]])
   meet_criteria <- MeetCriteria(CRISPR_df)
+  have_multiple_locations <- (CRISPR_df[["Num_0MM"]] == 1) %in% FALSE
 
-  are_problematic_sgRNAs <- are_top_four & (have_overlaps | !(meet_criteria))
+  are_problematic_sgRNAs <- are_top_four & (have_overlaps | (!(meet_criteria)) | have_multiple_locations)
   submit_entrezs <- unlist(strsplit(CRISPR_df[["Entrez_ID"]][are_problematic_sgRNAs], ", ", fixed = TRUE))
 
   are_problematic_genes <- !(overview_df[["Spacing"]] %in% paste0(seq(4, 100, by = 4), "*50"))
