@@ -191,7 +191,7 @@ DfToTSV(lax_CRISPRko_df[, rearranged_column_names], "CRISPRko_relaxed_all_genes"
 
 # Write changed wells to disk ---------------------------------------------
 
-legacy_RData_directory <- "C:/Users/lukas/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
+legacy_RData_directory <- "C:/Users/lukas/OneDrive/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
 load(file.path(legacy_RData_directory, "14) Allocate sgRNAs to plates.RData"))
 old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
 load(file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData"))
