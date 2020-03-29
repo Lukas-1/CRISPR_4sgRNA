@@ -20,7 +20,7 @@ source(file.path(general_functions_directory, "14) Checking for identical subseq
 
 CreateCombinations <- function(sub_df_reordered,
                                were_included,
-                               num_overlaps_allowed           = 0L,
+                               num_overlaps_allowed           = 999L,
                                tolerate_NA_overlaps           = FALSE,
                                min_space                      = 50L,
                                num_sgRNAs                     = 4L,
@@ -157,7 +157,7 @@ SortCombinations <- function(CRISPR_sub_df,
                              min_spaces      = 50L,
                              num_sgRNAs      = 4L,
                              only_top_24_GPP = FALSE,
-                             min_overlaps    = 0:10,
+                             max_overlaps    = 999L, # warning: If this is changed to, for instance, 0:12, then the number of overlaps is prioritized over the number of unambiguous guides (with exactly one 0MM location!)
                              tolerate_divergent_chromosomes = FALSE
                              ) {
 
@@ -210,14 +210,14 @@ SortCombinations <- function(CRISPR_sub_df,
 
   sgRNAs_found <- FALSE
   FoundsgRNA <- function(sub_df) sum(sub_df[["Best_combination_rank"]] %in% 1) >= num_sgRNAs
-  for (min_overlap in min_overlaps) {
+  for (max_overlap in max_overlaps) {
     for (min_space in min_spaces) {
       if (!(sgRNAs_found) && (sum(were_included) >= num_sgRNAs)) {
         sub_df_final <- CreateCombinations(sub_df_reordered,
                                            were_included,
                                            min_space            = min_space,
                                            num_sgRNAs           = num_sgRNAs,
-                                           num_overlaps_allowed = min_overlap
+                                           num_overlaps_allowed = max_overlap
                                            )
         sgRNAs_found <- FoundsgRNA(sub_df_final)
         if (sgRNAs_found) {
@@ -233,7 +233,7 @@ SortCombinations <- function(CRISPR_sub_df,
                                          were_included        = !(are_polyT | are_curated),
                                          min_space            = min(min_spaces),
                                          num_sgRNAs           = num_sgRNAs,
-                                         num_overlaps_allowed = min_overlap,
+                                         num_overlaps_allowed = max_overlap,
                                          tolerate_NA_overlaps = TRUE,
                                          meet_strict_criteria = were_included
                                          )
@@ -289,7 +289,7 @@ GetUniqueIDs <- function(CRISPR_df, ID_column = "AltTSS_ID") {
 
 PrioritizeNonOverlapping <- function(CRISPR_df,
                                      ID_column       = "AltTSS_ID",
-                                     min_overlaps    = 0:10,
+                                     max_overlaps    = 999L,
                                      min_spaces      = 50L,
                                      only_top_24_GPP = FALSE,
                                      parallel_mode   = TRUE,
@@ -310,14 +310,14 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                         "ReorderSubDfByLocation", "NumHomologousPairs", "SplitIntoSubstrings",
                                         "CRISPR_df", "tolerate_divergent_chromosomes",
                                         "preferred_AF_max_column", "SNP_frequency_cutoff",
-                                        "min_overlaps", "min_spaces", "only_top_24_GPP"
+                                        "max_overlaps", "min_spaces", "only_top_24_GPP"
                                         ),
                             envir = environment()
                             )
     reordered_df_list <- parallel::parLapply(cl,
                                              unique_IDs,
                                              function(x) SortCombinations(CRISPR_df[CRISPR_df[[ID_column]] == x, , drop = FALSE],
-                                                                          min_overlaps    = min_overlaps,
+                                                                          max_overlaps    = max_overlaps,
                                                                           min_spaces      = min_spaces,
                                                                           only_top_24_GPP = only_top_24_GPP,
                                                                           tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
@@ -330,7 +330,7 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                 function(x) SortCombinations(CRISPR_df[CRISPR_df[[ID_column]] == x, , drop = FALSE],
                                                              min_spaces      = min_spaces,
                                                              only_top_24_GPP = only_top_24_GPP,
-                                                             min_overlaps    = min_overlaps,
+                                                             max_overlaps    = max_overlaps,
                                                              tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
                                                              )
                                 )
