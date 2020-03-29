@@ -75,6 +75,31 @@ table((merged_replaced_CRISPRa_df[[preferred_AF_max_column]][were_mapped] > SNP_
 
 
 
+# Check for hCRISPRa-v2 TSSs that are not being targeted separately -------
+
+sgRNAs_lax_overview_df[which(sgRNAs_lax_overview_df[["Num_transcripts"]] < sgRNAs_lax_overview_df[["Num_hCRISPRa_v2_transcripts"]]), ]
+
+show_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol",
+                  "Nearest_symbols",
+                  "Nearest_gene_distance",
+                  "Calabrese_rank", "hCRISPRa_v2_rank",
+                  "sgRNA_sequence",
+
+                  "Num_TSSs", "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS",
+                  "hCRISPRa_v2_transcript",
+                  "Rank", "Original_rank",
+
+                  "Best_TSS", "Entrez_chromosome", "Chromosome", "Strand", "Distance_from_TSS",
+                  "CRISPOR_3MM_specificity",
+                  "CRISPOR_Num_0MM", "CRISPOR_Num_1MM",
+                  "CRISPOR_Num_2MM", "CRISPOR_Num_3MM", "CRISPOR_Num_4MM"
+                  )
+
+
+
+
+
+
 
 # Write the summary data frame to disk ------------------------------------
 
