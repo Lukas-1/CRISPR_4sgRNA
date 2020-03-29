@@ -37,6 +37,24 @@ NumberTSSs <- function(locations_vec, min_space = 1001L) {
 }
 
 
+NumberByNearestTSS <- function(positions_vec, TSS_number_vec, max_distance = 1001L) {
+  stopifnot(length(positions_vec) == length(TSS_number_vec))
+  are_unassigned <- is.na(TSS_number_vec) & !(is.na(positions_vec))
+  if (!(any(are_unassigned))) {
+    return(TSS_number_vec)
+  } else {
+    results_vec <- TSS_number_vec
+    for (i in which(are_unassigned)) {
+      distances <- abs(positions_vec[!(are_unassigned)] - positions_vec[[i]])
+      if (min(distances, na.rm = TRUE) < max_distance) {
+        results_vec[[i]] <- TSS_number_vec[!(are_unassigned)][[which.min(distances)]]
+      }
+    }
+    return(results_vec)
+  }
+}
+
+
 
 AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TSS_prefix = "N") {
   stopifnot(length(TSS_number_vec) == length(original_TSS_vec))
@@ -86,7 +104,13 @@ SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE)
 
   reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df, tolerate_divergent_chromosomes = tolerate_divergent_chromosomes)
   reordered_df <- reordered_list[["reordered_df"]]
-  TSS_number_vec <- NumberTSSs(reordered_df[["Cut_location"]])
+  are_GPP <- reordered_df[["Source"]] %in% c("GPP", "Curated, GPP")
+  are_outside_top5 <- !(is.na(reordered_df[["GPP_rank"]])) & !(reordered_df[["GPP_rank"]] %in% 1:5)
+  core_locations_vec <- reordered_df[["Cut_location"]]
+  core_locations_vec[are_GPP & are_outside_top5] <- NA_integer_
+  core_TSS_number_vec <- NumberTSSs(core_locations_vec)
+  TSS_number_vec <- NumberByNearestTSS(reordered_df[["Cut_location"]], core_TSS_number_vec)
+
   allocated_TSS_vec <- AllocateTSSs(TSS_number_vec, reordered_df[["hCRISPRa_v2_transcript"]], reordered_df[["Cut_location"]])
 
   results_df <- data.frame(
@@ -173,7 +197,7 @@ AllocateTSSforAllGenes <- function(CRISPR_df,
     cl <- parallel::makeCluster(num_cores)
     parallel::clusterExport(cl,
                             varlist = c("SeparateByTSS", "MessageID", "ReorderSubDfByLocation",
-                                        "NumberTSSs", "AllocateTSSs",
+                                        "NumberTSSs", "NumberByNearestTSS", "AllocateTSSs",
                                         "CRISPR_df", "tolerate_divergent_chromosomes"
                                         ),
                             envir = environment()
