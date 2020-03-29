@@ -49,11 +49,11 @@ names(hCRISPRa_v2_df) <- names(read_excel(CRISPRa_Horlbeck2016_sgRNAs_path, n_ma
 
 
 # Downloaded from https://www.ensembl.org/biomart/martview
-BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2020-03-11_Gene_Ontology.txt"),
+BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2020-03-25_Gene_Ontology.txt"),
                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE,
                             fill = TRUE
                             )
-
+# Downloaded from https://www.proteinatlas.org/search/protein_class:Predicted+membrane+proteins
 HPA_membrane_proteins_df <- read.table(file.path(CRISPR_input_directory, "Human Genome", "Human Protein Atlas", "protein_class_Predicted_Membrane_Proteins__2020_03_11.tsv"),
                                        sep = "\t", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE,
                                        fill = TRUE

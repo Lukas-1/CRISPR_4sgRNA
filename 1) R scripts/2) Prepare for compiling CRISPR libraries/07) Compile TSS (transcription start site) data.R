@@ -48,7 +48,7 @@ FANTOM5_bed_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover_C
                              )
 
 # The BioMart file was downloaded from https://www.ensembl.org/biomart/martview
-BioMart_df     <- read.table(file.path(CRISPR_input_directory, "Human genome", "Ensembl", "BioMart_human_2019-07-25_mart_export.txt"),
+BioMart_df     <- read.table(file.path(CRISPR_input_directory, "Human genome", "Ensembl", "BioMart_human_2020-03-25_mart_export.txt"),
                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
                              )
 

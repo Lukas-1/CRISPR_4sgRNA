@@ -22,7 +22,7 @@ general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1
 # Read in data ------------------------------------------------------------
 
 # Downloaded from https://www.ensembl.org/biomart/martview
-BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2020-03-11_Gene_Ontology.txt"),
+BioMart_GO_df <- read.table(file.path(CRISPR_input_directory, "Sublibraries", "Gene Ontology", "biomart_export_2020-03-25_Gene_Ontology.txt"),
                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE,
                             fill = TRUE
                             )

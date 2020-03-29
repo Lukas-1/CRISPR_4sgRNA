@@ -32,7 +32,7 @@ annotation_intermediate_files_directory <- file.path(CRISPR_root_directory, "4) 
 # Read in data ------------------------------------------------------------
 
 # Downloaded from ftp://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz
-# on 13 January 2020
+# on 25 March 2020
 NCBI_Hs_info_df <- read.table(file.path(NCBI_directory, "Homo_sapiens.gene_info"),
                               sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL,
                               fill = TRUE, check.names = FALSE, comment.char = ""
@@ -40,9 +40,9 @@ NCBI_Hs_info_df <- read.table(file.path(NCBI_directory, "Homo_sapiens.gene_info"
 
 
 
-# Downloaded from ftp://ftp.ensembl.org/pub/release-98/tsv/homo_sapiens/Homo_sapiens.GRCh38.98.entrez.tsv.gz
-# on 14 October 2019
-Ensembl_Hs_entrez_df <- read.table(file.path(CRISPR_input_directory, "Human genome", "ENSEMBL", "Homo_sapiens.GRCh38.98.entrez.tsv"),
+# Downloaded from ftp://ftp.ensembl.org/pub/release-99/tsv/homo_sapiens/Homo_sapiens.GRCh38.99.entrez.tsv.gz
+# on 25 March 2020
+Ensembl_Hs_entrez_df <- read.table(file.path(CRISPR_input_directory, "Human genome", "Ensembl", "Homo_sapiens.GRCh38.99.entrez.tsv"),
                                    sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL,
                                    check.names = FALSE
                                    )
