@@ -48,7 +48,7 @@ lax_CRISPRa_df <- FindBest0MMLocations(merged_replaced_CRISPRa_df)
 # Identify genes affected by relaxed locations ----------------------------
 
 are_identical <- mapply(identical, lax_CRISPRa_df[["Start"]], lax_CRISPRa_df[["Start_lax"]])
-changed_IDs <- lax_CRISPRa_df[["Combined_ID"]][!(are_identical)]
+changed_IDs <- unique(lax_CRISPRa_df[["Combined_ID"]][!(are_identical)])
 
 
 

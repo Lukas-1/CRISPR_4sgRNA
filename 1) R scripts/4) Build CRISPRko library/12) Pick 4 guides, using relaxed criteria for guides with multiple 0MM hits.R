@@ -47,7 +47,7 @@ lax_CRISPRko_df <- FindBest0MMLocations(merged_CRISPRko_df)
 # Identify genes affected by relaxed locations ----------------------------
 
 are_identical <- mapply(identical, lax_CRISPRko_df[["Start"]], lax_CRISPRko_df[["Start_lax"]])
-changed_IDs <- lax_CRISPRko_df[["Combined_ID"]][!(are_identical)]
+changed_IDs <- unique(lax_CRISPRko_df[["Combined_ID"]][!(are_identical)])
 
 
 
