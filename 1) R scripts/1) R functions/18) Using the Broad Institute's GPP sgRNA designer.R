@@ -24,7 +24,6 @@ PrettyGeneString <- function(entrezs_vec) {
 
 
 FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
-
   are_top_four <- CRISPR_df[["Rank"]] %in% 1:4
 
   have_overlaps <- !(CRISPR_df[["Num_overlaps"]] %in% 0) | is.na(CRISPR_df[["Num_overlaps"]])
@@ -65,7 +64,6 @@ FindProblematicEntrezs <- function(CRISPR_df, overview_df) {
     }
   }
   message(show_message)
-
   return(required_entrezs)
 }
 
@@ -181,7 +179,6 @@ TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
                  "Genetic Perturbation Platform (GPP) sgRNA picker tool and were omitted from the data frame!"
                  )
           )
-
   are_other_error <- are_errors & !(were_not_found)
   if (any(are_other_error)) {
     message("")
@@ -189,7 +186,6 @@ TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
     print(GPP_output_df[are_other_error, ])
     message("")
   }
-
   results_df <- GPP_output_df[!(are_errors), choose_columns]
   row.names(results_df) <- NULL
   return(results_df)
