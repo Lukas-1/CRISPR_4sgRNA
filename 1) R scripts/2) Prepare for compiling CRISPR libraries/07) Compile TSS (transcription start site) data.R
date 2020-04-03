@@ -16,9 +16,10 @@ source(file.path(general_functions_directory, "02) Translating between Entrez ID
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR"
-CRISPR_input_directory  <- file.path(CRISPR_root_directory, "2) Input data")
-FANTOM5_input_directory <- file.path(CRISPR_input_directory, "Human genome", "FANTOM5_liftover")
-Ensembl_input_directory <- file.path(CRISPR_input_directory, "Human genome", "Ensembl")
+human_genome_directory  <- file.path(CRISPR_root_directory, "2) Input data", "Human genome")
+FANTOM5_input_directory <- file.path(human_genome_directory, "FANTOM5_liftover")
+Ensembl_input_directory <- file.path(human_genome_directory, "Ensembl")
+HGNC_input_directory    <- file.path(human_genome_directory, "HGNC")
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory <- file.path(RData_directory, "1) General")
 
@@ -52,53 +53,6 @@ BioMart_df     <- read.table(file.path(CRISPR_input_directory, "Human genome", "
                              sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
                              )
 
-
-
-
-
-# Define functions --------------------------------------------------------
-
-TSSWindows <- function(sorted_TSS_vec, total_range = (2500L * 1000L - 2L), TSS_range = 1202L, overlap = 30L) {
-  start_vec <- sorted_TSS_vec[[1]] - (TSS_range / 2L)
-  num_TSSs <- length(sorted_TSS_vec)
-  if (num_TSSs > 1) {
-    current_start <- start_vec
-    current_max <- start_vec + total_range
-    end_vec <- c()
-    for (i in 2:num_TSSs) {
-      supposed_end <- sorted_TSS_vec[[i]] + (TSS_range / 2L)
-      if (supposed_end > current_max) {
-        new_end <- sorted_TSS_vec[[i - 1]] + (TSS_range / 2L)
-        current_start <- sorted_TSS_vec[[i]] - (TSS_range / 2L)
-        if (new_end > current_start) {
-          new_end <- new_end - overlap
-        }
-        current_max <- current_start + total_range
-        end_vec <- c(end_vec, new_end)
-        start_vec <- c(start_vec, current_start)
-      }
-    }
-    end_vec <- c(end_vec, sorted_TSS_vec[[i]] + (TSS_range / 2L))
-  } else {
-    end_vec <- sorted_TSS_vec[[1]] + (TSS_range / 2)
-  }
-  results_mat <- cbind("Start" = start_vec, "End" = end_vec)
-  return(results_mat)
-}
-
-
-ListToDf <- function(named_list) {
-  if (is.null(names(named_list))) {
-    stop("named_list must be a named list!")
-  }
-  results_df <- data.frame(
-    "Names" = rep.int(names(named_list), vapply(named_list, nrow, integer(1))),
-    do.call(rbind, named_list),
-    stringsAsFactors = FALSE,
-    row.names = NULL
-  )
-  return(results_df)
-}
 
 
 
@@ -151,7 +105,7 @@ any(duplicated(FANTOM5_bed_df[["Peak_ID"]]))
 
 
 
-# Build a combined FANTOM data frame --------------------------------------
+# Build a combined FANTOM5 data frame -------------------------------------
 
 FANTOM_ann_matches <- match(FANTOM5_bed_df[["Peak_ID"]], FANTOM5_ann_df[["CAGE_Peak_ID"]])
 
@@ -171,7 +125,7 @@ stopifnot(all(grepl("chr", FANTOM5_df[["Chromosome"]], fixed = TRUE)))
 
 
 
-# Perform checks on the combined FANTOM data frame ------------------------
+# Perform checks on the combined FANTOM5 data frame -----------------------
 
 unique_IDs_FANTOM5_df <- unique(FANTOM5_df[, c("Entrez_ID", "Gene_symbol", "Chromosome")])
 
@@ -315,8 +269,6 @@ combined_TSS_df[["Source"]][are_duplicates_FANTOM5] <- "FANTOM5, BioMart"
 combined_TSS_df <- combined_TSS_df[!(are_duplicates_BioMart), ]
 
 row.names(combined_TSS_df) <- NULL
-
-
 
 
 
