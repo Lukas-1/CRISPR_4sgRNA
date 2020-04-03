@@ -29,9 +29,18 @@ RangesDfToGRangesObject <- function(ranges_df, strip_Chr = FALSE) {
 
 
 TruncateLongEntries <- function(char_vec, use_sep = "; ", max_length = 10L) {
-  splits <- strsplit(char_vec, use_sep, fixed = TRUE)
-  are_too_long <- lengths(splits) > max_length
-  char_vec[are_too_long] <- vapply(splits[are_too_long], function(x) {
+  splits_list <- strsplit(char_vec, use_sep, fixed = TRUE)
+  TruncateLongEntriesSplits(splits_list, use_sep = use_sep, max_length = max_length, char_vec = char_vec)
+}
+
+
+TruncateLongEntriesSplits <- function(splits_list, use_sep = "; ", max_length = 10L, char_vec = NULL) {
+  are_too_long <- lengths(splits_list) > max_length
+  if (is.null(char_vec)) {
+    char_vec <- rep(NA_character_, length(splits_list))
+    char_vec[!(are_too_long)] <- vapply(splits_list[!(are_too_long)], function(x) paste0(x, collapse = use_sep), "")
+  }
+  char_vec[are_too_long] <- vapply(splits_list[are_too_long], function(x) {
     all_the_same <- length(unique(x)) == 1
     result <- paste0("Truncated (", length(x), " entries)...")
     if (all_the_same) {
@@ -48,3 +57,8 @@ TruncateLongEntries <- function(char_vec, use_sep = "; ", max_length = 10L) {
   }, "")
   return(char_vec)
 }
+
+
+
+
+

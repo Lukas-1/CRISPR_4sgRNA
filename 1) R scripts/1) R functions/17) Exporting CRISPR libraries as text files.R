@@ -58,9 +58,6 @@ RoundNumericColumns <- function(my_df, num_digits = 7) {
 
 
 
-
-
-
 FormatForExcel <- function(my_df,
                            remove_columns            = NULL,
                            probability_to_percentage = FALSE,
@@ -73,16 +70,66 @@ FormatForExcel <- function(my_df,
 
   is_CRISPRa <- "Calabrese_rank" %in% names(my_df)
 
-  overlapping_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols",
-                           "Entrez_overlapping_0MM", "Symbol_overlapping_0MM",
-                           "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
+  CRISPRko_overlapping_vec <- c(
+    "Entrez_overlapping_0MM" = "Entrez_ID",
+    "Symbol_overlapping_0MM" = "Gene_symbol"
+  )
+  other_overlapping_columns <- c(
+    "Nearest_Entrez_IDs", "Nearest_symbols",
+    "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
+  )
+  if (!(is_CRISPRa)) {
+    for (column_name in names(CRISPRko_overlapping_vec)) {
+      target_vec <- my_df[[CRISPRko_overlapping_vec[[column_name]]]]
+      target_list <- strsplit(target_vec, ", ", fixed = TRUE)
+
+      split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
+
+      split_list_list <- lapply(split_list, function(x) strsplit(x, ", ", fixed = TRUE))
+
+      contains_target <- vapply(seq_along(split_list_list),
+                                function(x) any(vapply(split_list_list[[x]], function(y) any(y %in% target_list[[x]]), logical(1))),
+                                logical(1)
+                                )
+      split_list_list <- lapply(seq_along(split_list_list),
+                                function(x) lapply(split_list_list[[x]], function(y) setdiff(y, target_list[[x]]))
+                                )
+      split_list_list <- lapply(split_list_list, function(x) x[lengths(x) >= 1])
+      split_list <- lapply(split_list_list,
+                           function(x) vapply(x, function(y) if (all(is.na(y))) NA_character_ else paste0(y, collapse = ", "), "")
                            )
-  for (column_name in intersect(overlapping_columns, colnames(my_df))) {
+      split_list <- mapply(setdiff, split_list, target_list)
+      split_list <- lapply(split_list, function(x) unique(x[x != "NA"]))
+
+      num_overlaps <- vapply(split_list, function(x) sum(!(is.na(x))), integer(1))
+      split_vec <- TruncateLongEntriesSplits(split_list, max_length = 20)
+
+      split_vec <- ifelse(contains_target | is.na(target_vec),
+                          split_vec,
+                          ifelse(num_overlaps == 0,
+                                 paste0("No overlaps with ", target_vec, "!"),
+                                 ifelse(num_overlaps == 1,
+                                        paste0(split_vec, " (not ", target_vec, "!)"),
+                                        paste0("Does not target ", target_vec, ", but ", split_vec)
+                                        )
+                                 )
+                          )
+      my_df[[column_name]] <- split_vec
+    }
+  }
+  for (column_name in intersect(other_overlapping_columns, colnames(my_df))) {
     split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
     split_list <- lapply(split_list, function(x) unique(x[x != "NA"]))
-    split_vec <- vapply(split_list, function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = "; "), "")
 
-    split_vec <- TruncateLongEntries(split_vec, max_length = 20)
+
+    ### DELETE THIS!!
+    for (item in split_list) {
+      if ((length(item) > 1) && all(is.na(item))) {
+        stop("unexpected situation!!")
+      }
+    }
+
+    split_vec <- TruncateLongEntriesSplits(split_list, max_length = 20)
     my_df[[column_name]] <- split_vec
   }
 
