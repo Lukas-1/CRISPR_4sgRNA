@@ -61,7 +61,7 @@ for (column_name in names(rename_columns_vec)) {
 
 extended_CRISPRko_df[["Entrez_chromosome"]] <- EntrezIDsToChromosomes(extended_CRISPRko_df[["Entrez_ID"]])
 
-extended_CRISPRko_df <- ReplaceDuplicatedGenes(extended_CRISPRko_df)
+extended_CRISPRko_df <- FindBest0MMLocations(extended_CRISPRko_df)
 
 
 
