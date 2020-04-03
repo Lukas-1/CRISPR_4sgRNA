@@ -32,8 +32,7 @@ load(file.path(CRISPRa_RData_directory, "17) Integrate the output from CRISPOR.R
 
 # Rank sgRNAs -------------------------------------------------------------
 
-merged_replaced_CRISPRa_df <- RankCRISPRDf(merged_replaced_CRISPRa_df, ID_column = "AltTSS_ID")
-
+merged_replaced_CRISPRa_df <- RankCRISPRDfByTSS(merged_replaced_CRISPRa_df)
 
 
 
