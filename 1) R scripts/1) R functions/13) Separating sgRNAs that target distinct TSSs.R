@@ -105,7 +105,7 @@ SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE)
   reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df, tolerate_divergent_chromosomes = tolerate_divergent_chromosomes)
   reordered_df <- reordered_list[["reordered_df"]]
   are_GPP <- reordered_df[["Source"]] %in% c("GPP", "Curated, GPP")
-  are_outside_top5 <- !(is.na(reordered_df[["GPP_rank"]])) & !(reordered_df[["GPP_rank"]] %in% 1:5)
+  are_outside_top5 <- is.na(reordered_df[["GPP_rank"]]) | !(reordered_df[["GPP_rank"]] %in% 1:5)
   core_locations_vec <- reordered_df[["Cut_location"]]
   core_locations_vec[are_GPP & are_outside_top5] <- NA_integer_
   core_TSS_number_vec <- NumberTSSs(core_locations_vec)
