@@ -71,7 +71,11 @@ ReplaceUnspacedGuides <- function(CRISPR_df) {
                                                         )
                            )
   picked_df_list <- lapply(picked_df_list, function(x) {
-    x[["AltTSS_ID"]] <- x[["Combined_ID"]]
+    x[["TSS_number"]]    <- NA_integer_
+    x[["Allocated_TSS"]] <- NA_character_
+    x[["Num_TSSs"]]      <- 1L
+    x[["TSS_ID"]]        <- NA_character_
+    x[["AltTSS_ID"]]     <- x[["Combined_ID"]]
     return(x)
   })
 
