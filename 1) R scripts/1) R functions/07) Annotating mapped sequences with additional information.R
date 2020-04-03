@@ -437,7 +437,6 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
                                                        )
 
   results_df[["Gene_symbol"]][are_ambiguous][were_replaced] <- MapToEntrezs(entrez_IDs_vec = new_entrezs_vec[were_replaced])[["Gene_symbol"]]
-
   return(results_df)
 }
 
