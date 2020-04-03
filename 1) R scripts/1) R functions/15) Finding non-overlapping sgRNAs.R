@@ -28,13 +28,14 @@ CreateCombinations <- function(sub_df_reordered,
                                ) {
 
   assign("delete_sub_df_reordered", sub_df_reordered, envir = globalenv())
+  assign("delete_were_included", were_included, envir = globalenv())
   assign("delete_meet_strict_criteria", meet_strict_criteria, envir = globalenv())
 
   if (is.null(meet_strict_criteria)) {
     meet_strict_criteria <- rep.int(TRUE, nrow(sub_df_reordered))
   }
 
-  have_one_0MM <- sub_df_reordered[["Num_0MM"]] == 1L
+  have_one_0MM <- (sub_df_reordered[["Num_0MM"]] == 1L) & !(is.na(sub_df_reordered[["Start"]]))
 
   are_core_library <- grepl("Calabrese|hCRISPRa-v2|Brunello|TKOv3", sub_df_reordered[["Source"]])
 
@@ -342,6 +343,14 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                           list(stringsAsFactors = FALSE, make.row.names = FALSE)
                           )
                         )
+
+  if ("AltTSS_ID" %in% colnames(results_df)) {
+    are_superfluous_TSS <- AreSuperfluousTSS(results_df)
+    for (column_name in c("Rank", setdiff(colnames(results_df), colnames(CRISPR_df)))) {
+      results_df[[column_name]][are_superfluous_TSS] <- NA
+    }
+  }
+
   return(results_df)
 }
 
