@@ -571,7 +571,7 @@ MergeLocations <- function(merged_CRISPR_df) {
 
 
 
-AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_rank = TRUE, allow_5pG_MM = TRUE) {
+AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_rank = TRUE, allow_5pG_MM = TRUE, minimal_version = FALSE) {
   # Depends on the data frame 'combined_TSS_CRISPRa_df' in the global environment
 
   # Assign sgRNAs to their genomic locations
@@ -606,102 +606,104 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, reorder_by_ran
 
   assign("merged_CRISPR_df_pre_duplicated", merged_CRISPR_df, envir = globalenv())
 
-  # For genes that are clearly duplicated (e.g. those that are located in the pseudo-autosomal regions of chromosomes X and Y),
-  # arbitrarily assign the sgRNAs to the "first" of the two locations in the genome
-  merged_CRISPR_df <- ReplaceDuplicatedGenes(merged_CRISPR_df)
 
-  merged_CRISPR_df <- ReassignTSS(merged_CRISPR_df)
+  if (!(minimal_version)) {
 
-
+    ## Assign duplicated genes to a location
+    merged_CRISPR_df <- ReplaceDuplicatedGenes(merged_CRISPR_df)
+    merged_CRISPR_df <- ReassignTSS(merged_CRISPR_df)
+  }
 
   # Remove location data for sgRNAs that seem to have discrepant locations
   for (column in c("Chromosome", "Strand", "Start", "End", "PAM")) {
     merged_CRISPR_df[[column]][merged_CRISPR_df[["Discordant_locations"]]] <- NA
   }
 
+  if (!(minimal_version)) {
 
-  ### Calculate the "cut" location
-  merged_CRISPR_df[["Cut_location"]] <- GetCutLocations(merged_CRISPR_df)
+    ### Calculate the "cut" location
+    merged_CRISPR_df[["Cut_location"]] <- GetCutLocations(merged_CRISPR_df)
 
 
-
-  ### Calculate the distance from the TSS
-  merged_CRISPR_df[["Distance_from_TSS"]] <- GetDistanceFromTSS(merged_CRISPR_df)
-
+    ### Calculate the distance from the TSS
+    merged_CRISPR_df[["Distance_from_TSS"]] <- GetDistanceFromTSS(merged_CRISPR_df)
+  }
 
   # Eliminate duplicated sgRNAs
   merged_CRISPR_df <- ResolveDuplicates(merged_CRISPR_df, concatenate_columns = c("Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source"))
 
-  ####################################################################################################################
-  ### The following section of code attempts to troubleshoot the issue of sgRNAs that were not found by GuideScan. ###
-  ### Is it because the regions where these sgRNAs are located were not submitted to GuideScan?                    ###
-  ### Or were they submitted, but the sgRNA was not present in GuideScan's database?                               ###
-  ####################################################################################################################
 
-  TSS_ranges_df <- data.frame(combined_TSS_CRISPRa_df, TSSRangesForGuideScan(combined_TSS_CRISPRa_df), stringsAsFactors = FALSE, row.names = NULL)
-  TSS_ranges_df[["Region"]] <- TSSStringForGuideScan(combined_TSS_CRISPRa_df)
+  if (!(minimal_version)) {
+    ####################################################################################################################
+    ### The following section of code attempts to troubleshoot the issue of sgRNAs that were not found by GuideScan. ###
+    ### Is it because the regions where these sgRNAs are located were not submitted to GuideScan?                    ###
+    ### Or were they submitted, but the sgRNA was not present in GuideScan's database?                               ###
+    ####################################################################################################################
 
-  IDs_fac <- factor(merged_CRISPR_df[["Combined_ID"]], levels = unique(merged_CRISPR_df[["Combined_ID"]]))
+    TSS_ranges_df <- data.frame(combined_TSS_CRISPRa_df, TSSRangesForGuideScan(combined_TSS_CRISPRa_df), stringsAsFactors = FALSE, row.names = NULL)
+    TSS_ranges_df[["Region"]] <- TSSStringForGuideScan(combined_TSS_CRISPRa_df)
 
-  ### Create a new column that lists of all regions that were submitted to GuideScan for that gene
-  regions_per_gene_list <- tapply(
-    seq_len(nrow(merged_CRISPR_df)),
-    IDs_fac,
-    function(x) {
-      are_this_ID <- TSS_ranges_df[["Combined_ID"]] == merged_CRISPR_df[["Combined_ID"]][[x[[1]]]]
-      if (any(are_this_ID)) {
-        my_result <- paste0(unique(TSS_ranges_df[["Region"]][are_this_ID]), collapse = "; ")
-      } else {
-        my_result <- NA_character_
+    IDs_fac <- factor(merged_CRISPR_df[["Combined_ID"]], levels = unique(merged_CRISPR_df[["Combined_ID"]]))
+
+    ### Create a new column that lists of all regions that were submitted to GuideScan for that gene
+    regions_per_gene_list <- tapply(
+      seq_len(nrow(merged_CRISPR_df)),
+      IDs_fac,
+      function(x) {
+        are_this_ID <- TSS_ranges_df[["Combined_ID"]] == merged_CRISPR_df[["Combined_ID"]][[x[[1]]]]
+        if (any(are_this_ID)) {
+          my_result <- paste0(unique(TSS_ranges_df[["Region"]][are_this_ID]), collapse = "; ")
+        } else {
+          my_result <- NA_character_
+        }
+        rep.int(my_result, length(x))
       }
-      rep.int(my_result, length(x))
-    }
-  )
-  merged_CRISPR_df[["TSS_regions"]] <- unlist(regions_per_gene_list)
+    )
+    merged_CRISPR_df[["TSS_regions"]] <- unlist(regions_per_gene_list)
 
-  ### Create a column that indicates whether a given genomic location was within the TSS regions searched by GuideScan
-  searched_by_GuideScan_list <- tapply(
-    seq_len(nrow(merged_CRISPR_df)),
-    IDs_fac,
-    function(x) {
-      have_location <- !(is.na(merged_CRISPR_df[["Start"]][x]))
-      are_this_ID <- TSS_ranges_df[["Combined_ID"]] == merged_CRISPR_df[["Combined_ID"]][[x[[1]]]]
-      results_vec <- rep.int(NA_character_, length(x))
-      if (any(have_location) && any(are_this_ID) && (any(merged_CRISPR_df[["Chromosome"]][x[have_location]] %in% TSS_ranges_df[["Chromosome"]][are_this_ID]))) {
-        GRanges_object_sgRNAs <- RangesDfToGRangesObject(merged_CRISPR_df[x[have_location], ])
-        GRanges_object_GuideScan <- RangesDfToGRangesObject(TSS_ranges_df[are_this_ID, ])
-        overlap_Hits_object <- findOverlaps(GRanges_object_sgRNAs, GRanges_object_GuideScan, ignore.strand = TRUE)
-        were_searched <- seq_len(sum(have_location)) %in% queryHits(overlap_Hits_object)
-        results_vec[have_location] <- ifelse(were_searched, "Yes", "No")
-      }
-      return(results_vec)
+    ### Create a column that indicates whether a given genomic location was within the TSS regions searched by GuideScan
+    searched_by_GuideScan_list <- tapply(
+      seq_len(nrow(merged_CRISPR_df)),
+      IDs_fac,
+      function(x) {
+        have_location <- !(is.na(merged_CRISPR_df[["Start"]][x]))
+        are_this_ID <- TSS_ranges_df[["Combined_ID"]] == merged_CRISPR_df[["Combined_ID"]][[x[[1]]]]
+        results_vec <- rep.int(NA_character_, length(x))
+        if (any(have_location) && any(are_this_ID) && (any(merged_CRISPR_df[["Chromosome"]][x[have_location]] %in% TSS_ranges_df[["Chromosome"]][are_this_ID]))) {
+          GRanges_object_sgRNAs <- RangesDfToGRangesObject(merged_CRISPR_df[x[have_location], ])
+          GRanges_object_GuideScan <- RangesDfToGRangesObject(TSS_ranges_df[are_this_ID, ])
+          overlap_Hits_object <- findOverlaps(GRanges_object_sgRNAs, GRanges_object_GuideScan, ignore.strand = TRUE)
+          were_searched <- seq_len(sum(have_location)) %in% queryHits(overlap_Hits_object)
+          results_vec[have_location] <- ifelse(were_searched, "Yes", "No")
+        }
+        return(results_vec)
 
-    },
-    simplify = FALSE
-  )
-  merged_CRISPR_df[["TSS_searched_by_GuideScan"]] <- unlist(searched_by_GuideScan_list)
+      },
+      simplify = FALSE
+    )
+    merged_CRISPR_df[["TSS_searched_by_GuideScan"]] <- unlist(searched_by_GuideScan_list)
 
-  ### Further refine the data in the "TSS_searched_by_GuideScan" to reflect whether the sgRNA was located within the TSS search window for specifically this gene
-  have_location <- !(is.na(merged_CRISPR_df[["Start"]]))
-  GRanges_object_sgRNAs <- RangesDfToGRangesObject(merged_CRISPR_df[have_location, ])
-  GRanges_object_GuideScan <- RangesDfToGRangesObject(TSS_ranges_df)
-  overlap_Hits_object <- findOverlaps(GRanges_object_sgRNAs, GRanges_object_GuideScan, ignore.strand = TRUE)
-  were_searched <- seq_len(sum(have_location)) %in% queryHits(overlap_Hits_object)
+    ### Further refine the data in the "TSS_searched_by_GuideScan" to reflect whether the sgRNA was located within the TSS search window for specifically this gene
+    have_location <- !(is.na(merged_CRISPR_df[["Start"]]))
+    GRanges_object_sgRNAs <- RangesDfToGRangesObject(merged_CRISPR_df[have_location, ])
+    GRanges_object_GuideScan <- RangesDfToGRangesObject(TSS_ranges_df)
+    overlap_Hits_object <- findOverlaps(GRanges_object_sgRNAs, GRanges_object_GuideScan, ignore.strand = TRUE)
+    were_searched <- seq_len(sum(have_location)) %in% queryHits(overlap_Hits_object)
 
-  submitted_to_GuideScan_vec <- rep.int(NA_character_, nrow(merged_CRISPR_df))
-  submitted_to_GuideScan_vec[have_location] <- ifelse(were_searched, "Yes", "No")
+    submitted_to_GuideScan_vec <- rep.int(NA_character_, nrow(merged_CRISPR_df))
+    submitted_to_GuideScan_vec[have_location] <- ifelse(were_searched, "Yes", "No")
 
-  are_conflicting <- (merged_CRISPR_df[["TSS_searched_by_GuideScan"]] %in% "No") & (submitted_to_GuideScan_vec %in% "Yes")
-  merged_CRISPR_df[["TSS_searched_by_GuideScan"]][are_conflicting] <- "Not this gene"
+    are_conflicting <- (merged_CRISPR_df[["TSS_searched_by_GuideScan"]] %in% "No") & (submitted_to_GuideScan_vec %in% "Yes")
+    merged_CRISPR_df[["TSS_searched_by_GuideScan"]][are_conflicting] <- "Not this gene"
 
-  ####################################################################################################################
-  ####################################################################################################################
-  ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
 
+    merged_CRISPR_df[["GuideScan_offtarget_category"]] <- GetOffTargetCategory(merged_CRISPR_df)
 
-  merged_CRISPR_df[["GuideScan_offtarget_category"]] <- GetOffTargetCategory(merged_CRISPR_df)
+  }
 
-  # merged_CRISPR_df[["Locations_0MM"]] <- TruncateLongEntries(merged_CRISPR_df[["Locations_0MM"]])
 
 
   # Remove unnecessary columns
