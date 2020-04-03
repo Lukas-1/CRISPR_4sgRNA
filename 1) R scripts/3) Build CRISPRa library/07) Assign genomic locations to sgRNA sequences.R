@@ -18,7 +18,7 @@ CRISPR_root_directory        <- "~/CRISPR"
 CRISPR_input_directory       <- file.path(CRISPR_root_directory, "2) Input data")
 RData_directory              <- file.path(CRISPR_root_directory, "3) RData files")
 CRISPRa_RData_directory      <- file.path(RData_directory, "2) CRISPRa")
-file_output_directory        <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")
+
 
 
 
@@ -47,14 +47,20 @@ table(extended_CRISPRa_df[["Num_5G_MM"]][extended_CRISPRa_df[["Num_5G_MM"]] > 0]
 
 full_merged_CRISPRa_df <- MergeTSSandGuideScan(extended_CRISPRa_df, guidescan_all_genes_df)
 
+merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all_genes_df, allow_5pG_MM = TRUE, minimal_version = TRUE)
+
+
+
+
+
+# Check for discrepancies with GuideScan locations ------------------------
+
 mapped_by_GuideScan <- is.na(full_merged_CRISPRa_df[["Hits_start"]]) & !(is.na(full_merged_CRISPRa_df[["GuideScan_start"]]))
 were_confirmed <- vapply(which(mapped_by_GuideScan), function(x) {
   locations_vec <- strsplit(full_merged_CRISPRa_df[["Locations_0MM"]][[x]], "; ", fixed = TRUE)[[1]]
   full_merged_CRISPRa_df[["GuideScan_start"]][[x]] %in% LocationStringToDf(locations_vec)[["Start"]]
 }, logical(1))
 head(full_merged_CRISPRa_df[mapped_by_GuideScan, c("GuideScan_chromosome", "GuideScan_strand", "GuideScan_start", "GuideScan_end", "Locations_0MM")])
-
-merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all_genes_df, allow_5pG_MM = TRUE)
 
 
 
