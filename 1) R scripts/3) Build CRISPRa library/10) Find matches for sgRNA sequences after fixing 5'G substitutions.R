@@ -48,7 +48,7 @@ new_sequences_df <- FindSequences(new_or_not_found_sequences)
 
 
 
-# Extend sequence matches with additional data (e.g. nearby genes) --------
+# Extend sequence matches with additional data ----------------------------
 
 # new_sequences_df <- FindNearestGenes(new_sequences_df)
 new_sequences_df[["PAM"]] <- GetNGGPAM(new_sequences_df)
