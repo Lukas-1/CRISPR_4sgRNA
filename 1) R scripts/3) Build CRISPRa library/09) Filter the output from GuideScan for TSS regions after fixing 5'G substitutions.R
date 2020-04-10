@@ -24,7 +24,6 @@ GuideScan_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate f
 
 
 
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRa_RData_directory, "03) Map CRISPR libraries to TSS data.RData"))
