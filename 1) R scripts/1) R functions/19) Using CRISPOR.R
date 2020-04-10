@@ -55,32 +55,12 @@ MakeBedDf <- function(CRISPR_df, combined_IDs) {
     CRISPR_bed_df["Strand"],
     stringsAsFactors = FALSE
   )
-  are_duplicated <- duplicated(export_bed_df[, colnames(export_bed_df) != "Combined_ID"])
-  export_bed_df <- export_bed_df[!(are_duplicated), ]
-  row.names(export_bed_df) <- NULL
-  return(export_bed_df)
-}
-
-
-
-MakeBedDf <- function(CRISPR_df, combined_IDs) {
-  are_selected <- (CRISPR_df[["Combined_ID"]] %in% combined_IDs) &
-                  !(is.na(CRISPR_df[["Start"]]))
-  CRISPR_bed_df <- CRISPR_df[are_selected, ]
-  export_bed_df <- data.frame(
-    CRISPR_bed_df[c("Combined_ID", "Chromosome")],
-    "Start"  = ifelse(CRISPR_bed_df[["Strand"]] == "+", CRISPR_bed_df[["Start"]],    CRISPR_bed_df[["Start"]] - 3L) - 1L,
-    "End"    = ifelse(CRISPR_bed_df[["Strand"]] == "+", CRISPR_bed_df[["End"]] + 3L, CRISPR_bed_df[["End"]]),
-    "Names"  = ".",
-    "Scores" = ".",
-    CRISPR_bed_df["Strand"],
-    stringsAsFactors = FALSE
-  )
   are_duplicated <- duplicated(export_bed_df[, !(colnames(export_bed_df) %in% c("sgRNA_sequence", "Combined_ID"))])
   export_bed_df <- export_bed_df[!(are_duplicated), ]
   row.names(export_bed_df) <- NULL
   return(export_bed_df)
 }
+
 
 
 BreakIntoChunks <- function(UseFunction, CRISPR_df, combined_IDs_list) {
@@ -94,8 +74,8 @@ BreakIntoChunks <- function(UseFunction, CRISPR_df, combined_IDs_list) {
 
 
 
-
 PAMorOriginalPAM <- function(CRISPR_df) {
+  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
   are_validated_PAMs <- !(is.na(CRISPR_df[["Original_PAM"]])) &
                         mapply(function(x, y) x %in% strsplit(y, "; ", fixed = TRUE)[[1]],
                                CRISPR_df[["Original_PAM"]],
@@ -113,25 +93,27 @@ PAMorOriginalPAM <- function(CRISPR_df) {
 
 MakeFASTADf <- function(CRISPR_df, combined_IDs) {
   are_selected <- (CRISPR_df[["Combined_ID"]] %in% combined_IDs) &
-                  is.na(CRISPR_df[["Start"]])
-  results_df <- CRISPR_df[are_selected, ]
-  results_df <- results_df[results_df[["Num_0MM"]] > 0, ]
-  PAM_vec <- PAMorOriginalPAM(results_df)
-  results_df <- data.frame(
-    results_df[, c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "sgRNA_sequence")],
-    "PAM" = PAM_vec,
-    stringsAsFactors = FALSE,
-    row.names = NULL
-  )
-  results_df <- results_df[!(is.na(PAM_vec)), ]
-  are_duplicated <- duplicated(results_df[, c("sgRNA_sequence", "PAM")])
-  results_df <- results_df[!(are_duplicated), ]
-  row.names(results_df) <- NULL
-  return(results_df)
+                  is.na(CRISPR_df[["Start"]]) &
+                  (CRISPR_df[["Num_0MM"]] > 0)
+  if (!(any(are_selected))) {
+    message("No sgRNAs were found that required submission as a FASTA sequence!")
+    return(NULL)
+  } else {
+    results_df <- CRISPR_df[are_selected, ]
+    PAM_vec <- PAMorOriginalPAM(results_df)
+    results_df <- data.frame(
+      results_df[, c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "sgRNA_sequence")],
+      "PAM" = PAM_vec,
+      stringsAsFactors = FALSE,
+      row.names = NULL
+    )
+    results_df <- results_df[!(is.na(PAM_vec)), ]
+    are_duplicated <- duplicated(results_df[, c("sgRNA_sequence", "PAM")])
+    results_df <- results_df[!(are_duplicated), ]
+    row.names(results_df) <- NULL
+    return(results_df)
+  }
 }
-
-
-
 
 
 MakeFASTAvec <- function(use_FASTA_df) {
@@ -183,9 +165,6 @@ IdentifyCRISPOROutputFiles <- function() {
 
 
 
-
-
-
 ReadCRISPOROutputFiles <- function(file_names, is_FASTA, show_messages = FALSE) {
   df_list <- lapply(file_names, function(x) ReadCRISPOROutput(x, use_fread = TRUE, show_messages = show_messages))
   results_df <- rbindlist(df_list)
@@ -203,19 +182,18 @@ ReadCRISPOROutputFiles <- function(file_names, is_FASTA, show_messages = FALSE) 
         results_df[[column_name]] <- as.integer(results_df[[column_name]])
       }
     }
-    for (column_name in c("mitSpecScore", "cfdSpecScore")) {
-      if (!(is.integer(results_df[[column_name]]))) {
-        are_none <- results_df[[column_name]] %in% "None"
-        message(paste0(sum(are_none), " entries in the '", column_name,
-                       "' column were invalid (i.e. 'None')!"
-                       )
-                )
-        results_df[[column_name]][are_none] <- NA_character_
+    have_no_specificity <- results_df[["mitSpecScore"]] %in% "None"
+    stopifnot(identical(have_no_specificity, results_df[["cfdSpecScore"]] %in% "None"))
+    if (any(have_no_specificity)) {
+      message(paste0(sum(have_no_specificity), " entries had invalid specificity scores (i.e. 'None')!"))
+      for (column_name in c("mitSpecScore", "cfdSpecScore")) {
+        results_df[[column_name]][have_no_specificity] <- NA_character_
         results_df[[column_name]] <- as.integer(results_df[[column_name]])
       }
+      results_df[["offtargetCount"]] <- NA_integer_
     }
   }
-  use_columns <- colnames(results_df)
+  use_columns <- setdiff(colnames(results_df), c("mitOfftargetScore", "cfdOfftargetScore")) # This is to avoid floating-point issues that leads to some duplicates being missed
   if (is_FASTA) {
     use_columns <- setdiff(use_columns, c("seqId", "#seqId"))
   }
@@ -260,7 +238,8 @@ ReadCRISPOROutput <- function(file_name, use_fread = TRUE, show_messages = FALSE
 
 
 SummarizeOfftargets <- function(offtargets_df, is_FASTA) {
-  offtargets_df[["mismatchCount"]] <- as.ordered(offtargets_df[["mismatchCount"]])
+  assign("delete_offtargets_df", offtargets_df, envir = globalenv())
+  offtargets_df[["mismatchCount"]] <- factor(offtargets_df[["mismatchCount"]], levels = 0:4, ordered = TRUE)
   offtargets_df[["cfdOfftargetScore"]] <- as.numeric(ifelse(offtargets_df[["cfdOfftargetScore"]] == "None", NA, offtargets_df[["cfdOfftargetScore"]]))
 
   if (is_FASTA) {
@@ -274,6 +253,7 @@ SummarizeOfftargets <- function(offtargets_df, is_FASTA) {
   results_list <- tapply(seq_len(nrow(offtargets_df)),
                          factor(offtargets_df[[ID_column]], levels = unique(offtargets_df[[ID_column]])),
                          function(x) {
+                           assign("delete_x", x, envir = globalenv())
                            mismatch_table <- as.integer(table(offtargets_df[["mismatchCount"]][x]))
                            names(mismatch_table) <- paste0("CRISPOR_Num_", 0:4, "MM")
                            specificity_unrounded <- 1 / (1 + sum(offtargets_df[["cfdOfftargetScore"]][x], na.rm = TRUE))
@@ -372,12 +352,38 @@ AddCRISPORBedData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_d
 
 AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets_df, resolve_missing_offtargets = TRUE) {
 
-  not_mapped <- is.na(CRISPR_df[["Start"]])
-  sequences_vec <- rep(NA_character_, nrow(CRISPR_df))
-  sequences_vec[not_mapped] <- toupper(paste0(CRISPR_df[["sgRNA_sequence"]][not_mapped], PAMorOriginalPAM(CRISPR_df[not_mapped, ])))
+  are_mapped <- !(is.na(CRISPR_df[["Start"]]))
+  have_scores <- are_mapped #!(is.na(CRISPR_df[["CRISPOR_3MM_specificity"]]))
 
-  stopifnot(!(anyNA(CRISPOR_output_df[["targetSeq"]])))
-  stopifnot(all(is.na(CRISPR_df[["CRISPOR_off_target_count"]][not_mapped])))
+  ### DELETE THIS!! ###
+
+  if (anyNA(CRISPOR_output_df[["targetSeq"]])) {
+    stop("None of the entries in the targetSeq column may be NA, to avoid erroneous matches!")
+  }
+
+  if (any(have_scores & !(are_mapped))) {
+    stop("A guide with no location, but a CRISPOR score, was unexpectedly found!")
+  }
+  ### DELETE THIS!! ###
+
+  stopifnot(all(is.na(CRISPR_df[["CRISPOR_off_target_count"]][!(have_scores)])))
+
+  were_not_scored <- !(have_scores) & are_mapped
+  if (any(were_not_scored)) {
+    message(paste0(sum(were_not_scored), " guides had no CRISPOR scores, ",
+                   "even though they had a location! It will be attempted to find ",
+                   "CRISPOR scores for the sgRNA + PAM sequence."
+                   )
+            )
+  }
+
+  sequences_vec <- rep(NA_character_, nrow(CRISPR_df))
+  PAM_vec <- PAMorOriginalPAM(CRISPR_df[!(have_scores), ])
+  sequences_vec[!(have_scores)] <- toupper(ifelse(is.na(PAM_vec),
+                                                  NA_character_,
+                                                  paste0(CRISPR_df[["sgRNA_sequence"]][!(have_scores)], PAM_vec)
+                                                  )
+                                           )
 
   output_matches_vec <- match(sequences_vec, toupper(CRISPOR_output_df[["targetSeq"]]))
   output_matched_df <- CRISPOR_output_df[output_matches_vec, names(rename_CRISPOR_columns_vec)]
@@ -398,11 +404,10 @@ AddCRISPORFASTAData <- function(CRISPR_df, CRISPOR_output_df, CRISPOR_offtargets
     offtargets_df <- ResolveMissingOffTargets(offtargets_df)
   }
   for (column_name in setdiff(names(offtargets_df), "Location_ID")) {
-    CRISPR_df[[column_name]][not_mapped] <- offtargets_df[[column_name]][not_mapped]
+    CRISPR_df[[column_name]][!(have_scores)] <- offtargets_df[[column_name]][!(have_scores)]
   }
   return(CRISPR_df)
 }
-
 
 
 
@@ -454,6 +459,13 @@ AddCombinedFilteredDf <- function(filtered_df_list) {
     combined_df_list <- CombineDfChunks(filtered_df_list[!(grepl("_all_done$", names(filtered_df_list)))])
     if (length(combined_df_list) == 1) {
       filtered_df_list[["filtered_all_chunks_combined"]] <- combined_df_list[[1]]
+    } else {
+      combined_names <- sub("chunk_chunk", "chunk", names(combined_df_list), fixed = TRUE)
+      combined_names <- gsub("_some_donechunk_", "", combined_names, fixed = TRUE)
+      combined_names <- sub("_some_done", "", combined_names, fixed = TRUE)
+      combined_names <- paste0("combined_", combined_names)
+      names(combined_df_list) <- combined_names
+      filtered_df_list <- c(filtered_df_list, combined_df_list)
     }
   } else {
     message("CRISPOR scores for all entries are already available!")
