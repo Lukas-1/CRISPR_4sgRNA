@@ -125,7 +125,6 @@ MergeTSSandGuideScan <- function(CRISPR_df, guidescan_df, combined_TSS_df) {
 
 # Functions for tidying and summarizing the data from GuideScan -----------
 
-
 GetOffTargetCategory <- function(merged_CRISPR_df) {
   if ("Num_5G_MM" %in% names(merged_CRISPR_df)) {
     num_perfect_hits_vec <- rowSums(merged_CRISPR_df[, c("Num_0MM", "Num_5G_MM")])
