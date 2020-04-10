@@ -117,7 +117,11 @@ chromosome_vec <- vapply(unique_entrez_IDs, function(x) {
                              "chrM",
                              ifelse(entrez_to_chromosome_list[[x]] == "Un", NA_character_, paste0("chr", entrez_to_chromosome_list[[x]]))
                              )
-    return(paste0(chromosome_vec, collapse = ", "))
+    if (all(is.na(chromosome_vec))) {
+      return(NA_character_)
+    } else {
+      return(paste0(chromosome_vec, collapse = ", "))
+    }
   } else {
     return(NA_character_)
   }
