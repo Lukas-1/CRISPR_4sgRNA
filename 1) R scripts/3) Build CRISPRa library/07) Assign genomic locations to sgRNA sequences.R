@@ -45,9 +45,11 @@ table(extended_CRISPRa_df[["Num_5G_MM"]][extended_CRISPRa_df[["Num_5G_MM"]] > 0]
 
 # Merge with GuideScan data -----------------------------------------------
 
-full_merged_CRISPRa_df <- MergeTSSandGuideScan(extended_CRISPRa_df, guidescan_all_genes_df)
+full_merged_CRISPRa_df <- MergeTSSandGuideScan(extended_CRISPRa_df, guidescan_all_genes_df, combined_TSS_CRISPRa_df)
 
-merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all_genes_df, allow_5pG_MM = TRUE, minimal_version = TRUE)
+merged_CRISPRa_df <- AdjustPositionColumns(full_merged_CRISPRa_df, guidescan_all_genes_df, combined_TSS_CRISPRa_df,
+                                           allow_5pG_MM = TRUE, minimal_version = TRUE
+                                           )
 
 
 
