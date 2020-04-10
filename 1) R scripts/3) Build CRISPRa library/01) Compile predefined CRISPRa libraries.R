@@ -22,18 +22,21 @@ source(file.path(general_functions_directory, "24) Assigning genes to sublibrari
 CRISPR_root_directory            <- "~/CRISPR"
 CRISPR_input_directory           <- file.path(CRISPR_root_directory, "2) Input data")
 CRISPR_libraries_directory       <- file.path(CRISPR_input_directory, "CRISPR libraries")
+CRISPRa_datasets_directory       <- file.path(CRISPR_libraries_directory, "CRISPRa")
+
 gene_lists_directory             <- file.path(CRISPR_input_directory, "Gene lists")
 RData_directory                  <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory          <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory          <- file.path(RData_directory, "2) CRISPRa")
 
-CRISPR_libraries_directory       <- file.path(CRISPR_input_directory, "CRISPR libraries")
-CRISPRa_datasets_directory       <- file.path(CRISPR_libraries_directory, "CRISPRa")
-
 CRISPRa_Horlbeck2016_path        <- file.path(CRISPRa_datasets_directory, "Horlbeck, Kampmann, Weissman - eLife 2016")
 CRISPRa_Horlbeck2016_sgRNAs_path <- file.path(CRISPRa_Horlbeck2016_path, "2016 - Compact and highly active next-generation libraries - Table S5.xlsx")
-CRISPRa_Horlbeck2016_TSSs_path   <- file.path(CRISPRa_Horlbeck2016_path, "2016 - Compact and highly active next-generation libraries - Table S2.xlsx")
-CRISPRa_Doench2018_path          <- file.path(CRISPRa_datasets_directory, "Sanson, Doench - Nat Comm 2018", "2018 - Optimized libraries for CRISPR-Cas9 genetic screens - Data S5.xlsx")
+Horlbeck2016_TSSs_path           <- file.path(CRISPR_libraries_directory, "TSS", "Horlbeck, Kampmann, Weissman - eLife 2016",
+                                              "2016 - Compact and highly active next-generation libraries - Table S2.xlsx"
+                                              )
+CRISPRa_Doench2018_path          <- file.path(CRISPRa_datasets_directory, "Sanson, Doench - Nat Comm 2018",
+                                              "2018 - Optimized libraries for CRISPR-Cas9 genetic screens - Data S5.xlsx"
+                                              )
 hand_picked_CRISPRa_path         <- file.path(CRISPRa_datasets_directory, "Manually curated CRISPRa gRNAs.xlsx")
 GPP_CRISPRa_path                 <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRa/GPP sgRNA designer/2) Output files")
 GPP_priority_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "1) High-priority")
@@ -45,7 +48,7 @@ GPP_optional_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "2) Optional")
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
-load(file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
+load(file.path(CRISPRa_RData_directory, "25) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
 
 
 
@@ -56,7 +59,7 @@ load(file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA des
 hCRISPRa_v2_df <- data.frame(read_excel(CRISPRa_Horlbeck2016_sgRNAs_path, skip = 7)[-1, ], stringsAsFactors = FALSE)
 names(hCRISPRa_v2_df) <- names(read_excel(CRISPRa_Horlbeck2016_sgRNAs_path, n_max = 1))
 
-hCRISPRa_v2_TSS_df <- data.frame(read_excel(CRISPRa_Horlbeck2016_TSSs_path), stringsAsFactors = FALSE, check.names = FALSE)
+Horlbeck_TSS_df <- data.frame(read_excel(Horlbeck2016_TSSs_path), stringsAsFactors = FALSE, check.names = FALSE)
 
 CalabreseA_df  <- data.frame(read_excel(CRISPRa_Doench2018_path, sheet = "SetA sgRNA Annotations"), stringsAsFactors = FALSE, check.names = FALSE)
 CalabreseB_df  <- data.frame(read_excel(CRISPRa_Doench2018_path, sheet = "SetB sgRNA Annotations"), stringsAsFactors = FALSE, check.names = FALSE)
@@ -76,10 +79,8 @@ GPP_CRISPRa_full_df <- ReadGPPOutputFiles(c(GPP_priority_CRISPRa_path, GPP_optio
 
 hCRISPRa_v2_df[["Sublibrary"]] <- hCRISPRa_v2_sublibrary_map[hCRISPRa_v2_df[["Sublibrary"]]]
 
-hCRISPRa_v2_df_transcript_IDs <- paste0(hCRISPRa_v2_df[["gene"]], "__", hCRISPRa_v2_df[["transcript"]])
-hCRISPRa_v2_TSS_df_transcript_IDs <- paste0(hCRISPRa_v2_TSS_df[["gene"]], "__", hCRISPRa_v2_TSS_df[["transcript"]])
-TSS_source_matches <- match(hCRISPRa_v2_df_transcript_IDs, hCRISPRa_v2_TSS_df_transcript_IDs)
-hCRISPRa_v2_df[["TSS_source"]] <- hCRISPRa_v2_TSS_df[["TSS source"]][TSS_source_matches]
+hCRISPRa_v2_df <- AddHorlbeckTSSSource(hCRISPRa_v2_df, Horlbeck_TSS_df)
+
 
 
 
