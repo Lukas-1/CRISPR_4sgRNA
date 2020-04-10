@@ -68,7 +68,7 @@ FormatForExcel <- function(my_df,
                            ) {
   # Requires the object 'source_abbreviations_vec' in the global environment
 
-  is_CRISPRa <- "Calabrese_rank" %in% names(my_df)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(my_df)
 
   CRISPRko_overlapping_vec <- c(
     "Entrez_overlapping_0MM" = "Entrez_ID",
@@ -78,7 +78,7 @@ FormatForExcel <- function(my_df,
     "Nearest_Entrez_IDs", "Nearest_symbols",
     "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
   )
-  if (!(is_CRISPRa)) {
+  if (is_CRISPRko) {
     for (column_name in names(CRISPRko_overlapping_vec)) {
       target_vec <- my_df[[CRISPRko_overlapping_vec[[column_name]]]]
       target_list <- strsplit(target_vec, ", ", fixed = TRUE)
@@ -148,8 +148,9 @@ FormatForExcel <- function(my_df,
                             !(grepl("TTTT", my_df[["sgRNA_sequence"]], ignore.case = TRUE))
       ones_and_zeros_vec[are_valid_controls] <- 3L
     }
-    if (is_CRISPRa) {
-      my_df[["hCRISPRa_v2_transcript"]][are_controls] <- NA_character_
+    if (!(is_CRISPRko)) {
+      transcript_column <- grep("_v2_transcript", colnames(my_df), fixed = TRUE)
+      my_df[[transcript_column]][are_controls] <- NA_character_
     }
     my_df[["Gene_symbol"]][are_controls] <- my_df[["Combined_ID"]][are_controls]
     my_df[["Original_symbol"]][are_controls] <- ifelse(grepl("TKOv3", my_df[["Source"]][are_controls], fixed = TRUE), # The TKOv3 library targets EGFP, luciferase, and LacZ
@@ -202,10 +203,11 @@ FormatForExcel <- function(my_df,
     my_df[[SNP_AF_column]][is.na(my_df[[SNP_ID_column]])] <- NA_real_
   }
 
-  if (is_CRISPRa) {
+  if (!(is_CRISPRko)) {
+    rank_column <- grep("^(Calabrese|Dolcetto)_", colnames(my_df))
     # This is to prevent the cell value "1/2/3" from being converted into a date by Excel
-    my_df[["Calabrese_rank"]] <- gsub("/", " or ", my_df[["Calabrese_rank"]], fixed = TRUE)
-    my_df[["Calabrese_rank"]] <- sub(" or ", ", ", my_df[["Calabrese_rank"]], fixed = TRUE)
+    my_df[[rank_column]] <- gsub("/", " or ", my_df[[rank_column]], fixed = TRUE)
+    my_df[[rank_column]] <- sub(" or ", ", ", my_df[[rank_column]], fixed = TRUE)
   }
   if (probability_to_percentage) {
     for (column_index in grep("_AF_(sum|max)_", names(my_df), fixed = TRUE)) {
@@ -230,7 +232,7 @@ FormatForExcel <- function(my_df,
                                                     fixed = TRUE
                                                     )
   }
-  if (!(is_CRISPRa)) {
+  if (is_CRISPRko) {
     my_df[["Source"]] <- ifelse(my_df[["Source"]] == "GPP, Bru, TKOv3",
                                 "GPP, Bru, tk3",
                                 my_df[["Source"]]

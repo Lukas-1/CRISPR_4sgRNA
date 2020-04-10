@@ -20,13 +20,12 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 TF_annotation_columns <- c("Gene_symbol", "Ensembl_gene_ID", "Entrez_ID", "Original_symbol", "Original_entrez", "Sources")
 all_genes_annotation_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol", "Original_entrez", "Sources")
 
-CRISPRa_columns <- c("Num_hCRISPRa_v2_transcripts", "Num_transcripts", "Num_overlapping_transcripts", "Num_incomplete_transcripts")
+TSS_columns <- c("Num_hCRISPR_v2_transcripts", "Num_transcripts", "Num_overlapping_transcripts", "Num_incomplete_transcripts")
 
 selected_metrics <- c("Num_overlaps", "Spacing", "Longest_subsequence", "GuideScan_specificity",
                       "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity",
                       "Num_top4_outside_criteria", "Num_total",
-                      "Specific_guides_available", "Num_no_perfect_match", "Gene_annotation_status",
-                      "Lax_locations_differ"
+                      "Specific_guides_available", "Num_no_perfect_match", "Gene_annotation_status"
                       )
 
 
@@ -63,16 +62,22 @@ libraries_order <- c(
   "Calabrese",
   "hCRISPRa-v2",
   "Brunello",
+  "hCRISPRi-v2.1",
+  "hCRISPRi-v2.0",
+  "Dolcetto",
   "TKOv3",
   "GPP"
 )
 
 libraries_two_letters <- c(
-  "Calabrese"   = "Ca",
-  "hCRISPRa-v2" = "v2",
-  "Brunello"    = "B",
-  "TKOv3"       = "T",
-  "GPP"         = "G"
+  "Calabrese"     = "Ca",
+  "hCRISPRa-v2"   = "v2",
+  "Dolcetto"      = "Do",
+  "hCRISPRi-v2.1" = "v2",
+  "hCRISPRi-v2.0" = "v2",
+  "Brunello"      = "B",
+  "TKOv3"         = "T",
+  "GPP"           = "G"
 )
 
 
@@ -151,7 +156,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       "Original_entrez"             = CollapseOriginal(CRISPR_df[["Original_entrez"]][x]),
       "Original_symbol"             = CollapseOriginal(CRISPR_df[["Original_symbol"]][x]),
       "Sources"                     = SummarizeSources(CRISPR_df[["Source"]][x]),
-      "Num_hCRISPRa_v2_transcripts" = NA_integer_,
+      "Num_hCRISPR_v2_transcripts"  = NA_integer_,
       "Num_transcripts"             = NA_integer_,
       "Num_overlapping_transcripts" = NA_integer_,
       "Num_unspaced_transcripts"    = NA_integer_,
@@ -271,13 +276,14 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       }
       unique_transcripts <- unique(transcripts_vec)
       unique_transcripts <- unique_transcripts[!(is.na(unique_transcripts))]
-      unique_hC_transcripts <- unique(CRISPR_df[["hCRISPRa_v2_transcript"]][x])
+      transcript_column <- grep("_v2_transcript", colnames(CRISPR_df), fixed = TRUE, value = TRUE)
+      unique_hC_transcripts <- unique(CRISPR_df[[transcript_column]][x])
       unique_hC_transcripts <- unique_hC_transcripts[!(is.na(unique_hC_transcripts))]
       results_list[["Num_transcripts"]] <- length(unique_transcripts)
-      results_list[["Num_hCRISPRa_v2_transcripts"]] <- length(unique_hC_transcripts)
+      results_list[["Num_hCRISPR_v2_transcripts"]] <- length(unique_hC_transcripts)
     } else {
       results_list[["Num_transcripts"]] <- NULL
-      results_list[["Num_hCRISPRa_v2_transcripts"]] <- NULL
+      results_list[["Num_hCRISPR_v2_transcripts"]] <- NULL
     }
     if (include_transcripts && include_top4nonoverlapping) {
       results_list[["Num_unspaced_transcripts"]]    <- sum(tapply(are_incomplete[x], transcripts_fac, any))
