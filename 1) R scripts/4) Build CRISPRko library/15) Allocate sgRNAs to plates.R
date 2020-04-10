@@ -27,7 +27,7 @@ CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 
 
 
@@ -206,7 +206,7 @@ TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_sgRNA_plates_df",
-     file = file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData")
+     file = file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData")
      )
 
 

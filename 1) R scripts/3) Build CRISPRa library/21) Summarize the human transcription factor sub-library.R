@@ -12,11 +12,11 @@ source(file.path(general_functions_directory, "16) Producing per-gene summaries 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
-RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory  <- file.path(RData_directory, "1) General")
-CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
-file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko")
+CRISPR_root_directory   <- "~/CRISPR"
+RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory <- file.path(RData_directory, "1) General")
+CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
+file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")
 
 
 
@@ -25,8 +25,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
-load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
 
 
@@ -34,9 +33,9 @@ load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed crite
 
 # Determine the number of available sgRNAs for TF genes -------------------
 
-CRISPRko_TF_sgRNAs_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Combined_ID"]] %in% all_TF_df[["Combined_ID"]], ]
+CRISPRa_TF_sgRNAs_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% all_TF_df[["Combined_ID"]], ]
 
-TF_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRko_TF_sgRNAs_df)
+TF_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRa_TF_sgRNAs_df)
 
 reorganized_df <- ReorganizeSummaryDf(TF_sgRNAs_summary_df, all_TF_df[["Combined_ID"]])
 all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[["Combined_ID"]], all_TF_df[["Combined_ID"]]), ],
@@ -63,27 +62,19 @@ table(TF_overview_df[["Num_meeting_criteria"]] < 4)
 
 
 
-# Does the use of relaxed locations change the choice of guides? ----------
-
-are_different <- DifferUsingRelaxedLocations(TF_overview_df[["Entrez_ID"]], merged_CRISPRko_df, lax_CRISPRko_df)
-TF_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
-
-
-
 
 
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
   TF_annotation_columns,
-  selected_metrics,
+  TSS_columns,
+  setdiff(selected_metrics, "Num_overlaps"),
   "DNA_binding_domain", "TF_assessment", "Binding_mode",
   "Is_TF_CisBP", "Is_TF_TFClass", "Is_TF_GO", "Is_C2H2_ZF"
 )
 
-WriteOverviewDfToDisk(TF_overview_df[, columns_for_excel], file_name = "Overview_CRISPRko_transcription_factors")
-
-
+WriteOverviewDfToDisk(TF_overview_df[, columns_for_excel], file_name = "Overview_CRISPRa_transcription_factors")
 
 
 
@@ -91,8 +82,14 @@ WriteOverviewDfToDisk(TF_overview_df[, columns_for_excel], file_name = "Overview
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_overview_df",
-     file = file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData")
+     file = file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData")
      )
+
+
+
+
+
+
 
 
 

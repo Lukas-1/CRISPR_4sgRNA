@@ -28,9 +28,8 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
-load(file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData"))
 
 
 
@@ -183,18 +182,16 @@ DfToTSV(secretome_CRISPRko_df, "CRISPRko_secretome")
 
 DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
-DfToTSV(lax_CRISPRko_df[, rearranged_column_names], "CRISPRko_relaxed_all_genes")
-
 
 
 
 
 # Write changed wells to disk ---------------------------------------------
 
-legacy_RData_directory <- "C:/Users/lukas/OneDrive/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
+legacy_RData_directory <- "C:/Users/lukas/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
 load(file.path(legacy_RData_directory, "14) Allocate sgRNAs to plates.RData"))
 old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
-load(file.path(CRISPRko_RData_directory, "16) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData"))
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]

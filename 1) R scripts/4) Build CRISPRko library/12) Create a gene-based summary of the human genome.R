@@ -31,7 +31,6 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 
 
 
@@ -40,15 +39,7 @@ load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed crite
 
 # Create an overview data frame -------------------------------------------
 
-sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df, lax_CRISPRko_df)
-
-
-
-
-
-# Create an overview data frame for relaxed locations ---------------------
-
-sgRNAs_lax_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df, lax_CRISPRko_df, use_lax_df = TRUE)
+sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df)
 
 
 
@@ -86,22 +77,12 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 
 
 
-# Write the summary to disk for relaxed locations -------------------------
-
-are_targetable <- !(sgRNAs_lax_overview_df[["Gene_annotation_status"]] %in% untargetable_annotations)
-
-WriteOverviewDfToDisk(sgRNAs_lax_overview_df[are_targetable, columns_for_excel],
-                      file_name = "Overview_CRISPRko_relaxed_all_targetable_genes"
-                      )
-
-
-
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sgRNAs_overview_df", "sgRNAs_lax_overview_df"),
-     file = file.path(CRISPRko_RData_directory, "13) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
+save("sgRNAs_overview_df",
+     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
      )
 
 

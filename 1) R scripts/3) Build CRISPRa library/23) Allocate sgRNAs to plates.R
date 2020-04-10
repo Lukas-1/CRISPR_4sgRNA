@@ -27,9 +27,9 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "23) Summarize the human secretome sub-library.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
+load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "22) Summarize the human secretome sub-library.RData"))
 
 
 
@@ -50,6 +50,7 @@ all_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Entrez
 
 are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
 
+foo
 
 
 
@@ -245,8 +246,37 @@ TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_sgRNA_plates_df",
-     file = file.path(CRISPRa_RData_directory, "24) Allocate sgRNAs to plates.RData")
+     file = file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData")
      )
+
+
+
+
+
+# load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - lax_CRISPRa_df.RData"))
+#
+# all_CRISPRa_df <- lax_CRISPRa_df[lax_CRISPRa_df[["Entrez_ID"]] %in% all_entrezs, ]
+# are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
+#
+# are_top4 <- are_top4_mat[, "Are_top4"] & are_top4_mat[, "Have_valid_guides"]
+#
+# are_undefined_TSS <- is.na(all_CRISPRa_df[["TSS_ID"]]) & (all_CRISPRa_df[["Num_TSSs"]] > 1)
+#
+# all_CRISPRa_df[are_top4 & are_undefined_TSS, c("Entrez_ID", "Gene_symbol")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

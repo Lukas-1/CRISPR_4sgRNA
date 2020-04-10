@@ -18,9 +18,8 @@ source(file.path(general_functions_directory, "21) Splitting sgRNAs into chunks 
 CRISPR_root_directory     <- "~/CRISPR"
 RData_directory           <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory   <- file.path(RData_directory, "1) General")
-CRISPRa_RData_directory   <- file.path(RData_directory, "2) CRISPRa")
-GPP_input_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRa", "GPP sgRNA designer", "1) Input files")
-
+CRISPRko_RData_directory  <- file.path(RData_directory, "3) CRISPRko")
+GPP_input_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRko", "GPP sgRNA designer", "1) Input files")
 
 
 
@@ -28,9 +27,8 @@ GPP_input_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate f
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "09) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "21) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
-
+load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
 
 
 
@@ -38,7 +36,10 @@ load(file.path(CRISPRa_RData_directory, "21) Create a gene-based summary of the 
 
 # Collect Entrez IDs for submission to the GPP sgRNA designer -------------
 
-problematic_entrezs <- FindProblematicEntrezs(merged_replaced_CRISPRa_df, sgRNAs_overview_df)
+problematic_entrezs <- FindProblematicEntrezs(merged_CRISPRko_df, sgRNAs_overview_df)
+
+top_4_df <- merged_CRISPRko_df[(merged_CRISPRko_df[["Rank"]] %in% 1:4), ]
+table(top_4_df[(top_4_df[["Source"]] %in% "GPP"), "Entrez_ID"] %in% problematic_entrezs)
 
 
 
@@ -59,6 +60,7 @@ submit_df_list <- lapply(submit_entrez_chunks_list, BuildDfForGPP)
 optional_df_list <- lapply(optional_entrez_chunks_list, BuildDfForGPP)
 
 combined_submit_df_list <- CombineDfChunks(submit_df_list, max_num_per_chunk = 200L)
+
 
 
 
@@ -92,18 +94,12 @@ for (chunk_ID in names(combined_submit_df_list)) {
 
 
 
+
 # Save data ---------------------------------------------------------------
 
 save(list = "problematic_entrezs",
-     file = file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
+     file = file.path(CRISPRko_RData_directory, "17) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
      )
-
-
-
-
-
-
-
 
 
 

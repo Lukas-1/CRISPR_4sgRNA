@@ -27,10 +27,9 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")) # for candidates_CRISPRa_df
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - lax_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "24) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
+load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 
 
 
@@ -348,18 +347,16 @@ DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes")
 
 DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes_all_SNP_databases", remove_columns = omit_columns)
 
-DfToTSV(lax_CRISPRa_df[, selected_columns], "CRISPRa_relaxed_all_genes")
-
 
 
 
 
 # Write changed wells to disk ---------------------------------------------
 
-legacy_RData_directory <- "C:/Users/lukas/OneDrive/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/2) CRISPRa"
+legacy_RData_directory <- "C:/Users/lukas/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/2) CRISPRa"
 load(file.path(legacy_RData_directory, "21) Allocate sgRNAs to plates.RData"))
 old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
-load(file.path(CRISPRa_RData_directory, "24) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 

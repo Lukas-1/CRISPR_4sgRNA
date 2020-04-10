@@ -13,11 +13,11 @@ source(file.path(general_functions_directory, "16) Producing per-gene summaries 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
-RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory  <- file.path(RData_directory, "1) General")
-CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
-file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko")
+CRISPR_root_directory   <- "~/CRISPR"
+RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory <- file.path(RData_directory, "1) General")
+CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
+file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")
 
 
 
@@ -26,8 +26,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
-load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
 
 
@@ -35,9 +34,9 @@ load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed crite
 
 # Determine the number of available sgRNAs for secretome genes ------------
 
-CRISPRko_secretome_sgRNAs_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Combined_ID"]] %in% secretome_df[["Combined_ID"]], ]
+CRISPRa_secretome_sgRNAs_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% secretome_df[["Combined_ID"]], ]
 
-secretome_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRko_secretome_sgRNAs_df)
+secretome_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRa_secretome_sgRNAs_df)
 
 secretome_df <- secretome_df[!(secretome_df[["Ensembl_gene_ID"]] %in% "ENSG00000284779"), ]
 
@@ -52,26 +51,15 @@ secretome_overview_df <- data.frame(secretome_df[match(reorganized_df[["Combined
 
 
 
-
-# Does the use of relaxed locations change the choice of guides? ----------
-
-are_different <- DifferUsingRelaxedLocations(secretome_overview_df[["Entrez_ID"]], merged_CRISPRko_df, lax_CRISPRko_df)
-secretome_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
-
-
-
-
-
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
   setdiff(TF_annotation_columns, "Original_entrez"),
-  selected_metrics,
+  TSS_columns,
+  setdiff(selected_metrics, "Num_overlaps"),
   "UniProt_accession", "Annotated_category"
 )
-
-WriteOverviewDfToDisk(secretome_overview_df[, columns_for_excel], file_name = "Overview_CRISPRko_secretome")
-
+WriteOverviewDfToDisk(secretome_overview_df[, columns_for_excel], file_name = "Overview_CRISPRa_secretome")
 
 
 
@@ -80,7 +68,7 @@ WriteOverviewDfToDisk(secretome_overview_df[, columns_for_excel], file_name = "O
 # Save data ---------------------------------------------------------------
 
 save(list = "secretome_overview_df",
-     file = file.path(CRISPRko_RData_directory, "15) Summarize the human secretome sub-library.RData")
+     file = file.path(CRISPRa_RData_directory, "22) Summarize the human secretome sub-library.RData")
      )
 
 

@@ -27,8 +27,8 @@ output_plots_directory  <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "21) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
 
 
 
@@ -77,7 +77,6 @@ BarPlot_Sources(merged_replaced_CRISPRa_df, "Have_homologies")
 
 
 
-
 # Try stuff ---------------------------------------------------------------
 
 
@@ -87,9 +86,6 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
                   "filter_complete_genes"  = FALSE,
                   "filter_complete_scores" = FALSE
                   )
-
-
-
 
 
 

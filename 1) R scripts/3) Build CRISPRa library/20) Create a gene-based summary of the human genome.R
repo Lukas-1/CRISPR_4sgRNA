@@ -30,8 +30,7 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - lax_CRISPRa_df.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
 
 
@@ -40,15 +39,8 @@ load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guide
 
 # Create an overview data frame -------------------------------------------
 
-sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRa_df, lax_CRISPRa_df)
+sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRa_df)
 
-
-
-
-
-# Create an overview data frame for relaxed locations ---------------------
-
-sgRNAs_lax_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRa_df, lax_CRISPRa_df, use_lax_df = TRUE)
 
 
 
@@ -99,13 +91,11 @@ show_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol",
 
 
 
-
-
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
   all_genes_annotation_columns,
-  CRISPRa_columns,
+  TSS_columns,
   setdiff(selected_metrics, "Num_overlaps")
 )
 
@@ -114,21 +104,10 @@ untargetable_annotations <- c("Not protein-coding", "Only annotated on alternate
 are_targetable <- !(sgRNAs_overview_df[["Gene_annotation_status"]] %in% untargetable_annotations)
 
 WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel],
-                      file_name = "Overview_CRISPRa_all_genes"
+                      file_name = "Overview_CRISPRi_all_genes"
                       )
 WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
-                      file_name = "Overview_CRISPRa_all_targetable_genes"
-                      )
-
-
-
-
-# Write the summary to disk for relaxed locations -------------------------
-
-are_targetable <- !(sgRNAs_lax_overview_df[["Gene_annotation_status"]] %in% untargetable_annotations)
-
-WriteOverviewDfToDisk(sgRNAs_lax_overview_df[are_targetable, columns_for_excel],
-                      file_name = "Overview_CRISPRa_relaxed_all_targetable_genes"
+                      file_name = "Overview_CRISPRi_all_targetable_genes"
                       )
 
 
@@ -137,8 +116,8 @@ WriteOverviewDfToDisk(sgRNAs_lax_overview_df[are_targetable, columns_for_excel],
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sgRNAs_overview_df", "sgRNAs_lax_overview_df"),
-     file = file.path(CRISPRa_RData_directory, "21) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
+save(list = "sgRNAs_overview_df",
+     file = file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
      )
 
 
