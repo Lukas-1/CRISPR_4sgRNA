@@ -22,6 +22,7 @@ CRISPRa_RData_directory      <- file.path(RData_directory, "2) CRISPRa")
 
 
 
+
 # Load data ---------------------------------------------------------------
 
 load(file.path(CRISPRa_RData_directory, "02) Extract the original sequences for sgRNAs from hCRISPRa-v2 - CRISPRa_df.RData"))
@@ -80,10 +81,10 @@ extended_replaced_CRISPRa_df[["sgRNA_sequence"]] <- flipped_vec
 
 # Merge with GuideScan data -----------------------------------------------
 
-full_merged_replaced_CRISPRa_df <- MergeTSSandGuideScan(extended_replaced_CRISPRa_df, replaced_guidescan_all_genes_df)
+full_merged_replaced_CRISPRa_df <- MergeTSSandGuideScan(extended_replaced_CRISPRa_df, replaced_guidescan_all_genes_df, combined_TSS_CRISPRa_df)
 head(full_merged_replaced_CRISPRa_df[is.na(full_merged_replaced_CRISPRa_df[["Hits_start"]]) & !(is.na(full_merged_replaced_CRISPRa_df[["GuideScan_start"]])), ])
 
-merged_replaced_CRISPRa_df <- AdjustPositionColumns(full_merged_replaced_CRISPRa_df, replaced_guidescan_all_genes_df)
+merged_replaced_CRISPRa_df <- AdjustPositionColumns(full_merged_replaced_CRISPRa_df, replaced_guidescan_all_genes_df, combined_TSS_CRISPRa_df)
 
 
 
@@ -106,6 +107,11 @@ unique(merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %i
 save(list = "merged_replaced_CRISPRa_df",
      file = file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgRNA sequences after fixing 5'G substitutions.RData")
      )
+
+
+
+
+
 
 
 
