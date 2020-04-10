@@ -1,4 +1,5 @@
-### 4th February 2020 ###
+### 9th April 2020 ###
+
 
 
 # Import packages and source code -----------------------------------------
@@ -12,7 +13,6 @@ library("RColorBrewer")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R")) # For GetMinEntrez
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R"))
-
 
 
 
@@ -81,6 +81,10 @@ sublibraries_order <- c(
   "Calabrese_4to6",
   "hCRISPRa-v2_1to5",
   "hCRISPRa-v2_6to10",
+  "Dolcetto_1to3",
+  "Dolcetto_4to6",
+  "hCRISPRi-v2.1_1to5",
+  "hCRISPRi-v2,1_6to10",
   "Brunello",
   "TKOv3",
   "GPP_1to10",
@@ -97,6 +101,10 @@ sublibraries_labels <- c(
   "Calabrese_4to6"    = "# 4-6",
   "hCRISPRa-v2_1to5"  = "Top 5",
   "hCRISPRa-v2_6to10" = "Supp 5",
+  "Dolcetto_1to3"     = "# 1-3",
+  "Dolcetto_4to6"     = "# 4-6",
+  "hCRISPRi-v2_1to5"  = "Top 5",
+  "hCRISPRi-v2_6to10" = "Supp 5",
   "GPP_1to10"         = "Top 10",
   "GPP_top10"         = "Top 10",
   "GPP_11to50"        = "# 11-50",
@@ -500,8 +508,8 @@ FilterTop4 <- function(expanded_CRISPR_df,
   }
 
   ## Distinguish between CRISPRa and CRISPRko
-  is_CRISPRa <- "Entrez_source_Calabrese" %in% colnames(expanded_CRISPR_df)
-  if (!(is_CRISPRa) & !("Entrez_source_Brunello" %in% colnames(expanded_CRISPR_df))) {
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(expanded_CRISPR_df)
+  if (is_CRISPRko && !("Entrez_source_Brunello" %in% colnames(expanded_CRISPR_df))) {
     stop("No identifying column names were found in expanded_CRISPR_df!")
   }
 
@@ -510,7 +518,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
   are_protein_coding <- expanded_CRISPR_df[["Entrez_ID"]] %in% collected_entrez_IDs
   are_eligible <- have_entrez & are_protein_coding
 
-  if (is_CRISPRa && show_sublibraries) {
+  if (!(is_CRISPRko) && show_sublibraries) {
     are_eligible <- are_eligible & !(expanded_CRISPR_df[["Subgroup"]] == "hCRISPRa-v2_6to10") # Otherwise, a tiny group of "supp 5" genes is displayed in the plot
   }
   eligible_entrezs_vec <- expanded_CRISPR_df[["Entrez_ID"]][are_eligible]
@@ -555,24 +563,25 @@ FilterTop4 <- function(expanded_CRISPR_df,
   stopifnot(all(table(FourSg_df[["Combined_ID"]]) == 4))
 
 
-  if (is_CRISPRa) {
+  if (!(is_CRISPRko)) {
 
     ## Choose the guides for Calabrese
-    Calabrese_df <- filtered_df[filtered_df[["Group"]] == "Calabrese", ]
-    Calabrese_df <- Calabrese_df[order(as.integer(Calabrese_df[["Entrez_ID"]])), ]
+    Doench_df <- filtered_df[filtered_df[["Group"]] %in% c("Dolcetto", "Calabrese"), ]
+    Doench_df <- Doench_df[order(as.integer(Doench_df[["Entrez_ID"]])), ]
 
     if (!(filter_complete_genes)) {
-      Calabrese_df <- FilterCompleteTop4(Calabrese_df)
+      Doench_df <- FilterCompleteTop4(Doench_df)
     }
 
-    Calabrese_entrezs_fac <- factor(Calabrese_df[["Entrez_ID"]], levels = unique(Calabrese_df[["Entrez_ID"]]))
+    Doench_entrezs_fac <- factor(Doench_df[["Entrez_ID"]], levels = unique(Doench_df[["Entrez_ID"]]))
 
-    CheckThatFactorIsInOrder(Calabrese_entrezs_fac)
+    CheckThatFactorIsInOrder(Doench_entrezs_fac)
 
-    Calabrese_rank_list <- split(Calabrese_df[["Calabrese_rank"]], Calabrese_entrezs_fac)
+    rank_column <- grep("^(Calabrese|Dolcetto)_rank", colnames(Doench_df))
+    Doench_rank_list <- split(Doench_df[[rank_column]], Doench_entrezs_fac)
 
     set.seed(1)
-    Calabrese_are_chosen_list <- lapply(Calabrese_rank_list, function(x) {
+    Doench_are_chosen_list <- lapply(Doench_rank_list, function(x) {
       are_SetA <- x == "1/2/3"
       num_SetA <- sum(are_SetA)
       if (num_SetA > 4) {
@@ -586,21 +595,22 @@ FilterTop4 <- function(expanded_CRISPR_df,
       stopifnot(sum(are_chosen) == 4)
       return(are_chosen)
     })
-    Calabrese_are_chosen <- unlist(Calabrese_are_chosen_list, use.names = FALSE)
-    Calabrese_chosen_df <- Calabrese_df[Calabrese_are_chosen, ]
+    Doench_are_chosen <- unlist(Doench_are_chosen_list, use.names = FALSE)
+    Doench_chosen_df <- Doench_chosen_df[Doench_are_chosen, ]
 
 
     ## Choose the guides for hCRISPRa-v2
-    hCRISPRa_v2_df <- filtered_df[filtered_df[["Group"]] == "hCRISPRa-v2", ]
+    hCRISPR_v2_df <- filtered_df[filtered_df[["Group"]] %in% c("hCRISPRa-v2", "hCRISPRa-v2.1", "hCRISPRa-v2.0"), ]
 
-    hCRISPRa_v2_df <- hCRISPRa_v2_df[order(match(hCRISPRa_v2_df[["Combined_ID"]], hCRISPRa_v2_df[["Combined_ID"]])), ]
-    hCRISPRa_v2_combined_IDs <- factor(hCRISPRa_v2_df[["Combined_ID"]], levels = unique(hCRISPRa_v2_df[["Combined_ID"]]))
-    hCRISPRa_v2_rank_list <- split(as.integer(hCRISPRa_v2_df[["hCRISPRa_v2_rank"]]), hCRISPRa_v2_combined_IDs)
-    are_top4 <- unlist(lapply(hCRISPRa_v2_rank_list, function(x) {
+    hCRISPR_v2_df <- hCRISPR_v2_df[order(match(hCRISPR_v2_df[["Combined_ID"]], hCRISPR_v2_df[["Combined_ID"]])), ]
+    hCRISPR_v2_combined_IDs <- factor(hCRISPR_v2_df[["Combined_ID"]], levels = unique(hCRISPR_v2_df[["Combined_ID"]]))
+    rank_column <- grep("_v2_rank", colnames(hCRISPR_v2_df), fixed = TRUE)
+    hCRISPR_v2_rank_list <- split(as.integer(hCRISPR_v2_df[[rank_column]]), hCRISPR_v2_combined_IDs)
+    are_top4 <- unlist(lapply(hCRISPR_v2_rank_list, function(x) {
       top_4_ranks <- sort(unique(x))[1:4]
       x %in% top_4_ranks
     }))
-    hCRISPRa_v2_chosen_df <- hCRISPRa_v2_df[are_top4, ]
+    hCRISPRa_v2_chosen_df <- hCRISPR_v2_df[are_top4, ]
     hCRISPRa_v2_chosen_df <- ChooseOriginalTop4(hCRISPRa_v2_chosen_df)
 
 
@@ -1201,8 +1211,8 @@ ViolinBox_Sources <- function(CRISPR_df,
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), y_column)
 
   if (filter_top4) {
-    is_CRISPRa <- "Entrez_source_Calabrese" %in% colnames(CRISPR_df)
-    if (is_CRISPRa) {
+    is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+    if (!(is_CRISPRko)) {
       are_main_transcript <- (GetMainTSS(CRISPR_df) == CRISPR_df[["AltTSS_ID"]]) %in% TRUE
       CRISPR_df <- CRISPR_df[are_main_transcript, ]
     }
@@ -1319,8 +1329,8 @@ ViolinBox_UniqueLibraries <- function(CRISPR_df, y_column, show_title = TRUE) {
 
 UniquePointsBoxPlots <- function(CRISPR_df) {
 
-  is_CRISPRa <- "hCRISPRa_v2_transcript" %in% colnames(CRISPR_df)
-  if (!(is_CRISPRa)) {
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  if (is_CRISPRko) {
     numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
   }
 
@@ -1360,12 +1370,12 @@ UniquePointsBoxPlots <- function(CRISPR_df) {
 
 SourcesBoxPlots <- function(CRISPR_df) {
 
-  is_CRISPRa <- "hCRISPRa_v2_transcript" %in% colnames(CRISPR_df)
-  if (is_CRISPRa) {
-    args_list <- c(args_list, CRISPRa_args_list)
-  } else {
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(my_df)
+  if (is_CRISPRko) {
     args_list <- c(args_list, CRISPRko_args_list)
     numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
+  } else {
+    args_list <- c(args_list, CRISPRa_args_list)
   }
   use_width <- pdf_width * 0.85
   use_height <- pdf_height * 1.2
@@ -1756,8 +1766,8 @@ BarPlot_Sources <- function(CRISPR_df,
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), use_column)
 
   if (filter_top4) {
-    is_CRISPRa <- "Entrez_source_Calabrese" %in% colnames(CRISPR_df)
-    if (is_CRISPRa) {
+    is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+    if (!(is_CRISPRko)) {
       are_main_transcript <- (GetMainTSS(CRISPR_df) == CRISPR_df[["AltTSS_ID"]]) %in% TRUE
       CRISPR_df <- CRISPR_df[are_main_transcript, ]
     }
@@ -1816,7 +1826,8 @@ BarPlot_Sources <- function(CRISPR_df,
     }
     stopifnot(all(table(interaction_fac) == 4))
     CheckThatFactorIsInOrder(interaction_fac)
-    stopifnot(all(tapply(plot_df[["Chromosome"]], interaction_fac, function(x) length(unique(x[!(is.na(x))]))) <= 1))
+
+    # stopifnot(all(tapply(plot_df[["Chromosome"]], interaction_fac, function(x) length(unique(x[!(is.na(x))]))) <= 1))
     are_to_keep <- rep_len(c(TRUE, FALSE, FALSE, FALSE), length.out = nrow(plot_df))
     if (use_column == "Are_overlapping") {
       guide_list <- lapply(seq_len(4), function(x) x == seq_len(4))
@@ -1927,8 +1938,8 @@ BarPlot_UniqueLibraries <- function(CRISPR_df,
 
 UniqueSequencesBarPlots <- function(CRISPR_df) {
 
-  is_CRISPRa <- "hCRISPRa_v2_transcript" %in% colnames(CRISPR_df)
-  if (!(is_CRISPRa)) {
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  if (is_CRISPRko) {
     categorical_columns <- setdiff(categorical_columns, "Deviation_from_TSS_window")
   }
 
@@ -1995,15 +2006,15 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
 
 SourcesBarPlots <- function(CRISPR_df) {
 
-  is_CRISPRa <- "hCRISPRa_v2_transcript" %in% colnames(CRISPR_df)
-  if (!(is_CRISPRa)) {
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  if (is_CRISPRko) {
     categorical_columns <- setdiff(categorical_columns, "Deviation_from_TSS_window")
   }
 
-  if (is_CRISPRa) {
-    args_list <- c(args_list, CRISPRa_args_list)
-  } else {
+  if (is_CRISPRko) {
     args_list <- c(args_list, CRISPRko_args_list)
+  } else {
+    args_list <- c(args_list, CRISPRa_args_list)
   }
   args_list <- lapply(args_list, function(x) x[names(x) != "aggregate_scores"])
 
@@ -2053,6 +2064,9 @@ SourcesBarPlots <- function(CRISPR_df) {
           if (make_PNG) {
             dev.off()
           }
+        }
+        if (make_PDF) {
+          dev.off()
         }
       }
     }
