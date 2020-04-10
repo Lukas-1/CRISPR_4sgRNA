@@ -37,13 +37,14 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 submit_df <- extended_CRISPRko_df[!(is.na(extended_CRISPRko_df[["Start"]])), ]
 
-submit_df[["GuideScan_input_sgRNA"]] <- sgRNAStringForGuideScan(submit_df)
 
 
 
 
 # Check for duplicated chromosomal positions ------------------------------
 # (Some of these duplications are not actually duplications, instead, one sgRNA is on the + strand, and the other is on the - strand.)
+
+submit_df[["GuideScan_input_sgRNA"]] <- sgRNAStringForGuideScan(submit_df)
 
 num_occurrences <- table(submit_df[["GuideScan_input_sgRNA"]])[submit_df[["GuideScan_input_sgRNA"]]]
 
@@ -59,6 +60,20 @@ row.names(multiplicates_df) <- NULL
 # Retain only unique chromosomal positions --------------------------------
 
 submit_df <- submit_df[!(duplicated(submit_df[["GuideScan_input_sgRNA"]])), ]
+
+
+
+
+# Filter for already present data -----------------------------------------
+
+previous_guidescan_sgRNAs_df <- GetCRISPRkoGuideScanOutput()
+
+are_already_present <- submit_df[["GuideScan_input_sgRNA"]] %in% previous_guidescan_sgRNAs_df[["Region"]]
+
+
+
+# Split the input into chunks ---------------------------------------------
+
 chunks_list <- AppendIDsWithoutCanonicalEntrezs(entrez_chunks_list, submit_df)
 
 chunks_df <- data.frame(
@@ -93,6 +108,13 @@ write.table(submit_df[["GuideScan_input_sgRNA"]],
             file = file.path(GuideScan_files_directory, file_name),
             quote = FALSE, row.names = FALSE, col.names = FALSE
             )
+
+file_name <- "Input_for_GuideScan_CRISPRko_all_guides_filtered.txt"
+write.table(submit_df[["GuideScan_input_sgRNA"]][!(are_already_present)],
+            file = file.path(GuideScan_files_directory, file_name),
+            quote = FALSE, row.names = FALSE, col.names = FALSE
+            )
+
 
 
 
