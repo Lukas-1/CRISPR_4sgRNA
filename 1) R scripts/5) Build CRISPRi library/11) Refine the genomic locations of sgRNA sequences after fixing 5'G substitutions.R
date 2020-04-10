@@ -62,7 +62,6 @@ extended_replaced_CRISPRi_df[["sgRNA_sequence"]] <- flipped_vec
 
 
 
-
 # Merge with GuideScan data -----------------------------------------------
 
 full_merged_replaced_CRISPRi_df <- MergeTSSandGuideScan(extended_replaced_CRISPRi_df, replaced_guidescan_all_genes_df, combined_TSS_CRISPRi_df)
