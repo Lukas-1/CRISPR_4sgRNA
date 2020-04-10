@@ -40,7 +40,11 @@ merged_replaced_CRISPRa_df <- RankCRISPRDfByTSS(merged_replaced_CRISPRa_df)
 
 # Find combinations of non-overlapping sgRNAs -----------------------------
 
-merged_replaced_CRISPRa_df <- PrioritizeNonOverlapping(merged_replaced_CRISPRa_df, ID_column = "AltTSS_ID", parallel_mode = TRUE)
+merged_replaced_CRISPRa_df <- PrioritizeNonOverlapping(merged_replaced_CRISPRa_df,
+                                                       ID_column = "AltTSS_ID",
+                                                       parallel_mode = TRUE,
+                                                       tolerate_divergent_chromosomes = TRUE
+                                                       )
 
 
 
