@@ -68,7 +68,6 @@ extended_CRISPRko_df <- FindBest0MMLocations(extended_CRISPRko_df)
 
 
 
-
 # Examine ambiguous Entrez IDs --------------------------------------------
 
 are_ambiguous <- grepl(",", extended_CRISPRko_df[["Entrez_ID"]], fixed = TRUE)
@@ -137,13 +136,15 @@ extended_CRISPRko_df <- ResolveDuplicates(extended_CRISPRko_df, concatenate_colu
 
 extended_CRISPRko_df[["Entrez_chromosome"]] <- EntrezIDsToChromosomes(extended_CRISPRko_df[["Entrez_ID"]])
 
+chromosome_vec <- extended_CRISPRko_df[["Entrez_chromosome"]]
+chromosome_vec <- ifelse(chromosome_vec == "chrX, chrY", "chrX", chromosome_vec)
+
 are_discordant <- !(is.na(extended_CRISPRko_df[["Chromosome"]])) &
-                  !(is.na(extended_CRISPRko_df[["Entrez_chromosome"]])) &
-                  (extended_CRISPRko_df[["Chromosome"]] != extended_CRISPRko_df[["Entrez_chromosome"]])
+                  !(is.na(chromosome_vec)) &
+                  (extended_CRISPRko_df[["Chromosome"]] != chromosome_vec)
 extended_CRISPRko_df[are_discordant, ]
 
-location_columns <- c("Chromosome", "Strand", "Start", "End")
-for (column in c(location_columns, "PAM")) {
+for (column in c(location_columns, paste0(location_columns, "_strict"))) {
   extended_CRISPRko_df[[column]][are_discordant] <- NA
 }
 
@@ -178,14 +179,11 @@ if (length(inconsistent_IDs) > 1) {
                  paste0(inconsistent_IDs, collapse = ", "), "!"
                  )
           )
-  selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome", "Symbol_overlapping_0MM")
+  selected_gene_columns <- c("Source", "Combined_ID", "Entrez_ID", "Gene_symbol", "Original_symbol", "Chromosome") #"Symbol_overlapping_0MM")
   unique(extended_CRISPRko_df[extended_CRISPRko_df[["Combined_ID"]] %in% inconsistent_IDs, selected_gene_columns])
 } else {
   message("No inconsistent mappings (sgRNAs from the same gene, but located on different chromosomes) were found!")
 }
-
-
-
 
 
 
@@ -195,6 +193,56 @@ if (length(inconsistent_IDs) > 1) {
 save(list = "extended_CRISPRko_df",
      file = file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData")
      )
+
+
+
+#
+# are_missing_lax <- is.na(extended_CRISPRko_df[["PAM"]]) & !(is.na(extended_CRISPRko_df[["PAM_strict"]]))
+#
+# are_missing_start_lax <- is.na(extended_CRISPRko_df[["Start"]]) & !(is.na(extended_CRISPRko_df[["Start_strict"]]))
+#
+# View(extended_CRISPRko_df[are_missing_start_lax, ])
+# View(extended_CRISPRko_df[are_missing_lax, ])
+# #
+# #
+# # CRISPR_df <- extended_CRISPRko_df[extended_CRISPRko_df[["Combined_ID"]] %in% "293", ]
+# # use_TSS <- FALSE
+#
+#
+#
+# groo_df <- extended_CRISPRko_df[are_missing_lax, ]
+# rownames(groo_df) <- NULL
+#
+#
+# groo_df[, c("Gene_symbol", "Entrez_ID", "Entrez_chromosome", "PAM", "PAM_strict", "Start", "Start_strict")]
+#
+# groo_df[, "Entrez_chromosome"]
+#
+#
+#
+#
+# groo_df[4, "Locations_0MM"]
+# #
+#
+#
+# extended_CRISPRko_df <- FindBest0MMLocations(extended_CRISPRko_df, num_cores = 7)
+#
+# use_df <- extended_CRISPRko_df[extended_CRISPRko_df[["Combined_ID"]] %in% "LOC100288966", ]
+#
+# found_df <- FindBest0MMLocations(use_df, parallel_mode = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
