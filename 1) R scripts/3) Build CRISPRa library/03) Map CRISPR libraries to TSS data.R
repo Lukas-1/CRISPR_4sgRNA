@@ -38,25 +38,25 @@ row.names(unique_CRISPRa_df) <- NULL
 
 
 
-# Map genes to FANTOM5 TSS summaries --------------------------------------
-
-FANTOM5_CRISPRa_df <- FilterAndCombineEntrezSymbol(FANTOM5_summary_df,
-                                                   unique_CRISPRa_df[["Entrez_ID"]],
-                                                   unique_CRISPRa_df[["Gene_symbol"]],
-                                                   unique_CRISPRa_df[["Combined_ID"]]
-                                                   )
-
-
-
-
-# Map genes to BioMart TSS summaries --------------------------------------
-
-BioMart_CRISPRa_df <- FilterAndCombineEntrezSymbol(BioMart_summary_df,
-                                                   unique_CRISPRa_df[["Entrez_ID"]],
-                                                   unique_CRISPRa_df[["Gene_symbol"]],
-                                                   unique_CRISPRa_df[["Combined_ID"]]
-                                                   )
-
+# # Map genes to FANTOM5 TSS summaries --------------------------------------
+#
+# FANTOM5_CRISPRa_df <- FilterAndCombineEntrezSymbol(FANTOM5_summary_df,
+#                                                    unique_CRISPRa_df[["Entrez_ID"]],
+#                                                    unique_CRISPRa_df[["Gene_symbol"]],
+#                                                    unique_CRISPRa_df[["Combined_ID"]]
+#                                                    )
+#
+#
+#
+#
+# # Map genes to BioMart TSS summaries --------------------------------------
+#
+# BioMart_CRISPRa_df <- FilterAndCombineEntrezSymbol(BioMart_summary_df,
+#                                                    unique_CRISPRa_df[["Entrez_ID"]],
+#                                                    unique_CRISPRa_df[["Gene_symbol"]],
+#                                                    unique_CRISPRa_df[["Combined_ID"]]
+#                                                    )
+#
 
 
 
@@ -74,7 +74,7 @@ combined_TSS_CRISPRa_df <- FilterAndCombineEntrezSymbol(combined_TSS_summary_df,
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("combined_TSS_CRISPRa_df", "FANTOM5_CRISPRa_df", "BioMart_CRISPRa_df"),
+save(list = c("combined_TSS_CRISPRa_df"), #, "FANTOM5_CRISPRa_df", "BioMart_CRISPRa_df"),
      file = file.path(CRISPRa_RData_directory, "03) Map CRISPR libraries to TSS data.RData")
      )
 
