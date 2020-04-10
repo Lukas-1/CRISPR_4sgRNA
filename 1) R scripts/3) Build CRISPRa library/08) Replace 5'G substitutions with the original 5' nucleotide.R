@@ -37,28 +37,6 @@ load(file.path(CRISPRa_RData_directory, "07) Assign genomic locations to sgRNA s
 
 
 
-# Define functions --------------------------------------------------------
-
-Exchange5PrimeG <- function(CRISPR_df) {
-  are_5prime_G <- !(is.na(CRISPR_df[["Start"]])) &
-                  (CRISPR_df[["Num_0MM"]] == 0) & (CRISPR_df[["Num_5G_MM"]] == 1) &
-                  (grepl("hCRISPRa-v2", CRISPR_df[["Source"]], fixed = TRUE)) &
-                  (CRISPR_df[["Is_control"]] != "Yes") &
-                  (CRISPR_df[["Exchanged_5pG"]] %in% "No")
-  GRanges_object <- RangesDfToGRangesObject(CRISPR_df[are_5prime_G, ])
-  nucleotide_5p_vec <- substr(as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38)), 1, 1)
-  CRISPR_df[["Exchanged_5pG"]] <- ifelse(are_5prime_G, "Yes", CRISPR_df[["Exchanged_5pG"]])
-  CRISPR_df[["sgRNA_sequence"]][are_5prime_G] <- paste0(nucleotide_5p_vec,
-                                                        substr(CRISPR_df[["sgRNA_sequence"]][are_5prime_G],
-                                                               2,
-                                                               nchar(CRISPR_df[["sgRNA_sequence"]][are_5prime_G])
-                                                               )
-                                                        )
-  return(CRISPR_df)
-}
-
-
-
 
 # Replace artificial 5' G nucleotides from the hCRISPRa-v2 database -------
 
