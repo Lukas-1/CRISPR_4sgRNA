@@ -71,8 +71,43 @@ sgRNAStringForGuideScan <- function(CRISPR_df) {
 }
 
 
+CRISPRStringForMatching <- function(CRISPR_df) {
+  paste0(sgRNAStringForGuideScan(CRISPR_df),
+         ":", CRISPR_df[["Strand"]],
+         "__", toupper(CRISPR_df[["sgRNA_sequence"]])
+         )
+}
+
+GuideScanStringForMatching <- function(guidescan_match_df) {
+  paste0(guidescan_match_df[["Region"]],
+         ":", guidescan_match_df[["GuideScan_strand"]],
+         "__", toupper(guidescan_match_df[["gRNA"]])
+         )
+}
+
+
+
+GetCRISPRkoGuideScanOutput <- function() {
+  # This function requires 'GuideScan_files_directory' in the global workspace.
+  guidescan_output_files <- grep("^GuideScan_output_CRISPRko_", list.files(GuideScan_files_directory), value = TRUE)
+  if (length(guidescan_output_files) == 0) {
+    message("No GuideScan output found!")
+    return(FALSE)
+  } else {
+    guidescan_raw_df_list <- lapply(guidescan_output_files, function(x) {
+      message(paste0("Reading in the file '", x, "'..."))
+      ReadGuideScanOutput(x)
+    })
+    guidescan_sgRNAs_raw_df <- do.call(rbind.data.frame, c(guidescan_raw_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+    guidescan_sgRNAs_df <- GuideScanOutputToDf(guidescan_sgRNAs_raw_df)
+    results_df <- TidyGuideScanColumns(guidescan_sgRNAs_df)
+    return(results_df)
+  }
+}
+
+
 ReadGuideScanOutput <- function(file_name, use_fread = FALSE) {
-  # This function requires 'CRISPOR_files_directory' in the global workspace.
+  # This function requires 'GuideScan_files_directory' in the global workspace.
   # Unfortunately, use of data.table::fread does not lead to a significant
   # speedup for this function. The main delay is not caused by reading the
   # the file, but by the 'strsplit(string_vec, ",", fixed = TRUE)' operation,
@@ -167,7 +202,6 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
   })
 
   ### Assemble the filtered GuideScan output ###
-
   guidescan_all_genes_df <- do.call(rbind.data.frame, c(guidescan_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   names(guidescan_all_genes_df)[2:ncol(guidescan_all_genes_df)] <- gsub(" ", "_", raw_df[2, ], fixed = TRUE)
 
@@ -175,4 +209,45 @@ BuildGuideScanDf <- function(raw_df, TSS_df, CRISPR_df) {
 }
 
 
+
+SplitOffTargetsSummary <- function(off_targets_summary_vec) {
+  offtargets_summary_splits <- strsplit(off_targets_summary_vec, "|", fixed = TRUE)
+  results_df <- data.frame(
+    "GuideScan_Num_2MM" = vapply(offtargets_summary_splits, function(x) if (all(is.na(x))) NA_integer_ else as.integer(sub("2:", "", x[[1]], fixed = TRUE)), integer(1)),
+    "GuideScan_Num_3MM" = vapply(offtargets_summary_splits, function(x) if (all(is.na(x))) NA_integer_ else as.integer(sub("3:", "", x[[2]], fixed = TRUE)), integer(1)),
+    stringsAsFactors = FALSE,
+    row.names        = NULL
+  )
+  return(results_df)
+}
+
+
+TidyGuideScanColumns <- function(guidescan_df) {
+  results_df <- data.frame(
+    guidescan_df[, c("Region", "gRNA")],
+    "GuideScan_chromosome"  = guidescan_df[["chromosome"]],
+    "GuideScan_strand"      = guidescan_df[["strand"]],
+    "GuideScan_start"       = as.integer(guidescan_df[["target_site_start_coordinate"]]),
+    "GuideScan_end"         = as.integer(guidescan_df[["target_site_end_coordinate"]]),
+    "GuideScan_efficiency"  = as.numeric(ifelse(guidescan_df[["cutting_efficiency_score"]] == "*", NA_character_, guidescan_df[["cutting_efficiency_score"]])),
+    "GuideScan_specificity" = as.numeric(guidescan_df[["cutting_specificity_score"]]),
+    SplitOffTargetsSummary(guidescan_df[["offtargets_summary"]]),
+    "GuideScan_Num_2or3MM"  = as.integer(guidescan_df[["offtargets_sum"]]),
+    "Annotation"            = guidescan_df[["annotation"]],
+    guidescan_df["gRNA_label"],
+    stringsAsFactors        = FALSE,
+    row.names               = NULL
+  )
+  # Make the GuideScan locations consistent with the locations returned by Biostrings::matchPattern
+  results_df[["GuideScan_start"]] <- ifelse(results_df[["GuideScan_strand"]] %in% "-",
+                                            results_df[["GuideScan_start"]] + 3L,
+                                            results_df[["GuideScan_start"]]
+                                            )
+
+  results_df[["GuideScan_end"]] <- ifelse(results_df[["GuideScan_strand"]] %in% "-",
+                                          results_df[["GuideScan_end"]] + 1L,
+                                          results_df[["GuideScan_end"]] - 2L
+                                          )
+  return(results_df)
+}
 
