@@ -30,25 +30,10 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 
 
-# Read in data ------------------------------------------------------------
 
-guidescan_output_files <- grep("^GuideScan_output_CRISPRko_", list.files(GuideScan_files_directory), value = TRUE)
-guidescan_raw_df_list <- lapply(guidescan_output_files, function(x) {
-  message(paste0("Reading in the file '", x, "'..."))
-  ReadGuideScanOutput(x)
-})
+# Read in and process the output from GuideScan ---------------------------
 
-
-
-
-
-
-# Process the output from GuideScan ---------------------------------------
-
-guidescan_sgRNAs_raw_df <- do.call(rbind.data.frame, c(guidescan_raw_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-
-guidescan_sgRNAs_df <- GuideScanOutputToDf(guidescan_sgRNAs_raw_df)
-tidy_guidescan_sgRNAs_df <- TidyGuideScanColumns(guidescan_sgRNAs_df)
+guidescan_sgRNAs_df <- GetCRISPRkoGuideScanOutput()
 
 
 
@@ -58,9 +43,10 @@ tidy_guidescan_sgRNAs_df <- TidyGuideScanColumns(guidescan_sgRNAs_df)
 
 sgRNAs_input_vec <- sgRNAStringForGuideScan(extended_CRISPRko_df)
 
-matches_vec <- match(sgRNAs_input_vec, guidescan_sgRNAs_df[["Region"]])
+matches_vec <- match(CRISPRStringForMatching(extended_CRISPRko_df),
+                     GuideScanStringForMatching(guidescan_sgRNAs_df)
+                     )
 
-guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_Num_2or3MM")
 
 
 
@@ -69,8 +55,10 @@ guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideSc
 # Add the data from GuideScan to the CRISPRko library ---------------------
 
 merged_CRISPRko_df <- extended_CRISPRko_df
+guidescan_columns <- c("GuideScan_efficiency", "GuideScan_specificity", "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_Num_2or3MM")
+
 for (column in guidescan_columns) {
-  merged_CRISPRko_df[[column]] <- tidy_guidescan_sgRNAs_df[[column]][matches_vec]
+  merged_CRISPRko_df[[column]] <- guidescan_sgRNAs_df[[column]][matches_vec]
 }
 merged_CRISPRko_df[["GuideScan_offtarget_category"]] <- GetOffTargetCategory(merged_CRISPRko_df)
 

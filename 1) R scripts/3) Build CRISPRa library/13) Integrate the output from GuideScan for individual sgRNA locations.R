@@ -51,7 +51,10 @@ tidy_guidescan_sgRNAs_df <- TidyGuideScanColumns(guidescan_sgRNAs_df)
 
 sgRNAs_input_vec <- sgRNAStringForGuideScan(merged_replaced_CRISPRa_df)
 
-matches_vec <- match(sgRNAs_input_vec, guidescan_sgRNAs_df[["Region"]])
+matches_vec <- match(CRISPRStringForMatching(merged_replaced_CRISPRa_df),
+                     GuideScanStringForMatching(guidescan_sgRNAs_df)
+                     )
+
 are_to_be_replaced <- (merged_replaced_CRISPRa_df[["TSS_searched_by_GuideScan"]] %in% c("No", "Not this gene")) & !(is.na(matches_vec))
 
 
