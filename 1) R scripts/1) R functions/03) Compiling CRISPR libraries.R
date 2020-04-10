@@ -6,15 +6,48 @@
 # Define lookup maps ------------------------------------------------------
 
 CRISPR_library_sources <- c(
-  "Curated", "GPP",
-  "Calabrese", "hCRISPRa-v2",
-  "Brunello", "TKOv3"
+  "Curated",
+  "GPP",
+  "Calabrese",
+  "hCRISPRa-v2",
+  "Dolcetto",
+  "hCRISPRi-v2.1",
+  "hCRISPRi-v2.0",
+  "Brunello",
+  "TKOv3"
 )
 
 
 
 
 # Define functions --------------------------------------------------------
+
+AddHorlbeckTSSSource <- function(sgRNA_df, TSS_df) {
+  sgRNA_df_transcript_IDs <- paste0(sgRNA_df[["gene"]], "__", sgRNA_df[["transcript"]])
+  TSS_df_transcript_IDs <- paste0(TSS_df[["gene"]], "__", TSS_df[["transcript"]])
+  TSS_source_matches <- match(sgRNA_df_transcript_IDs, TSS_df_transcript_IDs)
+  sgRNA_df[["TSS_source"]] <- TSS_df[["TSS source"]][TSS_source_matches]
+  return(sgRNA_df)
+}
+
+Exchange5PrimeG <- function(CRISPR_df) {
+  are_5prime_G <- !(is.na(CRISPR_df[["Start"]])) &
+                  (CRISPR_df[["Num_0MM"]] == 0) & (CRISPR_df[["Num_5G_MM"]] == 1) &
+                  (grepl("hCRISPRi-v2", CRISPR_df[["Source"]], fixed = TRUE)) &
+                  (CRISPR_df[["Is_control"]] != "Yes") &
+                  (CRISPR_df[["Exchanged_5pG"]] %in% "No")
+  GRanges_object <- RangesDfToGRangesObject(CRISPR_df[are_5prime_G, ])
+  nucleotide_5p_vec <- substr(as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38)), 1, 1)
+  CRISPR_df[["Exchanged_5pG"]] <- ifelse(are_5prime_G, "Yes", CRISPR_df[["Exchanged_5pG"]])
+  CRISPR_df[["sgRNA_sequence"]][are_5prime_G] <- paste0(nucleotide_5p_vec,
+                                                        substr(CRISPR_df[["sgRNA_sequence"]][are_5prime_G],
+                                                               2,
+                                                               nchar(CRISPR_df[["sgRNA_sequence"]][are_5prime_G])
+                                                               )
+                                                        )
+  return(CRISPR_df)
+}
+
 
 FindIdenticalsgRNAs <- function(entrez_ID, symbol, sgRNA, CRISPR_df) {
   are_this_gene <- (CRISPR_df[["Entrez_ID"]] %in% entrez_ID) & (CRISPR_df[["Gene_symbol"]] %in% symbol)
@@ -35,11 +68,8 @@ FindIdenticalsgRNAs <- function(entrez_ID, symbol, sgRNA, CRISPR_df) {
 }
 
 
-
 ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
-
   results_df <- replicates_df
-
   unique_symbols <- replicates_df[["Original_symbol"]]
   unique_symbols <- unique(unique_symbols[unique_symbols != ""])
   if (length(unique_symbols) == 0) {
@@ -101,7 +131,7 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
   if ("Exon_number_GPP" %in% concatenate_columns) {
     results_df <- results_df[order(results_df[["Exon_number_GPP"]]), ]
   }
-  for (column_name in concatenate_columns) {
+  for (column_name in intersect(concatenate_columns, colnames(results_df))) {
     character_vec <- unique(replicates_df[[column_name]])
     character_vec <- character_vec[!(is.na(character_vec))]
     if (length(character_vec) == 0) {
@@ -138,16 +168,19 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     any_resolved <- TRUE
   }
 
-  ### Deal with CRISPRa triplicates (two transcripts in hCRISPRa-v2, and also found in Calabrese or GPP) ###
-  if ((nrow(results_df) == 3) && ("hCRISPRa_v2_rank" %in% colnames(results_df))) {
-    are_hCRISPRa_v2 <- results_df[["Original_source"]] == "hCRISPRa-v2"
-    is_GPP_or_Calabrese <- results_df[["Original_source"]] %in% c("GPP", "Calabrese", "GPP, Calabrese")
-    if ((sum(are_hCRISPRa_v2) == 2) && (sum(is_GPP_or_Calabrese) == 1)) {
-      non_hCRISPRa_v2_columns <- c("Entrez_source_Calabrese", "Calabrese_rank", "GPP_rank", "Original_PAM")
-      for (column_name in non_hCRISPRa_v2_columns) {
-        results_df[[column_name]] <- results_df[[column_name]][is_GPP_or_Calabrese]
+  ### Deal with triplicates (two transcripts in the hCRISPR library, and also found in one of the other libraries) ###
+  if ((nrow(results_df) == 3) && any(c("hCRISPRa_v2_rank", "hCRISPRi_v2_rank") %in% colnames(results_df))) {
+    are_Horlbeck <- results_df[["Original_source"]] %in% c("hCRISPRa-v2", "hCRISPRi-v2.1")
+    are_not_Horlbeck <- results_df[["Original_source"]] %in% c("GPP", "Calabrese", "GPP, Calabrese", "Dolcetto", "GPP, Dolcetto")
+    if ((sum(are_Horlbeck) == 2) && (sum(are_not_Horlbeck) == 1)) {
+      non_Horlbeck_columns <- c("GPP_rank", "Original_PAM",
+                                "Entrez_source_Calabrese", "Calabrese_rank",
+                                "Entrez_source_Dolcetto", "Dolcetto_rank"
+                                )
+      for (column_name in non_Horlbeck_columns) {
+        results_df[[column_name]] <- results_df[[column_name]][are_not_Horlbeck]
       }
-      results_df <- results_df[are_hCRISPRa_v2, ]
+      results_df <- results_df[are_Horlbeck, ]
       any_resolved <- TRUE
     }
   }
