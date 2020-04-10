@@ -20,7 +20,6 @@ RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 CRISPOR_files_directory  <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRko", "CRISPOR")
-output_plots_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko", "Plots")
 
 
 
@@ -109,6 +108,23 @@ if (any(only_GuideScan_present)) {
 
 
 
+# Check which guides have no CRISPOR scores -------------------------------
+
+check_columns <- c(
+  "Combined_ID", "Entrez_ID", "Gene_symbol", "Source",
+  "sgRNA_sequence", "PAM", "Original_PAM", "PAM_0MM",
+  "Num_0MM", "Num_1MM",
+  "CRISPOR_Doench_efficacy",
+  "Cut_location", "Start", "Location_ID",
+  "Chromosome", "Entrez_chromosome", "Locations_0MM"
+)
+
+have_no_scores <- is.na(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]])
+table(have_no_scores)
+head(merged_CRISPRko_df[have_no_scores, check_columns])
+
+
+
 
 
 
@@ -118,8 +134,6 @@ if (any(only_GuideScan_present)) {
 save(list = "merged_CRISPRko_df",
      file = file.path(CRISPRko_RData_directory, "09) Integrate the output from CRISPOR.RData")
      )
-
-
 
 
 
