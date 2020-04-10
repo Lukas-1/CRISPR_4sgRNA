@@ -38,6 +38,8 @@ NumberTSSs <- function(locations_vec, min_space = 1001L) {
 
 
 NumberByNearestTSS <- function(positions_vec, TSS_number_vec, max_distance = 1001L) {
+  assign("delete_positions_vec", positions_vec, envir = globalenv())
+  assign("delete_TSS_number_vec", TSS_number_vec, envir = globalenv())
   stopifnot(length(positions_vec) == length(TSS_number_vec))
   are_unassigned <- is.na(TSS_number_vec) & !(is.na(positions_vec))
   if (!(any(are_unassigned))) {
@@ -46,6 +48,7 @@ NumberByNearestTSS <- function(positions_vec, TSS_number_vec, max_distance = 100
     results_vec <- TSS_number_vec
     for (i in which(are_unassigned)) {
       distances <- abs(positions_vec[!(are_unassigned)] - positions_vec[[i]])
+      assign("delete_distances", positions_vec, envir = globalenv())
       if (min(distances, na.rm = TRUE) < max_distance) {
         results_vec[[i]] <- TSS_number_vec[!(are_unassigned)][[which.min(distances)]]
       }
@@ -102,17 +105,23 @@ AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TS
 SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE) {
   MessageID(CRISPR_sub_df)
 
+  assign("delete_SeparateByTSS_CRISPR_sub_df", CRISPR_sub_df, envir = globalenv())
+
   reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df, tolerate_divergent_chromosomes = tolerate_divergent_chromosomes)
   reordered_df <- reordered_list[["reordered_df"]]
   are_GPP <- reordered_df[["Source"]] %in% c("GPP", "Curated, GPP")
   are_outside_top5 <- is.na(reordered_df[["GPP_rank"]]) | !(reordered_df[["GPP_rank"]] %in% 1:5)
   core_locations_vec <- reordered_df[["Cut_location"]]
   core_locations_vec[are_GPP & are_outside_top5] <- NA_integer_
-  core_TSS_number_vec <- NumberTSSs(core_locations_vec)
-  TSS_number_vec <- NumberByNearestTSS(reordered_df[["Cut_location"]], core_TSS_number_vec)
-
-  allocated_TSS_vec <- AllocateTSSs(TSS_number_vec, reordered_df[["hCRISPRa_v2_transcript"]], reordered_df[["Cut_location"]])
-
+  if (all(is.na(core_locations_vec))) {
+    TSS_number_vec <- rep(1L, nrow(reordered_df))
+    allocated_TSS_vec <- rep("N1", nrow(reordered_df))
+  } else {
+    core_TSS_number_vec <- NumberTSSs(core_locations_vec)
+    TSS_number_vec <- NumberByNearestTSS(reordered_df[["Cut_location"]], core_TSS_number_vec)
+    transcript_column <- grep("_v2_transcript", colnames(reordered_df), fixed = TRUE, value = TRUE)
+    allocated_TSS_vec <- AllocateTSSs(TSS_number_vec, reordered_df[[transcript_column]], reordered_df[["Cut_location"]])
+  }
   results_df <- data.frame(
     reordered_df,
     "TSS_number"     = TSS_number_vec,
@@ -128,7 +137,7 @@ SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE)
 
 
 
-CountNumTSSs <- function(CRISPR_df, TSS_column = "hCRISPRa_v2_transcript") {
+CountNumTSSs <- function(CRISPR_df, TSS_column) {
   IDs_fac <- factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]]))
   num_transcripts_list <- tapply(
     seq_len(nrow(CRISPR_df)),
