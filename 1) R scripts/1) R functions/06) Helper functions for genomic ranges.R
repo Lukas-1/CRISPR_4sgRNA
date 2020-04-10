@@ -14,6 +14,7 @@ CheckRangesDf <- function(ranges_df) {
 }
 
 
+
 RangesDfToGRangesObject <- function(ranges_df, strip_Chr = FALSE) {
   if (strip_Chr) {
     ranges_df[["Chromosome"]] <- sub("chr", "", ranges_df[["Chromosome"]], fixed = TRUE)
@@ -26,6 +27,7 @@ RangesDfToGRangesObject <- function(ranges_df, strip_Chr = FALSE) {
   )
   return(GRanges_object)
 }
+
 
 
 TruncateLongEntries <- function(char_vec, use_sep = "; ", max_length = 10L) {
