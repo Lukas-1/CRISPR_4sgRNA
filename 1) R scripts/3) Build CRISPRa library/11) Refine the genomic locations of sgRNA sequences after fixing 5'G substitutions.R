@@ -101,16 +101,11 @@ unique(merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %i
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "merged_replaced_CRISPRa_df",
      file = file.path(CRISPRa_RData_directory, "11) Refine the genomic locations of sgRNA sequences after fixing 5'G substitutions.RData")
      )
-
-
-
-
 
 
 
