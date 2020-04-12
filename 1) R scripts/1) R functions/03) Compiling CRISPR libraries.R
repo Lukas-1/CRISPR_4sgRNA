@@ -30,10 +30,11 @@ AddHorlbeckTSSSource <- function(sgRNA_df, TSS_df) {
   return(sgRNA_df)
 }
 
+
 Exchange5PrimeG <- function(CRISPR_df) {
   are_5prime_G <- !(is.na(CRISPR_df[["Start"]])) &
                   (CRISPR_df[["Num_0MM"]] == 0) & (CRISPR_df[["Num_5G_MM"]] == 1) &
-                  (grepl("hCRISPRi-v2", CRISPR_df[["Source"]], fixed = TRUE)) &
+                  (grepl("hCRISPR", CRISPR_df[["Source"]], fixed = TRUE)) &
                   (CRISPR_df[["Is_control"]] != "Yes") &
                   (CRISPR_df[["Exchanged_5pG"]] %in% "No")
   GRanges_object <- RangesDfToGRangesObject(CRISPR_df[are_5prime_G, ])
