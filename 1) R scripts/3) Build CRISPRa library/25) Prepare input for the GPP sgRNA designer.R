@@ -43,7 +43,6 @@ problematic_entrezs <- FindProblematicEntrezs(merged_replaced_CRISPRa_df, sgRNAs
 
 
 
-
 # Separate the Entrez IDs into chunks -------------------------------------
 
 submit_entrez_chunks_list   <- lapply(entrez_chunks_list, function(x) intersect(x, problematic_entrezs))
@@ -91,19 +90,11 @@ for (chunk_ID in names(combined_submit_df_list)) {
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "problematic_entrezs",
      file = file.path(CRISPRa_RData_directory, "25) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
      )
-
-
-
-
-
-
-
 
 
 
