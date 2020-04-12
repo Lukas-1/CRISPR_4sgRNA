@@ -345,21 +345,24 @@ sublibrary_df[["Sublibrary"]][are_new_membrane_proteins] <- "Membrane Proteins"
 
 
 
+# Define an inclusive list of Entrez IDs for sublibraries -----------------
+# ... that also includes non-protein coding genes for transcription factors
+# and the secretome
+
+sublibraries_all_entrezs_list <- split(sublibrary_df[["Entrez_ID"]], sublibrary_df[["Sublibrary"]])
+sublibraries_all_entrezs_list[["Transcription factors"]] <- TF_entrez_IDs
+sublibraries_all_entrezs_list[["Secretome"]] <- setdiff(secretome_entrezs, c(TF_entrez_IDs, GPCR_entrez_IDs))
+
+
+
+
+
 
 # Save data ---------------------------------------------------------------
 
-save(list = "sublibrary_df",
+save(list = c("sublibrary_df", "sublibraries_all_entrezs_list"),
      file = file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData")
      )
-
-
-
-
-
-
-
-
-
 
 
 
