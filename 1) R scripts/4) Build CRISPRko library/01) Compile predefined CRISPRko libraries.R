@@ -341,15 +341,3 @@ save(list = "CRISPRko_df",
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
