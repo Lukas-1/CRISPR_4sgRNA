@@ -97,6 +97,8 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
 
   is_CRISPRko <- "Exon_number_GPP" %in% names(CRISPR_sub_df)
 
+  hCRISPR_rank_column <- grep("v2_rank", colnames(CRISPR_sub_df), fixed = TRUE, value = TRUE)
+
   list_for_ranking <- list(CRISPR_sub_df[["Is_control"]] == "No",
                            !(grepl("TTTT", CRISPR_sub_df[["sgRNA_sequence"]], ignore.case = TRUE)),
                            !(is.na(CRISPR_sub_df[["Start"]])),
@@ -114,11 +116,12 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
                            if (is_CRISPRko && ("CRISPOR_Graf_status" %in% names(CRISPR_sub_df))) (CRISPR_sub_df[["CRISPOR_Graf_status"]] %in% "GrafOK") else NA_vec,
 
                            CRISPR_sub_df[["GuideScan_specificity"]],
-                           if ("CRISPOR_4MM_specificity" %in% names(CRISPR_sub_df)) CRISPR_sub_df[["CRISPOR_4MM_specificity"]]                    else NA_vec,
+                           if ("CRISPOR_4MM_specificity" %in% names(CRISPR_sub_df)) CRISPR_sub_df[["CRISPOR_4MM_specificity"]]                      else NA_vec,
                            CRISPR_sub_df[["GuideScan_efficiency"]],
-                           if ("CRISPOR_Doench_efficacy" %in% names(CRISPR_sub_df)) CRISPR_sub_df[["CRISPOR_Doench_efficacy"]]                    else NA_vec,
-                           if ("hCRISPRa_v2_rank" %in% names(CRISPR_sub_df)) -(suppressWarnings(as.integer(CRISPR_sub_df[["hCRISPRa_v2_rank"]]))) else NA_vec,
-                           if ("Calabrese_rank" %in% names(CRISPR_sub_df)) -(match(CRISPR_sub_df[["Calabrese_rank"]], c("1/2/3", "4/5/6")))       else NA_vec,
+                           if ("CRISPOR_Doench_efficacy" %in% names(CRISPR_sub_df)) CRISPR_sub_df[["CRISPOR_Doench_efficacy"]]                      else NA_vec,
+                           if (!(is_CRISPRko)) -(suppressWarnings(as.integer(CRISPR_sub_df[[hCRISPR_rank_column]]))) else NA_vec,
+                           if ("Calabrese_rank" %in% names(CRISPR_sub_df)) -(match(CRISPR_sub_df[["Calabrese_rank"]], c("1/2/3", "4/5/6")))         else NA_vec,
+                           if ("Dolcetto_rank" %in% names(CRISPR_sub_df))  -(match(CRISPR_sub_df[["Dolcetto_rank"]],  c("1/2/3", "4/5/6")))         else NA_vec,
                            -(CRISPR_sub_df[["GPP_rank"]])
                            )
   assign("delete_list_for_ranking", list_for_ranking, envir = globalenv())
