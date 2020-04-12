@@ -235,7 +235,6 @@ GetCutLocations <- function(ranges_df) {
 
 
 LocationStringToDf <- function(location_char_vec) {
-  assign("delete_location_char_vec", location_char_vec, envir = globalenv())
   chromosome_splits <- strsplit(location_char_vec, "(", fixed = TRUE)
   strand_splits <- strsplit(sapply(chromosome_splits, "[[", 2), ")", fixed = TRUE)
   location_vec <- sapply(strand_splits, "[[", 2)
@@ -522,7 +521,6 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, combined_TSS_d
 
 
   if (!(minimal_version)) {
-
     ## Assign duplicated genes to a location
     merged_CRISPR_df <- FindBest0MMLocations(merged_CRISPR_df, parallel_mode = FALSE)
     merged_CRISPR_df <- ReassignTSS(merged_CRISPR_df, combined_TSS_df)
@@ -548,7 +546,6 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, combined_TSS_d
                                                                 "hCRISPRi_v2_ID", "hCRISPRi_TSS_source"
                                                                 )
                                         )
-
 
   if (!(minimal_version)) {
     ####################################################################################################################
