@@ -30,24 +30,20 @@ load(file.path(general_RData_directory, "09) Divide the entire set of protein-co
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
 
-load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - Alexandra_entrezs.RData"))
+load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData"))
 
 
 
 
 
-# Collect Entrez IDs for submission to the GPP sgRNA designer -------------
+# Identify problematic Entrez IDs -----------------------------------------
 
 problematic_entrezs <- FindProblematicEntrezs(merged_replaced_CRISPRi_df, sgRNAs_overview_df)
 
+vacuolation_only_entrezs <- setdiff(vacuolation_entrezs, sgRNAs_overview_df[["Entrez_ID"]])
 
+problematic_entrezs <- c(vacuolation_only_entrezs, problematic_entrezs)
 
-
-
-# Separate the Entrez IDs into chunks -------------------------------------
-
-submit_entrez_chunks_list   <- lapply(entrez_chunks_list, function(x) intersect(x, problematic_entrezs))
-optional_entrez_chunks_list <- lapply(entrez_chunks_list, function(x) setdiff(x, problematic_entrezs))
 
 
 
@@ -55,48 +51,30 @@ optional_entrez_chunks_list <- lapply(entrez_chunks_list, function(x) setdiff(x,
 
 # Build data frames for submission to the GPP sgRNA designer --------------
 
-submit_df_list <- lapply(submit_entrez_chunks_list, BuildDfForGPP)
-optional_df_list <- lapply(optional_entrez_chunks_list, BuildDfForGPP)
+all_genes_df_list <- lapply(entrez_chunks_list, BuildDfForGPP)
 
-Alex_df <- BuildDfForGPP(Alexandra_entrezs)
+vacuolation_df <- BuildDfForGPP(vacuolation_entrezs)
+vacuolation_only_df <- BuildDfForGPP(setdiff(vacuolation_entrezs, unlist(entrez_chunks_list, use.names = FALSE)))
 
-combined_submit_df_list <- CombineDfChunks(submit_df_list, max_num_per_chunk = 200L)
+all_genes_df_list <- c(all_genes_df_list, list("Vacuolation_only" = vacuolation_only_df))
 
 
 
 
 # Write input files for the GPP sgRNA designer to disk --------------------
 
-for (chunk_ID in names(submit_df_list)) {
-  WriteGPPInputDf(submit_df_list[[chunk_ID]],
+for (chunk_ID in names(all_genes_df_list)) {
+  WriteGPPInputDf(all_genes_df_list[[chunk_ID]],
                   chunk_ID,
-                  file.path(GPP_input_files_directory, "1) High-priority")
+                  file.path(GPP_input_files_directory, "All genes")
                   )
 }
 
-for (chunk_ID in names(optional_df_list)) {
-  WriteGPPInputDf(optional_df_list[[chunk_ID]],
-                  chunk_ID,
-                  file.path(GPP_input_files_directory, "2) Optional"),
-                  input_prefix = "optional_"
-                  )
-}
-
-for (chunk_ID in names(combined_submit_df_list)) {
-  WriteGPPInputDf(combined_submit_df_list[[chunk_ID]],
-                  sub("chunk_", "", chunk_ID),
-                  file.path(GPP_input_files_directory, "3) Combined"),
-                  input_prefix = "combined_"
-                  )
-}
-
-
-WriteGPPInputDf(Alex_df,
-                "Alex",
-                file.path(GPP_input_files_directory, "4) Alex"),
+WriteGPPInputDf(vacuolation_df,
+                "vacuolation",
+                file.path(GPP_input_files_directory, "Vacuolation genes"),
                 input_prefix = ""
                 )
-
 
 
 
@@ -106,13 +84,6 @@ WriteGPPInputDf(Alex_df,
 save(list = "problematic_entrezs",
      file = file.path(CRISPRi_RData_directory, "25) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
      )
-
-
-
-
-
-
-
 
 
 
