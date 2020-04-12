@@ -98,24 +98,31 @@ WriteCRISPORInputFiles(filtered_FASTA_vec_list, file_ending = "__CRISPRi.fa",
 
 
 
-# Prioritize Alexandra's candidate genes ----------------------------------
+# Prioritize the vacuolation screen candidate genes -----------------------
 
-Alexandra_entrezs <- as.character(c(vacuolation_genes, LSM_genes))
+vacuolation_entrezs <- as.character(c(vacuolation_genes, LSM_genes))
 
-Alex_bed_df <- MakeBedDf(merged_replaced_CRISPRi_df, Alexandra_entrezs)
-Alex_FASTA_df <- MakeFASTADf(merged_replaced_CRISPRi_df, Alexandra_entrezs)
+vacuolation_bed_df <- MakeBedDf(merged_replaced_CRISPRi_df, vacuolation_entrezs)
+filtered_vacuolation_bed_df <- FilterBedDfList(list(vacuolation_bed_df))[[1]]
+vacuolation_FASTA_df <- MakeFASTADf(merged_replaced_CRISPRi_df, vacuolation_entrezs)
 
-WriteCRISPORInputFiles(list("Alex" = Alex_bed_df[-1]),
+WriteCRISPORInputFiles(list("vacuolation" = vacuolation_bed_df[-1]),
+                       file_ending = "__CRISPRi.bed",
+                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_bed")
+                       )
+WriteCRISPORInputFiles(list("vacuolation_filtered" = filtered_vacuolation_bed_df[-1]),
                        file_ending = "__CRISPRi.bed",
                        CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_bed_filtered")
                        )
 
 
 
+
+
 # Save data ---------------------------------------------------------------
 
-save(list = "Alexandra_entrezs",
-     file = file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - Alexandra_entrezs.RData")
+save(list = "vacuolation_entrezs",
+     file = file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData")
      )
 
 

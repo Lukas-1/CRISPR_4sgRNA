@@ -30,7 +30,8 @@ load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guide
 load(file.path(CRISPRi_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRi_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 
-load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - Alexandra_entrezs.RData"))
+load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData"))
+
 
 
 
@@ -150,7 +151,7 @@ replaced_TF_CRISPRi_df <- merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[
 
 secretome_CRISPRi_df <- merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Combined_ID"]] %in% secretome_df[["Combined_ID"]], ]
 
-Alex_CRISPRi_df <- merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Combined_ID"]] %in% Alexandra_entrezs, ]
+vacuolation_CRISPRi_df <- merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Combined_ID"]] %in% vacuolation_entrezs, ]
 
 
 
@@ -307,14 +308,9 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 DfToTSV(replaced_TF_CRISPRi_df, "CRISPRi_transcription_factors")
 DfToTSV(secretome_CRISPRi_df, "CRISPRi_secretome")
-DfToTSV(Alex_CRISPRi_df, "CRISPRi_Alexandra")
+DfToTSV(vacuolation_CRISPRi_df, "CRISPRi_vacuolation")
 
 DfToTSV(merged_replaced_CRISPRi_df, "CRISPRi_all_genes")
-
-
-
-
-
 
 
 

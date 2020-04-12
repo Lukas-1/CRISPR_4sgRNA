@@ -32,6 +32,7 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
+load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData"))
 
 
 
@@ -93,6 +94,23 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel],
 WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
                       file_name = "Overview_CRISPRi_all_targetable_genes"
                       )
+
+
+
+
+# Write an overview of the vacuolation candidate genes to disk ------------
+
+vacuolation_summary_df <- SummarizeCRISPRDf(merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Combined_ID"]] %in% vacuolation_entrezs, ])
+
+vacuolation_overview_df <- ReorganizeSummaryDf(vacuolation_summary_df, vacuolation_entrezs)
+vacuolation_overview_df[["Entrez_ID"]] <- vacuolation_overview_df[["Combined_ID"]]
+vacuolation_overview_df <- vacuolation_overview_df[, names(vacuolation_overview_df) != "Combined_ID"]
+vacuolation_overview_df <- FixSymbolsForSummaryDf(vacuolation_overview_df)
+
+WriteOverviewDfToDisk(vacuolation_overview_df[, columns_for_excel],
+                      file_name = "Overview_CRISPRi_vacuolation"
+                      )
+
 
 
 
