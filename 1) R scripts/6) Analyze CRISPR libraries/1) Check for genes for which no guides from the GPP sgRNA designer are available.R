@@ -23,7 +23,7 @@ annotation_intermediate_files_directory <- file.path(CRISPR_root_directory, "4) 
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 
 
