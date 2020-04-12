@@ -37,9 +37,7 @@ CRISPRi_Doench2018_path          <- file.path(CRISPRi_datasets_directory, "Sanso
                                               "2018 - Optimized libraries for CRISPR-Cas9 genetic screens - Data S3.xlsx"
                                               )
 GPP_CRISPRi_path                 <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRi/GPP sgRNA designer/2) Output files")
-GPP_priority_CRISPRi_path        <- file.path(GPP_CRISPRi_path, "1) High-priority")
-GPP_optional_CRISPRi_path        <- file.path(GPP_CRISPRi_path, "2) Optional")
-GPP_Alex_CRISPRi_path            <- file.path(GPP_CRISPRi_path, "Alex")
+GPP_CRISPRi_path                 <- file.path(GPP_CRISPRi_path, "All genes")
 
 
 
@@ -67,7 +65,8 @@ DolcettoA_df  <- data.frame(read_excel(CRISPRi_Doench2018_path, sheet = "SetA sg
 DolcettoB_df  <- data.frame(read_excel(CRISPRi_Doench2018_path, sheet = "SetB sgRNA annotations"), stringsAsFactors = FALSE, check.names = FALSE)
 
 ### Read in the output from the GPP sgRNA designer tool
-GPP_CRISPRi_full_df <- ReadGPPOutputFiles(c(GPP_Alex_CRISPRi_path, GPP_priority_CRISPRi_path, GPP_optional_CRISPRi_path))
+GPP_CRISPRi_full_df <- ReadGPPOutputFiles(GPP_CRISPRi_path)
+
 
 
 
