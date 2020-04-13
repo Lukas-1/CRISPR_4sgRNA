@@ -459,7 +459,7 @@ AddCombinedFilteredDf <- function(filtered_df_list) {
     combined_df_list <- CombineDfChunks(filtered_df_list[!(grepl("_all_done$", names(filtered_df_list)))])
     if (length(combined_df_list) == 1) {
       filtered_df_list[["filtered_all_chunks_combined"]] <- combined_df_list[[1]]
-    } else {
+    } else  if (length(combined_df_list) != length(filtered_df_list)) {
       combined_names <- sub("chunk_chunk", "chunk", names(combined_df_list), fixed = TRUE)
       combined_names <- gsub("_some_donechunk_", "", combined_names, fixed = TRUE)
       combined_names <- sub("_some_done", "", combined_names, fixed = TRUE)
