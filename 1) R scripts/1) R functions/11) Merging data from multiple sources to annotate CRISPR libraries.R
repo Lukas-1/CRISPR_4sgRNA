@@ -522,7 +522,7 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, combined_TSS_d
 
   if (!(minimal_version)) {
     ## Assign duplicated genes to a location
-    merged_CRISPR_df <- FindBest0MMLocations(merged_CRISPR_df, parallel_mode = FALSE)
+    merged_CRISPR_df <- FindBest0MMLocations(merged_CRISPR_df, parallel_mode = TRUE)
     merged_CRISPR_df <- ReassignTSS(merged_CRISPR_df, combined_TSS_df)
   }
 
