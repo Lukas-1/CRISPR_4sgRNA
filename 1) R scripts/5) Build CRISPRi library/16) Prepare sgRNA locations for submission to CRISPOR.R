@@ -24,9 +24,9 @@ CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate fil
 
 # Read in data ------------------------------------------------------------
 
-gene_lists_directory <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists", "Alexandra")
-vacuolation_genes <- read.table(file.path(gene_lists_directory, "hit_gene_IDs_1.5allhitnoderatio.csv"),   header = FALSE, stringsAsFactors = FALSE)[[1]]
-LSM_genes         <- read.table(file.path(gene_lists_directory, "Alexandra_LSM_genes.txt"), header = FALSE, stringsAsFactors = FALSE)[[1]]
+gene_lists_directory <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists", "Vacuolation")
+vacuolation_genes <- read.table(file.path(gene_lists_directory, "hit_gene_IDs_1.5allhitnoderatio.csv"), header = FALSE, stringsAsFactors = FALSE)[[1]]
+LSM_genes <- read.table(file.path(gene_lists_directory, "Additional_LSM_genes.txt"), header = FALSE, stringsAsFactors = FALSE)[[1]]
 
 
 
@@ -82,8 +82,8 @@ WriteCRISPORInputFiles(FASTA_vec_list, file_ending = "__CRISPRi.fa",
 
 # Write input files (filtered by already present data) --------------------
 
-filtered_bed_df_list    <- FilterBedDfList(bed_df_list)
-filtered_FASTA_df_list  <- FilterFASTADfList(FASTA_df_list)
+filtered_bed_df_list <- FilterBedDfList(bed_df_list)
+filtered_FASTA_df_list <- FilterFASTADfList(FASTA_df_list)
 filtered_FASTA_vec_list <- lapply(filtered_FASTA_df_list, MakeFASTAvec)
 
 WriteCRISPORInputFiles(filtered_bed_df_list, file_ending = "__CRISPRi.bed",
