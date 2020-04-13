@@ -48,11 +48,24 @@ RetrieveIndices <- function(CRISPR_df, indices_vec, ID_column) {
 
 
 
+ReportProblematic <- function(are_top4_mat, CRISPR_df) {
+  if (any(are_top4_mat[, "Are_problematic_top4"])) {
+    problematic_IDs <- unique(CRISPR_df[["Combined_ID"]][are_top4_mat[, "Are_problematic_top4"]])
+    assign("delete_problematic_IDs", problematic_IDs, envir = globalenv())
+    message(paste0(length(problematic_IDs), " genes had an invalid 4sg ",
+                   "combination (3 or fewer guides, or 4 guides that shared ",
+                   "identical subsequences of 8 bp or more!)"
+                   )
+            )
+  }
+}
+
+
 CRISPRaAreTop4Mat <- function(CRISPRa_df) {
 
   are_top4 <- CRISPRa_df[["Rank"]] %in% 1:4
   only_one_TSS <- CRISPRa_df[["Num_TSSs"]] == 1
-  are_spaced <- !(is.na(CRISPRa_df[["Spacing"]])) & !(CRISPRa_df[["Spacing"]] %in% 0)
+  are_not_homologous <- !(is.na(CRISPRa_df[["Spacing"]])) & !(CRISPRa_df[["Spacing"]] %in% 0)
 
   altTSS_IDs_fac <- factor(CRISPRa_df[["AltTSS_ID"]], levels = unique(CRISPRa_df[["AltTSS_ID"]]))
   CheckThatFactorIsInOrder(altTSS_IDs_fac)
@@ -60,19 +73,20 @@ CRISPRaAreTop4Mat <- function(CRISPRa_df) {
   are_complete <- vapply(rank_splits, function(x) all(1:4 %in% x), logical(1))
   have_complete_guides <- rep(are_complete, lengths(rank_splits))
 
-  are_valid_top4 <- are_top4 & are_spaced & have_complete_guides
+  are_valid_top4 <- are_top4 & are_not_homologous & have_complete_guides
   are_valid_or_only_top4 <- are_valid_top4 | (are_top4 & only_one_TSS)
 
-  have_spaced_guides <- rep(tapply(are_spaced, altTSS_IDs_fac, sum) >= 4, lengths(rank_splits))
+  have_non_homologous_guides <- rep(tapply(are_not_homologous, altTSS_IDs_fac, sum) >= 4, lengths(rank_splits))
 
   results_mat <- cbind(
-    "Are_top4"               = are_top4,
-    "Are_valid_top4"         = are_valid_top4,
-    "Are_valid_or_only_top4" = are_valid_or_only_top4,
-    "Have_complete_guides"   = have_complete_guides,
-    "Have_spaced_guides"     = have_spaced_guides,
-    "Have_valid_guides"      = have_spaced_guides & have_complete_guides
+    "Are_chosen_4sg"       = are_valid_or_only_top4,
+    "Are_top4"             = are_top4,
+    "Are_problematic_top4" = are_valid_or_only_top4 & !(are_valid_top4),
+    "Have_complete_guides" = have_complete_guides,
+    "Have_spaced_guides"   = have_non_homologous_guides,
+    "Have_valid_guides"    = have_non_homologous_guides & have_complete_guides
   )
+  ReportProblematic(results_mat, CRISPRa_df)
   return(results_mat)
 }
 
@@ -82,7 +96,7 @@ CRISPRaAreTop4Mat <- function(CRISPRa_df) {
 CRISPRkoAreTop4Mat <- function(CRISPRko_df) {
 
   are_top4 <- CRISPRko_df[["Rank"]] %in% 1:4
-  are_spaced <- !(is.na(CRISPRko_df[["Spacing"]])) & !(CRISPRko_df[["Spacing"]] %in% 0)
+  are_not_homologous <- !(is.na(CRISPRko_df[["Spacing"]])) & !(CRISPRko_df[["Spacing"]] %in% 0)
 
   combined_IDs_fac <- factor(CRISPRko_df[["Combined_ID"]], levels = unique(CRISPRko_df[["Combined_ID"]]))
   CheckThatFactorIsInOrder(combined_IDs_fac)
@@ -91,15 +105,17 @@ CRISPRkoAreTop4Mat <- function(CRISPRko_df) {
   are_complete <- vapply(rank_splits, function(x) all(1:4 %in% x), logical(1))
   have_complete_guides <- rep(are_complete, lengths(rank_splits))
 
-  have_spaced_guides <- rep(tapply(are_spaced, combined_IDs_fac, sum) >= 4, lengths(rank_splits))
+  have_non_homologous_guides <- rep(tapply(are_not_homologous, combined_IDs_fac, sum) >= 4, lengths(rank_splits))
 
   results_mat <- cbind(
-    "Are_top4"               = are_top4,
-    "Are_valid_top4"         = are_top4 & are_spaced & have_complete_guides,
-    "Have_complete_guides"   = have_complete_guides,
-    "Have_spaced_guides"     = have_spaced_guides,
-    "Have_valid_guides"      = have_spaced_guides & have_complete_guides
+    "Are_chosen_4sg"             = are_top4, # sic
+    "Are_top4"                   = are_top4,
+    "Are_problematic_top4"       = are_top4 & !(are_spaced & have_complete_guides),
+    "Have_complete_guides"       = have_complete_guides,
+    "Have_non_homologous_guides" = have_non_homologous_guides,
+    "Have_valid_guides"          = have_non_homologous_guides & have_complete_guides
   )
+  ReportProblematic(results_mat, CRISPRko_df)
   return(results_mat)
 }
 
