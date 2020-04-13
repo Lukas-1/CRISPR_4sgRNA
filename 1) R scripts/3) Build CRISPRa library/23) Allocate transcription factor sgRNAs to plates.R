@@ -50,7 +50,6 @@ all_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Entrez
 
 are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
 
-foo
 
 
 
@@ -66,7 +65,7 @@ invalid_combo_show_columns <- c(
   "sgRNA_sequence", "PAM"
 )
 
-all_CRISPRa_df[are_top4_mat[, "Are_valid_or_only_top4"] & !(are_top4_mat[, "Have_complete_guides"]), invalid_combo_show_columns]
+all_CRISPRa_df[are_top4_mat[, "Are_chosen_4sg"] & !(are_top4_mat[, "Have_complete_guides"]), invalid_combo_show_columns]
 
 
 
@@ -99,7 +98,7 @@ replaced_TF_CRISPRa_df[are_invalid_top4, invalid_combo_show_columns]
 
 # Define the final selection of sgRNAs ------------------------------------
 
-top4_df <- replaced_TF_CRISPRa_df[are_valid_top4, ]
+top4_df <- replaced_TF_CRISPRa_df[TF_are_top4_mat[, "Are_chosen_4sg"], ]
 row.names(top4_df) <- NULL
 
 table(table(top4_df[["AltTSS_ID"]]))
