@@ -205,7 +205,7 @@ DfToTSV(TF_sgRNA_plates_df[are_new, ],
         file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__new_guides"),
         add_primers = TRUE
         )
-DfToTSV(TF_sgRNA_plates_df[are_obsolete, ],
+DfToTSV(old_TF_sgRNA_plates_df[are_obsolete, ],
         file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__obsolete_guides"),
         add_primers = TRUE
         )
