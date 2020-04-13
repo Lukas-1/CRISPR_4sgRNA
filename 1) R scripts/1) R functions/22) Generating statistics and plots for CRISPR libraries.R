@@ -1370,7 +1370,7 @@ UniquePointsBoxPlots <- function(CRISPR_df) {
 
 SourcesBoxPlots <- function(CRISPR_df) {
 
-  is_CRISPRko <- "Entrez_source_Brunello" %in% names(my_df)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     args_list <- c(args_list, CRISPRko_args_list)
     numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
