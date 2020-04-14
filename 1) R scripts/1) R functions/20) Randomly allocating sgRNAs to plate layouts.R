@@ -2,6 +2,28 @@
 
 
 
+
+
+
+# Define maps -------------------------------------------------------------
+
+sublibraries_short_names <- c(
+  "Transcription factors"             = "TF",
+  "GPCRs"                             = "GPCR",
+  "Secretome"                         = "Secretome",
+  "Membrane Proteins"                 = "Membrane",
+  "Kinases/Phosphatases/Drug Targets" = "Kinase",
+  "Mitochondria/Trafficking/Motility" = "Mito",
+  "Stress/Proteostasis"               = "Stress",
+  "Cancer/Apoptosis"                  = "Cancer",
+  "Gene Expression"                   = "Expression",
+  "Unassigned"                        = "Misc",
+  "None"                              = "None"
+)
+
+
+
+
 # Functions for selecting the 4sg guides to export ------------------------
 
 ReportProblematic <- function(are_top4_mat, CRISPR_df) {
@@ -86,7 +108,7 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat) {
   problematic_df <- targeting_CRISPR_df[are_invalid_top4, ]
   problematic_df <- data.frame(
     problematic_df,
-    are_top4_mat[are_invalid_top4, c("Have_complete_guides", "Have_spaced_guides")],
+    top4_mat[are_invalid_top4, c("Have_complete_guides", "Have_spaced_guides")],
     "Are_protein_coding" = problematic_df[["Entrez_ID"]] %in% collected_entrez_IDs,
     "Annotation_category" = collected_entrezs_df[["Category"]][match(problematic_df[["Entrez_ID"]], collected_entrezs_df[["Entrez_ID"]])],
     stringsAsFactors = FALSE
@@ -219,9 +241,10 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
     chosen_indices <- sample(c(indices_Doench, indices_hCRISPR_v2))
     chosen_sequences <- CRISPR_df[["sgRNA_sequence"]][chosen_indices]
   }
-  chosen_sequences <- toupper(chosen_sequences)
 
   stopifnot((length(chosen_sequences) / 4) == num_control_wells)
+
+  chosen_sequences <- toupper(chosen_sequences)
   control_combos_vec <- rep(seq_len(num_control_wells), each = 4L)
   control_combos_vec <- sample(control_combos_vec)
   controls_list <- split(chosen_sequences, control_combos_vec)
@@ -243,10 +266,10 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
   message("Control guide groupings are now unproblematic!")
 
   sequences_vec <- unlist(controls_list, use.names = FALSE)
+
   groups_vec <- rep(seq_along(controls_list), each = 4)
 
   matches_vec <- match(sequences_vec, toupper(CRISPR_df[["sgRNA_sequence"]][are_good_controls]))
-
   stopifnot(!(anyNA(matches_vec)))
 
   results_df <- CRISPR_df
@@ -258,11 +281,44 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
 
 
 
+AssignControlsToPlates <- function(CRISPR_df, num_wells_per_plate = 384L) {
+
+  stopifnot("Control_group_4sg" %in% colnames(CRISPR_df))
+
+  control_IDs_seq <- CRISPR_df[["Control_group_4sg"]]
+
+  are_control_guides <- !(is.na(control_IDs_seq))
+
+  num_control_wells <- sum(are_control_guides) / 4
+  wells_seq <- seq_len(num_control_wells)
+
+  stopifnot(identical(wells_seq, sort(unique(control_IDs_seq[are_control_guides]))))
+
+  num_plates <- ceiling(num_control_wells / num_wells_per_plate)
+  plates_vec <- rep(seq_len(num_plates), each = num_wells_per_plate)[wells_seq]
+  wells_vec <- rep.int(seq_len(num_wells_per_plate), times = num_plates)[wells_seq]
+
+  results_df <- CRISPR_df
+  for (column_name in c("Sublibrary_4sg", "Plate_ID", "Plate_number", "Well_number")) {
+    if (!(column_name %in% names(results_df))) {
+      results_df[[column_name]] <- NA_integer_
+    }
+  }
+  control_matches <- match(control_IDs_seq[are_control_guides], wells_seq)
+  results_df[["Plate_number"]][are_control_guides] <- plates_vec[control_matches]
+  results_df[["Well_number"]][are_control_guides] <- wells_vec[control_matches]
+  results_df[["Plate_ID"]][are_control_guides] <- paste0("Control_", results_df[["Plate_number"]][are_control_guides])
+  return(results_df)
+}
+
+
+
 
 # Functions for assigning guides to 384-well plates -----------------------
 
 AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plate = 384L) {
-  stopifnot(length(unique(table(all_CRISPRa_df[["Rank"]]))) == 1)
+  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
+  stopifnot(length(unique(table(CRISPR_df[["Rank"]]))) == 1)
   if (randomize_order) {
     set.seed(1)
   }
@@ -273,8 +329,8 @@ AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plat
     ID_column <- "AltTSS_ID"
   }
   stopifnot(all(table(CRISPR_df[[ID_column]]) == 4))
-  use_sublibrary <- "Sublibrary_4sg" %in% colnames(CRISPR_df)
-  if (use_sublibrary) {
+  use_sublibraries <- "Sublibrary_4sg" %in% colnames(CRISPR_df)
+  if (use_sublibraries) {
     sublibraries <- levels(CRISPR_df[["Sublibrary_4sg"]])
     have_no_sublibrary <- is.na(CRISPR_df[["Sublibrary_4sg"]])
     if (any(have_no_sublibrary)) {
@@ -289,29 +345,102 @@ AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plat
   plates_vec <- rep.int(NA_integer_, nrow(CRISPR_df))
   wells_vec <- rep.int(NA_integer_, nrow(CRISPR_df))
   for (sublibrary in sublibraries) {
-    if (use_sublibrary) {
-      are_eligible <- CRISPR_df[["Sublibrary_4sg"]] %in% sublibrary
+    if (use_sublibraries) {
+      are_eligible <- as.character(CRISPR_df[["Sublibrary_4sg"]]) %in% sublibrary
     } else {
       are_eligible <- CRISPR_df[["Is_control"]] == "No"
     }
+    are_eligible <- are_eligible & (CRISPR_df[["Rank"]] %in% 1:4)
     CheckThatFactorIsInOrder(CRISPR_df[["ID_column"]][are_eligible])
     num_wells <- sum(are_eligible) / 4
     wells_seq <- seq_len(num_wells)
     num_plates <- ceiling(num_wells / num_wells_per_plate)
     plates_sub_vec <- rep(seq_len(num_plates), each = num_wells_per_plate)[wells_seq]
-    wells_sub_vec <- rep.int(seq_len(num_wells_per_plate), times = num_plates)[wells_seq]
     if (randomize_order) {
+      wells_sub_vec <- rep(NA_integer_, num_wells)
       plates_sub_vec <- sample(plates_sub_vec)
-      wells_sub_vec <- sample(wells_sub_vec)
+      for (plate_number in seq_len(num_plates)) {
+        are_this_plate <- plates_sub_vec == plate_number
+        wells_sub_vec[are_this_plate] <- sample(seq_len(sum(are_this_plate)))
+      }
+    } else {
+      wells_sub_vec <- rep.int(seq_len(num_wells_per_plate), times = num_plates)[wells_seq]
     }
     plates_vec[are_eligible] <- rep(plates_sub_vec, each = 4)
     wells_vec[are_eligible] <- rep(wells_sub_vec, each = 4)
   }
   results_df <- CRISPR_df
-  results_df[["Plate"]] <- plates_vec
-  results_df[["Well"]] <- wells_vec
+  if (use_sublibraries) {
+    assign("delete_CRISPR_df_33", CRISPR_df, envir = globalenv())
+    short_sublibraries_fac <- CRISPR_df[["Sublibrary_4sg"]]
+    levels(short_sublibraries_fac) <- sublibraries_short_names[levels(short_sublibraries_fac)]
+    results_df[["Plate_ID"]] <- paste0(as.character(short_sublibraries_fac), "_", plates_vec)
+  } else {
+    results_df[["Plate_ID"]] <- plates_vec
+  }
+  results_df[["Plate_number"]] <- plates_vec
+  results_df[["Well_number"]] <- wells_vec
   return(results_df)
 }
+
+
+
+
+# Functions that encapsulate the workflow for export ----------------------
+
+AssignAllGuides <- function(CRISPR_df, sublibraries_entrezs_list, num_control_wells = NULL, reorder_df = FALSE) {
+
+  CRISPR_df <- AddRandomized4sgControls(CRISPR_df, num_control_wells = num_control_wells)
+  CRISPR_df <- AssignControlsToPlates(CRISPR_df)
+
+  controls_df <- CRISPR_df[!(is.na(CRISPR_df[["Control_group_4sg"]])), ]
+  controls_df <- AssignControlsToPlates(controls_df)
+
+  targeting_df <- CRISPR_df[CRISPR_df[["Entrez_ID"]] %in% unlist(sublibraries_entrezs_list, use.names = FALSE), ]
+
+  are_top4_mat <- CRISPRaAreTop4Mat(targeting_df)
+
+  ShowProblematicGuides(targeting_df, are_top4_mat)
+
+  are_valid_chosen <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
+
+  targeting_df <- targeting_df[are_valid_chosen, ]
+
+  targeting_df <- AddSublibrary(targeting_df, sublibraries_entrezs_list)
+  targeting_df <- AssignToPlates(targeting_df)
+
+  results_df <- rbind.data.frame(targeting_df,
+                                 controls_df,
+                                 make.row.names = FALSE,
+                                 stringsAsFactors = FALSE
+                                 )
+
+  plate_IDs_vec <- results_df[["Plate_ID"]]
+  new_order <- order(results_df[["Sublibrary_4sg"]],
+                     results_df[["Plate_number"]],
+                     results_df[["Well_number"]],
+                     results_df[["Rank"]]
+                     )
+  plate_IDs_vec <- plate_IDs_vec[new_order]
+  results_df[["Plate_ID"]] <- factor(results_df[["Plate_ID"]], levels = unique(plate_IDs_vec))
+  if (reorder_df) {
+    results_df <- results_df[new_order, ]
+    are_controls <- results_df[["Is_control"]] == "Yes"
+    results_df[["Rank"]][are_controls] <- rep.int(1:4, sum(are_controls) / 4)
+    row.names(results_df) <- NULL
+  }
+  return(results_df)
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
