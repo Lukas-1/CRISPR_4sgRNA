@@ -27,8 +27,19 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
+
+
+
+
+
+# Pick control guides -----------------------------------------------------
+
+merged_replaced_CRISPRa_df <- AddRandomized4sgControls(merged_replaced_CRISPRa_df, num_control_wells = 384)
+
+table(merged_replaced_CRISPRa_df[["Source"]][!(is.na(merged_replaced_CRISPRa_df[["Control_group_4sg"]]))])
 
 
 
@@ -41,12 +52,31 @@ all_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Entrez
 
 
 
-# Exclude incomplete transcripts, or those with shared subsequences -------
+
+# Include only valid 4sg combinations -------------------------------------
 
 are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
 
-are_valid_top4 <- are_top4_mat[, "Are_top4"] & are_top4_mat[, "Have_valid_guides"]
-are_invalid_top4 <- are_top4_mat[, "Are_top4"] & !(are_top4_mat[, "Have_valid_guides"])
+ShowProblematicGuides(all_CRISPRa_df, are_top4_mat)
+
+are_valid_chosen <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
+
+all_CRISPRa_df <- all_CRISPRa_df[are_valid_chosen, ]
+rownames(all_CRISPRa_df) <- NULL
+
+
+
+# Allocate guides to plates -----------------------------------------------
+
+all_CRISPRa_df <- AddSublibrary(all_CRISPRa_df, sublibraries_all_entrezs_list)
+all_CRISPRa_df <- AssignToPlates(all_CRISPRa_df)
+
+
+
+
+
+
+
 
 
 
