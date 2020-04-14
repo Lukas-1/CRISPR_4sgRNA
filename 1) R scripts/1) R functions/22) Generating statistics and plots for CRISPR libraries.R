@@ -596,8 +596,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
       return(are_chosen)
     })
     Doench_are_chosen <- unlist(Doench_are_chosen_list, use.names = FALSE)
-    Doench_chosen_df <- Doench_chosen_df[Doench_are_chosen, ]
-
+    Doench_chosen_df <- Doench_df[Doench_are_chosen, ]
 
     ## Choose the guides for hCRISPRa-v2
     hCRISPR_v2_df <- filtered_df[filtered_df[["Group"]] %in% c("hCRISPRa-v2", "hCRISPRa-v2.1", "hCRISPRa-v2.0"), ]
@@ -610,18 +609,18 @@ FilterTop4 <- function(expanded_CRISPR_df,
       top_4_ranks <- sort(unique(x))[1:4]
       x %in% top_4_ranks
     }))
-    hCRISPRa_v2_chosen_df <- hCRISPR_v2_df[are_top4, ]
-    hCRISPRa_v2_chosen_df <- ChooseOriginalTop4(hCRISPRa_v2_chosen_df)
+    hCRISPR_v2_chosen_df <- hCRISPR_v2_df[are_top4, ]
+    hCRISPR_v2_chosen_df <- ChooseOriginalTop4(hCRISPR_v2_chosen_df)
 
 
     ## Combine the final data frame for CRISPRa
     if (filter_complete_genes) {
-      stopifnot(length(unique(c(nrow(Calabrese_chosen_df), nrow(hCRISPRa_v2_chosen_df), nrow(GPP_chosen_df), nrow(FourSg_df)))) == 1)
+      stopifnot(length(unique(c(nrow(Doench_chosen_df), nrow(hCRISPR_v2_chosen_df), nrow(GPP_chosen_df), nrow(FourSg_df)))) == 1)
     }
 
     combined_chosen_df <- rbind.data.frame(
-      Calabrese_chosen_df,
-      hCRISPRa_v2_chosen_df,
+      Doench_chosen_df,
+      hCRISPR_v2_chosen_df,
       GPP_chosen_df,
       FourSg_df,
       stringsAsFactors = FALSE,
@@ -1034,6 +1033,7 @@ PlotViolin <- function(plot_df,
                                       title_line       = title_line
                                       )
 
+  set.seed(1)
   jittered_vec <- x_positions[as.integer(plot_df[["Groups_factor"]])] +
                   rnorm(n = nrow(plot_df), mean = 0, sd = 0.03)
   points_alpha <- 0.1
@@ -2304,6 +2304,7 @@ ScatterPlot <- function(CRISPR_df,
   y_vec <- CRISPR_df[[y_column]]
 
   if (add_jitter) {
+    set.seed(1)
     x_vec <- GaussianJitter(x_vec)
     y_vec <- GaussianJitter(y_vec)
   }
