@@ -27,12 +27,8 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
-
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
-load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "22) Summarize the human secretome sub-library.RData"))
 
 
 
@@ -50,12 +46,12 @@ all_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Entrez
 are_top4_mat <- CRISPRaAreTop4Mat(all_CRISPRa_df)
 
 are_valid_top4 <- are_top4_mat[, "Are_top4"] & are_top4_mat[, "Have_valid_guides"]
+are_invalid_top4 <- are_top4_mat[, "Are_top4"] & !(are_top4_mat[, "Have_valid_guides"])
 
 
 
 
 
-identical(all_CRISPRa_df, all_CRISPRa_df_2)
 
 
 
