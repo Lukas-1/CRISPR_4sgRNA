@@ -69,7 +69,7 @@ table((merged_replaced_CRISPRa_df[[preferred_AF_max_column]][were_mapped] > SNP_
 
 # Check for hCRISPRa-v2 TSSs that are not being targeted separately -------
 
-sgRNAs_lax_overview_df[which(sgRNAs_lax_overview_df[["Num_transcripts"]] < sgRNAs_lax_overview_df[["Num_hCRISPRa_v2_transcripts"]]), ]
+sgRNAs_overview_df[which(sgRNAs_overview_df[["Num_transcripts"]] < sgRNAs_overview_df[["Num_hCRISPRa_v2_transcripts"]]), ]
 
 show_columns <- c("Entrez_ID", "Gene_symbol", "Original_symbol",
                   "Nearest_symbols",
