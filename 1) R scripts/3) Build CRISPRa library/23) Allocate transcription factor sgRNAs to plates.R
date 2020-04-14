@@ -8,6 +8,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R")) # for FormatFixedWidthInteger
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))
+source(file.path(general_functions_directory, "26) Allocating transcription factor sgRNAs to plates.R"))
 
 
 
