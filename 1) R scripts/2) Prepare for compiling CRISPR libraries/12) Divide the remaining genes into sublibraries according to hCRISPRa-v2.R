@@ -351,7 +351,7 @@ sublibrary_df[["Sublibrary"]][are_new_membrane_proteins] <- "Membrane Proteins"
 
 sublibraries_all_entrezs_list <- split(sublibrary_df[["Entrez_ID"]], sublibrary_df[["Sublibrary"]])
 sublibraries_all_entrezs_list[["Transcription factors"]] <- TF_entrez_IDs
-sublibraries_all_entrezs_list[["Secretome"]] <- setdiff(secretome_entrezs, c(TF_entrez_IDs, GPCR_entrez_IDs))
+sublibraries_all_entrezs_list[["Secretome"]] <- setdiff(secretome_entrez_IDs, c(TF_entrez_IDs, GPCR_entrez_IDs))
 
 
 
