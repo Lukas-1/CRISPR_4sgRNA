@@ -196,7 +196,7 @@ save(list = "extended_CRISPRko_df",
 
 
 
-#
+
 # are_missing_lax <- is.na(extended_CRISPRko_df[["PAM"]]) & !(is.na(extended_CRISPRko_df[["PAM_strict"]]))
 #
 # are_missing_start_lax <- is.na(extended_CRISPRko_df[["Start"]]) & !(is.na(extended_CRISPRko_df[["Start_strict"]]))
