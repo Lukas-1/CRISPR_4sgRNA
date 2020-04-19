@@ -35,17 +35,6 @@ load(file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData"))
 
 
 
-# Define lookup maps ------------------------------------------------------
-
-source_abbreviations_vec <- c(
-  "Brunello" = "Bru",
-  "TKOv3"    = "TKOv3",
-  "GPP"      = "GPP"
-)
-
-
-
-
 
 # Re-arrange the columns --------------------------------------------------
 

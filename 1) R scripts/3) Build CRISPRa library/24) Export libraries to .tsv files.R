@@ -34,15 +34,6 @@ load(file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 
 
 
-# Define lookup maps ------------------------------------------------------
-
-source_abbreviations_vec <- c(
-  "Curated"     = "Cur",
-  "Calabrese"   = "Cal",
-  "hCRISPRa-v2" = "hC-v2",
-  "GPP"         = "GPP"
-)
-
 
 
 
@@ -339,7 +330,6 @@ for (i in 1:4) {
 }
 DfToTSV(TF_sgRNA_plates_df,         file.path(TF_folder_name, "CRISPRa_TF_randomized_all_4_guides"),     add_primers = TRUE)
 DfToTSV(TF_sgRNA_original_order_df, file.path(TF_folder_name, "CRISPRa_TF_original_order_all_4_guides"), add_primers = TRUE)
-
 
 DfToTSV(replaced_curated_CRISPRa_df, file.path("Candidate genes", "CRISPRa_16_sgRNAs"), allow_curated = TRUE)
 DfToTSV(merged_replaced_candidates_CRISPRa_df, file.path("Candidate genes", "CRISPRa_20_trial_genes"))

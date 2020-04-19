@@ -9,7 +9,6 @@ source(file.path(general_functions_directory, "14) Checking for identical subseq
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
 
-source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R")) # For exporting the 4sg vacuolation library
 
 
 
@@ -33,18 +32,6 @@ load(file.path(CRISPRi_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 
 load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData"))
 
-
-
-
-# Define lookup maps ------------------------------------------------------
-
-source_abbreviations_vec <- c(
-  "Curated"       = "Cur",
-  "Dolcetto"      = "Dol",
-  "hCRISPRi-v2.1" = "hC-v2",
-  "hCRISPRi-v2.0" = "hC-v2",
-  "GPP"           = "GPP"
-)
 
 
 
@@ -304,12 +291,6 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 
 
-# Filter for just the 4sg vacuolation guides ------------------------------
-
-are_top4_vac_mat <- CRISPRaAreTop4Mat(vacuolation_CRISPRi_df)
-
-
-
 
 
 
@@ -321,7 +302,6 @@ DfToTSV(vacuolation_CRISPRi_df, "CRISPRi_vacuolation")
 
 DfToTSV(merged_replaced_CRISPRi_df, "CRISPRi_all_genes")
 
-DfToTSV(vacuolation_CRISPRi_df[are_top4_vac_mat[, "Are_chosen_4sg"], ], "CRISPRi_vacuolation_chosen_4sg")
 
 
 
