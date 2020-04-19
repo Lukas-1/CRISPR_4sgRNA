@@ -70,6 +70,31 @@ FormatForExcel <- function(my_df,
 
   is_CRISPRko <- "Entrez_source_Brunello" %in% names(my_df)
 
+  if (is_CRISPRko) {
+    source_abbreviations_vec <- c(
+      "Brunello" = "Bru",
+      "TKOv3"    = "TKOv3",
+      "GPP"      = "GPP"
+    )
+  } else {
+    if ("Entrez_source_Dolcetto" %in% names(my_df)) {
+      source_abbreviations_vec <- c(
+        "Curated"       = "Cur",
+        "Dolcetto"      = "Dol",
+        "hCRISPRi-v2.1" = "hC-v2",
+        "hCRISPRi-v2.0" = "hC-v2",
+        "GPP"           = "GPP"
+      )
+    } else {
+      source_abbreviations_vec <- c(
+        "Curated"     = "Cur",
+        "Calabrese"   = "Cal",
+        "hCRISPRa-v2" = "hC-v2",
+        "GPP"         = "GPP"
+      )
+    }
+  }
+
   CRISPRko_overlapping_vec <- c(
     "Entrez_overlapping_0MM" = "Entrez_ID",
     "Symbol_overlapping_0MM" = "Gene_symbol"
@@ -114,7 +139,7 @@ FormatForExcel <- function(my_df,
                                         )
                                  )
                           )
-      my_df[[column_name]] <- split_vec
+      my_df[[column_name]] <- ifelse(my_df[["Is_control"]] == "Yes", NA_character_, split_vec)
     }
   }
   for (column_name in intersect(other_overlapping_columns, colnames(my_df))) {
@@ -134,6 +159,8 @@ FormatForExcel <- function(my_df,
   }
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[["Combined_ID"]])
+  assign("delete_my_df", my_df, envir = globalenv())
+  assign("delete_ones_and_zeros_vec", ones_and_zeros_vec, envir = globalenv())
   if (convert_excluded_to_3) {
     are_to_be_excluded <- !(MeetCriteria(my_df, allow_curated = allow_curated))
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
@@ -239,6 +266,9 @@ FormatForExcel <- function(my_df,
                                 )
   }
 
+  assign("delete_my_df", my_df, envir = globalenv())
+  assign("delete_ones_and_zeros_vec", ones_and_zeros_vec, envir = globalenv())
+
   my_df[["Color"]] <- ones_and_zeros_vec + 1L
   return(my_df)
 }
@@ -247,17 +277,18 @@ FormatForExcel <- function(my_df,
 
 
 
-DfToTSV <- function(CRISPR_df,file_name, remove_columns = full_omit_columns, probability_to_percentage = FALSE,
+DfToTSV <- function(CRISPR_df, file_name, remove_columns = full_omit_columns, probability_to_percentage = FALSE,
                     add_primers = FALSE, allow_curated = FALSE
                     ) {
+  formatted_df <- FormatForExcel(CRISPR_df, remove_columns = remove_columns, probability_to_percentage = probability_to_percentage,
+                                 add_primers = add_primers, allow_curated = allow_curated
+                                 )
   # Requires the objects 'full_omit_columns' and 'file_output_directory' in the global environment
-  write.table(FormatForExcel(CRISPR_df, remove_columns = remove_columns, probability_to_percentage = probability_to_percentage,
-                             add_primers = add_primers, allow_curated = allow_curated
-                             ),
+  write.table(formatted_df,
               file = file.path(file_output_directory, paste0(file_name, ".tsv")),
               quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
               )
-  return(invisible(NULL))
+  return(invisible(formatted_df))
 }
 
 
@@ -308,17 +339,6 @@ FormatFixedWidthInteger <- function(integer_vec) {
   result <- formatC(integer_vec, width = integer_width, flag = "0")
   return(result)
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
