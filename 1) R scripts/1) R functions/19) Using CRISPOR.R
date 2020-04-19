@@ -124,10 +124,12 @@ MakeFASTAvec <- function(use_FASTA_df) {
 }
 
 
-WriteCRISPORInputFiles <- function(CRISPOR_chunk_list, file_ending, CRISPOR_input_directory, file_prefix = "Input_for_CRISPOR__chunk_") {
+WriteCRISPORInputFiles <- function(CRISPOR_chunk_list, file_ending, CRISPOR_input_directory, file_prefix = "Input_for_CRISPOR__") {
   for (i in seq_along(CRISPOR_chunk_list)) {
-    file_name <- paste0(file_prefix, names(CRISPOR_chunk_list)[[i]], file_ending)
-    file_name <- sub("chunk_chunk_", "chunk_", file_name, fixed = TRUE)
+    contains_chunk <- grepl("chunk", names(CRISPOR_chunk_list)[[i]], fixed = TRUE)
+    file_name <- paste0(file_prefix, if (contains_chunk) "" else "chunk_",
+                        names(CRISPOR_chunk_list)[[i]], file_ending
+                        )
     write.table(CRISPOR_chunk_list[[i]],
                 file = file.path(CRISPOR_input_directory, file_name),
                 quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t"
