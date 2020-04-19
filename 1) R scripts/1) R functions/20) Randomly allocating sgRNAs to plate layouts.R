@@ -22,6 +22,31 @@ sublibraries_short_names <- c(
 )
 
 
+export_columns <- c(
+  "Sublibrary_4sg", "Plate_number", "Well_number",
+  "Entrez_ID", "Entrez_overlapping_0MM",
+  "Gene_symbol", "Symbol_overlapping_0MM", "Original_symbol",
+  "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP",
+  "Transcript_ID", "Genomic_sequence_ID",
+  "TSS_ID", "Rank", "Num_overlaps", "Source",
+  "sgRNA_sequence", "PAM", "Sequence_with_primers",
+  "Calabrese_rank", "Dolcetto_rank",
+  "GPP_rank",
+  "hCRISPRa_v2_rank", "hCRISPRi_v2_rank",
+  "Predicted_score", "Empirical_score",
+  "Chromosome", "Strand", "Cut_location", "Distance_from_TSS",
+  "GuideScan_efficiency", "CRISPOR_Doench_efficacy",
+  "CRISPOR_Graf_status",
+  "GuideScan_specificity",
+  "CRISPOR_3MM_specificity", "CRISPOR_4MM_specificity", "CRISPOR_CFD_specificity",
+  "Num_0MM", "Num_1MM", "GuideScan_Num_2MM", "GuideScan_Num_3MM",
+  "GuideScan_offtarget_category", "CRISPOR_Num_0MM", "CRISPOR_Num_1MM",
+  "CRISPOR_Num_2MM", "CRISPOR_Num_3MM", "CRISPOR_Num_4MM",
+  "all22_SNP_IDs_vcf", "all22_SNP_AF_max_Kaviar",
+  "Locations_0MM", "Locations_1MM", "Sequences_1MM"
+)
+
+
 
 
 # Functions for selecting the 4sg guides to export ------------------------
@@ -29,7 +54,6 @@ sublibraries_short_names <- c(
 ReportProblematic <- function(are_top4_mat, CRISPR_df) {
   if (any(are_top4_mat[, "Are_problematic_top4"])) {
     problematic_IDs <- unique(CRISPR_df[["Combined_ID"]][are_top4_mat[, "Are_problematic_top4"]])
-    assign("delete_problematic_IDs", problematic_IDs, envir = globalenv())
     message(paste0(length(problematic_IDs), " genes had an invalid 4sg ",
                    "combination (3 or fewer guides, or 4 guides that shared ",
                    "identical subsequences of 8 bp or more!)"
@@ -57,12 +81,12 @@ CRISPRaAreTop4Mat <- function(CRISPRa_df) {
   have_non_homologous_guides <- rep.int(tapply(are_not_homologous, altTSS_IDs_fac, sum) >= 4, lengths(rank_splits))
 
   results_mat <- cbind(
-    "Are_chosen_4sg"       = are_valid_or_only_top4,
-    "Are_top4"             = are_top4,
-    "Are_problematic_top4" = are_valid_or_only_top4 & !(are_valid_top4),
-    "Have_complete_guides" = have_complete_guides,
-    "Have_spaced_guides"   = have_non_homologous_guides,
-    "Have_valid_guides"    = have_non_homologous_guides & have_complete_guides
+    "Are_chosen_4sg"             = are_valid_or_only_top4,
+    "Are_top4"                   = are_top4,
+    "Are_problematic_top4"       = are_valid_or_only_top4 & !(are_valid_top4),
+    "Have_complete_guides"       = have_complete_guides,
+    "Have_non_homologous_guides" = have_non_homologous_guides,
+    "Have_valid_guides"          = have_non_homologous_guides & have_complete_guides
   )
   ReportProblematic(results_mat, CRISPRa_df)
   return(results_mat)
@@ -86,7 +110,7 @@ CRISPRkoAreTop4Mat <- function(CRISPRko_df) {
   results_mat <- cbind(
     "Are_chosen_4sg"             = are_top4, # sic
     "Are_top4"                   = are_top4,
-    "Are_problematic_top4"       = are_top4 & !(are_spaced & have_complete_guides),
+    "Are_problematic_top4"       = are_top4 & !(are_not_homologous & have_complete_guides),
     "Have_complete_guides"       = have_complete_guides,
     "Have_non_homologous_guides" = have_non_homologous_guides,
     "Have_valid_guides"          = have_non_homologous_guides & have_complete_guides
@@ -105,34 +129,39 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat) {
 
   are_invalid_top4 <- top4_mat[, "Are_chosen_4sg"] & !(top4_mat[, "Have_valid_guides"])
 
-  problematic_df <- targeting_CRISPR_df[are_invalid_top4, ]
-  problematic_df <- data.frame(
-    problematic_df,
-    top4_mat[are_invalid_top4, c("Have_complete_guides", "Have_spaced_guides")],
-    "Are_protein_coding" = problematic_df[["Entrez_ID"]] %in% collected_entrez_IDs,
-    "Annotation_category" = collected_entrezs_df[["Category"]][match(problematic_df[["Entrez_ID"]], collected_entrezs_df[["Entrez_ID"]])],
-    stringsAsFactors = FALSE
-  )
+  if (any(are_invalid_top4)) {
+    problematic_df <- targeting_CRISPR_df[are_invalid_top4, ]
+    problematic_df <- data.frame(
+      problematic_df,
+      top4_mat[are_invalid_top4, c("Have_complete_guides", "Have_non_homologous_guides")],
+      "Are_protein_coding" = problematic_df[["Entrez_ID"]] %in% collected_entrez_IDs,
+      "Annotation_category" = collected_entrezs_df[["Category"]][match(problematic_df[["Entrez_ID"]], collected_entrezs_df[["Entrez_ID"]])],
+      stringsAsFactors = FALSE
+    )
 
-  show_columns <- c(
-    "Combined_ID",  "Entrez_ID", "Gene_symbol", "Original_symbol",
-    "Source",
-    "sgRNA_sequence", "PAM", "Cut_location", "Chromosome", "Entrez_chromosome",
-    "Num_0MM", "Num_1MM",
+    show_columns <- c(
+      "Combined_ID",  "Entrez_ID", "Gene_symbol", "Original_symbol",
+      "Source",
+      "sgRNA_sequence", "PAM", "Cut_location", "Chromosome", "Entrez_chromosome",
+      "Num_0MM", "Num_1MM",
 
-    "TSS_number", "Allocated_TSS", "Num_TSSs",
-    "TSS_ID", "AltTSS_ID",
-    "CRISPOR_3MM_specificity",
-    "Rank", "Best_combination_rank",
-    "Spacing", "Overlaps_tolerance", "Num_overlaps", "Original_rank",
-    "Have_complete_guides", "Have_spaced_guides",
-    "Are_protein_coding", "Annotation_category"
-  )
-  message(paste0("The following ", nrow(problematic_df), " guides were not ",
-                 "part of valid 4sg combinations and should be excluded!"
-                 )
-          )
-  print(problematic_df[, intersect(show_columns, colnames(problematic_df))])
+      "TSS_number", "Allocated_TSS", "Num_TSSs",
+      "TSS_ID", "AltTSS_ID",
+      "CRISPOR_3MM_specificity",
+      "Rank", "Best_combination_rank",
+      "Spacing", "Overlaps_tolerance", "Num_overlaps", "Original_rank",
+      "Have_complete_guides", "Have_non_homologous_guides",
+      "Are_protein_coding", "Annotation_category"
+    )
+    message(paste0("The following ", nrow(problematic_df), " guides were not ",
+                   "part of valid 4sg combinations and should be excluded!"
+                   )
+            )
+    print(problematic_df[, intersect(show_columns, colnames(problematic_df))])
+  } else {
+    message("Valid guides were found for all genes in the sgRNA dataframe!")
+    problematic_df <- NULL
+  }
   return(invisible(problematic_df))
 }
 
@@ -227,7 +256,7 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
     are_Brunello <- grepl("Brunello", CRISPR_df[["Source"]], fixed = TRUE)
     are_selected <- are_good_controls & are_Brunello
     CheckControlsNumber(are_selected, num_control_wells * 4)
-    chosen_sequences <- CRISPR_df[["sgRNA_sequence"]][are_selected]
+    chosen_sequences <- sample(CRISPR_df[["sgRNA_sequence"]][are_selected], num_control_wells * 4)
   } else {
     are_Doench <- grepl("Calabrese|Dolcetto", CRISPR_df[["Source"]])
     are_hCRISPR_v2 <- grepl("hCRISPR", CRISPR_df[["Source"]], fixed = TRUE)
@@ -275,14 +304,24 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
   results_df <- CRISPR_df
   results_df[["Control_group_4sg"]] <- NA_integer_
   results_df[["Control_group_4sg"]][are_good_controls][matches_vec] <- groups_vec
-
   return(results_df)
+}
+
+
+RenameControls <- function(CRISPR_df) {
+  stopifnot("Control_group_4sg" %in% colnames(CRISPR_df))
+  are_controls <- CRISPR_df[["Is_control"]] == "Yes"
+  are_chosen <- !(is.na(CRISPR_df[["Control_group_4sg"]]))
+  CRISPR_df[["Combined_ID"]] <- ifelse(are_controls,
+                                       ifelse(are_chosen, paste0("Control_", CRISPR_df[["Control_group_4sg"]]), "Control"),
+                                       CRISPR_df[["Combined_ID"]]
+                                       )
+  return(CRISPR_df)
 }
 
 
 
 AssignControlsToPlates <- function(CRISPR_df, num_wells_per_plate = 384L) {
-
   stopifnot("Control_group_4sg" %in% colnames(CRISPR_df))
 
   control_IDs_seq <- CRISPR_df[["Control_group_4sg"]]
@@ -304,10 +343,11 @@ AssignControlsToPlates <- function(CRISPR_df, num_wells_per_plate = 384L) {
       results_df[[column_name]] <- NA_integer_
     }
   }
-  control_matches <- match(control_IDs_seq[are_control_guides], wells_seq)
-  results_df[["Plate_number"]][are_control_guides] <- plates_vec[control_matches]
-  results_df[["Well_number"]][are_control_guides] <- wells_vec[control_matches]
+  control_indices <- unlist(lapply(wells_seq, function(x) which(control_IDs_seq[are_control_guides] == x)))
+  results_df[["Plate_number"]][are_control_guides][control_indices] <- rep(plates_vec, each = 4)
+  results_df[["Well_number"]][are_control_guides][control_indices] <- rep(wells_vec, each = 4)
   results_df[["Plate_ID"]][are_control_guides] <- paste0("Control_", results_df[["Plate_number"]][are_control_guides])
+  results_df[["Sublibrary_4sg"]][are_control_guides] <- "Controls"
   return(results_df)
 }
 
@@ -317,7 +357,6 @@ AssignControlsToPlates <- function(CRISPR_df, num_wells_per_plate = 384L) {
 # Functions for assigning guides to 384-well plates -----------------------
 
 AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plate = 384L) {
-  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
   stopifnot(length(unique(table(CRISPR_df[["Rank"]]))) == 1)
   if (randomize_order) {
     set.seed(1)
@@ -350,7 +389,6 @@ AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plat
     } else {
       are_eligible <- CRISPR_df[["Is_control"]] == "No"
     }
-    are_eligible <- are_eligible & (CRISPR_df[["Rank"]] %in% 1:4)
     CheckThatFactorIsInOrder(CRISPR_df[["ID_column"]][are_eligible])
     num_wells <- sum(are_eligible) / 4
     wells_seq <- seq_len(num_wells)
@@ -371,7 +409,6 @@ AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plat
   }
   results_df <- CRISPR_df
   if (use_sublibraries) {
-    assign("delete_CRISPR_df_33", CRISPR_df, envir = globalenv())
     short_sublibraries_fac <- CRISPR_df[["Sublibrary_4sg"]]
     levels(short_sublibraries_fac) <- sublibraries_short_names[levels(short_sublibraries_fac)]
     results_df[["Plate_ID"]] <- paste0(as.character(short_sublibraries_fac), "_", plates_vec)
@@ -395,17 +432,22 @@ AssignAllGuides <- function(CRISPR_df, sublibraries_entrezs_list, num_control_we
 
   controls_df <- CRISPR_df[!(is.na(CRISPR_df[["Control_group_4sg"]])), ]
   controls_df <- AssignControlsToPlates(controls_df)
+  controls_df <- RenameControls(controls_df)
 
   targeting_df <- CRISPR_df[CRISPR_df[["Entrez_ID"]] %in% unlist(sublibraries_entrezs_list, use.names = FALSE), ]
 
-  are_top4_mat <- CRISPRaAreTop4Mat(targeting_df)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  if (is_CRISPRko) {
+    are_top4_mat <- CRISPRkoAreTop4Mat(targeting_df)
+  } else {
+    are_top4_mat <- CRISPRaAreTop4Mat(targeting_df)
+  }
 
   ShowProblematicGuides(targeting_df, are_top4_mat)
 
   are_valid_chosen <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
 
   targeting_df <- targeting_df[are_valid_chosen, ]
-
   targeting_df <- AddSublibrary(targeting_df, sublibraries_entrezs_list)
   targeting_df <- AssignToPlates(targeting_df)
 
@@ -417,27 +459,62 @@ AssignAllGuides <- function(CRISPR_df, sublibraries_entrezs_list, num_control_we
 
   plate_IDs_vec <- results_df[["Plate_ID"]]
   new_order <- order(results_df[["Sublibrary_4sg"]],
-                     results_df[["Plate_number"]],
-                     results_df[["Well_number"]],
-                     results_df[["Rank"]]
+                     results_df[["Plate_number"]]
                      )
   plate_IDs_vec <- plate_IDs_vec[new_order]
   results_df[["Plate_ID"]] <- factor(results_df[["Plate_ID"]], levels = unique(plate_IDs_vec))
+
+
+  unique_IDs_vec <- paste0(as.character(results_df[["Plate_ID"]]), "__", results_df[["Well_number"]])
+  sequences_list <- split(toupper(results_df[["sgRNA_sequence"]]), unique_IDs_vec)
+  shared_subsequence_lengths <- vapply(sequences_list, LongestSharedSubsequence, integer(1))
+  if (any(shared_subsequence_lengths >= 8)) {
+    stop("Invalid 4sg combination found!")
+  } else {
+    message(paste0("The library did not contain any 4sg combinations that ",
+                   "shared subsequences >7bp in length."
+                   )
+            )
+  }
   if (reorder_df) {
-    results_df <- results_df[new_order, ]
-    are_controls <- results_df[["Is_control"]] == "Yes"
-    results_df[["Rank"]][are_controls] <- rep.int(1:4, sum(are_controls) / 4)
-    row.names(results_df) <- NULL
+    results_df <- ReorderPlates(results_df)
   }
   return(results_df)
 }
 
 
 
+ReorderPlates <- function(CRISPR_df) {
+  new_order <- order(CRISPR_df[["Sublibrary_4sg"]],
+                     CRISPR_df[["Plate_number"]],
+                     CRISPR_df[["Well_number"]],
+                     CRISPR_df[["Rank"]]
+                     )
+  CRISPR_df[["Original_index"]] <- seq_len(nrow(CRISPR_df))
+  CRISPR_df <- CRISPR_df[new_order, ]
+  are_controls <- CRISPR_df[["Is_control"]] == "Yes"
+  CRISPR_df[["Rank"]][are_controls] <- rep.int(1:4, sum(are_controls) / 4)
+  row.names(CRISPR_df) <- NULL
+  return(CRISPR_df)
+}
 
 
 
 
+# Functions for exporting the plate layouts -------------------------------
+
+ExportPlates <- function(export_df, file_name, sub_folder = "Final plate layout") {
+  use_columns <- intersect(export_columns, colnames(export_df))
+  remove_columns <- setdiff(colnames(export_df), use_columns)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(export_df)
+  if (!(is_CRISPRko)) {
+    remove_columns <- c(remove_columns, "CRISPOR_Graf_status")
+  }
+  DfToTSV(export_df[, union(use_columns, colnames(export_df))],
+          file_name = file.path(sub_folder, file_name),
+          add_primers = TRUE, remove_columns = remove_columns
+          )
+}
 
 
 
