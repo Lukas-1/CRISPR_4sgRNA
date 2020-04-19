@@ -194,7 +194,7 @@ TidyGPPOutputDf <- function(GPP_output_df, choose_columns) {
 
 
 
-FilterGPPOutputDf <- function(GPP_output_df, problematic_genes, n_unproblematic, n_problematic = NULL, min_n = 5) {
+FilterGPPOutputDf <- function(GPP_output_df, problematic_genes, n_unproblematic, n_problematic = NULL) {
   split_df_list <- split(GPP_output_df, GPP_output_df[["Target Gene ID"]])
   filtered_df_list <- lapply(split_df_list, function(x) {
     is_problematic <- x[["Target Gene ID"]][[1]] %in% problematic_genes
