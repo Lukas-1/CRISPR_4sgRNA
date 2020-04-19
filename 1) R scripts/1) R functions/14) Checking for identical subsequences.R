@@ -22,7 +22,7 @@ SplitIntoSubstrings <- function(string, substring_length = 8L) {
   if (nchar(string) <= substring_length) {
     return(string)
   } else {
-    start_positions <- seq_len(nchar(string) - substring_length)
+    start_positions <- seq_len(nchar(string) - substring_length + 1)
     stop_positions <- seq(substring_length, nchar(string))
     sub_strings <- substr(rep.int(string, length(start_positions)), start_positions, stop_positions)
     return(sub_strings)
@@ -104,6 +104,38 @@ CheckForIdenticalSubsequences <- function(CRISPR_df, substring_length = 8L, ID_c
 
 
 
+
+
+
+# Supplemental functions for interactive use ------------------------------
+
+RemovePolyT <- function(char_vec) {
+  are_poly_T <- grepl("TTTT", char_vec, ignore.case = TRUE)
+  num_poly_T <- sum(are_poly_T)
+  message(paste0(num_poly_T, " sequence",
+                 if (num_poly_T > 1) "s" else "",
+                 " containing a TTTT stretch ",
+                 if (num_poly_T > 1) "were" else "was",
+                 " removed."
+                 ))
+  return(char_vec[!(are_poly_T)])
+}
+
+
+FindMinimalOverlap <- function(char_vec, num_per_group = 4) {
+  combinations_mat <- combn(char_vec, num_per_group)
+  max_homology_vec <- apply(combinations_mat, 2, LongestSharedSubsequence)
+  results_df <- data.frame(max_homology_vec,
+                           t(combinations_mat),
+                           stringsAsFactors = FALSE
+                           )
+  colnames(results_df) <- c("Longest_substring",
+                            paste0("String_", seq_len(num_per_group))
+                            )
+  results_df <- results_df[order(results_df[["Longest_substring"]]), ]
+  rownames(results_df) <- NULL
+  return(results_df)
+}
 
 
 
