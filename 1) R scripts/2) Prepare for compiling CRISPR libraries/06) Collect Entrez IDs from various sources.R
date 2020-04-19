@@ -107,7 +107,6 @@ only_on_patches         <- SearchNCBIGene("only annotated on patches unit in ref
 
 
 
-
 # Integrate information on Entrez IDs -------------------------------------
 
 collected_entrez_IDs <- TidyEntrezs(union(NCBI_entrezs_vec, Ensembl_entrezs_vec))
