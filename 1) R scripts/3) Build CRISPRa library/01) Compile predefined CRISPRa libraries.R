@@ -41,6 +41,7 @@ hand_picked_CRISPRa_path         <- file.path(CRISPRa_datasets_directory, "Manua
 GPP_CRISPRa_path                 <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRa/GPP sgRNA designer/2) Output files")
 GPP_priority_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "1) High-priority")
 GPP_optional_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "2) Optional")
+GPP_semimanual_CRISPRa_path      <- file.path(GPP_CRISPRa_path, "3) Semi-manual")
 
 
 
@@ -70,7 +71,7 @@ first_trial_df <- read.table(file.path(gene_lists_directory, "Trial_genes.txt"),
 
 
 ### Read in the output from the GPP sgRNA designer tool
-GPP_CRISPRa_full_df <- ReadGPPOutputFiles(c(GPP_priority_CRISPRa_path, GPP_optional_CRISPRa_path))
+GPP_CRISPRa_full_df <- ReadGPPOutputFiles(c(GPP_priority_CRISPRa_path, GPP_optional_CRISPRa_path, GPP_semimanual_CRISPRa_path))
 
 
 

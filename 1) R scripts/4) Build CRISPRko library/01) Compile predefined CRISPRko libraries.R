@@ -19,26 +19,27 @@ source(file.path(general_functions_directory, "18) Using the Broad Institute's G
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory       <- "~/CRISPR"
-CRISPR_input_directory      <- file.path(CRISPR_root_directory, "2) Input data")
-RData_directory             <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory     <- file.path(RData_directory, "1) General")
-CRISPRko_RData_directory    <- file.path(RData_directory, "3) CRISPRko")
+CRISPR_root_directory        <- "~/CRISPR"
+CRISPR_input_directory       <- file.path(CRISPR_root_directory, "2) Input data")
+RData_directory              <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory      <- file.path(RData_directory, "1) General")
+CRISPRko_RData_directory     <- file.path(RData_directory, "3) CRISPRko")
 
-CRISPR_libraries_directory  <- file.path(CRISPR_input_directory, "CRISPR libraries")
-CRISPRko_datasets_directory <- file.path(CRISPR_libraries_directory, "CRISPRko")
+CRISPR_libraries_directory   <- file.path(CRISPR_input_directory, "CRISPR libraries")
+CRISPRko_datasets_directory  <- file.path(CRISPR_libraries_directory, "CRISPRko")
 
-CRISPRko_Brunello_path      <- file.path(CRISPRko_datasets_directory, "Brunello",
-                                         "2016 - Optimized sgRNA design to maximize activity and minimize off-target effects of CRISPR-Cas9 - Table S21 - Brunello.xlsx"
-                                         )
-CRISPRko_Brunello_2018_path <- file.path(CRISPRko_datasets_directory, "Brunello",
-                                         "2018 - Optimized libraries for CRISPR-Cas9 genetic screens with multiple modalities - Data S1.xlsx"
-                                         )
-CRISPRko_TKOv3_path         <- file.path(CRISPRko_datasets_directory, "TKOv3",  "tkov3_guide_sequence.xlsx")
+CRISPRko_Brunello_path       <- file.path(CRISPRko_datasets_directory, "Brunello",
+                                          "2016 - Optimized sgRNA design to maximize activity and minimize off-target effects of CRISPR-Cas9 - Table S21 - Brunello.xlsx"
+                                          )
+CRISPRko_Brunello_2018_path  <- file.path(CRISPRko_datasets_directory, "Brunello",
+                                          "2018 - Optimized libraries for CRISPR-Cas9 genetic screens with multiple modalities - Data S1.xlsx"
+                                          )
+CRISPRko_TKOv3_path          <- file.path(CRISPRko_datasets_directory, "TKOv3",  "tkov3_guide_sequence.xlsx")
 
-GPP_CRISPRko_path           <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRko/GPP sgRNA designer/2) Output files")
-GPP_priority_CRISPRko_path  <- file.path(GPP_CRISPRko_path, "1) High-priority")
-GPP_optional_CRISPRko_path  <- file.path(GPP_CRISPRko_path, "2) Optional")
+GPP_CRISPRko_path            <- file.path(CRISPR_root_directory, "4) Intermediate files/CRISPRko/GPP sgRNA designer/2) Output files")
+GPP_priority_CRISPRko_path   <- file.path(GPP_CRISPRko_path, "1) High-priority")
+GPP_optional_CRISPRko_path   <- file.path(GPP_CRISPRko_path, "2) Optional")
+GPP_semimanual_CRISPRko_path <- file.path(GPP_CRISPRko_path, "3) Semi-manual")
 
 
 
@@ -66,7 +67,7 @@ Brunello_2018_df <- data.frame(read_excel(CRISPRko_Brunello_2018_path, sheet = "
 
 TKOv3_df <- data.frame(read_excel(CRISPRko_TKOv3_path), stringsAsFactors = FALSE, check.names = FALSE)
 
-GPP_CRISPRko_full_df <- ReadGPPOutputFiles(c(GPP_priority_CRISPRko_path, GPP_optional_CRISPRko_path))
+GPP_CRISPRko_full_df <- ReadGPPOutputFiles(c(GPP_priority_CRISPRko_path, GPP_optional_CRISPRko_path, GPP_semimanual_CRISPRko_path))
 
 
 
