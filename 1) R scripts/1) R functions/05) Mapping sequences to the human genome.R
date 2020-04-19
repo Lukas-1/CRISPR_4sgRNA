@@ -120,7 +120,11 @@ FindVariableLengthSequences <- function(sequences_vec) {
 FindSequences <- function(sequences_vec) {
 
   num_sequences <- length(sequences_vec)
-  message(paste0("Looking for matches for ", num_sequences, " sequence", if (num_sequences > 1) "s" else "", " in the Hsapiens.UCSC.hg38 genome..."))
+  message(paste0("Looking for matches for ", num_sequences, " sequence",
+                 if (num_sequences > 1) "s" else "",
+                 " in the Hsapiens.UCSC.hg38 genome..."
+                 )
+          )
 
   harmonized_sequences <- HarmonizeSequenceLengths(sequences_vec)
   sequences_vec <- toupper(harmonized_sequences[["Truncated_sequences"]])
