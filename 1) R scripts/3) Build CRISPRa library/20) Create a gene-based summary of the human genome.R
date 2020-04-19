@@ -65,6 +65,14 @@ table((merged_replaced_CRISPRa_df[[preferred_AF_max_column]][were_mapped] > SNP_
 
 
 
+# Count the number of genes for which multiple TSSs are targeted ----------
+
+table(sgRNAs_overview_df[["Num_hCRISPR_v2_transcripts"]], useNA = "ifany")
+table(sgRNAs_overview_df[["Num_hCRISPR_v2_transcripts"]] > 1, useNA = "ifany")
+
+
+
+
 
 
 # Check for hCRISPRa-v2 TSSs that are not being targeted separately -------
