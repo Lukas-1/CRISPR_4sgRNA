@@ -50,7 +50,18 @@ chunks_list <- AppendIDsWithoutCanonicalEntrezs(entrez_chunks_list, merged_repla
 
 # Prepare data frames that can be exported to .bed files ------------------
 
-bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRi_df, chunks_list)
+# Further split the TF genes into two groups, because otherwise,
+# the disk space allocated to the CRISPOR virtual machine (25 gigabytes)
+# will be insufficient.
+chunks_TF_split_list <- c(
+  list(
+    "A1_TF" = chunks_list[[1]][1:818],
+    "A2_TF" = chunks_list[[1]][819:1636]
+  ),
+  chunks_list[2:length(chunks_list)]
+)
+
+bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRi_df, chunks_TF_split_list)
 
 
 
