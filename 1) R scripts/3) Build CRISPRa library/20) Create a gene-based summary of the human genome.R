@@ -112,10 +112,10 @@ untargetable_annotations <- c("Not protein-coding", "Only annotated on alternate
 are_targetable <- !(sgRNAs_overview_df[["Gene_annotation_status"]] %in% untargetable_annotations)
 
 WriteOverviewDfToDisk(sgRNAs_overview_df[, columns_for_excel],
-                      file_name = "Overview_CRISPRi_all_genes"
+                      file_name = "Overview_CRISPRa_all_genes"
                       )
 WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
-                      file_name = "Overview_CRISPRi_all_targetable_genes"
+                      file_name = "Overview_CRISPRa_all_targetable_genes"
                       )
 
 
