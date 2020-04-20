@@ -14,11 +14,12 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
-RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory <- file.path(RData_directory, "1) General")
-CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
-file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")
+CRISPR_root_directory       <- "~/CRISPR"
+RData_directory             <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory     <- file.path(RData_directory, "1) General")
+CRISPRa_RData_directory     <- file.path(RData_directory, "2) CRISPRa")
+file_output_directory       <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")
+previous_versions_directory <- file.path(RData_directory, "5) Previous versions of the library")
 
 
 
@@ -30,6 +31,7 @@ load(file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa librarie
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData"))
+load(file.path(previous_versions_directory, "01) CRISPRa transcription factor sub-library (1st version) - TF_v1_CRISPRa_df.RData"))
 
 
 
@@ -343,12 +345,8 @@ DfToTSV(merged_replaced_CRISPRa_df, "CRISPRa_all_genes_all_SNP_databases", remov
 
 # Write changed wells to disk ---------------------------------------------
 
-legacy_RData_directory <- "C:/Users/lukas/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/2) CRISPRa"
-load(file.path(legacy_RData_directory, "21) Allocate sgRNAs to plates.RData"))
-old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
-load(file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
-old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]
+old_TF_sgRNA_plates_df <- TF_v1_CRISPRa_df[TF_v1_CRISPRa_df[["Is_control"]] == "No", ]
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", selected_columns)]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_number", intersect(selected_columns, colnames(old_TF_sgRNA_plates_df)))]

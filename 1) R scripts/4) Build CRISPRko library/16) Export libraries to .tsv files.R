@@ -14,12 +14,12 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
-RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory  <- file.path(RData_directory, "1) General")
-CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
-file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko")
-
+CRISPR_root_directory       <- "~/CRISPR"
+RData_directory             <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory     <- file.path(RData_directory, "1) General")
+CRISPRko_RData_directory    <- file.path(RData_directory, "3) CRISPRko")
+file_output_directory       <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko")
+previous_versions_directory <- file.path(RData_directory, "5) Previous versions of the library")
 
 
 
@@ -30,6 +30,7 @@ load(file.path(general_RData_directory, "10) Compile genes that constitute the s
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData"))
+load(file.path(previous_versions_directory, "02) CRISPRko transcription factor sub-library (1st version) - TF_v1_CRISPRko_df.RData"))
 
 
 
@@ -177,13 +178,8 @@ DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
 # Write changed wells to disk ---------------------------------------------
 
-legacy_RData_directory <- "C:/Users/lukas/Desktop/Desktop/CRISPR_legacy_freeze/3) RData files/3) CRISPRko"
-load(file.path(legacy_RData_directory, "14) Allocate sgRNAs to plates.RData"))
-old_TF_sgRNA_plates_df <- TF_sgRNA_plates_df
-load(file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData"))
-
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
-old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[old_TF_sgRNA_plates_df[["Is_control"]] == "No", ]
+old_TF_sgRNA_plates_df <- TF_v1_CRISPRko_df[TF_v1_CRISPRko_df[["Is_control"]] == "No", ]
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
