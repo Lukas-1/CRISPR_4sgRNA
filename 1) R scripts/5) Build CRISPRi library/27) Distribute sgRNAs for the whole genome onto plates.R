@@ -38,6 +38,7 @@ load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submiss
 
 
 
+
 # Assign vacuolation sgRNAs to plates -------------------------------------
 
 are_vacuolation <- (merged_replaced_CRISPRi_df[["Combined_ID"]] %in% vacuolation_entrezs) |
@@ -47,15 +48,14 @@ vacuolation_CRISPRi_df <- merged_replaced_CRISPRi_df[are_vacuolation, ]
 
 
 
+
 # Add the control guides to vacuolation plate 2 ---------------------------
 
-vac_4sg_df <- AssignAllGuides(vacuolation_CRISPRi_df,
-                              list("Vacuolation" = vacuolation_entrezs),
-                              num_control_wells = 10,
-                              reorder_df = FALSE
-                              )
-
-
+vac_4sg_df <- AllocateAllGuidesToPlates(vacuolation_CRISPRi_df,
+                                        list("Vacuolation" = vacuolation_entrezs),
+                                        num_control_wells = 10,
+                                        reorder_df = FALSE
+                                        )
 
 
 
@@ -63,6 +63,7 @@ vac_4sg_df <- AssignAllGuides(vacuolation_CRISPRi_df,
 # Re-order the data frame according to the plate layout -------------------
 
 vac_4sg_reordered_df <- ReorderPlates(vac_4sg_df)
+
 
 
 

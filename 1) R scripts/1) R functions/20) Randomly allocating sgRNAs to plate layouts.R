@@ -8,6 +8,7 @@
 # Define maps -------------------------------------------------------------
 
 sublibraries_short_names <- c(
+  "Controls & changed TFs"            = "ChangedTF",
   "Transcription factors"             = "TF",
   "GPCRs"                             = "GPCR",
   "Secretome"                         = "Secretome",
@@ -153,7 +154,7 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat) {
       "Have_complete_guides", "Have_non_homologous_guides",
       "Are_protein_coding", "Annotation_category"
     )
-    message(paste0("The following ", nrow(problematic_df), " guides were not ",
+    message(paste0("\nThe following ", nrow(problematic_df), " guides were not ",
                    "part of valid 4sg combinations and should be excluded!"
                    )
             )
@@ -162,6 +163,28 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat) {
     message("Valid guides were found for all genes in the sgRNA dataframe!")
     problematic_df <- NULL
   }
+
+  are_valid_top4 <- top4_mat[, "Are_chosen_4sg"] & top4_mat[, "Have_valid_guides"]
+  num_unique_genes <- length(unique(targeting_CRISPR_df[["Entrez_ID"]][are_valid_top4]))
+  num_combos <- sum(are_valid_top4) / 4
+  show_message <- paste0("\nThe 4sg library targets ", num_unique_genes,
+                         " unique genes"
+                         )
+
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(targeting_CRISPR_df)
+  if (is_CRISPRko) {
+    stopifnot(num_unique_genes == num_combos)
+  } else {
+    num_unique_TSSs <- length(unique(targeting_CRISPR_df[["AltTSS_ID"]][are_valid_top4]))
+    stopifnot(num_unique_TSSs == num_combos)
+    show_message <- paste0(show_message, " and ", num_unique_TSSs, " unique ",
+                           "transcription start sites (TSSs)"
+                           )
+  }
+  show_message <- paste0(show_message, "!\n")
+  message(show_message)
+
+
   return(invisible(problematic_df))
 }
 
@@ -237,10 +260,12 @@ ShuffleProblematic <- function(control_combos_list, are_problematic) {
 }
 
 
-AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
+AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL, previously_used_controls = NULL, num_wells_per_plate = 384L) {
+  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
+  assign("delete_previously_used_controls", previously_used_controls, envir = globalenv())
   set.seed(1)
   if (is.null(num_control_wells)) {
-    num_control_wells <- 384L * 2L
+    num_control_wells <- num_wells_per_plate * 2L
     message(paste0(num_control_wells * 4, " guides for ", num_control_wells,
                    " control wells will be randomly selected."
                    )
@@ -251,6 +276,16 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
   are_duplicated <- duplicated(toupper(CRISPR_df[["sgRNA_sequence"]][are_good_controls]))
   if (any(are_duplicated)) {
     stop("Duplicated control sequences found!")
+  }
+  if (!(is.null(previously_used_controls))) {
+    are_previously_used <- toupper(CRISPR_df[["sgRNA_sequence"]][are_good_controls]) %in% toupper(previously_used_controls)
+    if (any(are_previously_used)) {
+      message(paste0(sum(are_previously_used), " previously used control ",
+                     "guide sequences were excluded."
+                     )
+              )
+    }
+    are_good_controls[are_previously_used] <- FALSE
   }
   if (is_CRISPRko) {
     are_Brunello <- grepl("Brunello", CRISPR_df[["Source"]], fixed = TRUE)
@@ -286,7 +321,7 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL) {
       num_tries <- num_tries + 1L
       message(paste0("Control guide groupings will be re-shuffled to resolve ",
                      "any remaining combinations that share subsequences ",
-                     "longer than 8 bp. Round ", num_tries, "..."
+                     "8 bp or longer. Round ", num_tries, "..."
                      )
               )
       controls_list <- ShuffleProblematic(controls_list, are_problematic)
@@ -316,6 +351,12 @@ RenameControls <- function(CRISPR_df) {
                                        ifelse(are_chosen, paste0("Control_", CRISPR_df[["Control_group_4sg"]]), "Control"),
                                        CRISPR_df[["Combined_ID"]]
                                        )
+  if ("AltTSS_ID" %in% colnames(CRISPR_df)) {
+    CRISPR_df[["AltTSS_ID"]] <- ifelse(are_controls,
+                                       CRISPR_df[["Combined_ID"]],
+                                       CRISPR_df[["AltTSS_ID"]]
+                                       )
+  }
   return(CRISPR_df)
 }
 
@@ -349,6 +390,23 @@ AssignControlsToPlates <- function(CRISPR_df, num_wells_per_plate = 384L) {
   results_df[["Plate_ID"]][are_control_guides] <- paste0("Control_", results_df[["Plate_number"]][are_control_guides])
   results_df[["Sublibrary_4sg"]][are_control_guides] <- "Controls"
   return(results_df)
+}
+
+
+ShuffleControlRanks <- function(CRISPR_df) {
+  set.seed(1)
+  control_groups_vec <- CRISPR_df[["Control_group_4sg"]]
+  are_controls <- !(is.na(control_groups_vec))
+  control_groups_vec <- control_groups_vec[are_controls]
+  stopifnot(all(table(control_groups_vec) == 4))
+  unique_groups <- unique(control_groups_vec)
+  ranks_vec <- rep(NA_integer_, length(control_groups_vec))
+  for (group in unique_groups) {
+    are_this_group <- control_groups_vec == group
+    ranks_vec[are_this_group] <- sample(1:4)
+  }
+  CRISPR_df[["Rank"]][are_controls] <- ranks_vec
+  return(CRISPR_df)
 }
 
 
@@ -422,17 +480,220 @@ AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plat
 
 
 
+RenumberPlatesContinuously <- function(CRISPR_df,
+                                       num_wells_per_plate = 384L,
+                                       start_at_plate_number = 1L
+                                       ) {
+  gene_or_TSS_IDs <- GetGeneOrTSSIDs(CRISPR_df)
+  stopifnot(all(table(gene_or_TSS_IDs) == 4))
+  total_num_wells <- nrow(CRISPR_df) / 4
+  total_num_plates <- ceiling(total_num_wells / num_wells_per_plate)
+  wells_seq <- seq_len(num_wells_per_plate)
+  plates_seq <- seq(from = start_at_plate_number,
+                    to = start_at_plate_number + total_num_plates - 1L
+                    )
+  total_seq <- seq_len(total_num_wells)
+  plates_vec <- rep(plates_seq, each = num_wells_per_plate)[total_seq]
+  wells_vec <- rep(wells_seq, times = total_num_plates)[total_seq]
+
+  results_df <- CRISPR_df
+  results_df[["Plate_number"]] <- rep(plates_vec, each = 4)
+  results_df[["Well_number"]] <- rep(wells_vec, each = 4)
+  results_df[["Plate_ID"]] <- NA_character_
+  return(results_df)
+}
+
+
+
+
+PlaceCandidateGenesTogether <- function(CRISPR_df, candidate_entrezs) {
+
+  CRISPR_df[["Is_candidate_gene"]] <- CRISPR_df[["Entrez_ID"]] %in% candidate_entrezs
+  sublibrary_df_list <- split(CRISPR_df, CRISPR_df[["Sublibrary_4sg"]])
+
+  sublibrary_reordered_df_list <- lapply(sublibrary_df_list, function(sub_df) {
+    assign("delete_sub_df", sub_df, envir = globalenv())
+    are_candidates <- sub_df[["Entrez_ID"]] %in% candidate_entrezs
+    if (any(are_candidates)) {
+      are_well_1 <- sub_df[["Well_number"]] %in% 1
+      first_well_index <- which(are_well_1)[[1]]
+
+      plate_layout_columns <- c("Plate_ID", "Plate_number", "Well_number")
+      other_columns <- setdiff(colnames(CRISPR_df), plate_layout_columns)
+      plate_layout_df <- sub_df[, plate_layout_columns]
+      data_df <- sub_df[, other_columns]
+
+      candidates_df <- data_df[are_candidates, ]
+      not_candidates_df <- data_df[!(are_candidates), ]
+
+      ## Notice that this assumes that there are not very many candidate genes,
+      ## so that we can start them on a "fresh" plate and still have space!
+      if (first_well_index == 1) {
+        preceding_indices <- c()
+        preceding_df <- NULL
+      } else {
+        preceding_indices <- seq_len(first_well_index - 1L)
+        preceding_df <- not_candidates_df[preceding_indices, ]
+      }
+      following_indices <- setdiff(seq_len(nrow(not_candidates_df)), preceding_indices)
+      following_df <- not_candidates_df[following_indices, ]
+
+      recombined_data_df <- rbind.data.frame(preceding_df,
+                                             candidates_df,
+                                             following_df,
+                                             stringsAsFactors = FALSE,
+                                             make.row.names = FALSE
+                                             )
+      recombined_df <- data.frame(recombined_data_df, plate_layout_df)
+      recombined_df <- recombined_df[, colnames(sub_df)]
+      return(recombined_df)
+    } else {
+      return(sub_df)
+    }
+  })
+
+  reordered_df <- do.call(rbind.data.frame,
+                          c(sublibrary_reordered_df_list,
+                            list(stringsAsFactors = FALSE,
+                                 make.row.names = FALSE
+                                 )
+                            )
+                          )
+
+  return(reordered_df)
+}
+
+
+
+
 
 # Functions that encapsulate the workflow for export ----------------------
 
-AssignAllGuides <- function(CRISPR_df, sublibraries_entrezs_list, num_control_wells = NULL, reorder_df = FALSE) {
+AllocateAllGuides_v2 <- function(CRISPR_df,
+                                 sublibraries_entrezs_list,
+                                 previous_version_CRISPR_df,
+                                 candidate_entrezs,
+                                 num_control_wells        = 96L,
+                                 num_wells_per_plate      = 384L
+                                 ) {
+
+  ## Preserve the original order
+
+  CRISPR_df[["Original_index"]] <- seq_len(nrow(CRISPR_df))
+
+
+  ## Choose control guides
+
+  are_previous_controls <- previous_version_CRISPR_df[["Is_control"]] == "Yes"
+  previous_control_sequences <- previous_version_CRISPR_df[["sgRNA_sequence"]][are_previous_controls]
+
+  CRISPR_df <- AddRandomized4sgControls(CRISPR_df,
+                                        num_control_wells = 96,
+                                        previously_used_controls = previous_control_sequences,
+                                        num_wells_per_plate = num_wells_per_plate
+                                        )
+  controls_df <- CRISPR_df[!(is.na(CRISPR_df[["Control_group_4sg"]])), ]
+  controls_df <- AssignControlsToPlates(controls_df, num_wells_per_plate = num_wells_per_plate)
+  controls_df <- RenameControls(controls_df)
+  controls_df <- ShuffleControlRanks(controls_df)
+  controls_df <- ReorderPlates(controls_df)
+  controls_df[["Is_candidate_gene"]] <- FALSE
+
+
+  ## Choose targeting guides
+
+  targeting_df <- CRISPR_df[CRISPR_df[["Entrez_ID"]] %in% unlist(sublibraries_entrezs_list, use.names = FALSE), ]
+  message("")
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  if (is_CRISPRko) {
+    are_top4_mat <- CRISPRkoAreTop4Mat(targeting_df)
+  } else {
+    are_top4_mat <- CRISPRaAreTop4Mat(targeting_df)
+  }
+  ShowProblematicGuides(targeting_df, are_top4_mat)
+
+  are_valid_chosen <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
+  targeting_df <- targeting_df[are_valid_chosen, ]
+  targeting_df <- AddSublibrary(targeting_df, sublibraries_entrezs_list)
+  targeting_df <- AssignToPlates(targeting_df, num_wells_per_plate = num_wells_per_plate)
+  targeting_df <- ReorderPlates(targeting_df)
+
+
+  ## Find genes that change (compared to version 1.0 of the TF library)
+
+  are_TFs <- targeting_df[["Sublibrary_4sg"]] %in% "Transcription factors"
+  new_TF_df <- targeting_df[are_TFs, ]
+  old_TF_df <- previous_version_CRISPR_df[!(are_previous_controls), ]
+
+  new_TF_IDs <- Get4sgIDs(new_TF_df)
+  old_TF_IDs <- Get4sgIDs(old_TF_df)
+
+  changed_new_TF_IDs <- setdiff(new_TF_IDs, old_TF_IDs)
+  changed_entrez_IDs <- unique(new_TF_df[["Entrez_ID"]][new_TF_IDs %in% changed_new_TF_IDs])
+  changed_TF_df <- new_TF_df[new_TF_df[["Entrez_ID"]] %in% changed_entrez_IDs, ]
+
+  changed_TF_df <- RenumberPlatesContinuously(changed_TF_df)
+  reordered_changed_TF_df <- PlaceCandidateGenesTogether(changed_TF_df, PD_4sg_entrezs)
+
+
+  ## Define the first plate ("5+")
+
+  assign("delete_controls_df", controls_df, envir = globalenv())
+  assign("delete_reordered_changed_TF_df", reordered_changed_TF_df, envir = globalenv())
+
+  first_plate_df <- rbind.data.frame(controls_df,
+                                     reordered_changed_TF_df,
+                                     stringsAsFactors = FALSE,
+                                     make.row.names = FALSE
+                                     )
+  stopifnot((nrow(first_plate_df) / 4) < num_wells_per_plate)
+
+
+  ## Define the other plates
+
+  other_plates_df <- targeting_df[!(are_TFs), ]
+
+
+  ## Combine all the plates
+
+  levels(other_plates_df[["Sublibrary_4sg"]])[[1]] <- "Controls & changed TFs"
+  first_plate_df[["Sublibrary_4sg"]] <- "Controls & changed TFs"
+  first_plate_df[["Sublibrary_4sg"]] <- factor(first_plate_df[["Sublibrary_4sg"]],
+                                               levels = levels(other_plates_df[["Sublibrary_4sg"]])
+                                               )
+  assign("delete_first_plate_df", first_plate_df, envir = globalenv())
+  first_plate_df <- RenumberPlatesContinuously(first_plate_df)
+  other_plates_df <- RenumberPlatesContinuously(other_plates_df, start_at_plate_number = 6)
+
+  reordered_other_plates_df <- PlaceCandidateGenesTogether(other_plates_df, PD_4sg_entrezs)
+
+  all_plates_df <- rbind.data.frame(first_plate_df,
+                                    reordered_other_plates_df,
+                                    stringsAsFactors = FALSE,
+                                    make.row.names = FALSE
+                                    )
+
+  ## Check for shared subsequences 8bp or more in length
+  all_plates_df[["Plate_ID"]] <- all_plates_df[["Plate_number"]]
+  CheckForSharedSubsequences(all_plates_df)
+
+  all_plates_df[["Plate_ID"]] <- NULL
+
+  return(all_plates_df)
+}
+
+
+
+
+
+AllocateAllGuidesToPlates <- function(CRISPR_df, sublibraries_entrezs_list, num_control_wells = NULL, reorder_df = FALSE) {
 
   CRISPR_df <- AddRandomized4sgControls(CRISPR_df, num_control_wells = num_control_wells)
-  CRISPR_df <- AssignControlsToPlates(CRISPR_df)
 
   controls_df <- CRISPR_df[!(is.na(CRISPR_df[["Control_group_4sg"]])), ]
   controls_df <- AssignControlsToPlates(controls_df)
   controls_df <- RenameControls(controls_df)
+  controls_df <- ShuffleControlRanks(controls_df)
 
   targeting_df <- CRISPR_df[CRISPR_df[["Entrez_ID"]] %in% unlist(sublibraries_entrezs_list, use.names = FALSE), ]
 
@@ -464,9 +725,30 @@ AssignAllGuides <- function(CRISPR_df, sublibraries_entrezs_list, num_control_we
   plate_IDs_vec <- plate_IDs_vec[new_order]
   results_df[["Plate_ID"]] <- factor(results_df[["Plate_ID"]], levels = unique(plate_IDs_vec))
 
+  CheckForSharedSubsequences(results_df, check_gene_IDs = FALSE)
+  if (reorder_df) {
+    results_df <- ReorderPlates(results_df)
+  }
+  return(results_df)
+}
 
-  unique_IDs_vec <- paste0(as.character(results_df[["Plate_ID"]]), "__", results_df[["Well_number"]])
-  sequences_list <- split(toupper(results_df[["sgRNA_sequence"]]), unique_IDs_vec)
+
+
+
+CheckForSharedSubsequences <- function(CRISPR_df, check_gene_IDs = TRUE) {
+  assign("delete_CRISPR_df_sss", CRISPR_df, envir = globalenv())
+
+  unique_IDs_vec <- paste0(as.character(CRISPR_df[["Plate_ID"]]), "__", CRISPR_df[["Well_number"]])
+  unique_IDs_fac <- factor(unique_IDs_vec, levels = unique(unique_IDs_vec))
+
+  sequences_vec <- toupper(CRISPR_df[["sgRNA_sequence"]])
+  sequences_list <- split(sequences_vec, unique_IDs_fac)
+
+  if (check_gene_IDs) {
+    gene_or_TSS_fac <- GetGeneOrTSSIDs(CRISPR_df)
+    stopifnot(identical(unname(sequences_list), unname(split(sequences_vec, gene_or_TSS_fac))))
+  }
+
   shared_subsequence_lengths <- vapply(sequences_list, LongestSharedSubsequence, integer(1))
   if (any(shared_subsequence_lengths >= 8)) {
     stop("Invalid 4sg combination found!")
@@ -476,11 +758,11 @@ AssignAllGuides <- function(CRISPR_df, sublibraries_entrezs_list, num_control_we
                    )
             )
   }
-  if (reorder_df) {
-    results_df <- ReorderPlates(results_df)
-  }
-  return(results_df)
+  return(invisible(NULL))
 }
+
+
+
 
 
 
@@ -490,12 +772,18 @@ ReorderPlates <- function(CRISPR_df) {
                      CRISPR_df[["Well_number"]],
                      CRISPR_df[["Rank"]]
                      )
-  CRISPR_df[["Original_index"]] <- seq_len(nrow(CRISPR_df))
   CRISPR_df <- CRISPR_df[new_order, ]
-  are_controls <- CRISPR_df[["Is_control"]] == "Yes"
-  CRISPR_df[["Rank"]][are_controls] <- rep.int(1:4, sum(are_controls) / 4)
   row.names(CRISPR_df) <- NULL
   return(CRISPR_df)
+}
+
+
+
+
+RestoreOriginalOrder <- function(CRISPR_df) {
+  results_df <- CRISPR_df[order(CRISPR_df[["Original_index"]]), ]
+  rownames(results_df) <- NULL
+  return(results_df)
 }
 
 
@@ -515,6 +803,41 @@ ExportPlates <- function(export_df, file_name, sub_folder = "Final plate layout"
           add_primers = TRUE, remove_columns = remove_columns
           )
 }
+
+
+
+
+
+
+# Functions for examining different versions of the library ---------------
+
+GetGeneOrTSSIDs <- function(CRISPR_df) {
+  stopifnot(length(unique(table(CRISPR_df[["Rank"]]))) == 1)
+  if ("AltTSS_ID" %in% colnames(CRISPR_df)) {
+    gene_or_TSS_IDs <- CRISPR_df[["AltTSS_ID"]]
+  } else {
+    gene_or_TSS_IDs <- CRISPR_df[["Combined_ID"]]
+  }
+  gene_or_TSS_IDs_fac <- factor(gene_or_TSS_IDs,
+                                levels = unique(gene_or_TSS_IDs)
+                                )
+  CheckThatFactorIsInOrder(gene_or_TSS_IDs_fac)
+  return(gene_or_TSS_IDs_fac)
+}
+
+
+Get4sgIDs <- function(CRISPR_df) {
+  gene_or_TSS_IDs_fac <- GetGeneOrTSSIDs(CRISPR_df)
+  sgRNAs_list <- split(toupper(CRISPR_df[["sgRNA_sequence"]]),
+                       gene_or_TSS_IDs_fac
+                       )
+  sgRNAs_vec <- vapply(sgRNAs_list, paste0, collapse = "_", "")
+  foursg_IDs <- paste0(as.character(gene_or_TSS_IDs_fac), "__",
+                       rep.int(sgRNAs_vec, lengths(sgRNAs_list))
+                       )
+  return(foursg_IDs)
+}
+
 
 
 
