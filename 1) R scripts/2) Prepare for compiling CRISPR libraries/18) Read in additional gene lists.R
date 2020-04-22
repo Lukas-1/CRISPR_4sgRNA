@@ -46,21 +46,28 @@ PD_candidates_df <- data.frame(read_excel(PD_path), stringsAsFactors = FALSE)
 PD_mapped_df <- MapToEntrezs(symbols_vec = PD_candidates_df[[1]])
 
 
+## Manually assign ambiguous Entrez IDs
+are_ambiguous <- grepl(",", PD_mapped_df[["Entrez_ID"]], fixed = TRUE)
+PD_mapped_df[are_ambiguous, ]
+PD_entrezs_vec <- PD_mapped_df[["Entrez_ID"]]
+PD_entrezs_vec[[which(are_ambiguous & (PD_mapped_df[["Original_symbol"]] %in% "QARS"))]] <- "5859"
+
+
 ## Identify genes that are unavailable in our library
-are_missing <- is.na(PD_mapped_df[["Entrez_ID"]])
-are_not_protein_coding <- PD_mapped_df[["Entrez_ID"]] %in% collected_entrez_IDs
-are_not_included <- PD_mapped_df[["Entrez_ID"]] %in% unlist(sublibraries_all_entrezs_list)
+are_missing <- is.na(PD_entrezs_vec)
+are_protein_coding <- PD_entrezs_vec %in% collected_entrez_IDs
+are_included <- PD_entrezs_vec %in% unlist(sublibraries_all_entrezs_list)
 
 
 ## Examine missing genes
-identical(are_not_protein_coding, are_not_included)
+identical(are_protein_coding, are_included)
 table(are_missing)
-table(are_not_included)
+table(are_included)
 
 
 ## Define gene lists
-PD_all_entrezs <- PD_mapped_df[["Entrez_ID"]][!(are_missing)]
-PD_4sg_entrezs <- PD_mapped_df[["Entrez_ID"]][!(are_not_included)]
+PD_all_entrezs <- PD_entrezs_vec[!(are_missing)]
+PD_4sg_entrezs <- PD_entrezs_vec[are_included]
 
 
 
