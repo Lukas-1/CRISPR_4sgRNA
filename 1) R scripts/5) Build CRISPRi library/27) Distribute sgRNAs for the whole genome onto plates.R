@@ -100,4 +100,13 @@ for (i in 1:4) {
 
 
 
+# Save data ---------------------------------------------------------------
+
+save(list = c("vac_4sg_df", "vac_4sg_reordered_df"),
+     file = file.path(CRISPRi_RData_directory, "27) Distribute sgRNAs for the whole genome onto plates.RData")
+     )
+
+
+
+
 

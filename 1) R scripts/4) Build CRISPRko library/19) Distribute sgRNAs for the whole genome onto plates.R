@@ -69,6 +69,16 @@ for (i in 1:4) {
 
 
 
+# Save data ---------------------------------------------------------------
+
+save(list = c("sg4_df", "sg4_reordered_df"),
+     file = file.path(CRISPRko_RData_directory, "19) Distribute sgRNAs for the whole genome onto plates.RData")
+     )
+
+
+
+
+
 
 
 
