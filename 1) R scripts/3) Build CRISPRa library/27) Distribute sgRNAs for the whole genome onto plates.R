@@ -61,7 +61,7 @@ ExportPlates(sg4_reordered_df, "All_sublibraries_reordered")
 
 for (i in 1:4) {
   use_df <- sg4_reordered_df[sg4_reordered_df[["Rank"]] %in% i, ]
-  ExportPlates(use_df, paste0("4sg_reordered_sg", i))
+  ExportPlates(use_df, paste0("4sg_reordered_sg", i), add_padding_between_plates = TRUE)
 }
 
 

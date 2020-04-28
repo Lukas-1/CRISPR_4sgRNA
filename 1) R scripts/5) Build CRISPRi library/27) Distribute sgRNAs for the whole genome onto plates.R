@@ -57,6 +57,8 @@ vac_4sg_df <- AllocateAllGuidesToPlates(vacuolation_CRISPRi_df,
                                         reorder_df = FALSE
                                         )
 
+vac_4sg_df <- AssignPlateStrings(vac_4sg_df, use_prefix = "vac")
+
 
 
 
@@ -91,7 +93,11 @@ ExportPlates(vac_4sg_reordered_df, "Vacuolation_4sg_reordered", sub_folder = "Pl
 
 for (i in 1:4) {
   use_df <- vac_4sg_reordered_df[vac_4sg_reordered_df[["Rank"]] %in% i, ]
-  ExportPlates(use_df, paste0("Vacuolation_4sg_reordered_sg", i), sub_folder = "Plate layouts")
+  ExportPlates(use_df,
+               paste0("Vacuolation_4sg_reordered_sg", i),
+               sub_folder = "Plate layouts",
+               add_padding_between_plates = TRUE
+               )
 }
 
 

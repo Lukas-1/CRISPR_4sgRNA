@@ -24,7 +24,7 @@ sublibraries_short_names <- c(
 
 
 export_columns <- c(
-  "Sublibrary_4sg", "Plate_number", "Well_number",
+  "Sublibrary_4sg", "Plate_string", "Well_number",
   "Entrez_ID", "Entrez_overlapping_0MM",
   "Gene_symbol", "Symbol_overlapping_0MM", "Original_symbol",
   "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP",
@@ -569,6 +569,72 @@ PlaceCandidateGenesTogether <- function(CRISPR_df, candidate_entrezs) {
 
 # Functions that encapsulate the workflow for export ----------------------
 
+MakeMiscPlate <- function(CRISPR_df, num_wells_per_plate = 384L) {
+
+  sublibrary_vec <- as.character(CRISPR_df[["Sublibrary_4sg"]])
+  are_TF_or_controls <- sublibrary_vec == "Controls & changed TFs"
+  are_controls <- CRISPR_df[["Is_control"]][are_TF_or_controls] == "Yes"
+  sublibrary_vec[are_TF_or_controls][are_controls] <- "Misc / controls"
+  sublibrary_vec[are_TF_or_controls][!(are_controls)] <- "Misc / changed TFs"
+
+  first_plate_number <- unique(CRISPR_df[["Plate_number"]][are_TF_or_controls])
+  stopifnot(length(first_plate_number) == 1)
+  last_plate_number <- max(CRISPR_df[["Plate_number"]])
+  are_last_plate <- CRISPR_df[["Plate_number"]] == last_plate_number
+
+  last_plate_is_misc <- ((sum(are_TF_or_controls) + sum(are_last_plate)) / 4) <= num_wells_per_plate
+
+  results_df <- CRISPR_df
+  results_df[["Sublibrary_4sg"]] <- sublibrary_vec
+
+  if (last_plate_is_misc) {
+
+    are_other_plates <- !(are_TF_or_controls | are_last_plate)
+
+    stopifnot(all(results_df[["Sublibrary_4sg"]][are_last_plate] == "Unassigned"))
+    results_df[["Sublibrary_4sg"]][are_last_plate] <- "Misc / unassigned"
+
+    new_first_plate_df <- rbind.data.frame(results_df[are_TF_or_controls, ],
+                                           results_df[are_last_plate, ],
+                                           make.row.names = FALSE,
+                                           stringsAsFactors = FALSE
+                                           )
+    new_first_plate_df <- RenumberPlatesContinuously(new_first_plate_df)
+    new_first_plate_df[["Plate_ID"]] <- NULL
+    results_df <- rbind.data.frame(new_first_plate_df,
+                                   results_df[are_other_plates, ],
+                                   make.row.names = FALSE,
+                                   stringsAsFactors = FALSE
+                                   )
+  }
+  return(results_df)
+}
+
+
+
+AssignPlateStrings <- function(CRISPR_df, use_prefix = "h") {
+  unique_plate_numbers <- sort(unique(CRISPR_df[["Plate_number"]]))
+  plates_vec <- as.character(CRISPR_df[["Plate_number"]])
+  if ((unique_plate_numbers[[1]] == 1) && (unique_plate_numbers[[2]] == 6)) {
+    plates_vec[CRISPR_df[["Plate_number"]] == 1] <- "5+"
+  }
+  if ("Entrez_source_Brunello" %in% colnames(CRISPR_df)) {
+    modality_string <- "o"
+  } else if ("Entrez_source_Calabrese" %in% colnames(CRISPR_df)) {
+    modality_string <- "a"
+  } else if ("Entrez_source_Dolcetto" %in% colnames(CRISPR_df)) {
+    modality_string <- "i"
+  }
+  plates_vec <- paste0(use_prefix, modality_string, "_", plates_vec,
+                       "_sg", CRISPR_df[["Rank"]]
+                       )
+  CRISPR_df[["Plate_string"]] <- plates_vec
+  return(CRISPR_df)
+}
+
+
+
+
 AllocateAllGuides_v2 <- function(CRISPR_df,
                                  sublibraries_entrezs_list,
                                  previous_version_CRISPR_df,
@@ -679,6 +745,9 @@ AllocateAllGuides_v2 <- function(CRISPR_df,
 
   all_plates_df[["Plate_ID"]] <- NULL
 
+  all_plates_df <- MakeMiscPlate(all_plates_df)
+  all_plates_df <- AssignPlateStrings(all_plates_df)
+
   return(all_plates_df)
 }
 
@@ -763,9 +832,6 @@ CheckForSharedSubsequences <- function(CRISPR_df, check_gene_IDs = TRUE) {
 
 
 
-
-
-
 ReorderPlates <- function(CRISPR_df) {
   new_order <- order(CRISPR_df[["Sublibrary_4sg"]],
                      CRISPR_df[["Plate_number"]],
@@ -791,16 +857,24 @@ RestoreOriginalOrder <- function(CRISPR_df) {
 
 # Functions for exporting the plate layouts -------------------------------
 
-ExportPlates <- function(export_df, file_name, sub_folder = "Final plate layout") {
+ExportPlates <- function(export_df,
+                         file_name,
+                         sub_folder = "Final plate layout",
+                         add_padding_between_plates = FALSE
+                         ) {
   use_columns <- intersect(export_columns, colnames(export_df))
   remove_columns <- setdiff(colnames(export_df), use_columns)
   is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(export_df)
   if (!(is_CRISPRko)) {
     remove_columns <- c(remove_columns, "CRISPOR_Graf_status")
   }
+  if (length(unique(export_df[["Rank"]])) == 1) {
+    remove_columns <- c(remove_columns, "Rank")
+  }
   DfToTSV(export_df[, union(use_columns, colnames(export_df))],
           file_name = file.path(sub_folder, file_name),
-          add_primers = TRUE, remove_columns = remove_columns
+          add_primers = TRUE, remove_columns = remove_columns,
+          add_padding_between_plates = add_padding_between_plates
           )
 }
 
