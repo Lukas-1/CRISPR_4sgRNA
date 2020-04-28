@@ -59,12 +59,13 @@ RoundNumericColumns <- function(my_df, num_digits = 7) {
 
 
 FormatForExcel <- function(my_df,
-                           remove_columns            = NULL,
-                           probability_to_percentage = FALSE,
-                           convert_excluded_to_3     = TRUE,
-                           convert_controls_to_4     = TRUE,
-                           add_primers               = FALSE,
-                           allow_curated             = FALSE
+                           remove_columns             = NULL,
+                           probability_to_percentage  = FALSE,
+                           convert_excluded_to_3      = TRUE,
+                           convert_controls_to_4      = TRUE,
+                           add_primers                = FALSE,
+                           allow_curated              = FALSE,
+                           add_padding_between_plates = FALSE
                            ) {
   # Requires the object 'source_abbreviations_vec' in the global environment
 
@@ -159,8 +160,9 @@ FormatForExcel <- function(my_df,
   }
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[["Combined_ID"]])
+
   assign("delete_my_df", my_df, envir = globalenv())
-  assign("delete_ones_and_zeros_vec", ones_and_zeros_vec, envir = globalenv())
+  assign("delete_first_ones_and_zeros_vec", ones_and_zeros_vec, envir = globalenv())
   if (convert_excluded_to_3) {
     are_to_be_excluded <- !(MeetCriteria(my_df, allow_curated = allow_curated))
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
@@ -219,10 +221,6 @@ FormatForExcel <- function(my_df,
     my_df[["CRISPOR_Graf_status"]] <- ifelse(my_df[["CRISPOR_Graf_status"]] == "GrafOK", "OK", my_df[["CRISPOR_Graf_status"]])
   }
 
-  if (!(is.null(remove_columns))) {
-    my_df <- my_df[, !(names(my_df) %in% remove_columns)]
-  }
-
   SNP_ID_column <- grep("_SNP_IDs_", names(my_df), fixed = TRUE)
   SNP_AF_column <- grep("_SNP_AF_(max|sum)_", names(my_df))
   if ((length(SNP_ID_column) == 1) && (length(SNP_AF_column) == 1)) {
@@ -241,17 +239,9 @@ FormatForExcel <- function(my_df,
       my_df[[column_index]] <- ifelse(is.na(my_df[[column_index]]), NA_character_, paste0(my_df[[column_index]] * 100, "%"))
     }
   }
-  for (i in seq_len((ncol(my_df) - 6))) {
-    my_df[[i]] <- ifelse(is.na(my_df[[i]]), "", as.character(my_df[[i]]))
-  }
   my_df[["Locations_0MM"]] <- TruncateLongEntries(my_df[["Locations_0MM"]])
-  my_df <- AbbreviateColumns(my_df)
-  for (i in (ncol(my_df) - 5):ncol(my_df)) {
-    my_df[[i]] <- ifelse(is.na(my_df[[i]]), " ", as.character(my_df[[i]]))
-  }
 
   have_multiple_sources <- grepl(", ", my_df[["Source"]], fixed = TRUE)
-
   for (source in names(source_abbreviations_vec)) {
     my_df[["Source"]][have_multiple_sources] <- sub(source,
                                                     source_abbreviations_vec[[source]],
@@ -266,10 +256,30 @@ FormatForExcel <- function(my_df,
                                 )
   }
 
-  assign("delete_my_df", my_df, envir = globalenv())
-  assign("delete_ones_and_zeros_vec", ones_and_zeros_vec, envir = globalenv())
-
   my_df[["Color"]] <- ones_and_zeros_vec + 1L
+
+  assign("delete_my_df_9348", my_df, envir = globalenv())
+  assign("delete_remove_columns", remove_columns, envir = globalenv())
+  assign("delete_add_padding_between_plates", add_padding_between_plates, envir = globalenv())
+
+  if (add_padding_between_plates) {
+    my_df <- AddPaddingToPlates(my_df)
+    my_df[["Color"]][is.na(my_df[["Color"]])] <- 5L
+  }
+
+  if (!(is.null(remove_columns))) {
+    my_df <- my_df[, !(names(my_df) %in% remove_columns)]
+  }
+  for (i in seq_len((ncol(my_df) - 6))) {
+    my_df[[i]] <- ifelse(is.na(my_df[[i]]), "", as.character(my_df[[i]]))
+  }
+  for (i in (ncol(my_df) - 5):ncol(my_df)) {
+    my_df[[i]] <- ifelse(is.na(my_df[[i]]), " ", as.character(my_df[[i]]))
+  }
+
+  assign("delete_my_df", my_df, envir = globalenv())
+  assign("delete_ones_and_zeros_vec_99", ones_and_zeros_vec, envir = globalenv())
+
   return(my_df)
 }
 
@@ -277,11 +287,20 @@ FormatForExcel <- function(my_df,
 
 
 
-DfToTSV <- function(CRISPR_df, file_name, remove_columns = full_omit_columns, probability_to_percentage = FALSE,
-                    add_primers = FALSE, allow_curated = FALSE
+DfToTSV <- function(CRISPR_df,
+                    file_name,
+                    remove_columns             = full_omit_columns,
+                    probability_to_percentage  = FALSE,
+                    add_primers                = FALSE,
+                    allow_curated              = FALSE,
+                    add_padding_between_plates = FALSE
                     ) {
-  formatted_df <- FormatForExcel(CRISPR_df, remove_columns = remove_columns, probability_to_percentage = probability_to_percentage,
-                                 add_primers = add_primers, allow_curated = allow_curated
+  formatted_df <- FormatForExcel(CRISPR_df,
+                                 remove_columns             = remove_columns,
+                                 probability_to_percentage  = probability_to_percentage,
+                                 add_primers                = add_primers,
+                                 allow_curated              = allow_curated,
+                                 add_padding_between_plates = add_padding_between_plates
                                  )
   # Requires the objects 'full_omit_columns' and 'file_output_directory' in the global environment
   write.table(formatted_df,
@@ -293,22 +312,21 @@ DfToTSV <- function(CRISPR_df, file_name, remove_columns = full_omit_columns, pr
 
 
 
-AbbreviateColumns <- function(CRISPR_df) {
-  for (column_name in c("Locations_0MM", "Locations_1MM", "Sequences_1MM")) {
-    my_lengths <- lengths(strsplit(CRISPR_df[[column_name]], "; ", fixed = TRUE))
-    max_entries <- 10
-    are_too_long <- my_lengths > max_entries
-    if (any(are_too_long)) {
-      CRISPR_df[[column_name]][are_too_long] <- "too long"
-      message(paste0(sum(are_too_long), " rows in the ",
-                     column_name, " column were omitted, because they were too long (>",
-                     max_entries, " entries)."
-                     )
-              )
-    }
-  }
-  return(CRISPR_df)
-}
+# AbbreviateColumns <- function(CRISPR_df, max_entries = 10) {
+#   for (column_name in c("Locations_0MM", "Locations_1MM", "Sequences_1MM")) {
+#     my_lengths <- lengths(strsplit(CRISPR_df[[column_name]], "; ", fixed = TRUE))
+#     are_too_long <- my_lengths > max_entries
+#     if (any(are_too_long)) {
+#       CRISPR_df[[column_name]][are_too_long] <- "too long"
+#       message(paste0(sum(are_too_long), " rows in the ",
+#                      column_name, " column were omitted, because they were too long (>",
+#                      max_entries, " entries)."
+#                      )
+#               )
+#     }
+#   }
+#   return(CRISPR_df)
+# }
 
 
 primer_sequences <- list(
@@ -339,6 +357,28 @@ FormatFixedWidthInteger <- function(integer_vec) {
   result <- formatC(integer_vec, width = integer_width, flag = "0")
   return(result)
 }
+
+
+
+
+AddPaddingToPlates <- function(CRISPR_df) {
+  stopifnot("Plate_number" %in% colnames(CRISPR_df))
+  CheckThatFactorIsInOrder(CRISPR_df[["Plate_number"]])
+  padding_mat <- matrix(nrow = 10, ncol = ncol(CRISPR_df), dimnames = list(NULL, colnames(CRISPR_df)))
+  CRISPR_plates_df_list <- split(CRISPR_df, CRISPR_df[["Plate_number"]])
+  num_plates <- length(CRISPR_plates_df_list)
+  use_seq <- seq_len(num_plates - 1)
+  CRISPR_plates_df_list <- c(unlist(lapply(use_seq, function(x) list(CRISPR_plates_df_list[[x]], padding_mat)),
+                                    use.names = FALSE, recursive = FALSE
+                                    ),
+                             CRISPR_plates_df_list[num_plates]
+                             )
+  results_df <- do.call(rbind.data.frame, c(CRISPR_plates_df_list, list(make.row.names = FALSE, stringsAsFactors = FALSE)))
+  return(results_df)
+}
+
+
+
 
 
 
