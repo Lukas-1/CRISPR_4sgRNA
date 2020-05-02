@@ -73,6 +73,35 @@ BreakIntoChunks <- function(UseFunction, CRISPR_df, combined_IDs_list) {
 }
 
 
+BreakIntoManageableChunks <- function(old_df_list, max_num_rows, UseFunction, CRISPR_df, combined_IDs_list) {
+  stopifnot(identical(length(old_df_list), length(combined_IDs_list)))
+  are_too_long <- vapply(old_df_list, nrow, integer(1)) > max_num_rows
+  split_combined_IDs_list <- lapply(seq_along(combined_IDs_list), function(x) {
+    chunk_name <- names(combined_IDs_list)[[x]]
+    if (are_too_long[[x]]) {
+      if (chunk_name == "A_TF") {
+        split_chunk_names <- c("A1_TF", "A2_TF")
+      } else {
+        split_chunk_names <- paste0(chunk_name, 1:2)
+      }
+      num_genes <- length(combined_IDs_list[[x]])
+      first_half <- ceiling(num_genes / 2)
+      result_list <- list(
+        combined_IDs_list[[x]][seq_len(first_half)],
+        combined_IDs_list[[x]][(first_half + 1):num_genes]
+      )
+      names(result_list) <- split_chunk_names
+    } else {
+      result_list <- list(combined_IDs_list[[x]])
+      names(result_list) <- chunk_name
+    }
+    return(result_list)
+  })
+  split_combined_IDs_list <- unlist(split_combined_IDs_list, recursive = FALSE)
+  BreakIntoChunks(UseFunction, CRISPR_df, split_combined_IDs_list)
+}
+
+
 
 PAMorOriginalPAM <- function(CRISPR_df) {
   assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())

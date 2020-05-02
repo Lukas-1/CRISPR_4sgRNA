@@ -61,7 +61,8 @@ chunks_TF_split_list <- c(
   chunks_list[2:length(chunks_list)]
 )
 
-bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRi_df, chunks_TF_split_list)
+bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRi_df, chunks_list)
+bed_df_list <- BreakIntoManageableChunks(bed_df_list, 80050L, MakeBedDf, merged_replaced_CRISPRi_df, chunks_list)
 
 
 
