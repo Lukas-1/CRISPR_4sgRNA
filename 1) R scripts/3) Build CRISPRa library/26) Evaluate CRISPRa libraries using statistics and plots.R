@@ -54,30 +54,8 @@ BarPlot_Sources(merged_replaced_CRISPRa_df,
 
 BarPlot_Sources(merged_replaced_CRISPRa_df, "Are_overlapping")
 BarPlot_Sources(merged_replaced_CRISPRa_df, "Have_homologies")
+BarPlot_Sources(merged_replaced_CRISPRa_df, "Deviation_from_TSS_window")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Try stuff ---------------------------------------------------------------
 
 
 ViolinBox_Sources(merged_replaced_CRISPRa_df,
@@ -86,11 +64,6 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
                   "filter_complete_genes"  = FALSE,
                   "filter_complete_scores" = FALSE
                   )
-
-
-
-
-BarPlot_Sources(merged_replaced_CRISPRa_df, "Deviation_from_TSS_window")
 
 ViolinBox_Sources(merged_replaced_CRISPRa_df,
                   "GuideScan_specificity",
@@ -120,8 +93,6 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 # merged_replaced_CRISPRa_df[are_this_ID, show_columns]
 #
 #
-#
-# goo
 #
 # CRISPR_df <- merged_replaced_CRISPRa_df
 # CRISPR_df <- FilterCRISPRDf(CRISPR_df)
@@ -163,8 +134,6 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 
 # # Try stuff ---------------------------------------------------------------
 #
-# goo
-#
 # ViolinBox_Sources(merged_replaced_CRISPRa_df, "GuideScan_specificity",
 #                   aggregate_scores = TRUE
 #                   )
@@ -185,7 +154,6 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 #
 #
 # SourcesBoxPlots(merged_replaced_CRISPRa_df)
-# goo
 #
 #
 # ViolinBox_Sources(merged_replaced_CRISPRa_df, "GuideScan_specificity", show_sublibraries = FALSE, filter_top4 = FALSE)
@@ -199,8 +167,6 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 # ViolinBox_Sources(merged_replaced_CRISPRa_df, "GuideScan_specificity", show_sublibraries = TRUE, filter_top4 = TRUE)
 #
 #
-# coo
-#
 # SourcesBoxPlots(merged_replaced_CRISPRa_df)
 #
 #
@@ -213,14 +179,12 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 #
 #
 #
-# goo
 #
 # filtered_df <- FilterCRISPRDf(merged_replaced_CRISPRa_df)
 # expanded_df <- OriginalSubgroupsDf(filtered_df, "GuideScan_specificity")
 #
 # nrow(filtered_df); nrow(expanded_df)
 #
-# goo
 
 
 
