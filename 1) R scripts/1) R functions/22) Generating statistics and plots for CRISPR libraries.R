@@ -4,6 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
+library("png")
 library("vioplot")
 library("eulerr")
 library("gridExtra")
@@ -478,6 +479,7 @@ ExpandedSubgroupsDf <- function(CRISPR_df, collapse_GPP = FALSE, show_rest_v_4sg
     stringsAsFactors = FALSE
   )
   results_df <- rbind.data.frame(plot_df, top4_df, make.row.names = FALSE, stringsAsFactors = FALSE)
+
   return(results_df)
 }
 
@@ -733,7 +735,13 @@ MutuallyExclusiveSubgroupsDf <- function(CRISPR_df, use_column) {
 
 
 
-SourcesSubgroupLabels <- function(plot_df, x_positions, colors_df, show_sublibraries = TRUE, show_rest_v_4sg = FALSE, extra_space = FALSE) {
+SourcesSubgroupLabels <- function(plot_df,
+                                  x_positions,
+                                  colors_df,
+                                  show_sublibraries = TRUE,
+                                  show_rest_v_4sg   = FALSE,
+                                  extra_space       = FALSE
+                                  ) {
 
   ## Draw the group labels
   if (extra_space) {
@@ -750,7 +758,7 @@ SourcesSubgroupLabels <- function(plot_df, x_positions, colors_df, show_sublibra
     }
   } else {
     if (extra_space) {
-      second_line_factor <- 0.12
+      second_line_factor <- 0.09
     } else {
       second_line_factor <- 0.06
     }
@@ -941,10 +949,11 @@ GetAxisLimits <- function(numeric_vec, column_name = NULL, provide_other_limits 
 
 
 DrawViolinGridAndAxes <- function(y_column,
-                                  show_title       = TRUE,
-                                  aggregate_scores = aggregate_scores,
-                                  title_cex        = 0.9,
-                                  title_line       = 1.3
+                                  show_title            = TRUE,
+                                  aggregate_scores      = aggregate_scores,
+                                  title_cex             = 0.9,
+                                  title_line            = 1.3,
+                                  no_outside_annotation = FALSE
                                   ) {
   tick_locations <- axTicks(2)
   tick_distance <- tick_locations[[2]] - tick_locations[[1]]
@@ -966,29 +975,32 @@ DrawViolinGridAndAxes <- function(y_column,
   }
   abline(h = ticks_for_grid, col = "gray90", lwd = 0.5)
 
-  tick_labels <- format(tick_locations)
-  if ((y_column == "Deviation_from_TSS_window") && (tick_labels[[length(tick_labels)]] == "1000")) {
-    tick_labels <- sapply(tick_labels, as.expression)
-    tick_labels[[length(tick_labels)]] <- bquote("" >= 1000)
+  if (!(no_outside_annotation)) {
+    tick_labels <- format(tick_locations)
+    if ((y_column == "Deviation_from_TSS_window") && (tick_labels[[length(tick_labels)]] == "1000")) {
+      tick_labels <- sapply(tick_labels, as.expression)
+      tick_labels[[length(tick_labels)]] <- bquote("" >= 1000)
+    }
+    if (grepl("SNP", y_column, fixed = TRUE)) {
+      tick_labels <- paste0(tick_labels, "%")
+    }
+    axis(2,
+         labels   = tick_labels,
+         at       = tick_locations,
+         las      = 1,
+         mgp      = c(3, 0.45, 0),
+         tcl      = -0.3,
+         cex.axis = 0.8,
+         lwd      = 0.75
+         )
   }
-  if (grepl("SNP", y_column, fixed = TRUE)) {
-    tick_labels <- paste0(tick_labels, "%")
-  }
-  axis(2,
-       labels   = tick_labels,
-       at       = tick_locations,
-       las      = 1,
-       mgp      = c(3, 0.45, 0),
-       tcl      = -0.3,
-       cex.axis = 0.8,
-       lwd      = 0.75
-       )
+
   title_text <- numeric_column_labels[[y_column]]
   if (aggregate_scores) {
     title_text <- paste0("Aggregate ", title_text)
   }
-  if (show_title) {
-    title(title_text, cex.main = title_cex, line = 1.3)
+  if (show_title && !(no_outside_annotation)) {
+    title(title_text, cex.main = title_cex, line = title_line)
   }
   return(invisible(title_text))
 }
@@ -1001,11 +1013,14 @@ PlotViolin <- function(plot_df,
                        x_limits,
                        colors_df,
                        y_column_name,
-                       show_title         = TRUE,
-                       large_count_labels = FALSE,
-                       aggregate_scores   = FALSE,
-                       title_cex          = 0.9,
-                       title_line         = 1.3
+                       show_title            = TRUE,
+                       large_count_labels    = FALSE,
+                       aggregate_scores      = FALSE,
+                       title_cex             = 0.9,
+                       title_line            = 1.3,
+                       no_outside_annotation = FALSE,
+                       use_raster_array      = NULL,
+                       point_cex             = 0.5
                        ) {
 
   assign("delete_plot_df",       plot_df,       envir = globalenv())
@@ -1027,84 +1042,104 @@ PlotViolin <- function(plot_df,
        ann  = FALSE
        )
   title_text <- DrawViolinGridAndAxes(y_column_name,
-                                      show_title       = show_title,
-                                      aggregate_scores = aggregate_scores,
-                                      title_cex        = title_cex,
-                                      title_line       = title_line
+                                      show_title            = show_title,
+                                      aggregate_scores      = aggregate_scores,
+                                      title_cex             = title_cex,
+                                      title_line            = title_line,
+                                      no_outside_annotation = no_outside_annotation
                                       )
 
-  set.seed(1)
-  jittered_vec <- x_positions[as.integer(plot_df[["Groups_factor"]])] +
-                  rnorm(n = nrow(plot_df), mean = 0, sd = 0.03)
-  points_alpha <- 0.1
-  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+  if (is.null(use_raster_array)) {
 
-  ## Draw the violin plots
-  vioplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
-          add      = TRUE,
-          at       = x_positions,
-          pchMed   = NA,
-          drawRect = FALSE,
-          col      = colors_df[["Medium"]],
-          border   = NA,
-          wex      = 0.75,
-          axes     = FALSE
-          )
+    set.seed(1)
+    jittered_vec <- x_positions[as.integer(plot_df[["Groups_factor"]])] +
+                    rnorm(n = nrow(plot_df), mean = 0, sd = 0.03)
+    points_alpha <- 0.1
+    alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
 
-  ## Draw the jittered points
-  points(x   = jittered_vec,
-         y   = plot_df[["Numeric_data"]],
-         cex = 0.5,
-         col = paste0(plot_df[["Point_colors"]], alpha_hex),
-         pch = 16
-         )
+    ## Draw the violin plots
+    vioplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
+            add      = TRUE,
+            at       = x_positions,
+            pchMed   = NA,
+            drawRect = FALSE,
+            col      = colors_df[["Medium"]],
+            border   = NA,
+            wex      = 0.75,
+            axes     = FALSE
+            )
 
-  ## Draw the superimposed boxplots
-  boxplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
-          add       = TRUE,
-          at        = x_positions,
-          cex       = 0.2,
-          boxwex    = 0.275,
-          outline   = FALSE,
-          names     = rep.int("", length(x_positions)),
-          whisklty  = "blank",
-          staplewex = 0,
-          whisklwd  = 0,
-          staplelty = 0,
-          col       = colors_df[["Pale"]],
-          border    = colors_df[["Dark"]],
-          axes      = FALSE,
-          lwd       = 0.75
-          )
+    ## Draw the jittered points
+    points(x   = jittered_vec,
+           y   = plot_df[["Numeric_data"]],
+           cex = point_cex * par("cex"),
+           col = paste0(plot_df[["Point_colors"]], alpha_hex),
+           pch = 16
+           )
 
-  box(xpd = NA, lwd = 0.75)
-
-  ## Draw the subgroup numbers
-  plot_height <- par("usr")[[4]] - par("usr")[[3]]
-
-  if (large_count_labels) {
-    count_plot_fraction <- 0.0275
-    count_cex <- 0.7
+    ## Draw the superimposed boxplots
+    boxplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
+            add       = TRUE,
+            at        = x_positions,
+            cex       = 0.2,
+            boxwex    = 0.275,
+            outline   = FALSE,
+            names     = rep.int("", length(x_positions)),
+            whisklty  = "blank",
+            staplewex = 0,
+            whisklwd  = 0,
+            staplelty = 0,
+            col       = colors_df[["Pale"]],
+            border    = colors_df[["Dark"]],
+            axes      = FALSE,
+            lwd       = 0.75
+            )
   } else {
-    count_plot_fraction <- 0.0125
-    count_cex <- 0.5
+    rasterImage(use_raster_array,
+                xleft = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+                )
   }
 
-  text(x      = x_positions,
-       y      = par("usr")[[3]] - (plot_height * count_plot_fraction),
-       labels = table(plot_df[["Groups_factor"]][!(is.na(plot_df[["Numeric_data"]]))]),
-       adj    = c(0.5, 1),
-       cex    = count_cex,
-       col    = "gray40",
-       xpd    = NA
-       )
+  if (!(no_outside_annotation)) {
+    box(xpd = NA, lwd = 0.75)
+  }
+
+  ## Draw the subgroup numbers
+
+  if (!(no_outside_annotation)) {
+    plot_height <- par("usr")[[4]] - par("usr")[[3]]
+
+    if (large_count_labels) {
+      count_plot_fraction <- 0.0275
+      count_cex <- 0.7
+    } else {
+      count_plot_fraction <- 0.0125
+      count_cex <- 0.5
+    }
+
+    text(x      = x_positions,
+         y      = par("usr")[[3]] - (plot_height * count_plot_fraction),
+         labels = table(plot_df[["Groups_factor"]][!(is.na(plot_df[["Numeric_data"]]))]),
+         adj    = c(0.5, 1),
+         cex    = count_cex,
+         col    = "gray40",
+         xpd    = NA
+         )
+  }
 
   return(invisible(title_text))
 }
 
 
 
-ViolinBox_UniqueTwoGroups <- function(CRISPR_df, y_column, show_title = TRUE) {
+ViolinBox_UniqueTwoGroups <- function(CRISPR_df,
+                                      y_column,
+                                      show_title            = TRUE,
+                                      no_outside_annotation = FALSE,
+                                      use_raster_array      = NULL,
+                                      point_cex             = 0.5
+                                      ) {
 
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), y_column)
 
@@ -1129,25 +1164,35 @@ ViolinBox_UniqueTwoGroups <- function(CRISPR_df, y_column, show_title = TRUE) {
   x_positions <- 1:2
   num_groups <- 2
   x_limits <- c(0.5 - (num_groups * 0.04), num_groups + 0.5 + (num_groups * 0.04))
-  old_mar <- par(mar = c(5, 4, 3.3, 0.2) + 0.1)
-  title_text <- PlotViolin(plot_df, x_positions, x_limits, colors_df, y_column, show_title = show_title)
+  if (no_outside_annotation) {
+    old_mar <- par(mai = rep(0, 4))
+  } else {
+    old_mar <- par(mai = (c(1, 0.8, 0.66, 0.04) + 0.02) * 0.66)
+  }
 
+  title_text <- PlotViolin(plot_df, x_positions, x_limits, colors_df,
+                           y_column, show_title = show_title,
+                           no_outside_annotation = no_outside_annotation,
+                           use_raster_array = use_raster_array,
+                           point_cex = point_cex
+                           )
 
   ## Draw the group labels
-  old_lheight <- par("lheight" = 1.15)
-  text(x      = x_positions,
-       y      = par("usr")[[3]] - ((par("usr")[[4]] - par("usr")[[3]]) * 0.085),
-       labels = c("Rest", "4sg"),
-       adj    = c(0.5, 1),
-       cex    = 0.9,
-       col    =  "black",
-       font   = 2,
-       xpd    = NA
-       )
-  par(old_lheight)
+  if (!(no_outside_annotation)) {
+    old_lheight <- par("lheight" = 1.15)
+    text(x      = x_positions,
+         y      = par("usr")[[3]] - ((par("usr")[[4]] - par("usr")[[3]]) * 0.085),
+         labels = c("Rest", "4sg"),
+         adj    = c(0.5, 1),
+         cex    = 0.9,
+         col    =  "black",
+         font   = 2,
+         xpd    = NA
+         )
+    par(old_lheight)
+  }
 
   ## Final steps
-  box(xpd = NA, lwd = 0.75)
   par(old_mar)
   results_list <- list("plot_df" = plot_df, "title_text" = title_text)
   return(invisible(results_list))
@@ -1155,27 +1200,156 @@ ViolinBox_UniqueTwoGroups <- function(CRISPR_df, y_column, show_title = TRUE) {
 
 
 
-### Delete this!!
 
-# CRISPR_df <- merged_CRISPRko_df
-# y_column <- "GuideScan_specificity"
-# show_rest_v_4sg        = FALSE
-# aggregate_scores       = TRUE
-# show_sublibraries      = !(show_rest_v_4sg || aggregate_scores)
-# filter_top4            = aggregate_scores
-# filter_complete_genes  = FALSE
-# filter_complete_scores = FALSE
-# collapse_GPP           = filter_top4
-#
-# CRISPR_df              <- merged_replaced_CRISPRa_df
-# y_column               <- "Deviation_from_TSS_window"
-# aggregate_scores       = FALSE
-# filter_top4            = aggregate_scores
-# show_sublibraries      = FALSE
-# filter_complete_genes  = FALSE
-# filter_complete_scores = FALSE
-# show_rest_v_4sg        = FALSE
-# collapse_GPP           = aggregate_scores
+
+
+ViolinBox_UniqueLibraries <- function(CRISPR_df,
+                                      y_column,
+                                      show_title            = TRUE,
+                                      no_outside_annotation = FALSE,
+                                      use_raster_array      = NULL,
+                                      point_cex             = 0.5
+                                      ) {
+
+  CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), y_column)
+
+  plot_df <- MutuallyExclusiveSubgroupsDf(CRISPR_df, y_column)
+
+  num_subgroups <- nlevels(plot_df[["Subgroup"]])
+
+
+  ## Draw the violins
+  colors_df <- SubgroupColorsDf()
+
+  plot_df[["Point_colors"]] <- rep(colors_df[["Dark"]], as.integer(table(plot_df[["Subgroup"]])))
+  plot_df[["Groups_factor"]] <- plot_df[["Subgroup"]]
+  plot_df[["Numeric_data"]] <- plot_df[["Data"]]
+
+  x_positions <- seq_len(num_subgroups) + (rep_len(c(1, -1), length.out = num_subgroups) * 0.18)
+  x_limits <- c(0.85 - (num_subgroups * 0.04), num_subgroups + 0.15 + (num_subgroups * 0.04))
+  if (no_outside_annotation) {
+    old_mar <- par(mai = rep(0, 4))
+  } else {
+    old_mar <- par(mai = (c(1, 0.8, 0.66, 0.6) + 0.02) * 0.66)
+  }
+
+  title_text <- PlotViolin(plot_df, x_positions, x_limits, colors_df,
+                           y_column, show_title = show_title,
+                           no_outside_annotation = no_outside_annotation,
+                           use_raster_array = use_raster_array,
+                           point_cex = point_cex
+                           )
+
+
+  ## Draw the group labels
+  if (!(no_outside_annotation)) {
+    UniqueSequencesSubgroupLabels(plot_df, x_positions, colors_df, extra_space = TRUE)
+  }
+
+  ## Final steps
+  par(old_mar)
+  results_list <- list("plot_df" = plot_df, "title_text" = title_text)
+  return(invisible(results_list))
+}
+
+
+
+
+UniquePointsBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
+
+  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  if (is_CRISPRko) {
+    numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
+  }
+
+  main_folder_path <- file.path(output_plots_directory, "Box plots - A) unique points")
+
+  for (make_PDF in c(FALSE, TRUE)) {
+    if (make_PDF) {
+      pdf(file = file.path(main_folder_path, "Box plots - A) unique points.pdf"),
+          width = pdf_width, height = pdf_height
+          )
+    }
+    for (y_column in names(numeric_column_labels)) {
+
+      if (make_PDF && embed_raster_within_PDFs) {
+        PDF_device <- dev.cur()
+        temp_left_path <- file.path(main_folder_path, "temp_left.png")
+        temp_right_path <- file.path(main_folder_path, "temp_right.png")
+
+        left_width_fraction <- layout_widths[[1]] / sum(layout_widths)
+        right_width_fraction <- layout_widths[[2]] / sum(layout_widths)
+        height_fraction  <- layout_heights[[2]] / sum(layout_heights)
+
+        temp_left_width <- pdf_width * left_width_fraction - (0.88 * 0.66)
+        temp_right_width <- pdf_width * right_width_fraction - (1.44 * 0.66)
+        temp_height <- pdf_height * height_fraction - (1.7 * 0.66)
+
+        png(file = temp_left_path,
+            width = temp_left_width, height = temp_height,
+            units = "in", res = 600
+            )
+        ViolinBox_UniqueTwoGroups(CRISPR_df, y_column, show_title = FALSE,
+                                  no_outside_annotation = TRUE,
+                                  point_cex = 0.4
+                                  )
+        dev.off()
+
+        png(file = temp_right_path,
+            width = temp_right_width, height = temp_height,
+            units = "in", res = 600
+            )
+        ViolinBox_UniqueLibraries(CRISPR_df, y_column, show_title = FALSE,
+                                  no_outside_annotation = TRUE,
+                                  point_cex = 0.4
+                                  )
+        dev.off()
+
+        left_raster_array <- readPNG(temp_left_path)
+        right_raster_array <- readPNG(temp_right_path)
+
+        file.remove(temp_left_path)
+        file.remove(temp_right_path)
+
+        dev.set(PDF_device)
+
+        layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
+        ViolinBox_UniqueTwoGroups(CRISPR_df, y_column, show_title = FALSE,
+                                  use_raster_array = left_raster_array
+                                  )
+        ViolinBox_results <- ViolinBox_UniqueLibraries(CRISPR_df, y_column, show_title = FALSE,
+                                                       use_raster_array = right_raster_array
+                                                       )
+        OuterTitleForLayout(ViolinBox_results[["title_text"]], extra_space = TRUE)
+        layout(1)
+
+      } else {
+        layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
+        ViolinBox_UniqueTwoGroups(CRISPR_df, y_column, show_title = FALSE)
+        ViolinBox_results <- ViolinBox_UniqueLibraries(CRISPR_df, y_column, show_title = FALSE)
+        OuterTitleForLayout(ViolinBox_results[["title_text"]], extra_space = TRUE)
+        layout(1)
+      }
+    }
+    if (make_PDF) {
+      dev.off()
+    }
+  }
+  numeric_seq <- seq_along(numeric_column_labels)
+  file_numbers <- FormatFixedWidthInteger(numeric_seq)
+  for (i in seq_along(numeric_column_labels)) {
+    file_name <- paste0(file_numbers[[i]], ") ", names(numeric_column_labels)[[i]])
+    png(file = file.path(main_folder_path, "PNGs", paste0("Box plots - ", file_name, ".png")),
+        width = pdf_width, height = pdf_height - 0.14, units = "in", res = 600
+        )
+    layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
+    ViolinBox_UniqueTwoGroups(CRISPR_df, names(numeric_column_labels)[[i]], show_title = FALSE)
+    ViolinBox_results <- ViolinBox_UniqueLibraries(CRISPR_df, names(numeric_column_labels)[[i]], show_title = FALSE)
+    OuterTitleForLayout(ViolinBox_results[["title_text"]])
+    dev.off()
+  }
+}
+
 
 
 
@@ -1189,7 +1363,9 @@ ViolinBox_Sources <- function(CRISPR_df,
                               filter_top4            = aggregate_scores,
                               filter_complete_genes  = TRUE,
                               filter_complete_scores = TRUE,
-                              collapse_GPP           = filter_top4
+                              collapse_GPP           = filter_top4,
+                              no_outside_annotation  = FALSE,
+                              use_raster_array       = NULL
                               ) {
 
   if (show_sublibraries && show_rest_v_4sg) {
@@ -1228,11 +1404,14 @@ ViolinBox_Sources <- function(CRISPR_df,
                           show_sublibraries      = show_sublibraries
                           )
   }
-  assign("delete_plot_df", plot_df, envir = globalenv())
   colors_df <- FilterOriginalColorsDf(SubgroupColorsDf(), plot_df, show_rest_v_4sg = show_rest_v_4sg)
 
-  plot_df <- plot_df[, c("Combined_ID", "Entrez_ID", "Gene_symbol", "Group", "Subgroup", y_column)]
-
+  plot_df_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Group", "Subgroup")
+  if (!(aggregate_scores)) {
+    plot_df_columns <- c(plot_df_columns, "sgRNA_sequence")
+  }
+  plot_df_columns <- c(plot_df_columns, y_column)
+  plot_df <- plot_df[, plot_df_columns]
 
   if (show_sublibraries || show_rest_v_4sg) {
     plot_df[["Groups_factor"]] <- droplevels(interaction(plot_df[["Group"]], plot_df[["Subgroup"]], lex.order = TRUE))
@@ -1271,20 +1450,29 @@ ViolinBox_Sources <- function(CRISPR_df,
                 )
 
   ## Draw the violins
-  old_mar <- par(mar = c(4.4, 4, 3.5, 3) + 0.1)
+  if (no_outside_annotation) {
+    old_mar <- par(mar = rep(0, 4))
+  } else {
+    old_mar <- par(mar = c(4.4, 4, 3.5, 3) + 0.1)
+  }
   PlotViolin(plot_df, x_positions, x_limits, colors_df, y_column,
              aggregate_scores = aggregate_scores,
-             title_cex = 0.8, title_line = 1.5
+             title_cex = 0.8, title_line = 1.55,
+             no_outside_annotation = no_outside_annotation,
+             use_raster_array = use_raster_array
              )
 
-  SourcesSubgroupLabels(plot_df, x_positions, colors_df,
-                        show_sublibraries = show_sublibraries,
-                        show_rest_v_4sg = show_rest_v_4sg, extra_space = TRUE
-                        )
+  if (!(no_outside_annotation)) {
+    SourcesSubgroupLabels(plot_df, x_positions, colors_df,
+                          show_sublibraries = show_sublibraries,
+                          show_rest_v_4sg = show_rest_v_4sg,
+                          extra_space = TRUE
+                          )
+  }
 
   ## Final steps
   par(old_mar)
-  return(invisible(NULL))
+  return(invisible(plot_df))
 }
 
 
@@ -1292,83 +1480,8 @@ ViolinBox_Sources <- function(CRISPR_df,
 
 
 
-ViolinBox_UniqueLibraries <- function(CRISPR_df, y_column, show_title = TRUE) {
 
-  CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), y_column)
-
-  plot_df <- MutuallyExclusiveSubgroupsDf(CRISPR_df, y_column)
-
-  num_subgroups <- nlevels(plot_df[["Subgroup"]])
-
-
-  ## Draw the violins
-  colors_df <- SubgroupColorsDf()
-
-  plot_df[["Point_colors"]] <- rep(colors_df[["Dark"]], as.integer(table(plot_df[["Subgroup"]])))
-  plot_df[["Groups_factor"]] <- plot_df[["Subgroup"]]
-  plot_df[["Numeric_data"]] <- plot_df[["Data"]]
-
-  x_positions <- seq_len(num_subgroups) + (rep_len(c(1, -1), length.out = num_subgroups) * 0.18)
-  x_limits <- c(0.85 - (num_subgroups * 0.04), num_subgroups + 0.15 + (num_subgroups * 0.04))
-  old_mar <- par(mar = c(5, 4, 3.3, 3) + 0.1)
-  title_text <- PlotViolin(plot_df, x_positions, x_limits, colors_df, y_column, show_title = show_title)
-
-
-  ## Draw the group labels
-  UniqueSequencesSubgroupLabels(plot_df, x_positions, colors_df, extra_space = TRUE)
-
-
-  ## Final steps
-  par(old_mar)
-  results_list <- list("plot_df" = plot_df, "title_text" = title_text)
-  return(invisible(results_list))
-}
-
-
-
-
-UniquePointsBoxPlots <- function(CRISPR_df) {
-
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
-  if (is_CRISPRko) {
-    numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
-  }
-
-  for (make_PDF in c(FALSE, TRUE)) {
-    if (make_PDF) {
-      pdf(file = file.path(output_plots_directory, "Box plots - A) unique points.pdf"),
-          width = pdf_width, height = pdf_height
-          )
-    }
-    for (y_column in names(numeric_column_labels)) {
-      layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
-      ViolinBox_UniqueTwoGroups(CRISPR_df, y_column, show_title = FALSE)
-      ViolinBox_results <- ViolinBox_UniqueLibraries(CRISPR_df, y_column, show_title = FALSE)
-      OuterTitleForLayout(ViolinBox_results[["title_text"]], extra_space = TRUE)
-      layout(1)
-    }
-    if (make_PDF) {
-      dev.off()
-    }
-  }
-  numeric_seq <- seq_along(numeric_column_labels)
-  file_numbers <- FormatFixedWidthInteger(numeric_seq)
-  for (i in seq_along(numeric_column_labels)) {
-    file_name <- paste0(file_numbers[[i]], ") ", names(numeric_column_labels)[[i]])
-    png(file = file.path(output_plots_directory, "Box plots - A) unique points", paste0("Box plots - ", file_name, ".png")),
-        width = pdf_width, height = pdf_height - 0.14, units = "in", res = 600
-        )
-    layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
-    ViolinBox_UniqueTwoGroups(CRISPR_df, names(numeric_column_labels)[[i]], show_title = FALSE)
-    ViolinBox_results <- ViolinBox_UniqueLibraries(CRISPR_df, names(numeric_column_labels)[[i]], show_title = FALSE)
-    OuterTitleForLayout(ViolinBox_results[["title_text"]])
-    dev.off()
-  }
-}
-
-
-
-SourcesBoxPlots <- function(CRISPR_df) {
+SourcesBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
 
   is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
@@ -1380,16 +1493,49 @@ SourcesBoxPlots <- function(CRISPR_df) {
   use_width <- pdf_width * 0.85
   use_height <- pdf_height * 1.2
 
+  export_raw_data_columns <- c(
+    "CRISPOR_Doench_efficacy", "GuideScan_efficiency",
+    "GuideScan_specificity", "CRISPOR_3MM_specificity",
+    "CRISPOR_4MM_specificity"
+  )
+  raw_data_exported_vec_list <- sapply(names(args_list)[1:5],
+                                       function(x) sapply(export_raw_data_columns, function(y) FALSE),
+                                       simplify = FALSE
+                                       )
+
   for (make_PNG in c(FALSE, TRUE)) {
     for (make_PDF in c(FALSE, TRUE)) {
       if (make_PNG && make_PDF) {
         next
       }
       for (file_name in names(args_list)) {
+        only_four_groups <- file_name %in% names(args_list)[1:5]
+        main_folder_path <- file.path(output_plots_directory, paste0("Box plots - ", file_name))
+        PNG_folder_path <- file.path(main_folder_path, "PNGs")
+        all_folder_paths <- c(main_folder_path, PNG_folder_path)
+        if (only_four_groups) {
+          raw_data_path <- file.path(main_folder_path, "Raw data")
+          all_folder_paths <- c(all_folder_paths, raw_data_path)
+        }
+        for (folder_path in all_folder_paths){
+          if (!(dir.exists(folder_path))) {
+            dir.create(folder_path)
+          }
+        }
+
+        if (only_four_groups) { # Make the plot a bit less wide, in order to compensate for only 4 groups
+          current_width <- use_width - 0.9
+          current_height <- use_height + 0.55
+        } else {
+          current_width <- use_width
+          current_height <- use_height
+        }
+
         if (make_PDF) {
           PDF_file_name <- paste0("Box plots - ", file_name, ".pdf")
-          pdf(file = file.path(output_plots_directory, PDF_file_name),
-              width = use_width, height = use_height
+
+          pdf(file = file.path(main_folder_path, PDF_file_name),
+              width = current_width, height = current_height
               )
         }
         numeric_seq <- seq_along(numeric_column_labels)
@@ -1401,21 +1547,69 @@ SourcesBoxPlots <- function(CRISPR_df) {
               ) {
             next
           }
-          if (make_PNG) {
-            folder_path <- file.path(output_plots_directory, paste0("Box plots - ", file_name))
-            if (!(dir.exists(folder_path))) {
-              dir.create(folder_path)
-            }
-            PNG_file_name <- paste0("Box plots - ", file_name, " - ",
-                                    file_numbers[[i]], ") ", y_column, ".png"
-                                    )
-            png(file = file.path(folder_path, PNG_file_name),
-                width = use_width, height = use_height, units = "in", res = 600
+
+          if (make_PDF && embed_raster_within_PDFs) {
+            PDF_device <- dev.cur()
+            temp_path <- file.path(main_folder_path, "temp.png")
+            temp_width <- current_width - 1.44 # subtract the margin
+            temp_height <- current_height - 1.62 # subtract the margin
+
+            png(file = temp_path,
+                width = temp_width, height = temp_height,
+                units = "in", res = 600
                 )
-          }
-          do.call(ViolinBox_Sources, c(list(y_column = y_column, CRISPR_df = CRISPR_df), args_list[[file_name]]))
-          if (make_PNG) {
+            plot_df <- do.call(ViolinBox_Sources,
+                               c(list(CRISPR_df             = CRISPR_df,
+                                      y_column              = y_column,
+                                      no_outside_annotation = TRUE
+                                      ),
+                                 args_list[[file_name]]
+                                 )
+                               )
             dev.off()
+            raster_array <- readPNG(temp_path)
+            file.remove(temp_path)
+            dev.set(PDF_device)
+            do.call(ViolinBox_Sources,
+                    c(list(CRISPR_df        = CRISPR_df,
+                           y_column         = y_column,
+                           use_raster_array = raster_array
+                           ),
+                      args_list[[file_name]]
+                      )
+                    )
+          } else {
+            if (make_PNG) {
+              folder_path <- file.path(output_plots_directory, paste0("Box plots - ", file_name))
+              if (!(dir.exists(folder_path))) {
+                dir.create(folder_path)
+              }
+              PNG_file_name <- paste0("Box plots - ", file_name, " - ",
+                                      file_numbers[[i]], ") ", y_column, ".png"
+                                      )
+              png(file = file.path(PNG_folder_path, PNG_file_name),
+                  width = current_width, height = current_height,
+                  units = "in", res = 600
+                  )
+            }
+            plot_df <- do.call(ViolinBox_Sources, c(list(y_column = y_column, CRISPR_df = CRISPR_df), args_list[[file_name]]))
+            if (make_PNG) {
+              dev.off()
+            }
+          }
+          if (only_four_groups && (y_column %in% export_raw_data_columns) &&
+              !(raw_data_exported_vec_list[[file_name]][[y_column]])
+              ) {
+            plot_df <- TidyRawData(plot_df)
+            raw_data_file_name <- paste0("Box plots - raw data - ", file_name, " - ",
+                                         file_numbers[[i]], ") ", y_column,
+                                         ".csv"
+                                         )
+            write.csv(plot_df,
+                      file = file.path(raw_data_path, raw_data_file_name),
+                      quote = FALSE, row.names = FALSE
+                      )
+            raw_data_exported_vec_list[[file_name]][[y_column]] <- TRUE
           }
         }
         if (make_PDF) {
@@ -1424,6 +1618,21 @@ SourcesBoxPlots <- function(CRISPR_df) {
       }
     }
   }
+}
+
+
+
+
+TidyRawData <- function(plot_df) {
+  if (identical(plot_df[["Combined_ID"]], plot_df[["Entrez_ID"]])) {
+    plot_df <- plot_df[, colnames(plot_df) != "Combined_ID"]
+  }
+  results_df <- plot_df[, !(duplicated(as.list(plot_df)))]
+  if (length(unique(results_df[["Subgroup"]])) == 1) {
+    results_df[["Subgroup"]] <- NULL
+  }
+  results_df <- results_df[, !(colnames(results_df) %in% "Point_colors")]
+  return(results_df)
 }
 
 
@@ -1977,18 +2186,16 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
             }
             PNG_file_name <- paste0(folder_name, " - ",
                                     file_numbers[[i]], ") ", use_column, ".png"
-                                    )
+            )
             png(file = file.path(folder_path, PNG_file_name),
                 width = use_width, height = use_height, units = "in", res = 600
-                )
+            )
           }
-
           layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
           BarPlot_UniqueTwoGroups(CRISPR_df, use_column, show_title = FALSE, only_chosen = only_chosen)
           StackedBarPlot_results <- BarPlot_UniqueLibraries(CRISPR_df, use_column, show_title = FALSE, only_chosen = only_chosen)
           OuterTitleForLayout(StackedBarPlot_results[["title_text"]], extra_space = FALSE)
           layout(1)
-
           if (make_PNG) {
             dev.off()
           }
@@ -2036,7 +2243,7 @@ SourcesBarPlots <- function(CRISPR_df) {
           PDF_file_name <- paste0("Bar charts - ", file_name, ".pdf")
           pdf(file = file.path(output_plots_directory, PDF_file_name),
               width = use_width, height = use_height
-          )
+              )
         }
         categorical_seq <- seq_along(use_columns)
         file_numbers <- FormatFixedWidthInteger(categorical_seq)
@@ -2055,7 +2262,7 @@ SourcesBarPlots <- function(CRISPR_df) {
             }
             PNG_file_name <- paste0("Bar charts - ", file_name, " - ",
                                     file_numbers[[i]], ") ", use_column, ".png"
-                                    )
+            )
             png(file = file.path(folder_path, PNG_file_name),
                 width = use_width, height = use_height, units = "in", res = 600
                 )
@@ -2257,6 +2464,7 @@ ScatterPlot <- function(CRISPR_df,
                         show_title                   = NULL,
                         add_jitter                   = FALSE,
                         make_PNG                     = FALSE,
+                        embed_PNG                    = FALSE,
                         only_top4                    = FALSE
                         ) {
 
@@ -2279,6 +2487,14 @@ ScatterPlot <- function(CRISPR_df,
     CRISPR_df[["GuideScan_specificity"]] <- (100 / (100 + ((1 / CRISPR_df[["GuideScan_specificity"]]) - 1))) * 100
   }
 
+  if (make_PNG || embed_PNG) {
+    if (only_top4) {
+      sub_folder <- "Scatter plots - B) only 4sg"
+    } else {
+      sub_folder <- "Scatter plots - A) all guides"
+    }
+  }
+
   if (make_PNG) {
     if (!("current_number" %in% ls(envir = globalenv()))) {
       current_number <- 1L
@@ -2287,12 +2503,9 @@ ScatterPlot <- function(CRISPR_df,
     file_name <- paste0("Scatter plots - ",
                         number_string, ") ", gsub(":", " - ", show_title), ".png"
                         )
-    if (only_top4) {
-      sub_folder <- "Scatter plots - B) only 4sg"
-    } else {
-      sub_folder <- "Scatter plots - A) all guides"
-    }
-    png(file = file.path(output_plots_directory, sub_folder, file_name),
+    file_path <- file.path(output_plots_directory, sub_folder, file_name)
+    assign("delete_file_path", file_path, envir = globalenv())
+    png(file = file_path,
         width = 5.75, height = 5.75, units = "in", res = 600
         )
     current_number <- current_number + 1L
@@ -2326,8 +2539,7 @@ ScatterPlot <- function(CRISPR_df,
     y_axis_limits <- GetAxisLimits(y_vec, y_column, provide_other_limits = TRUE)
   }
 
-  plot(x_vec,
-       y_vec,
+  plot(1,
        las  = 1,
        mgp  = c(2.7, 0.5, 0),
        tcl  = -0.4,
@@ -2339,6 +2551,31 @@ ScatterPlot <- function(CRISPR_df,
        xaxs = "i",
        yaxs = "i"
        )
+
+  alpha_hex <- substr(rgb(1, 1, 1, point_alpha), 8, 9)
+
+  if (embed_PNG) {
+    current_device <- dev.cur()
+    temp_file_path <- file.path(output_plots_directory, sub_folder, "temp.png")
+    png(file = temp_file_path,
+        width = 4.75, height = 4.75, units = "in", res = 600
+        )
+    par(mar = rep(0, 4))
+    plot(x_vec,
+         y_vec,
+         col  = paste0(brewer.pal(9, "Blues")[[7]], alpha_hex),
+         pch  = 16,
+         cex  = point_cex,
+         axes = FALSE,
+         ann  = FALSE,
+         xlim = x_axis_limits,
+         ylim = y_axis_limits,
+         xaxs = "i",
+         yaxs = "i",
+         bty  = "n"
+         )
+
+  }
 
   assign("delete_mark_diagonal", mark_diagonal, envir = globalenv())
   if (mark_diagonal) {
@@ -2362,13 +2599,24 @@ ScatterPlot <- function(CRISPR_df,
   }
   box()
 
-  alpha_hex <- substr(rgb(1, 1, 1, point_alpha), 8, 9)
-  points(x_vec,
-         y_vec,
-         col = paste0(brewer.pal(9, "Blues")[[7]], alpha_hex),
-         pch = 16,
-         cex = point_cex
-         )
+  if (embed_PNG) {
+    dev.off()
+    raster_array <- readPNG(temp_file_path)
+    file.remove(temp_file_path)
+    dev.set(current_device)
+    rasterImage(raster_array,
+                xleft = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+                )
+  } else {
+    points(x_vec,
+           y_vec,
+           col = paste0(brewer.pal(9, "Blues")[[7]], alpha_hex),
+           pch = 16,
+           cex = point_cex
+           )
+  }
+
   box()
   if (!(is.null(show_title))) {
     title(show_title, cex.main = par("cex") * 0.9)
@@ -2387,7 +2635,7 @@ ScatterPlot <- function(CRISPR_df,
 
 
 
-MakeScatterPlots <- function(CRISPR_df) {
+MakeScatterPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
 
   for (i in 1:3) {
     if (i == 1) {
@@ -2419,116 +2667,137 @@ MakeScatterPlots <- function(CRISPR_df) {
           pdf(file = file.path(output_plots_directory, paste0("Scatter plots", append_to_filename, ".pdf")),
               width = plot_dimensions, height = plot_dimensions
               )
+          embed_PNG <- embed_raster_within_PDFs
+        } else {
+          embed_PNG <- FALSE
         }
         ScatterPlot(CRISPR_df, "GuideScan_specificity", "GuideScan_efficiency",
                     point_alpha = 0.2, point_cex = 0.4,
                     show_title = "Efficacy vs. specificity (GuideScan)",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
         if (!(only_selected)) {
           ScatterPlot(CRISPR_df, "CRISPOR_3MM_specificity", "CRISPOR_Doench_efficacy",
                       point_alpha = 0.2, point_cex = 0.4,
                       show_title = "Efficacy vs. specificity (CRISPOR)",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
           ScatterPlot(CRISPR_df, "CRISPOR_4MM_specificity", "CRISPOR_Doench_efficacy",
                       point_alpha = 0.2, point_cex = 0.4,
                       show_title = "Efficacy vs. specificity (CRISPOR, up to 4MM)",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
           ScatterPlot(CRISPR_df, "CRISPOR_Doench_efficacy", "GuideScan_efficiency",
                       point_alpha = 0.2, point_cex = 0.4, add_jitter = TRUE,
                       show_title = "Original vs. updated Doench efficacy scores",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
         }
 
         ScatterPlot(CRISPR_df, "GuideScan_Num_2or3MM", "GuideScan_specificity",
                     point_alpha = 0.2, point_cex = 0.4, convert_CRISPOR_to_GuideScan = TRUE,
                     show_title = "Specificity score vs. number of off-targets (GuideScan)",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
 
         if (!(only_selected)) {
           ScatterPlot(CRISPR_df, "CRISPOR_Num_2or3MM", "CRISPOR_3MM_specificity",
                       point_alpha = 0.2, point_cex = 0.4, convert_CRISPOR_to_GuideScan = TRUE,
                       show_title = "Specificity score vs. number of off-targets (CRISPOR)",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
           if (FALSE) {
             ScatterPlot(CRISPR_df, "GuideScan_specificity", "CRISPOR_CFD_specificity",
                         point_alpha = 0.2, point_cex = 0.4, convert_CRISPOR_to_GuideScan = TRUE,
-                        make_PNG = make_PNG, only_top4 = only_top4
+                        make_PNG = make_PNG, only_top4 = only_top4,
+                        embed_PNG = embed_PNG
                         )
             ScatterPlot(CRISPR_df, "CRISPOR_4MM_specificity", "CRISPOR_CFD_specificity", # This is just for confirmation
                         convert_GuideScan_to_CRISPOR = TRUE, point_alpha = 0.2, point_cex = 0.4,
-                        make_PNG = make_PNG, only_top4 = only_top4
+                        make_PNG = make_PNG, only_top4 = only_top4,
+                        embed_PNG = embed_PNG
                         )
           }
         }
 
         ScatterPlot(CRISPR_df, "CRISPOR_Num_2or3MM", "GuideScan_Num_2or3MM",
-                    point_alpha = 0.5, point_cex = 0.2, identical_axes = TRUE,
+                    point_alpha = 0.5, point_cex = 0.3, identical_axes = TRUE,
                     show_title = "Off-target sites \u2013 GuideScan vs. CRISPOR",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
         ScatterPlot(CRISPR_df, "GuideScan_Num_2or3MM", "CRISPOR_Num_2or3MM",
-                    point_alpha = 0.5, point_cex = 0.2,
+                    point_alpha = 0.5, point_cex = 0.3,
                     identical_axes = TRUE, custom_axis_limits = c(0, 1000),
                     show_title = "Off-target sites \u2013 GuideScan vs. CRISPOR (zoomed in)",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
         ScatterPlot(CRISPR_df, "GuideScan_Num_2or3MM", "CRISPOR_Num_2or3MM",
-                    point_alpha = 0.5, point_cex = 0.2,
+                    point_alpha = 0.5, point_cex = 0.3,
                     identical_axes = TRUE, custom_axis_limits = c(0, 200),
                     show_title = "Off-target sites \u2013 GuideScan vs. CRISPOR (zoomed in more)",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
 
         if (!(only_selected)) {
           ScatterPlot(CRISPR_df, "CRISPOR_Num_2MM", "GuideScan_Num_2MM",
-                      point_alpha = 0.5, point_cex = 0.2, identical_axes = TRUE,
+                      point_alpha = 0.5, point_cex = 0.3, identical_axes = TRUE,
                       show_title = "2MM off-target sites \u2013 GuideScan vs. CRISPOR",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
           ScatterPlot(CRISPR_df, "GuideScan_Num_2MM", "CRISPOR_Num_2MM",
-                      point_alpha = 0.5, point_cex = 0.2,
+                      point_alpha = 0.5, point_cex = 0.3,
                       identical_axes = TRUE,
                       custom_axis_limits = c(0, 300),
                       show_title = "2MM off-target sites \u2013 GuideScan vs. CRISPOR (zoomed in)",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
           ScatterPlot(CRISPR_df, "GuideScan_Num_2MM", "CRISPOR_Num_2MM",
-                      point_alpha = 0.5, point_cex = 0.2,
+                      point_alpha = 0.5, point_cex = 0.3,
                       identical_axes = TRUE, custom_axis_limits = c(0, 50),
                       show_title = "2MM off-target sites \u2013 GuideScan vs. CRISPOR (zoomed in more)",
                       add_jitter = TRUE,
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
           ScatterPlot(CRISPR_df, "CRISPOR_CFD_specificity", "GuideScan_specificity",
                       point_alpha = 0.2, point_cex = 0.4,
                       show_title  = "Specificity \u2013 GuideScan score vs. original CRISPOR CFD score",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
         }
 
         ScatterPlot(CRISPR_df, "CRISPOR_3MM_specificity", "GuideScan_specificity",
                     point_alpha = 0.2, point_cex = 0.4, identical_axes = TRUE,
                     show_title = "Specificity score \u2013 GuideScan vs. CRISPOR",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
 
         ScatterPlot(CRISPR_df, "CRISPOR_4MM_specificity", "GuideScan_specificity",
                     point_alpha = 0.2, point_cex = 0.4,
                     show_title = "Specificity score \u2013 GuideScan vs. CRISPOR (4MM)",
-                    make_PNG = make_PNG, only_top4 = only_top4
+                    make_PNG = make_PNG, only_top4 = only_top4,
+                    embed_PNG = embed_PNG
                     )
 
         if (!(only_selected)) {
           ScatterPlot(CRISPR_df, "CRISPOR_4MM_specificity", "CRISPOR_3MM_specificity",
                       point_alpha = 0.2, point_cex = 0.4,
                       show_title = "CRISPOR specificity scores: 3MM vs. 4MM",
-                      make_PNG = make_PNG, only_top4 = only_top4
+                      make_PNG = make_PNG, only_top4 = only_top4,
+                      embed_PNG = embed_PNG
                       )
         }
         if (make_PDF) {
