@@ -66,7 +66,10 @@ are_selected <- (sg4_allTFs_df[["Is_control"]] == "No") &
 
 table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected])
 
+are_selected_TSSs <- (sg4_allTFs_df[["Is_control"]] == "No") &
+                     !(duplicated(sg4_allTFs_df[["AltTSS_ID"]]))
 
+sum(are_selected_TSSs) # Number of TSSs targeted by the library
 
 
 
