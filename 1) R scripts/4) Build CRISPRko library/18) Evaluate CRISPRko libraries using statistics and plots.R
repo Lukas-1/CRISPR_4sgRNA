@@ -36,13 +36,12 @@ load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the
 
 
 
-# # Try stuff ---------------------------------------------------------------
+# Try stuff ---------------------------------------------------------------
 
 
 ViolinBox_Sources(merged_CRISPRko_df, "CRISPOR_4MM_specificity",
                   aggregate_scores = TRUE
                   )
-
 
 BarPlot_Sources(merged_CRISPRko_df, "GuideScan_specificity", show_sublibraries = TRUE, filter_top4 = TRUE)
 BarPlot_Sources(merged_CRISPRko_df, "Are_overlapping")
@@ -54,8 +53,6 @@ BarPlot_Sources(merged_CRISPRko_df, "Have_homologies")
 #                   aggregate_scores = TRUE,
 #                   filter_for_complete = TRUE
 #                   )
-#
-#
 #
 #
 # use_width <- pdf_width * 0.9
