@@ -54,6 +54,22 @@ sg4_df <- RestoreOriginalOrder(sg4_reordered_df)
 
 
 
+# Examine the sub-library allocation --------------------------------------
+
+sg4_allTFs_df <- AllocateAllGuidesToPlates(merged_CRISPRko_df,
+                                           sublibraries_entrezs_list = sublibraries_all_entrezs_list,
+                                           num_control_wells = 96
+                                           )
+
+are_selected <- (sg4_allTFs_df[["Is_control"]] == "No") &
+                (sg4_allTFs_df[["Rank"]] == 1)
+
+table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected])
+
+
+
+
+
 # Export the plate layouts ------------------------------------------------
 
 ExportPlates(sg4_df, "All_sublibraries_original_order")
