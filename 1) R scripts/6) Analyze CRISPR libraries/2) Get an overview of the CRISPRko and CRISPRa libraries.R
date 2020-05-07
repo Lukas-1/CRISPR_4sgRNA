@@ -29,16 +29,16 @@ annotation_intermediate_files_directory <- file.path(CRISPR_root_directory, "4) 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 
-load(file.path(CRISPRko_RData_directory, "13) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
-load(file.path(CRISPRko_RData_directory, "14) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRko_RData_directory, "15) Summarize the human secretome sub-library.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "14) Summarize the human secretome sub-library.RData"))
 CRISPRko_sgRNAs_overview_df    <- sgRNAs_overview_df
 CRISPRko_TF_overview_df        <- TF_overview_df
 CRISPRko_secretome_overview_df <- secretome_overview_df
 
-load(file.path(CRISPRa_RData_directory, "21) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "22) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "23) Summarize the human secretome sub-library.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "22) Summarize the human secretome sub-library.RData"))
 CRISPRa_sgRNAs_overview_df    <- sgRNAs_overview_df
 CRISPRa_TF_overview_df        <- TF_overview_df
 CRISPRa_secretome_overview_df <- secretome_overview_df
@@ -46,11 +46,8 @@ CRISPRa_secretome_overview_df <- secretome_overview_df
 rm(sgRNAs_overview_df)
 
 
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - merged_replaced_CRISPRa_df.RData"))
-load(file.path(CRISPRa_RData_directory, "20) For problematic genes, pick 4 guides without reference to the TSS - lax_CRISPRa_df.RData"))
-
+load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed criteria for guides with multiple 0MM hits.RData"))
 
 
 
@@ -61,11 +58,11 @@ load(file.path(CRISPRko_RData_directory, "12) Pick 4 guides, using relaxed crite
 
 ArePresentInOverviewDf <- function(entrez_IDs, overview_df) {
   matches_vec <- match(entrez_IDs, overview_df[["Entrez_ID"]])
-  are_spaced <- !(is.na(overview_df[["Spacing"]])) & !(overview_df[["Spacing"]] %in% "None")
+  are_non_homologous <- !(is.na(overview_df[["Spacing"]])) & !(overview_df[["Spacing"]] %in% "None")
   results_mat <- cbind(
     "Are_present"  = (overview_df[["Num_total"]][matches_vec] >= 1) %in% TRUE,
     "Are_complete" = (overview_df[["Num_total"]][matches_vec] >= 4) %in% TRUE,
-    "Are_spaced"   = are_spaced[matches_vec] %in% TRUE
+    "Are_non_homologous" = are_non_homologous[matches_vec] %in% TRUE
   )
   rownames(results_mat) <- entrez_IDs
   return(results_mat)
@@ -76,24 +73,23 @@ ArePresentInCRISPRDf <- function(entrez_IDs, CRISPR_df) {
   is_CRISPRa <- "Calabrese_rank" %in% colnames(CRISPR_df)
   if (is_CRISPRa) {
     are_top4_mat <- CRISPRaAreTop4Mat(CRISPR_df)
-    are_chosen <- are_top4_mat[, "Are_valid_or_only_top4"]
   } else {
     are_top4_mat <- CRISPRkoAreTop4Mat(CRISPR_df)
-    are_chosen <- are_top4_mat[, "Are_top4"]
   }
 
-  present_entrezs  <- unique(CRISPR_df[["Entrez_ID"]])
-  complete_entrezs <- unique(CRISPR_df[["Entrez_ID"]][are_top4_mat[, "Have_complete_guides"]])
-  spaced_entrezs   <- unique(CRISPR_df[["Entrez_ID"]][are_top4_mat[, "Have_spaced_guides"]])
 
-  present_entrezs  <- present_entrezs[!(is.na(present_entrezs))]
-  complete_entrezs <- complete_entrezs[!(is.na(complete_entrezs))]
-  spaced_entrezs   <- spaced_entrezs[!(is.na(spaced_entrezs))]
+  present_entrezs        <- unique(CRISPR_df[["Entrez_ID"]])
+  complete_entrezs       <- unique(CRISPR_df[["Entrez_ID"]][are_top4_mat[, "Have_complete_guides"]])
+  non_homologous_entrezs <- unique(CRISPR_df[["Entrez_ID"]][are_top4_mat[, "Have_non_homologous_guides"]])
+
+  present_entrezs        <- present_entrezs[!(is.na(present_entrezs))]
+  complete_entrezs       <- complete_entrezs[!(is.na(complete_entrezs))]
+  non_homologous_entrezs <- non_homologous_entrezs[!(is.na(non_homologous_entrezs))]
 
   results_mat <- cbind(
-    "Are_present"  = entrez_IDs %in% present_entrezs,
-    "Are_complete" = entrez_IDs %in% complete_entrezs,
-    "Are_spaced"   = entrez_IDs %in% spaced_entrezs
+    "Are_present"        = entrez_IDs %in% present_entrezs,
+    "Are_complete"       = entrez_IDs %in% complete_entrezs,
+    "Are_non_homologous" = entrez_IDs %in% non_homologous_entrezs
   )
   rownames(results_mat) <- entrez_IDs
   return(results_mat)
@@ -157,8 +153,8 @@ are_present_in_both    <- present_genes_df[["Are_present_CRISPRa"]] & present_ge
 are_present_in_neither <- !(present_genes_df[["Are_present_CRISPRa"]]) & !(present_genes_df[["Are_present_CRISPRko"]])
 are_present_in_either  <- present_genes_df[["Are_present_CRISPRa"]] | present_genes_df[["Are_present_CRISPRko"]]
 
-are_spaced_in_both   <- present_genes_df[["Are_spaced_CRISPRa"]] & present_genes_df[["Are_spaced_CRISPRko"]]
-are_spacd_in_neither <- !(present_genes_df[["Are_spaced_CRISPRa"]]) & !(present_genes_df[["Are_spaced_CRISPRko"]])
+are_non_homologous_in_both <- present_genes_df[["Are_non_homologous_CRISPRa"]] & present_genes_df[["Are_non_homologous_CRISPRko"]]
+are_non_homologous_in_neither <- !(present_genes_df[["Are_non_homologous_CRISPRa"]]) & !(present_genes_df[["Are_non_homologous_CRISPRko"]])
 
 present_in_neither_and_targetable <- are_present_in_neither & present_genes_df[["Are_on_reference_genome"]] & present_genes_df[["Are_protein_coding"]]
 present_in_neither_and_untargetable <- are_present_in_neither & !(present_genes_df[["Are_on_reference_genome"]]) & present_genes_df[["Are_protein_coding"]]
@@ -167,11 +163,11 @@ present_in_neither_and_untargetable <- are_present_in_neither & !(present_genes_
 are_exclusive_to_CRISPRa  <- present_genes_df[["Are_present_CRISPRa"]] &  !(present_genes_df[["Are_present_CRISPRko"]])
 are_exclusive_to_CRISPRko <- present_genes_df[["Are_present_CRISPRko"]] & !(present_genes_df[["Are_present_CRISPRa"]])
 
-are_spaced_in_CRISPRa_only  <- present_genes_df[["Are_spaced_CRISPRa"]] &  !(present_genes_df[["Are_spaced_CRISPRko"]])
-are_spaced_in_CRISPRko_only <- present_genes_df[["Are_spaced_CRISPRko"]] & !(present_genes_df[["Are_spaced_CRISPRa"]])
+are_non_homologous_in_CRISPRa_only  <- present_genes_df[["Are_non_homologous_CRISPRa"]] &  !(present_genes_df[["Are_non_homologous_CRISPRko"]])
+are_non_homologous_in_CRISPRko_only <- present_genes_df[["Are_non_homologous_CRISPRko"]] & !(present_genes_df[["Are_non_homologous_CRISPRa"]])
 
-are_unspaced_CRISPRa <- present_genes_df[["Are_present_CRISPRa"]] & !(present_genes_df[["Are_spaced_CRISPRa"]]) & present_genes_df[["Are_on_reference_genome"]]
-are_unspaced_CRISPRko <- present_genes_df[["Are_present_CRISPRko"]] & !(present_genes_df[["Are_spaced_CRISPRko"]]) & present_genes_df[["Are_on_reference_genome"]]
+are_unspaced_CRISPRa <- present_genes_df[["Are_present_CRISPRa"]] & !(present_genes_df[["Are_non_homologous_CRISPRa"]]) & present_genes_df[["Are_on_reference_genome"]]
+are_unspaced_CRISPRko <- present_genes_df[["Are_present_CRISPRko"]] & !(present_genes_df[["Are_non_homologous_CRISPRko"]]) & present_genes_df[["Are_on_reference_genome"]]
 
 are_present_but_not_on_genome <- (present_genes_df[["Are_present_CRISPRa"]] |
                                   present_genes_df[["Are_present_CRISPRko"]]
@@ -188,9 +184,9 @@ sum(are_present_in_both)
 sum(present_genes_df[["Are_present_CRISPRa"]])
 sum(present_genes_df[["Are_present_CRISPRko"]])
 
-sum(are_spaced_in_both)
-sum(present_genes_df[["Are_spaced_CRISPRa"]])
-sum(present_genes_df[["Are_spaced_CRISPRko"]])
+sum(are_non_homologous_in_both)
+sum(present_genes_df[["Are_non_homologous_CRISPRa"]])
+sum(present_genes_df[["Are_non_homologous_CRISPRko"]])
 
 
 
@@ -205,8 +201,8 @@ table(present_genes_df[present_in_neither_and_untargetable, "Category"])
 
 present_genes_df[are_exclusive_to_CRISPRko, ]
 
-present_genes_df[are_spaced_in_CRISPRa_only, ]
-present_genes_df[are_spaced_in_CRISPRko_only, ]
+present_genes_df[are_non_homologous_in_CRISPRa_only, ]
+present_genes_df[are_non_homologous_in_CRISPRko_only, ]
 
 present_genes_df[are_present_but_not_on_genome, ]
 
@@ -232,7 +228,7 @@ show_columns_CRISPRa <- c(
   "sgRNA_sequence", "PAM"
 )
 
-all_CRISPRa_df[CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"] & !(CRISPRa_are_top4_mat[, "Have_complete_guides"]), show_columns_CRISPRa]
+all_CRISPRa_df[CRISPRa_are_top4_mat[, "Are_chosen_4sg"] & !(CRISPRa_are_top4_mat[, "Have_complete_guides"]), show_columns_CRISPRa]
 
 
 
@@ -256,32 +252,12 @@ all_CRISPRko_df[CRISPRko_are_top4_mat[, "Are_top4"] & !(CRISPRko_are_top4_mat[, 
 
 # Count the number of wells -----------------------------------------------
 
-## Guides picked using strict locations
-unique_IDs_CRISPRa_strict     <- unique(all_CRISPRa_df[["Combined_ID"]][CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
-unique_TSS_IDs_CRISPRa_strict <- unique(all_CRISPRa_df[["AltTSS_ID"]][CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
-unique_IDs_CRISPRko_strict    <- unique(all_CRISPRko_df[["Combined_ID"]][CRISPRko_are_top4_mat[, "Are_top4"]])
-length(unique_IDs_CRISPRa_strict)
-length(unique_TSS_IDs_CRISPRa_strict)
-length(unique_IDs_CRISPRko_strict)
-
-
-## Guides picked using relaxed locations
-lax_CRISPRa_df <- lax_CRISPRa_df[lax_CRISPRa_df[["Entrez_ID"]] %in% all_entrezs, ]
-lax_CRISPRko_df <- lax_CRISPRko_df[lax_CRISPRko_df[["Entrez_ID"]] %in% all_entrezs, ]
-lax_CRISPRa_are_top4_mat <- CRISPRaAreTop4Mat(lax_CRISPRa_df)
-lax_CRISPRko_are_top4_mat <- CRISPRkoAreTop4Mat(lax_CRISPRko_df)
-unique_IDs_CRISPRa_lax     <- unique(lax_CRISPRa_df[["Combined_ID"]][lax_CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
-unique_TSS_IDs_CRISPRa_lax <- unique(lax_CRISPRa_df[["AltTSS_ID"]][lax_CRISPRa_are_top4_mat[, "Are_valid_or_only_top4"]])
-unique_IDs_CRISPRko_lax    <- unique(lax_CRISPRko_df[["Combined_ID"]][lax_CRISPRko_are_top4_mat[, "Are_top4"]])
-length(unique_IDs_CRISPRa_lax)
-length(unique_TSS_IDs_CRISPRa_lax)
-length(unique_IDs_CRISPRko_lax)
-
-
-identical(unique_IDs_CRISPRko_lax, unique_IDs_CRISPRko_strict)
-setdiff(unique_IDs_CRISPRa_lax, unique_IDs_CRISPRa_strict)
-setdiff(unique_TSS_IDs_CRISPRa_lax, unique_TSS_IDs_CRISPRa_strict)
-
+unique_IDs_CRISPRa     <- unique(all_CRISPRa_df[["Combined_ID"]][CRISPRa_are_top4_mat[, "Are_chosen_4sg"]])
+unique_TSS_IDs_CRISPRa <- unique(all_CRISPRa_df[["AltTSS_ID"]][CRISPRa_are_top4_mat[, "Are_chosen_4sg"]])
+unique_IDs_CRISPRko    <- unique(all_CRISPRko_df[["Combined_ID"]][CRISPRko_are_top4_mat[, "Are_chosen_4sg"]])
+length(unique_IDs_CRISPRa)
+length(unique_TSS_IDs_CRISPRa)
+length(unique_IDs_CRISPRko)
 
 
 
