@@ -70,7 +70,31 @@ table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected])
 
 
 
-# Export the plate layouts ------------------------------------------------
+# Assign just the PD genes to plates --------------------------------------
+
+are_PD <- (merged_CRISPRko_df[["Combined_ID"]] %in% PD_all_entrezs) #|
+          #(merged_replaced_CRISPRi_df[["Is_control"]] %in% "Yes")
+PD_CRISPRko_df <- merged_CRISPRko_df[are_PD, ]
+
+PD_4sg_df <- AllocateAllGuidesToPlates(PD_CRISPRko_df,
+                                       list("PD" = PD_all_entrezs),
+                                       num_control_wells = 0,
+                                       reorder_df = FALSE
+                                       )
+PD_4sg_df <- AssignPlateStrings(PD_4sg_df, use_prefix = "PD_")
+PD_4sg_df[["Plate_string"]] <- sub("_1_", "_", PD_4sg_df[["Plate_string"]], fixed = TRUE)
+
+PD_4sg_reordered_df <- ReorderPlates(PD_4sg_df)
+
+PD_4sg_df[["Sublibrary_4sg"]] <- NULL
+PD_4sg_reordered_df[["Sublibrary_4sg"]] <- NULL
+
+
+
+
+
+
+# Export the whole-genome plate layouts -----------------------------------
 
 ExportPlates(sg4_df, "All_sublibraries_original_order")
 ExportPlates(sg4_reordered_df, "All_sublibraries_reordered")
@@ -84,11 +108,28 @@ for (i in 1:4) {
 
 
 
+# Export the PD plate layout ----------------------------------------------
+
+ExportPlates(PD_4sg_df, "PD_original_order", sub_folder = "PD plate layout")
+ExportPlates(PD_4sg_reordered_df, "PD_reordered", sub_folder = "PD plate layout")
+
+for (i in 1:4) {
+  use_df <- PD_4sg_reordered_df[PD_4sg_reordered_df[["Rank"]] %in% i, ]
+  ExportPlates(use_df, paste0("4sg_PD_sg", i), sub_folder = "PD plate layout")
+}
+
+
+
+
 
 # Save data ---------------------------------------------------------------
 
 save(list = c("sg4_df", "sg4_reordered_df"),
      file = file.path(CRISPRko_RData_directory, "19) Distribute sgRNAs for the whole genome onto plates.RData")
+     )
+
+save(list = c("PD_4sg_df", "PD_4sg_reordered_df"),
+     file = file.path(CRISPRko_RData_directory, "19) Distribute sgRNAs for the whole genome onto plates - PD genes.RData")
      )
 
 
