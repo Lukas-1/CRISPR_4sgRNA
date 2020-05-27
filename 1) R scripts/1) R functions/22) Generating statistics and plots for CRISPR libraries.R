@@ -953,27 +953,30 @@ DrawViolinGridAndAxes <- function(y_column,
                                   aggregate_scores      = aggregate_scores,
                                   title_cex             = 0.9,
                                   title_line            = 1.3,
-                                  no_outside_annotation = FALSE
+                                  no_outside_annotation = FALSE,
+                                  use_raster_array      = NULL
                                   ) {
   tick_locations <- axTicks(2)
-  tick_distance <- tick_locations[[2]] - tick_locations[[1]]
-  grid_locations <- seq(from = tick_locations[[1]] - (tick_distance / 2),
-                        to   = tick_locations[[length(tick_locations)]] + (tick_distance / 2),
-                        by   = tick_distance
-                        )
-  grid_locations <- grid_locations[(grid_locations > par("usr")[[3]]) & (grid_locations < par("usr")[[4]])]
+  if (is.null(use_raster_array)) {
+    tick_distance <- tick_locations[[2]] - tick_locations[[1]]
+    grid_locations <- seq(from = tick_locations[[1]] - (tick_distance / 2),
+                          to   = tick_locations[[length(tick_locations)]] + (tick_distance / 2),
+                          by   = tick_distance
+                          )
+    grid_locations <- grid_locations[(grid_locations > par("usr")[[3]]) & (grid_locations < par("usr")[[4]])]
 
-  abline(h = grid_locations, col = "gray95", lwd = 0.5)
+    abline(h = grid_locations, col = "gray95", lwd = 0.5)
 
-  ticks_for_grid <- tick_locations
-  if (y_column %in% c("CRISPOR_3MM_specificity", "GuideScan_specificity")) {
-    are_0point2 <- tick_locations == 0.2
-    if (any(are_0point2)) {
-      abline(h = 0.2, col = "gray50", lwd = 0.5)
-      ticks_for_grid <- ticks_for_grid[!(are_0point2)]
+    ticks_for_grid <- tick_locations
+    if (y_column %in% c("CRISPOR_3MM_specificity", "GuideScan_specificity")) {
+      are_0point2 <- tick_locations == 0.2
+      if (any(are_0point2)) {
+        abline(h = 0.2, col = "gray50", lwd = 0.5)
+        ticks_for_grid <- ticks_for_grid[!(are_0point2)]
+      }
     }
+    abline(h = ticks_for_grid, col = "gray90", lwd = 0.5)
   }
-  abline(h = ticks_for_grid, col = "gray90", lwd = 0.5)
 
   if (!(no_outside_annotation)) {
     tick_labels <- format(tick_locations)
@@ -1046,7 +1049,8 @@ PlotViolin <- function(plot_df,
                                       aggregate_scores      = aggregate_scores,
                                       title_cex             = title_cex,
                                       title_line            = title_line,
-                                      no_outside_annotation = no_outside_annotation
+                                      no_outside_annotation = no_outside_annotation,
+                                      use_raster_array      = use_raster_array
                                       )
 
   if (is.null(use_raster_array)) {
@@ -2549,7 +2553,8 @@ ScatterPlot <- function(CRISPR_df,
        xlim = x_axis_limits,
        ylim = y_axis_limits,
        xaxs = "i",
-       yaxs = "i"
+       yaxs = "i",
+       bty  = "n"
        )
 
   alpha_hex <- substr(rgb(1, 1, 1, point_alpha), 8, 9)
@@ -2597,7 +2602,6 @@ ScatterPlot <- function(CRISPR_df,
   if (y_column %in% c("CRISPOR_CFD_specificity")) {
     abline(h = 80, col = line_color, lty = line_type, lwd = line_width)
   }
-  box()
 
   if (embed_PNG) {
     dev.off()
