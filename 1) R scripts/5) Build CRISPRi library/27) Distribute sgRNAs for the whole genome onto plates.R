@@ -33,7 +33,7 @@ load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sou
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
-load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData"))
+load(file.path(CRISPRi_RData_directory, "24) Export libraries to .tsv files - vacuolation_entrezs.RData"))
 
 
 
