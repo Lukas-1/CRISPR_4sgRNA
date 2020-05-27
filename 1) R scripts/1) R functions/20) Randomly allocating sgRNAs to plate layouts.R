@@ -615,7 +615,10 @@ MakeMiscPlate <- function(CRISPR_df, num_wells_per_plate = 384L) {
 AssignPlateStrings <- function(CRISPR_df, use_prefix = "h") {
   unique_plate_numbers <- sort(unique(CRISPR_df[["Plate_number"]]))
   plates_vec <- as.character(CRISPR_df[["Plate_number"]])
-  if ((unique_plate_numbers[[1]] == 1) && (unique_plate_numbers[[2]] == 6)) {
+  if ((length(unique_plate_numbers) > 1) &&
+      (unique_plate_numbers[[1]] == 1) &&
+      (unique_plate_numbers[[2]] == 6)
+      ) {
     plates_vec[CRISPR_df[["Plate_number"]] == 1] <- "5+"
   }
   if ("Entrez_source_Brunello" %in% colnames(CRISPR_df)) {
@@ -755,14 +758,23 @@ AllocateAllGuides_v2 <- function(CRISPR_df,
 
 
 
-AllocateAllGuidesToPlates <- function(CRISPR_df, sublibraries_entrezs_list, num_control_wells = NULL, reorder_df = FALSE) {
+AllocateAllGuidesToPlates <- function(CRISPR_df,
+                                      sublibraries_entrezs_list,
+                                      num_control_wells = NULL,
+                                      reorder_df = FALSE
+                                      ) {
 
-  CRISPR_df <- AddRandomized4sgControls(CRISPR_df, num_control_wells = num_control_wells)
+  if (num_control_wells == 0) {
+    CRISPR_df <- CRISPR_df[CRISPR_df[["Is_control"]] == "No", ]
+    controls_df <- NULL
+  } else {
+    CRISPR_df <- AddRandomized4sgControls(CRISPR_df, num_control_wells = num_control_wells)
 
-  controls_df <- CRISPR_df[!(is.na(CRISPR_df[["Control_group_4sg"]])), ]
-  controls_df <- AssignControlsToPlates(controls_df)
-  controls_df <- RenameControls(controls_df)
-  controls_df <- ShuffleControlRanks(controls_df)
+    controls_df <- CRISPR_df[!(is.na(CRISPR_df[["Control_group_4sg"]])), ]
+    controls_df <- AssignControlsToPlates(controls_df)
+    controls_df <- RenameControls(controls_df)
+    controls_df <- ShuffleControlRanks(controls_df)
+  }
 
   targeting_df <- CRISPR_df[CRISPR_df[["Entrez_ID"]] %in% unlist(sublibraries_entrezs_list, use.names = FALSE), ]
 
