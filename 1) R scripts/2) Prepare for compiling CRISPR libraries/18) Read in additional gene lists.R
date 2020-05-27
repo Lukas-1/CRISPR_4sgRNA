@@ -42,16 +42,22 @@ PD_candidates_df <- data.frame(read_excel(PD_path), stringsAsFactors = FALSE)
 
 # Collect Entrez IDs from our collaborators' PD GWAS study ----------------
 
+## Correct the input gene symbols
+PD_symbols_vec <- PD_candidates_df[[1]]
+PD_symbols_vec[[42]] <- "CHCHD2"
+PD_symbols_vec[[which(PD_symbols_vec == "PARK7/DJ1")]] <- "PARK7"
+PD_symbols_vec[[which(PD_symbols_vec == "PLEKHMI")]]   <- "PLEKHM1"
+
+
 ## Map to Entrez IDs
-PD_mapped_df <- MapToEntrezs(symbols_vec = PD_candidates_df[[1]])
+PD_mapped_df <- MapToEntrezs(symbols_vec = PD_symbols_vec)
 
 
 ## Manually assign ambiguous Entrez IDs
 are_ambiguous <- grepl(",", PD_mapped_df[["Entrez_ID"]], fixed = TRUE)
 PD_mapped_df[are_ambiguous, ]
+PD_mapped_df[["Entrez_ID"]][[which(are_ambiguous & (PD_mapped_df[["Original_symbol"]] %in% "QARS"))]] <- "5859"
 PD_entrezs_vec <- PD_mapped_df[["Entrez_ID"]]
-PD_entrezs_vec[[which(are_ambiguous & (PD_mapped_df[["Original_symbol"]] %in% "QARS"))]] <- "5859"
-
 
 ## Identify genes that are unavailable in our library
 are_missing <- is.na(PD_entrezs_vec)
@@ -77,7 +83,7 @@ PD_4sg_entrezs <- PD_entrezs_vec[are_included]
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("PD_all_entrezs", "PD_4sg_entrezs"),
+save(list = c("PD_all_entrezs", "PD_4sg_entrezs", "PD_mapped_df"),
      file = file.path(general_RData_directory, "18) Read in additional gene lists.RData")
      )
 
