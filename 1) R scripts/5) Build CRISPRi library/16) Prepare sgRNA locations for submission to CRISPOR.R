@@ -22,15 +22,6 @@ CRISPOR_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate fil
 
 
 
-# Read in data ------------------------------------------------------------
-
-gene_lists_directory <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists", "Vacuolation")
-vacuolation_genes <- read.table(file.path(gene_lists_directory, "hit_gene_IDs_1.5allhitnoderatio.csv"), header = FALSE, stringsAsFactors = FALSE)[[1]]
-LSM_genes <- read.table(file.path(gene_lists_directory, "Additional_LSM_genes.txt"), header = FALSE, stringsAsFactors = FALSE)[[1]]
-
-
-
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "09) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData"))
@@ -106,39 +97,6 @@ WriteCRISPORInputFiles(filtered_bed_df_list, file_ending = "__CRISPRi.bed",
 WriteCRISPORInputFiles(filtered_FASTA_vec_list, file_ending = "__CRISPRi.fa",
                        CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_FASTA_filtered")
                        )
-
-
-
-
-
-# Prioritize the vacuolation screen candidate genes -----------------------
-
-vacuolation_entrezs <- as.character(c(vacuolation_genes, LSM_genes))
-
-vacuolation_bed_df <- MakeBedDf(merged_replaced_CRISPRi_df, vacuolation_entrezs)
-filtered_vacuolation_bed_df <- FilterBedDfList(list(vacuolation_bed_df))[[1]]
-vacuolation_FASTA_df <- MakeFASTADf(merged_replaced_CRISPRi_df, vacuolation_entrezs)
-
-WriteCRISPORInputFiles(list("vacuolation" = vacuolation_bed_df[-1]),
-                       file_ending = "__CRISPRi.bed",
-                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_bed")
-                       )
-WriteCRISPORInputFiles(list("vacuolation_filtered" = filtered_vacuolation_bed_df[-1]),
-                       file_ending = "__CRISPRi.bed",
-                       CRISPOR_input_directory = file.path(CRISPOR_files_directory, "Input_bed_filtered")
-                       )
-
-
-
-
-
-# Save data ---------------------------------------------------------------
-
-save(list = "vacuolation_entrezs",
-     file = file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData")
-     )
-
-
 
 
 
