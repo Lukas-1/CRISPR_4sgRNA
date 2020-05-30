@@ -42,17 +42,17 @@ chunks_list <- AppendIDsWithoutCanonicalEntrezs(entrez_chunks_list, merged_repla
 # Prepare data frames that can be exported to .bed files ------------------
 
 bed_df_list <- BreakIntoChunks(MakeBedDf, merged_replaced_CRISPRi_df, chunks_list)
-bed_df_list <- c(BreakIntoManageableChunks(bed_df_list[1:7],
+bed_df_list <- c(BreakIntoManageableChunks(bed_df_list[c(1:2, 4:7)],
                                            80050L,
                                            MakeBedDf,
                                            merged_replaced_CRISPRi_df,
-                                           chunks_list[1:7]
+                                           chunks_list[c(1:2, 4:7)]
                                            ),
-                 BreakIntoManageableChunks(bed_df_list[8:13],
+                 BreakIntoManageableChunks(bed_df_list[c(3, 8:13)],
                                            70000L,
                                            MakeBedDf,
                                            merged_replaced_CRISPRi_df,
-                                           chunks_list[8:13]
+                                           chunks_list[c(3, 8:13)]
                                            )
                  )
 
