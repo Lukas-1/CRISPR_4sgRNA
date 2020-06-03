@@ -23,6 +23,7 @@ general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRi_RData_directory <- file.path(RData_directory, "4) CRISPRi")
 file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPRi")
 
+gene_lists_directory    <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists", "Vacuolation")
 
 
 
@@ -32,7 +33,19 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
-load(file.path(CRISPRi_RData_directory, "16) Prepare sgRNA locations for submission to CRISPOR - vacuolation_entrezs.RData"))
+
+
+
+# Read in the list of genes that are "vacuolation hits" -------------------
+
+vacuolation_genes <- read.table(file.path(gene_lists_directory, "hit_gene_IDs_1.5allhitnoderatio.csv"),
+                                header = FALSE, stringsAsFactors = FALSE
+                                )[[1]]
+LSM_genes         <- read.table(file.path(gene_lists_directory, "Additional_LSM_genes.txt"),
+                                header = FALSE, stringsAsFactors = FALSE
+                                )[[1]]
+
+vacuolation_entrezs <- as.character(c(vacuolation_genes, LSM_genes))
 
 
 
@@ -121,6 +134,11 @@ WriteOverviewDfToDisk(vacuolation_overview_df[, columns_for_excel],
 save(list = "sgRNAs_overview_df",
      file = file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
      )
+
+save(list = "vacuolation_entrezs",
+     file = file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData")
+     )
+
 
 
 

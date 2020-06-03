@@ -20,7 +20,6 @@ general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRi_RData_directory <- file.path(RData_directory, "4) CRISPRi")
 file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPRi")
 
-gene_lists_directory    <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists", "Vacuolation")
 
 
 
@@ -29,22 +28,10 @@ gene_lists_directory    <- file.path(CRISPR_root_directory, "2) Input data", "Ge
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
+load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData"))
 load(file.path(CRISPRi_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRi_RData_directory, "23) Allocate sgRNAs to plates.RData"))
 
-
-
-
-# Read in the list of genes that are "vacuolation hits" -------------------
-
-vacuolation_genes <- read.table(file.path(gene_lists_directory, "hit_gene_IDs_1.5allhitnoderatio.csv"),
-                                header = FALSE, stringsAsFactors = FALSE
-                                )[[1]]
-LSM_genes         <- read.table(file.path(gene_lists_directory, "Additional_LSM_genes.txt"),
-                                header = FALSE, stringsAsFactors = FALSE
-                                )[[1]]
-
-vacuolation_entrezs <- as.character(c(vacuolation_genes, LSM_genes))
 
 
 
@@ -319,14 +306,6 @@ DfToTSV(merged_replaced_CRISPRi_df, "CRISPRi_all_genes")
 
 
 
-
-
-
-# Save data ---------------------------------------------------------------
-
-save(list = "vacuolation_entrezs",
-     file = file.path(CRISPRi_RData_directory, "24) Export libraries to .tsv files - vacuolation_entrezs.RData")
-     )
 
 
 
