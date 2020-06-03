@@ -62,8 +62,6 @@ table(TF_overview_df[["Num_meeting_criteria"]] < 4)
 
 
 
-
-
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(

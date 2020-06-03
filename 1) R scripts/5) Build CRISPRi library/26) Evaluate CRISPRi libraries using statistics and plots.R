@@ -80,19 +80,12 @@ BarPlot_Sources(merged_replaced_CRISPRi_df, "Have_homologies")
 
 # Try stuff ---------------------------------------------------------------
 
-
 ViolinBox_Sources(merged_replaced_CRISPRi_df,
                   "Deviation_from_TSS_window",
                   "show_sublibraries"      = FALSE,
                   "filter_complete_genes"  = FALSE,
                   "filter_complete_scores" = FALSE
                   )
-
-
-
-
-
-
 
 BarPlot_Sources(merged_replaced_CRISPRi_df, "Deviation_from_TSS_window")
 
