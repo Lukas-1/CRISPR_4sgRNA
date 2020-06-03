@@ -42,7 +42,7 @@ core_numeric_column_labels <- c(
   "CRISPOR_4MM_specificity"   = "CRISPOR specificity score (up to 4 mismatches)",
   "CRISPOR_CFD_specificity"   = "CRISPOR CFD specificity score",
   "CRISPOR_MIT_specificity"   = "CRISPOR MIT specificity score",
-  "Deviation_from_TSS_window" = "Deviation from the optimal window near the TSS (-75 to -150 bp)"
+  "Deviation_from_TSS_window" = "Deviation from the optimal window near the TSS"
 )
 
 numeric_column_labels <- c(
@@ -85,7 +85,7 @@ sublibraries_order <- c(
   "Dolcetto_1to3",
   "Dolcetto_4to6",
   "hCRISPRi-v2.1_1to5",
-  "hCRISPRi-v2,1_6to10",
+  "hCRISPRi-v2.1_6to10",
   "Brunello",
   "TKOv3",
   "GPP_1to10",
@@ -98,19 +98,19 @@ sublibraries_order <- c(
 
 
 sublibraries_labels <- c(
-  "Calabrese_1to3"    = "# 1-3",
-  "Calabrese_4to6"    = "# 4-6",
-  "hCRISPRa-v2_1to5"  = "Top 5",
-  "hCRISPRa-v2_6to10" = "Supp 5",
-  "Dolcetto_1to3"     = "# 1-3",
-  "Dolcetto_4to6"     = "# 4-6",
-  "hCRISPRi-v2_1to5"  = "Top 5",
-  "hCRISPRi-v2_6to10" = "Supp 5",
-  "GPP_1to10"         = "Top 10",
-  "GPP_top10"         = "Top 10",
-  "GPP_11to50"        = "# 11-50",
-  "GPP_rest"          = "Other",
-  "None"              = ""
+  "Calabrese_1to3"      = "# 1-3",
+  "Calabrese_4to6"      = "# 4-6",
+  "hCRISPRa-v2_1to5"    = "Top 5",
+  "hCRISPRa-v2_6to10"   = "Supp 5",
+  "Dolcetto_1to3"       = "# 1-3",
+  "Dolcetto_4to6"       = "# 4-6",
+  "hCRISPRi-v2.1_1to5"  = "Top 5",
+  "hCRISPRi-v2.1_6to10" = "Supp 5",
+  "GPP_1to10"           = "Top 10",
+  "GPP_top10"           = "Top 10",
+  "GPP_11to50"          = "# 11-50",
+  "GPP_rest"            = "Other",
+  "None"                = ""
 )
 
 
@@ -214,6 +214,7 @@ FilterCRISPRDf <- function(CRISPR_df) {
   CRISPR_df[(CRISPR_df[["Is_control"]] == "No") & (CRISPR_df[["Source"]] != "Curated"), ]
 }
 
+
 palify_cache_101 <- list()
 Palify <- function(myhex, fraction_pale = 0.5) {
   if (myhex %in% names(palify_cache_101)) {
@@ -231,27 +232,43 @@ Palify <- function(myhex, fraction_pale = 0.5) {
 
 
 
-# Helper functions for filtering CRISPRa sgRNAs ---------------------------
+# Helper functions specific to CRISPRa or CRISPRi -------------------------
 
-# show_columns <- c(
-#   "Entrez_ID", "Gene_symbol", "hCRISPRa_v2_transcript", "hCRISPRa_v2_rank", "Rank",
-#   "Num_TSSs", "TSS_number", "Allocated_TSS", "TSS_ID", "AltTSS_ID",
-#   "Entrez_chromosome", "Chromosome", "Start", "Best_TSS"
-# )
+IsCRISPRa <- function(CRISPR_df) {
+  "hCRISPRa_v2_rank" %in% colnames(CRISPR_df)
+}
+
+GetTSSWindow <- function(is_CRISPRa) {
+  if (is_CRISPRa) {
+    lower_bound <- -150
+    higher_bound <- -75
+  } else {
+    lower_bound <- +25
+    higher_bound <- +75
+  }
+  return(c(lower_bound, higher_bound))
+}
 
 
+TSSWindowString <- function(is_CRISPRa) {
+  TSS_window <- GetTSSWindow(is_CRISPRa)
+  TSS_strings <- formatC(TSS_window, format = "d", flag = "+")
+  result_string <- paste0(" (", TSS_strings[[1]], " to ", TSS_strings[[2]], ")")
+  return(result_string)
+}
 
-GetMainTSS <- function(CRISPRa_df) {
 
-  are_not_controls <- CRISPRa_df[["Is_control"]] == "No"
-  altTSS_ID_fac <- factor(CRISPRa_df[["AltTSS_ID"]][are_not_controls],
-                          levels = unique(CRISPRa_df[["AltTSS_ID"]][are_not_controls])
+GetMainTSS <- function(CRISPR_df) {
+
+  are_not_controls <- CRISPR_df[["Is_control"]] == "No"
+  altTSS_ID_fac <- factor(CRISPR_df[["AltTSS_ID"]][are_not_controls],
+                          levels = unique(CRISPR_df[["AltTSS_ID"]][are_not_controls])
                           )
   CheckThatFactorIsInOrder(altTSS_ID_fac)
 
-  combined_ID_vec <- tapply(CRISPRa_df[["Combined_ID"]][are_not_controls], altTSS_ID_fac, unique)
+  combined_ID_vec <- tapply(CRISPR_df[["Combined_ID"]][are_not_controls], altTSS_ID_fac, unique)
 
-  min_distance_from_TSS_vec <- tapply(CRISPRa_df[["Distance_from_TSS"]][are_not_controls],
+  min_distance_from_TSS_vec <- tapply(CRISPR_df[["Distance_from_TSS"]][are_not_controls],
                                       altTSS_ID_fac,
                                       function(x) if (all(is.na(x))) NA_integer_ else min(abs(x), na.rm = TRUE)
                                       )
@@ -279,9 +296,9 @@ GetMainTSS <- function(CRISPRa_df) {
                               }
                             })
 
-  best_TSS_expanded_vec <- best_TSS_ID_vec[match(CRISPRa_df[["Combined_ID"]][are_not_controls], names(best_TSS_ID_vec))]
+  best_TSS_expanded_vec <- best_TSS_ID_vec[match(CRISPR_df[["Combined_ID"]][are_not_controls], names(best_TSS_ID_vec))]
 
-  best_TSS_including_controls_vec <- rep(NA_character_, nrow(CRISPRa_df))
+  best_TSS_including_controls_vec <- rep(NA_character_, nrow(CRISPR_df))
   best_TSS_including_controls_vec[are_not_controls] <- best_TSS_expanded_vec
 
   return(best_TSS_including_controls_vec)
@@ -388,7 +405,8 @@ FilterOriginalColorsDf <- function(colors_df, plot_df, show_rest_v_4sg = FALSE, 
       } else {
         stop("Unexpected number of subgroups!")
       }
-    }), use.names = FALSE)
+    }), use.names = FALSE
+    )
     colors_df <- colors_df[are_to_keep, ]
   }
 
@@ -425,6 +443,8 @@ FilterOriginalColorsDf <- function(colors_df, plot_df, show_rest_v_4sg = FALSE, 
 
 ExpandedSubgroupsDf <- function(CRISPR_df, collapse_GPP = FALSE, show_rest_v_4sg = FALSE) {
 
+  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
+
   sources_vec <- as.character(ReformatSourceToFactor(CRISPR_df[["Source"]]))
   sources_splits <- strsplit(sources_vec, ", ", fixed = TRUE)
 
@@ -436,23 +456,28 @@ ExpandedSubgroupsDf <- function(CRISPR_df, collapse_GPP = FALSE, show_rest_v_4sg
   if (show_rest_v_4sg) {
     subgroups_fac <- factor(ifelse(CRISPR_df_expanded[["Rank"]] %in% 1:4, "4sg", "Rest"), levels = c("Rest", "4sg"))
   } else {
-    if ("hCRISPRa-v2" %in% sources_vec) {
-      sources_sublibraries <- ifelse(sources_vec == "hCRISPRa-v2",
-                                     paste0("hCRISPRa-v2_", ifelse(CRISPR_df_expanded[["hCRISPRa_v2_rank"]] %in% 1:5, "1to5", "6to10")),
-                                     ifelse(sources_vec == "Calabrese",
-                                            paste0("Calabrese_", ifelse(CRISPR_df_expanded[["Calabrese_rank"]] %in% "1/2/3", "1to3", "4to6")),
+    is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df_expanded)
+    if (is_CRISPRko) {
+      sources_sublibraries <- ifelse(sources_vec == "GPP",
+                                     paste0("GPP_", ifelse(CRISPR_df_expanded[["GPP_rank"]] %in% 1:10, "1to10", "11to50")),
+                                     "None"
+                                     )
+
+    } else {
+      hCRISPR_rank_column <- grep("v2_rank", colnames(CRISPR_df_expanded), fixed = TRUE, value = TRUE)
+      Doench_rank_column <- grep("(Dolcetto|Calabrese)_rank", colnames(CRISPR_df_expanded), value = TRUE)
+      are_hCRISPR <- sources_vec %in% c("hCRISPRa-v2", "hCRISPRi-v2.1")
+      are_Doench <- sources_vec %in% c("Calabrese", "Dolcetto")
+      sources_sublibraries <- ifelse(are_hCRISPR,
+                                     paste0(sources_vec, "_", ifelse(CRISPR_df_expanded[[hCRISPR_rank_column]] %in% 1:5, "1to5", "6to10")),
+                                     ifelse(are_Doench,
+                                            paste0(sources_vec, "_", ifelse(CRISPR_df_expanded[[Doench_rank_column]] %in% "1/2/3", "1to3", "4to6")),
                                             ifelse(sources_vec == "GPP",
                                                    paste0("GPP_", ifelse(CRISPR_df_expanded[["GPP_rank"]] %in% 1:10, "top10", "rest")),
                                                    sources_vec
                                                    )
                                             )
                                      )
-    } else {
-      sources_sublibraries <- ifelse(sources_vec == "GPP",
-                                     paste0("GPP_", ifelse(CRISPR_df_expanded[["GPP_rank"]] %in% 1:10, "1to10", "11to50")),
-                                     "None"
-                                     )
-
     }
     if (collapse_GPP) {
       sources_sublibraries <- ifelse(sources_vec == "GPP", "None", sources_sublibraries)
@@ -521,7 +546,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
   are_eligible <- have_entrez & are_protein_coding
 
   if (!(is_CRISPRko) && show_sublibraries) {
-    are_eligible <- are_eligible & !(expanded_CRISPR_df[["Subgroup"]] == "hCRISPRa-v2_6to10") # Otherwise, a tiny group of "supp 5" genes is displayed in the plot
+    are_eligible <- are_eligible & !(grepl("_6to10", expanded_CRISPR_df[["Subgroup"]], fixed = TRUE)) # Otherwise, a tiny group of "supp 5" genes is displayed in the plot
   }
   eligible_entrezs_vec <- expanded_CRISPR_df[["Entrez_ID"]][are_eligible]
 
@@ -544,7 +569,6 @@ FilterTop4 <- function(expanded_CRISPR_df,
   GPP_df <- GPP_df[order(as.integer(GPP_df[["Entrez_ID"]])), ]
 
   GPP_entrezs_fac <- factor(GPP_df[["Entrez_ID"]], levels = unique(GPP_df[["Entrez_ID"]]))
-
   CheckThatFactorIsInOrder(GPP_entrezs_fac)
 
   GPP_rank_list <- split(GPP_df[["GPP_rank"]], GPP_entrezs_fac)
@@ -567,7 +591,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
 
   if (!(is_CRISPRko)) {
 
-    ## Choose the guides for Calabrese
+    ## Choose the guides for the John Doench libraries
     Doench_df <- filtered_df[filtered_df[["Group"]] %in% c("Dolcetto", "Calabrese"), ]
     Doench_df <- Doench_df[order(as.integer(Doench_df[["Entrez_ID"]])), ]
 
@@ -600,8 +624,8 @@ FilterTop4 <- function(expanded_CRISPR_df,
     Doench_are_chosen <- unlist(Doench_are_chosen_list, use.names = FALSE)
     Doench_chosen_df <- Doench_df[Doench_are_chosen, ]
 
-    ## Choose the guides for hCRISPRa-v2
-    hCRISPR_v2_df <- filtered_df[filtered_df[["Group"]] %in% c("hCRISPRa-v2", "hCRISPRa-v2.1", "hCRISPRa-v2.0"), ]
+    ## Choose the guides for the hCRISPR-v2 libraries
+    hCRISPR_v2_df <- filtered_df[filtered_df[["Group"]] %in% c("hCRISPRa-v2", "hCRISPRi-v2.1", "hCRISPRi-v2.0"), ]
 
     hCRISPR_v2_df <- hCRISPR_v2_df[order(match(hCRISPR_v2_df[["Combined_ID"]], hCRISPR_v2_df[["Combined_ID"]])), ]
     hCRISPR_v2_combined_IDs <- factor(hCRISPR_v2_df[["Combined_ID"]], levels = unique(hCRISPR_v2_df[["Combined_ID"]]))
@@ -895,13 +919,15 @@ FixNumericColumns <- function(CRISPR_df, y_column) {
                                     ) * 100
   } else if (y_column == "Deviation_from_TSS_window") {
     distance_vec <- CRISPR_df[["Distance_from_TSS"]]
-    are_too_near <- distance_vec > -75
-    are_too_far <- distance_vec < -150
-    deviation_vec <- ifelse(!(are_too_near) & !(are_too_far),
+    is_CRISPRa <- IsCRISPRa(CRISPR_df)
+    TSS_window <- GetTSSWindow(is_CRISPRa)
+    are_below_lower_bound <- distance_vec < TSS_window[[1]]
+    are_above_higher_bound <- distance_vec > TSS_window[[2]]
+    deviation_vec <- ifelse(!(are_below_lower_bound) & !(are_above_higher_bound),
                             0L,
-                            ifelse(are_too_near,
-                                   abs(-75L - distance_vec),
-                                   abs(-150L - distance_vec)
+                            ifelse(are_above_higher_bound,
+                                   abs(TSS_window[[2]] - distance_vec),
+                                   abs(TSS_window[[1]] - distance_vec)
                                    )
                             )
     deviation_vec <- ifelse(deviation_vec > 1000, 1000L, deviation_vec)
@@ -949,6 +975,7 @@ GetAxisLimits <- function(numeric_vec, column_name = NULL, provide_other_limits 
 
 
 DrawViolinGridAndAxes <- function(y_column,
+                                  is_CRISPRa,
                                   show_title            = TRUE,
                                   aggregate_scores      = aggregate_scores,
                                   title_cex             = 0.9,
@@ -1001,6 +1028,8 @@ DrawViolinGridAndAxes <- function(y_column,
   title_text <- numeric_column_labels[[y_column]]
   if (aggregate_scores) {
     title_text <- paste0("Aggregate ", title_text)
+  } else if (y_column == "Deviation_from_TSS_window") {
+    title_text <- paste0(title_text, TSSWindowString(is_CRISPRa))
   }
   if (show_title && !(no_outside_annotation)) {
     title(title_text, cex.main = title_cex, line = title_line)
@@ -1010,12 +1039,12 @@ DrawViolinGridAndAxes <- function(y_column,
 
 
 
-
 PlotViolin <- function(plot_df,
                        x_positions,
                        x_limits,
                        colors_df,
                        y_column_name,
+                       is_CRISPRa,
                        show_title            = TRUE,
                        large_count_labels    = FALSE,
                        aggregate_scores      = FALSE,
@@ -1045,6 +1074,7 @@ PlotViolin <- function(plot_df,
        ann  = FALSE
        )
   title_text <- DrawViolinGridAndAxes(y_column_name,
+                                      is_CRISPRa,
                                       show_title            = show_title,
                                       aggregate_scores      = aggregate_scores,
                                       title_cex             = title_cex,
@@ -1175,7 +1205,8 @@ ViolinBox_UniqueTwoGroups <- function(CRISPR_df,
   }
 
   title_text <- PlotViolin(plot_df, x_positions, x_limits, colors_df,
-                           y_column, show_title = show_title,
+                           y_column, IsCRISPRa(CRISPR_df),
+                           show_title = show_title,
                            no_outside_annotation = no_outside_annotation,
                            use_raster_array = use_raster_array,
                            point_cex = point_cex
@@ -1238,7 +1269,8 @@ ViolinBox_UniqueLibraries <- function(CRISPR_df,
   }
 
   title_text <- PlotViolin(plot_df, x_positions, x_limits, colors_df,
-                           y_column, show_title = show_title,
+                           y_column, IsCRISPRa(CRISPR_df),
+                           show_title = show_title,
                            no_outside_annotation = no_outside_annotation,
                            use_raster_array = use_raster_array,
                            point_cex = point_cex
@@ -1460,6 +1492,7 @@ ViolinBox_Sources <- function(CRISPR_df,
     old_mar <- par(mar = c(4.4, 4, 3.5, 3) + 0.1)
   }
   PlotViolin(plot_df, x_positions, x_limits, colors_df, y_column,
+             IsCRISPRa(CRISPR_df),
              aggregate_scores = aggregate_scores,
              title_cex = 0.8, title_line = 1.55,
              no_outside_annotation = no_outside_annotation,
@@ -1662,7 +1695,10 @@ MakeCategoricalList <- function(CRISPR_df, use_column, use_cutoff) {
     use_title <- "Do not meet all criteria"
   } else if (use_column == "Deviation_from_TSS_window") {
     logical_vec <- CRISPR_df[["Deviation_from_TSS_window"]] != 0
-    use_title <- "Lie outside the optimal window around the TSS (-150 to -75 bp)"
+    is_CRISPRa <- IsCRISPRa(CRISPR_df)
+    use_title <- paste0("Lie outside the optimal window around the TSS",
+                        TSSWindowString(is_CRISPRa)
+                        )
     use_column <- "Outside_optimal_TSS_window"
   } else if (use_column == "CRISPOR_Graf_status") {
     logical_vec <- CRISPR_df[["CRISPOR_Graf_status"]] != "GrafOK"
@@ -1933,18 +1969,6 @@ BarPlot_UniqueTwoGroups <- function(CRISPR_df,
 
 
 
-# CRISPR_df <- merged_replaced_CRISPRa_df
-# use_column <- "Have_homologies"
-# use_cutoff             = NULL
-# show_rest_v_4sg        = FALSE
-# show_sublibraries      = FALSE
-# filter_top4            = use_column %in% categorical_4sg_columns
-# filter_complete_genes  = FALSE
-# filter_complete_scores = TRUE
-# collapse_GPP           = filter_top4
-
-
-
 
 BarPlot_Sources <- function(CRISPR_df,
                             use_column,
@@ -1957,6 +1981,7 @@ BarPlot_Sources <- function(CRISPR_df,
                             collapse_GPP           = filter_top4
                             ) {
 
+  assign("delete_CRISPR_df",              CRISPR_df,             envir = globalenv())
   assign("delete_use_column",             use_column,             envir = globalenv())
   assign("delete_use_cutoff",             use_cutoff,             envir = globalenv())
   assign("delete_show_rest_v_4sg",        show_rest_v_4sg,        envir = globalenv())
@@ -1986,7 +2011,11 @@ BarPlot_Sources <- function(CRISPR_df,
     }
   }
 
-  plot_df <- ExpandedSubgroupsDf(CRISPR_df, collapse_GPP = collapse_GPP, show_rest_v_4sg = show_rest_v_4sg)
+  plot_df <- ExpandedSubgroupsDf(CRISPR_df,
+                                 collapse_GPP = collapse_GPP,
+                                 show_rest_v_4sg = show_rest_v_4sg
+                                 )
+
 
   if (use_column == "Have_homologies") {
     categorical_list <- list(
@@ -2072,6 +2101,13 @@ BarPlot_Sources <- function(CRISPR_df,
   x_limits <- BarPlotXlimits(spaces_vec, side_space = max(spaces_vec))
 
   old_mar <- par(mar = c(4, 4, 6, 3) + 0.1)
+
+  assign("delete_counts_mat", counts_mat, envir = globalenv())
+  assign("delete_plot_df", plot_df, envir = globalenv())
+  assign("delete_proportions_mat", proportions_mat, envir = globalenv())
+  assign("delete_spaces_vec", spaces_vec, envir = globalenv())
+  assign("delete_x_limits", x_limits, envir = globalenv())
+  assign("delete_colors_df", colors_df, envir = globalenv())
 
   bar_positions <- PlotBars(proportions_mat, spaces_vec, x_limits, colors_df)
 

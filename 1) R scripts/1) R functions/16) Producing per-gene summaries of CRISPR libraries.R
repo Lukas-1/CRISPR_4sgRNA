@@ -61,10 +61,10 @@ AggregateSpecificityScores <- function(scores_vec) {
 libraries_order <- c(
   "Calabrese",
   "hCRISPRa-v2",
-  "Brunello",
+  "Dolcetto",
   "hCRISPRi-v2.1",
   "hCRISPRi-v2.0",
-  "Dolcetto",
+  "Brunello",
   "TKOv3",
   "GPP"
 )
