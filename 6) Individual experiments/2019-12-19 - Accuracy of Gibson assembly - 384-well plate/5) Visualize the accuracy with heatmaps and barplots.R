@@ -30,15 +30,6 @@ load(file.path(intermediate_R_objects_directory, "3) Import data from external t
 
 
 
-# Re-order assembly_df ----------------------------------------------------
-
-new_order <- order(assembly_df[["Fraction_correct_4sg"]])
-
-
-
-
-
-
 
 # Define functions --------------------------------------------------------
 
@@ -215,6 +206,224 @@ Do_cimage <- function(color_input) {
 
 
 
+DrawAccuracyHeatmap <- function(assembly_df) {
+
+  ## Set up the layout
+
+  space_height <- 1
+  golden_ratio <- (1 + sqrt(5)) / 2
+  layout(cbind(rep(1, 9),
+               3:(9 + 3 - 1),
+               rep(2, 9)
+               ),
+         widths  = c(0.1, 0.8, 0.1),
+         heights = c(space_height * 1.2,
+                     3.5,
+                     space_height * 0.13,
+                     space_height * 0.5,
+                     space_height * 1.2,
+                     3 * golden_ratio,
+                     space_height * 1.5,
+                     space_height * 0.5,
+                     space_height * 0.6
+                     )
+         )
+
+  par(mar = rep(0, 4))
+
+
+  ## Draw a vertical barplot
+
+  for (i in 1:4) {
+    MakeEmptyPlot()
+  }
+
+  fraction_correct_vec <- assembly_df[["Fraction_correct_4sg"]]
+  are_80perc_or_more <- assembly_df[["Fraction_correct_4sg"]] > 0.8
+  num_above_80 <- sum(are_80perc_or_more)
+  over_80_fraction <- num_above_80 / 384
+
+  darker_colors <- toupper("#15396d")
+  lighter_color <- "#ECEBE9"
+
+  rect(xleft = 0,
+       xright = 1,
+       ybottom = 0,
+       ytop = 1,
+       col = lighter_color,
+       border = NA
+  )
+
+
+  for (i in 1:384) {
+    rect(xleft   = (i - 1) / 384,
+         xright  = (i / 384),
+         ybottom = 0,
+         ytop    = assembly_df[["Fraction_correct_4sg"]][[i]],
+         col     = darker_colors[[1]],
+         border  = NA
+    )
+  }
+
+  tick_locations <- axTicks(2)
+  tick_labels <- paste0(tick_locations * 100, "%")
+  axis(2,
+       labels   = tick_labels,
+       at       = tick_locations,
+       las      = 1,
+       mgp      = c(3, 0.45, 0),
+       tcl      = -0.3,
+       lwd      = 0.75,
+       cex.axis = 0.9
+       )
+
+  text(x      = -0.062,
+       y      = 1.13,
+       adj    = c(0, 0),
+       labels = "Mean accuracy",
+       xpd    = NA,
+       font   = 2
+       )
+
+
+  ## Draw the % accuracy horizontal barplot
+
+  for (i in 1:2) {
+    MakeEmptyPlot()
+  }
+  two_grey_colors <- c("gray77", "gray40")
+
+
+  rect(xleft   = c(0, 1 - over_80_fraction),
+       xright  = c(1 - over_80_fraction, 1),
+       ybottom = 0,
+       ytop    = 1,
+       border  = NA,
+       lwd     = 0.5,
+       col     = two_grey_colors
+       )
+
+  text(x      = 0.5,
+       y      = -0.65,
+       adj    = c(0.5, 0.5),
+       labels = bquote(bold(.(as.character(num_above_80)) *  " / 384 genes " *
+                              "were " >= "80% accurate"
+                            )),
+       font   = 2,
+       col    = "black",
+       xpd    = NA
+       )
+  MakeEmptyPlot()
+
+
+  ## Draw the heatmap
+
+  numeric_mat <- t(as.matrix(assembly_df[, paste0("Fraction_correct_sg", 1:4)]))
+
+  my_breaks <- seq(0, 1, by = 0.01)
+  my_breaks[c(1, length(my_breaks))] <- c(0, ceiling(my_breaks[length(my_breaks)]))
+
+  my_cmap <- makecmap(numeric_mat, colFn = OrangeCividisFunction, breaks = my_breaks)
+
+  my_color_mat <- cmap(numeric_mat, my_cmap)
+
+  Do_cimage(my_color_mat)
+
+  x_range <- par("usr")[[2]] - par("usr")[[1]]
+
+  text(x      = par("usr")[[1]] - (x_range * 0.018),
+       y      = 4:1,
+       labels = paste0("sg", 1:4),
+       xpd    = NA,
+       adj    = c(1, 0.5)
+       )
+
+  MakeEmptyPlot()
+
+
+  ## Draw the color indicator (trapzeoid)
+
+  trapezoid_start_x <- 0.85
+  trapezoid_start_y <- 0.65
+  trapezoid_end_y   <- 0.9
+
+  DrawColorTrapezoid(start_x     = trapezoid_start_x,
+                     end_x       = 1,
+                     start_y     = trapezoid_start_y,
+                     end_y       = trapezoid_end_y,
+                     trapezoid_y = 0.72
+                     )
+
+  text(x      = trapezoid_start_x - 0.009,
+       y      = trapezoid_start_y + ((trapezoid_end_y - trapezoid_start_y) * 0.3),
+       adj    = c(1, 0.5),
+       labels = "Accuracy",
+       xpd    = NA,
+       font   = 2,
+       cex    = 0.9
+       )
+
+
+  trapezoid_seq <- seq(trapezoid_start_x, 1, by = ((1 - trapezoid_start_x) / 5))
+
+  text(x      = trapezoid_seq,
+       y      = trapezoid_start_y - 0.16,
+       labels = paste0(seq(0, 100, by = 20), "%"),
+       font   = 2,
+       cex    = 0.6,
+       xpd    = NA
+       )
+  segments(x0   = trapezoid_seq,
+           x1   = trapezoid_seq,
+           y0   = trapezoid_start_y - 0.088,
+           y1   = trapezoid_start_y - 0.02,
+           xpd  = NA,
+           lwd  = 0.5,
+           lend = "butt"
+           )
+
+  segments(x0   = trapezoid_start_x,
+           x1   = 1,
+           y0   = trapezoid_start_y - 0.02,
+           y1   = trapezoid_start_y - 0.02,
+           lwd  = 0.5,
+           lend = "butt"
+           )
+  MakeEmptyPlot()
+
+
+  ## Draw the strip indicating genes with homologies >8 bp
+
+  longest_subsequence_vec <- assembly_df[["Longest_subsequence"]]
+  have_homology <- longest_subsequence_vec >= 8
+
+  homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
+
+  for (i in 1:384) {
+    rect(xleft   = (i - 1) / 384,
+         xright  = (i / 384),
+         ybottom = 0,
+         ytop    = 1,
+         col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
+         border  = NA
+         )
+  }
+
+  text(x      = 0.5,
+       y      = -0.65,
+       adj    = c(0.5, 0.5),
+       labels = bquote(bold(.(as.character(sum(have_homology))) *  " / 384 genes " *
+                              "had " >= "8bp homology"
+                            )),
+       font   = 2,
+       col    = "black",
+       xpd    = NA
+       )
+
+  MakeEmptyPlot()
+
+  return(invisible(NULL))
+}
 
 
 
@@ -222,7 +431,9 @@ Do_cimage <- function(color_input) {
 
 
 
-# Set up the layout -------------------------------------------------------
+# Draw the accuracy panel -------------------------------------------------
+
+DrawAccuracyHeatmap(assembly_df)
 
 png(filename = file.path(file_output_directory, "Accuracy heatmap.png"),
     res    = 600,
@@ -230,287 +441,25 @@ png(filename = file.path(file_output_directory, "Accuracy heatmap.png"),
     width  = 6.5,
     units  = "in"
     )
-
-space_height <- 1
-
-golden_ratio <- (1 + sqrt(5)) / 2
-
-layout(cbind(rep(1, 9),
-             3:(9 + 3 - 1),
-             rep(2, 9)
-             ),
-       widths  = c(0.1, 0.8, 0.1),
-       heights = c(space_height * 1.2,
-                   3.5,
-                   space_height * 0.13,
-                   space_height * 0.5,
-                   space_height * 1.2,
-                   3 * golden_ratio,
-                   space_height * 1.5,
-                   space_height * 0.5,
-                   space_height * 0.6
-                   )
-       )
-
-par(mar = rep(0, 4))
-
-
-
-
-
-# Draw a vertical barplot -------------------------------------------------
-
-for (i in 1:4) {
-  MakeEmptyPlot()
-}
-
-# text(x = 0.5,
-#      y = 0.5,
-#      labels = "Sequencing of Gibson assembly \u2013 384 genes, re-ordered by accuracy",
-#      font = 2,
-#      xpd = NA
-#      )
-
-
-fraction_correct_vec <- assembly_df[["Fraction_correct_4sg"]][new_order]
-are_80perc_or_more <- fraction_correct_vec > 0.8
-num_above_80 <- sum(are_80perc_or_more)
-over_80_fraction <- num_above_80 / 384
-
-
-darker_colors <- toupper("#15396d")
-lighter_color <- "#ECEBE9"
-
-
-
-rect(xleft = 0,
-     xright = 1,
-     ybottom = 0,
-     ytop = 1,
-     col = lighter_color,
-     border = NA
-     )
-
-
-# grid_lines_grey <- "gray75"
-#
-# dark_line_positions <- seq(0.2, 1, by = 0.2)
-# light_line_positions <- seq(0.1, 0.9, by = 0.2)
-# segments(x0 = 0, x1 = 1, y0 = dark_line_positions, y1 = dark_line_positions,
-#          col = grid_lines_grey, lend = "butt"
-#          )
-# segments(x0 = 0, x1 = 1, y0 = light_line_positions, y1 = light_line_positions,
-#          col = grid_lines_grey, lend = "butt"
-#          )
-
-
-for (i in 1:384) {
-  rect(xleft   = (i - 1) / 384,
-       xright  = (i / 384),
-       ybottom = 0,
-       ytop    = fraction_correct_vec[[i]],
-       col     = darker_colors[[1]],
-       border  = NA
-       )
-}
-
-# segments(x0 = 0, x1 = 1, y0 = 0, y1 = 0,
-#          col = grid_lines_grey, lend = "butt"
-#          )
-
-
-
-# abline(h = 0.8, col = "gray60")
-# abline(v = over_80_fraction, col = "white")
-
-tick_locations <- axTicks(2)
-tick_labels <- paste0(tick_locations * 100, "%")
-axis(2,
-     labels   = tick_labels,
-     at       = tick_locations,
-     las      = 1,
-     mgp      = c(3, 0.45, 0),
-     tcl      = -0.3
-     )
-
-text(x      = -0.062,
-     y      = 1.13,
-     adj    = c(0, 0),
-     labels = "Mean accuracy",
-     xpd    = NA,
-     font   = 2
-     )
-
-# box()
-
-
-
-
-# Draw the % accuracy horizontal barplot ----------------------------------
-
-for (i in 1:2) {
-  MakeEmptyPlot()
-}
-
-
-
-
-two_grey_colors <- c("gray77", "gray40")
-
-rect(xleft   = c(0, 1 - over_80_fraction),
-     xright  = c(1 - over_80_fraction, 1),
-     ybottom = 0,
-     ytop    = 1,
-     border  = NA, #"gray20",
-     lwd     = 0.5,
-     col     = two_grey_colors
-     )
-
-x_mid <- (num_above_80 / 2) / 384
-
-mid_x <- par("usr")[[1]] + ((par("usr")[[2]] - (par("usr")[[1]])) * x_mid)
-mid_y <- 0.5
-
-text(x      = 0.5,
-     y      = -0.65,
-     adj    = c(0.5, 0.5),
-     labels = bquote(bold(.(as.character(num_above_80)) *  " / 384 genes " *
-                          "were " >= "80% accurate"
-                          )),
-     font   = 2,
-     col    = "black",
-     xpd    = NA
-     )
-
-
-MakeEmptyPlot()
-
-
-
-
-
-# Draw the heatmap --------------------------------------------------------
-
-numeric_mat <- t(as.matrix(assembly_df[, paste0("Fraction_correct_sg", 1:4)]))
-
-my_breaks <- seq(0, 1, by = 0.01)
-my_breaks[c(1, length(my_breaks))] <- c(0, ceiling(my_breaks[length(my_breaks)]))
-
-my_cmap <- makecmap(numeric_mat, colFn = OrangeCividisFunction, breaks = my_breaks)
-
-my_color_mat <- cmap(numeric_mat, my_cmap)
-
-Do_cimage(my_color_mat)
-
-x_range <- par("usr")[[2]] - par("usr")[[1]]
-
-text(x      = par("usr")[[1]] - (x_range * 0.018),
-     y      = 4:1,
-     labels = paste0("sg", 1:4),
-     xpd    = NA,
-     adj    = c(1, 0.5)
-     )
-# box()
-
-MakeEmptyPlot()
-
-
-
-
-
-# Draw the color indicator (trapezoid) ------------------------------------
-
-trapezoid_start_x <- 0.85
-trapezoid_start_y <- 0.65
-trapezoid_end_y   <- 0.9
-
-DrawColorTrapezoid(start_x     = trapezoid_start_x,
-                   end_x       = 1,
-                   start_y     = trapezoid_start_y,
-                   end_y       = trapezoid_end_y,
-                   trapezoid_y = 0.72
-                   )
-
-text(x      = trapezoid_start_x - 0.009,
-     y      = trapezoid_start_y + ((trapezoid_end_y - trapezoid_start_y) * 0.3),
-     adj    = c(1, 0.5),
-     labels = "Accuracy",
-     xpd    = NA,
-     font   = 2,
-     cex    = 0.9
-     )
-
-
-trapezoid_seq <- seq(trapezoid_start_x, 1, by = ((1 - trapezoid_start_x) / 5))
-
-text(x      = trapezoid_seq,
-     y      = trapezoid_start_y - 0.16,
-     labels = paste0(seq(0, 100, by = 20), "%"),
-     font   = 2,
-     cex    = 0.6,
-     xpd    = NA
-     )
-segments(x0   = trapezoid_seq,
-         x1   = trapezoid_seq,
-         y0   = trapezoid_start_y - 0.088,
-         y1   = trapezoid_start_y - 0.02,
-         xpd  = NA,
-         lwd  = 0.5,
-         lend = "butt"
-         )
-
-segments(x0   = trapezoid_start_x,
-         x1   = 1,
-         y0   = trapezoid_start_y - 0.02,
-         y1   = trapezoid_start_y - 0.02,
-         lwd  = 0.5,
-         lend = "butt"
-         )
-
-MakeEmptyPlot()
-
-
-
-
-# Draw the strip indicating genes with homologies >8 bp -------------------
-
-longest_subsequence_vec <- assembly_df[["Longest_subsequence"]][new_order]
-have_homology <- longest_subsequence_vec >= 8
-
-# homology_colors <- brewer.pal(8, "Paired")[c(3, 4)]
-homology_colors <- two_grey_colors
-
-for (i in 1:384) {
-  rect(xleft   = (i - 1) / 384,
-       xright  = (i / 384),
-       ybottom = 0,
-       ytop    = 1,
-       col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
-       border  = NA
-       )
-}
-
-
-text(x      = 0.5,
-     y      = -0.65,
-     adj    = c(0.5, 0.5),
-     labels = bquote(bold(.(as.character(sum(have_homology))) *  " / 384 genes " *
-                          "had " >= "8bp homology"
-                          )),
-     font   = 2,
-     col    = "black",
-     xpd    = NA
-     )
-
-MakeEmptyPlot()
+DrawAccuracyHeatmap(assembly_df)
+dev.off()
+
+
+pdf(file = file.path(file_output_directory, "Accuracy heatmap.pdf"),
+    height = 4.5,
+    width  = 6.5
+    )
+DrawAccuracyHeatmap(assembly_df)
 dev.off()
 
 
 
 
 
-
 # Compute some statistics -------------------------------------------------
+
+are_80perc_or_more <- assembly_df[["Fraction_correct_4sg"]] > 0.8
+have_homology <- assembly_df[["Longest_subsequence"]] >= 8
 
 table(are_80perc_or_more, have_homology)
 fisher.test(are_80perc_or_more, have_homology)

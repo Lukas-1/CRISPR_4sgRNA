@@ -93,11 +93,58 @@ MakeHist <- function(numeric_vec,
 
 
 
+DrawHistogramPanel <- function(assembly_df) {
+
+  par(mfrow = c(4, 1),
+      mar = c(0.5, 2, 1, 2),
+      oma = c(4, 4, 2, 3)
+      )
+
+  for (i in 1:4) {
+    title_text <- paste0("sg", i)
+    MakeHist(assembly_df[[paste0("Fraction_correct_sg", i)]],
+             use_color = "#003876",
+             show_axis_labels = i == 4
+             )
+    text(x      = -0.067,
+         y      = par("usr")[[3]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.5),
+         labels = title_text,
+         font   = 2,
+         cex    = 1.5,
+         xpd    = NA,
+         adj    = c(1, 0.5)
+         )
+    if (i == 1) {
+      text(x      = -0.07,
+           y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.11),
+           adj    = c(0, 0),
+           labels = "Counts",
+           xpd    = NA
+           )
+    }
+    if (i == 4) {
+      text(x      = 0.5,
+           y      = par("usr")[[3]] - ((par("usr")[[4]] - par("usr")[[3]]) * 0.4),
+           labels = "Accuracy",
+           font   = 1,
+           xpd    = NA,
+           cex    = 1.5
+           )
+    }
+  }
+  return(invisible(NULL))
+}
+
+
+
+
 
 
 
 
 # Draw the histograms -----------------------------------------------------
+
+DrawHistogramPanel(assembly_df)
 
 png(filename = file.path(file_output_directory, "Accuracy histograms.png"),
     res    = 600,
@@ -105,42 +152,18 @@ png(filename = file.path(file_output_directory, "Accuracy histograms.png"),
     width  = 6.5,
     units  = "in"
     )
-
-
-par(mfrow = c(4, 1),
-    mar = c(0.5, 2, 1, 2),
-    oma = c(4, 4, 2, 3)
-    )
-
-
-for (i in 1:4) {
-  title_text <- paste0("sg", i)
-  MakeHist(assembly_df[[paste0("Fraction_correct_sg", i)]],
-           use_color = "#003876",
-           show_axis_labels = i == 4
-           )
-  text(x      = -0.067,
-       y      = par("usr")[[3]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.5),
-       labels = title_text,
-       # col    = use_color,
-       font   = 2,
-       cex    = 1.5,
-       xpd    = NA,
-       adj    = c(1, 0.5)
-       )
-
-  if (i == 4) {
-    text(x      = 0.5,
-         y      = par("usr")[[3]] - ((par("usr")[[4]] - par("usr")[[3]]) * 0.4),
-         labels = "Accuracy",
-         font   = 1,
-         xpd    = NA,
-         cex    = 1.5
-         )
-  }
-}
-
+DrawHistogramPanel(assembly_df)
 dev.off()
+
+
+
+pdf(file.path(file_output_directory, "Accuracy histograms.pdf"),
+    height = 5.5,
+    width  = 6.5
+    )
+DrawHistogramPanel(assembly_df)
+dev.off()
+
 
 
 
