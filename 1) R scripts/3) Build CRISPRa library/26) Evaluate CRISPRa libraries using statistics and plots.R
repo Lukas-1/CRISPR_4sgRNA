@@ -36,6 +36,14 @@ load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the 
 
 # Try stuff ---------------------------------------------------------------
 
+ViolinBox_Sources(merged_replaced_CRISPRa_df,
+                  "Deviation_from_TSS_window",
+                  "show_sublibraries"      = FALSE,
+                  "filter_complete_genes"  = FALSE,
+                  "filter_complete_scores" = FALSE
+                  )
+
+
 BarPlot_Sources(merged_replaced_CRISPRa_df,
                 "Are_overlapping",
                 "show_sublibraries"      = FALSE,
