@@ -93,6 +93,7 @@ if (anyNA(as.integer(NCBI_gene_entrezs_vec))) {
 
 
 
+
 # Search the NCBI ASN.1 output for specific comments ----------------------
 
 SearchNCBIGene <- function(string) {
@@ -103,6 +104,7 @@ partial_on_assembly     <- SearchNCBIGene("partial on reference assembly")
 only_on_alternate_loci  <- SearchNCBIGene("only annotated on alternate loci in reference assembly")
 only_on_loci_or_patches <- SearchNCBIGene("only annotated on alternate loci and patches unit in reference")
 only_on_patches         <- SearchNCBIGene("only annotated on patches unit in reference assembly")
+
 
 
 
