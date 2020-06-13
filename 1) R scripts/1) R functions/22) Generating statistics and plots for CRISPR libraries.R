@@ -253,7 +253,9 @@ GetTSSWindow <- function(is_CRISPRa) {
 TSSWindowString <- function(is_CRISPRa) {
   TSS_window <- GetTSSWindow(is_CRISPRa)
   TSS_strings <- formatC(TSS_window, format = "d", flag = "+")
-  result_string <- paste0(" (", TSS_strings[[1]], " to ", TSS_strings[[2]], ")")
+  result_string <- paste0(" (", TSS_strings[[1]], " to ", TSS_strings[[2]],
+                          " bp)"
+                          )
   return(result_string)
 }
 
