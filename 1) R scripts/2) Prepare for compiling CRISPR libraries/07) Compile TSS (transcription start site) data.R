@@ -57,6 +57,10 @@ BioMart_df <- read.table(file.path(human_genome_directory, "Ensembl", "BioMart_h
                          sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
                          )
 
+# Read in a later version of the BioMart export file that also contains the gene type
+BioMart_gene_type_df <- read.table(file.path(human_genome_directory, "Ensembl", "BioMart_human_2020-06-03_mart_export_with_gene_type.txt"),
+                                   sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, check.names = FALSE
+                                   )
 
 
 
@@ -105,8 +109,42 @@ names(FANTOM5_bed_df) <- c(
 
 
 
+# Integrate "gene type" into the BioMart data frame -----------------------
 
-# Check cage peak IDs -----------------------------------------------------
+IDs_older <- paste0(BioMart_df[["Gene stable ID"]], "__",
+                    BioMart_df[["Transcript stable ID"]]
+                    )
+IDs_newer <- paste0(BioMart_gene_type_df[["Gene stable ID"]], "__",
+                    BioMart_gene_type_df[["Transcript stable ID"]]
+                    )
+ID_matches <- match(IDs_older, IDs_newer)
+
+for (column_name in c("Gene type", "Transcript type")) {
+  BioMart_df[[column_name]] <- BioMart_gene_type_df[[column_name]][ID_matches]
+}
+
+
+
+
+# Check for unannotated FANTOM5 CAGE peaks --------------------------------
+
+annotation_columns <- c("Transcript_name", "GeneID", "HGNC/MGI_ID",
+                        "UniProt_ID", "Gene_name", "Gene_symbol",
+                        "Gene_synonyms", "Gene_source"
+                        )
+annotation_mat <- as.matrix(FANTOM5_ann_df[, annotation_columns])
+
+are_empty_mat <- apply(annotation_mat, 2, function(x) x == "")
+are_all_empty <- apply(are_empty_mat, 1, all)
+have_NA_distance <- is.na(FANTOM5_ann_df[["Distance"]])
+
+stopifnot(identical(are_all_empty, have_NA_distance))
+
+
+
+
+
+# Check FANTOM5 CAGE peak IDs ---------------------------------------------
 
 table(FANTOM5_ann_df[["CAGE_Peak_ID"]] %in% FANTOM5_bed_df[["Peak_ID"]])
 table(FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]])
@@ -114,6 +152,19 @@ table(FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]])
 any(duplicated(FANTOM5_ann_df[["CAGE_Peak_ID"]]))
 any(duplicated(FANTOM5_bed_df[["Peak_ID"]]))
 
+
+
+
+# Remove unannotated FANTOM5 CAGE peaks -----------------------------------
+
+table(FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]])
+
+FANTOM5_ann_df <- FANTOM5_ann_df[!(are_all_empty), ]
+are_present <- FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]]
+FANTOM5_bed_df <- FANTOM5_bed_df[are_present, ]
+
+rownames(FANTOM5_ann_df) <- NULL
+rownames(FANTOM5_bed_df) <- NULL
 
 
 
@@ -125,6 +176,7 @@ HGNC_df[["Entrez_ID"]] <- ifelse(is.na(HGNC_df[["NCBI Gene ID"]]),
                                  HGNC_df[["NCBI Gene ID(supplied by NCBI)"]],
                                  HGNC_df[["NCBI Gene ID"]]
                                  )
+
 
 
 
@@ -169,6 +221,24 @@ FANTOM5_ann_df[["Consensus_entrez"]] <- ifelse(is.na(FANTOM5_ann_df[["FANTOM5_en
 
 
 
+# Tidy some additional FANTOM5 annotation columns -------------------------
+
+FANTOM5_ann_df[["HGNC_ID"]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[["HGNC/MGI_ID"]])
+FANTOM5_ann_df[["HGNC_ID"]] <- sub("HGNC:", "", FANTOM5_ann_df[["HGNC_ID"]])
+
+FANTOM5_ann_df[["UniProt_ID"]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[["HGNC/MGI_ID"]])
+
+tidy_annotation_columns <- c(
+  "Transcript_name", "HGNC/MGI_ID",
+  "UniProt_ID", "Gene_name", "Gene_synonyms", "Gene_source"
+)
+
+for (column_name in tidy_annotation_columns) {
+  FANTOM5_ann_df[[column_name]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[[column_name]])
+}
+
+
+
 # Build a combined FANTOM5 data frame -------------------------------------
 
 FANTOM_ann_matches <- match(FANTOM5_bed_df[["Peak_ID"]], FANTOM5_ann_df[["CAGE_Peak_ID"]])
@@ -178,14 +248,18 @@ FANTOM5_df <- data.frame(
   FANTOM5_bed_df[, c("Chromosome", "Strand", "Peak_start", "Peak_end", "TSS_start", "TSS_stop")],
   FANTOM5_ann_df[FANTOM_ann_matches, "Distance", drop = FALSE],
   FANTOM5_bed_df["Score"],
+  FANTOM5_ann_df[FANTOM_ann_matches, c("FANTOM5_entrez", tidy_annotation_columns)],
+  check.names = FALSE,
   stringsAsFactors = FALSE
 )
 
 names(FANTOM5_df)[names(FANTOM5_df) == "Consensus_entrez"] <- "Entrez_ID"
+names(FANTOM5_df)[names(FANTOM5_df) == "HGNC/MGI_ID"] <- "HGNC_ID"
 
 FANTOM5_df[["Gene_symbol"]] <- StandardizeFANTOM5IDs(FANTOM5_df[["Gene_symbol"]])
 
 stopifnot(all(grepl("chr", FANTOM5_df[["Chromosome"]], fixed = TRUE)))
+
 
 
 
@@ -219,22 +293,27 @@ unique_IDs_FANTOM5_df[my_order, ][(num_occurrences_pasted_IDs[my_order] > 1) %in
 
 # Filter and standardize the combined FANTOM5 data frame ------------------
 
-have_a_gene_ID <- (!(is.na(FANTOM5_df[["Entrez_ID"]]))) | (!(is.na(FANTOM5_df[["Gene_symbol"]])))
+FANTOM5_group_vec <- paste0(ifelse(is.na(FANTOM5_df[["Entrez_ID"]]),
+                                   "",
+                                   paste0(FANTOM5_df[["Entrez_ID"]], " | ")
+                                   ),
+                            FANTOM5_df[["Gene_symbol"]], " | ",
+                            FANTOM5_df[["Chromosome"]]
+                            )
 
-FANTOM5_filtered_df <- FANTOM5_df[have_a_gene_ID, ]
+have_a_gene_ID <- (!(is.na(FANTOM5_df[["Entrez_ID"]]))) |
+                  (!(is.na(FANTOM5_df[["Gene_symbol"]])))
 
-FANTOM5_filtered_df <- data.frame(
-  "Group" = paste0(ifelse(is.na(FANTOM5_filtered_df[["Entrez_ID"]]),
-                          "",
-                          paste0(FANTOM5_filtered_df[["Entrez_ID"]], " | ")
-                          ),
-                   FANTOM5_filtered_df[["Gene_symbol"]], " | ",
-                   FANTOM5_filtered_df[["Chromosome"]]
-                   ),
-  FANTOM5_filtered_df,
+FANTOM5_df <- data.frame(
+  "Group" = ifelse(have_a_gene_ID, FANTOM5_group_vec, NA_character_),
+  FANTOM5_df,
   stringsAsFactors = FALSE,
   row.names = NULL
 )
+
+FANTOM5_filtered_df <- FANTOM5_df[have_a_gene_ID, ]
+rownames(FANTOM5_filtered_df) <- NULL
+
 
 
 
@@ -242,37 +321,41 @@ FANTOM5_filtered_df <- data.frame(
 
 # Construct a simplified BioMart data frame -------------------------------
 
-are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y", "MT")
+BioMart_tidied_df <- BioMart_df
 
-BioMart_filtered_df <- BioMart_df[are_on_chromosome, ]
+BioMart_tidied_df[["Chromosome/scaffold name"]] <- ifelse(BioMart_tidied_df[["Chromosome/scaffold name"]] == "MT",
+                                                          "M",
+                                                          BioMart_tidied_df[["Chromosome/scaffold name"]]
+                                                          )
 
-BioMart_filtered_df[["Chromosome/scaffold name"]] <- ifelse(BioMart_filtered_df[["Chromosome/scaffold name"]] == "MT",
-                                                            "M",
-                                                            BioMart_filtered_df[["Chromosome/scaffold name"]]
-                                                            )
-
-BioMart_filtered_df <- data.frame(
-  "Group"             = paste0(ifelse(is.na(BioMart_filtered_df[["NCBI gene ID"]]),
+BioMart_tidied_df <- data.frame(
+  "Group"             = paste0(ifelse(is.na(BioMart_tidied_df[["NCBI gene ID"]]),
                                       "",
-                                      paste0(BioMart_filtered_df[["NCBI gene ID"]], " | ")
+                                      paste0(BioMart_tidied_df[["NCBI gene ID"]], " | ")
                                       ),
-                               BioMart_filtered_df[["Gene name"]], " | ", "chr",
-                               BioMart_filtered_df[["Chromosome/scaffold name"]]
+                               BioMart_tidied_df[["Gene name"]], " | ", "chr",
+                               BioMart_tidied_df[["Chromosome/scaffold name"]]
                                ),
-  "Entrez_ID"         = BioMart_filtered_df[["NCBI gene ID"]],
-  "Gene_symbol"       = BioMart_filtered_df[["Gene name"]],
-  "ENSG"              = BioMart_filtered_df[["Gene stable ID"]],
-  "ENST"              = BioMart_filtered_df[["Transcript stable ID"]],
-  "Chromosome"        = paste0("chr", BioMart_filtered_df[["Chromosome/scaffold name"]]),
-  "Strand"            = ifelse(BioMart_filtered_df[["Strand"]] == -1, "-", "+"),
-  "Gene_start"        = BioMart_filtered_df[["Gene start (bp)"]],
-  "Gene_end"          = BioMart_filtered_df[["Gene end (bp)"]],
-  "Transcript_start"  = BioMart_filtered_df[["Transcript start (bp)"]],
-  "Transcript_end"    = BioMart_filtered_df[["Transcript end (bp)"]],
-  "TSS"               = BioMart_filtered_df[["Transcription start site (TSS)"]],
-  "Transcript_length" = BioMart_filtered_df[["Transcript length (including UTRs and CDS)"]],
+  "Entrez_ID"         = BioMart_tidied_df[["NCBI gene ID"]],
+  "Gene_symbol"       = BioMart_tidied_df[["Gene name"]],
+  "ENSG"              = BioMart_tidied_df[["Gene stable ID"]],
+  "ENST"              = BioMart_tidied_df[["Transcript stable ID"]],
+  "Chromosome"        = paste0("chr", BioMart_tidied_df[["Chromosome/scaffold name"]]),
+  "Strand"            = ifelse(BioMart_tidied_df[["Strand"]] == -1, "-", "+"),
+  "Gene_start"        = BioMart_tidied_df[["Gene start (bp)"]],
+  "Gene_end"          = BioMart_tidied_df[["Gene end (bp)"]],
+  "Transcript_start"  = BioMart_tidied_df[["Transcript start (bp)"]],
+  "Transcript_end"    = BioMart_tidied_df[["Transcript end (bp)"]],
+  "TSS"               = BioMart_tidied_df[["Transcription start site (TSS)"]],
+  "Transcript_length" = BioMart_tidied_df[["Transcript length (including UTRs and CDS)"]],
+  "Gene_type"         = BioMart_tidied_df[["Gene type"]],
+  "Transcript_type"   = BioMart_tidied_df[["Transcript type"]],
   stringsAsFactors    = FALSE
 )
+
+are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y", "MT")
+BioMart_filtered_df <- BioMart_tidied_df[are_on_chromosome, ]
+rownames(BioMart_filtered_df) <- NULL
 
 
 
@@ -433,6 +516,7 @@ combined_TSS_summary_df <- do.call(rbind.data.frame, c(combined_TSS_summary_list
 # Save data ---------------------------------------------------------------
 
 save(list = c("combined_TSS_df", "BioMart_filtered_df", "FANTOM5_filtered_df",
+              "BioMart_tidied_df", "FANTOM5_df",
               "combined_TSS_summary_df" #, "BioMart_summary_df", "FANTOM5_summary_df"
               ),
      file = file.path(general_RData_directory, "07) Compile TSS (transcription start site) data.RData")
