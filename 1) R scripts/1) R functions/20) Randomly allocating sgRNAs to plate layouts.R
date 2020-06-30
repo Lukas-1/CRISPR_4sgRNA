@@ -702,7 +702,7 @@ AllocateAllGuides_v2 <- function(CRISPR_df,
   changed_TF_df <- new_TF_df[new_TF_df[["Entrez_ID"]] %in% changed_entrez_IDs, ]
 
   changed_TF_df <- RenumberPlatesContinuously(changed_TF_df)
-  reordered_changed_TF_df <- PlaceCandidateGenesTogether(changed_TF_df, PD_4sg_entrezs)
+  reordered_changed_TF_df <- PlaceCandidateGenesTogether(changed_TF_df, candidate_entrezs)
 
 
   ## Define the first plate ("5+")
