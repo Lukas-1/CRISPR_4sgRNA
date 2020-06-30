@@ -1,0 +1,58 @@
+### 27th June 2020 ###
+
+
+
+
+# Import packages and source code -----------------------------------------
+
+general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "27) Creating 4sg plasmid sequences.R"))
+
+
+
+
+
+# Define folder paths -----------------------------------------------------
+
+CRISPR_root_directory    <- "~/CRISPR"
+RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory  <- file.path(RData_directory, "1) General")
+CRISPRi_RData_directory  <- file.path(RData_directory, "4) CRISPRi")
+file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRi")
+plasmid_output_directory <- file.path(file_output_directory, "Plasmids")
+
+
+
+
+# Load data ---------------------------------------------------------------
+
+load(file.path(CRISPRi_RData_directory, "27) Distribute sgRNAs for the whole genome onto plates.RData"))
+
+
+
+
+
+# Export vectors ----------------------------------------------------------
+
+for (gene_symbol in c("PRNP", "FAAH2", "RGS18")) {
+  ExportVectorsForGene(gene_symbol, sg4_df)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
