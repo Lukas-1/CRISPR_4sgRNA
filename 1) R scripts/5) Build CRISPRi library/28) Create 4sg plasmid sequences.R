@@ -34,7 +34,15 @@ load(file.path(CRISPRi_RData_directory, "27) Distribute sgRNAs for the whole gen
 
 # Export vectors ----------------------------------------------------------
 
-for (gene_symbol in c("PRNP", "FAAH2", "RGS18")) {
+export_genes <- c(
+  "RGS18", "LSM4", "PML", "MED31", "ZNF441",
+  "SERPINB2", "FAAH2", "LSM2", "SMN1", "PIKFYVE"
+)
+
+
+export_genes %in% sg4_df[["Gene_symbol"]]
+
+for (gene_symbol in export_genes) {
   ExportVectorsForGene(gene_symbol, sg4_df)
 }
 
