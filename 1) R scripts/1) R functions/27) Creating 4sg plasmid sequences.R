@@ -26,9 +26,15 @@ plasmid_genbank_snapgene <- scan(file = file.path(plasmids_directory, "pYJA5 emp
                                  what = character(),
                                  sep = "\n"
                                  )
-prior_lines <- plasmid_genbank_snapgene[1:256]
-after_lines <- plasmid_genbank_snapgene[417]
-sequence_lines <- plasmid_genbank_snapgene[257:416]
+first_index <- which(plasmid_genbank_snapgene == "ORIGIN") + 1L
+prior_lines <- plasmid_genbank_snapgene[seq_len(first_index - 1)]
+last_index <- first_index + 159
+after_seq <- seq(from = last_index + 1,
+                 to = length(plasmid_genbank_snapgene)
+                 )
+after_lines <- plasmid_genbank_snapgene[after_seq]
+sequence_seq <- seq(from = first_index, to = last_index)
+sequence_lines <- plasmid_genbank_snapgene[sequence_seq]
 
 
 
@@ -93,10 +99,11 @@ ReplaceNNNLines <- function(lines_vec, four_guides) {
           replacement_chars[[char_index]] <- " "
         } else {
           sum_replaced <- sum_replaced + 1L
+          assign("delete_sequences_vec", sequences_vec, envir = globalenv())
           replacement_chars[[char_index]] <- substr(sequences_vec[[i]],
                                                     sum_replaced,
                                                     sum_replaced
-          )
+                                                    )
         }
       }
       replacement_string <- paste0(replacement_chars, collapse = "")
@@ -135,14 +142,19 @@ ExportVectorsForGene <- function(symbol_or_entrez, CRISPR_df) {
   are_chosen <- are_this_gene & are_top4
   num_guides <- sum(are_chosen)
   num_TSSs <- num_guides / 4
+
+  if (num_guides == 0) {
+    stop(paste0("The gene '", symbol_or_entrez, "' was not found!"))
+  }
   stopifnot((num_guides %% 4) == 0)
+
   if (num_TSSs > 1) {
-    file_name_postfixes <- paste0("_TSS", seq_along(num_TSSs))
+    file_name_postfixes <- paste0("_TSS", seq_len(num_TSSs))
   } else {
     file_name_postfixes <- ""
   }
   sequences_list <- split(CRISPR_df[["sgRNA_sequence"]][are_chosen],
-                          rep(seq_along(num_guides), each = 4)
+                          rep(seq_len(num_TSSs), each = 4)
                           )
   for (i in seq_along(sequences_list)) {
     new_lines <- ReplaceNNNLines(sequence_lines, sequences_list[[i]])
