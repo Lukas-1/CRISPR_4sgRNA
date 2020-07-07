@@ -1,4 +1,4 @@
-### 27th June 2020 ###
+### 7th July 2020 ###
 
 
 
@@ -17,8 +17,8 @@ source(file.path(general_functions_directory, "27) Creating 4sg plasmid sequence
 CRISPR_root_directory    <- "~/CRISPR"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
-CRISPRi_RData_directory  <- file.path(RData_directory, "4) CRISPRi")
-file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRi")
+CRISPRi_RData_directory  <- file.path(RData_directory, "2) CRISPRa")
+file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")
 plasmid_output_directory <- file.path(file_output_directory, "Plasmids")
 
 
@@ -33,11 +33,6 @@ load(file.path(CRISPRi_RData_directory, "27) Distribute sgRNAs for the whole gen
 
 
 # Export vectors ----------------------------------------------------------
-
-export_genes <- c(
-  "RGS18", "LSM4", "PML", "MED31", "ZNF441",
-  "SERPINB2", "FAAH2", "LSM2", "SMN1", "PIKFYVE"
-)
 
 export_genes <- c(
   "TXNIP", "KIF1A", "C19orf48"
