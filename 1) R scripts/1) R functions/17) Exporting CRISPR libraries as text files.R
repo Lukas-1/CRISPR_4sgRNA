@@ -58,6 +58,150 @@ RoundNumericColumns <- function(my_df, num_digits = 7) {
 
 
 
+
+AdditionalTargetsCRISPRko <- function(CRISPRko_df) {
+
+  CRISPRko_overlapping_vec <- c(
+    "Entrez_overlapping_0MM" = "Entrez_ID",
+    "Symbol_overlapping_0MM" = "Gene_symbol"
+  )
+
+  assign("start_CRISPRko_df", CRISPRko_df, envir = globalenv())
+  stop()
+
+  for (column_name in names(CRISPRko_overlapping_vec)) {
+    target_vec <- CRISPRko_df[[CRISPRko_overlapping_vec[[column_name]]]]
+    target_list <- strsplit(target_vec, ", ", fixed = TRUE)
+
+    split_list <- strsplit(CRISPRko_df[[column_name]], "; ", fixed = TRUE)
+
+    split_list_list <- lapply(split_list, function(x) strsplit(x, ", ", fixed = TRUE))
+
+
+    contains_target_list <- lapply(seq_along(split_list_list),
+                                   function(x) vapply(split_list_list[[x]],
+                                                      function(y) any(y %in% target_list[[x]]),
+                                                      logical(1)
+                                                      )
+                                   )
+    contains_target <- vapply(contains_target_list, any, logical(1))
+
+
+    contains_off_target_list <- lapply(seq_along(split_list_list),
+                                       function(x) vapply(split_list_list[[x]],
+                                                          function(y) !(all(y == "NA")) && !(any(y %in% target_list[[x]])),
+                                                          logical(1)
+                                                          )
+                                       )
+    contains_off_target <- vapply(contains_off_target_list, any, logical(1))
+
+
+
+    split_list_list <- lapply(seq_along(split_list_list),
+                              function(x) lapply(split_list_list[[x]], function(y) setdiff(y, target_list[[x]]))
+                              )
+    split_list_list <- lapply(split_list_list, function(x) x[lengths(x) >= 1])
+    split_list <- lapply(split_list_list,
+                         function(x) vapply(x, function(y) if (all(is.na(y))) NA_character_ else paste0(y, collapse = ", "), "")
+                         )
+    split_list <- mapply(setdiff, split_list, target_list)
+    split_list <- lapply(split_list, function(x) x[x != "NA"])
+
+    num_overlaps <- vapply(split_list, function(x) sum(!(is.na(x))), integer(1))
+    split_vec <- TruncateLongEntriesSplits(split_list, max_length = 20)
+
+    split_vec <- ifelse(contains_target | is.na(target_vec),
+                        split_vec,
+                        ifelse(num_overlaps == 0,
+                               paste0("No overlaps with ", target_vec, "!"),
+                               ifelse(num_overlaps == 1,
+                                      paste0(split_vec, " (not ", target_vec, "!)"),
+                                      paste0("Does not target ", target_vec, ", but ", split_vec)
+                                      )
+                               )
+                        )
+
+    are_all_NA <- vapply(split_list_list, function(x) all(is.na(x)), logical(1))
+
+    are_unspecific <- contains_off_target & !(are_all_NA)
+
+
+
+    library("TxDb.Hsapiens.UCSC.hg38.knownGene")
+    human_genes_GRanges <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
+    entrezs_included <- mcols(human_genes_GRanges)[["gene_id"]]
+
+
+    description_vec <- vapply(seq_along(split_list_list),
+                              function(x) {
+                                if (contains_target[[x]]) {
+                                  if (are_unspecific[[x]]) {
+                                    "Intended and unintended (in other loci)"
+                                  } else {
+                                    if (num_overlaps[[x]] == 0) {
+                                      "Only intended"
+                                    } else {
+                                      "Intended and others (in the same loci)"
+                                    }
+                                  }
+                                } else {
+                                  entrez_included <- CRISPRko_df[["Entrez_ID"]][[x]] %in% entrezs_included
+                                  if (!(entrez_included)) {
+                                    "Gene location not in database"
+                                  } else {
+                                    num_hits <- CRISPRko_df[["Num_0MM"]][[x]]
+                                    if (are_unspecific[[x]]) {
+                                      if (num_hits == 1) {
+                                        "Only unintended (single locus)"
+                                      } else {
+                                        "Only unintended (multiple loci)"
+                                      }
+                                    } else {
+                                      if (num_hits == 0) {
+                                        "No location found in the reference genome"
+                                      } else if (num_hits == 1) {
+                                        "No targets (single locus)"
+                                      } else {
+                                        "No targets (multiple loci)"
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              ""
+                              )
+
+    description_fac <- factor(description_vec,
+                              levels = c(
+                                "Gene location not in database",
+                                "Only intended",
+                                "Intended and others (in the same loci)",
+                                "Intended and unintended (in other loci)",
+                                "No targets (single locus)",
+                                "No targets (multiple loci)",
+                                "Only unintended (single locus)",
+                                "Only unintended (multiple loci)",
+                                "No location found in the reference genome"
+                                )
+                              )
+
+
+
+
+    CRISPRko_df[[column_name]] <- ifelse(CRISPRko_df[["Is_control"]] == "Yes",
+                                         NA_character_,
+                                         split_vec
+                                         )
+
+
+
+
+  }
+  return(CRISPRko_df)
+}
+
+
+
 FormatForExcel <- function(my_df,
                            remove_columns             = NULL,
                            probability_to_percentage  = FALSE,
@@ -96,52 +240,12 @@ FormatForExcel <- function(my_df,
     }
   }
 
-  CRISPRko_overlapping_vec <- c(
-    "Entrez_overlapping_0MM" = "Entrez_ID",
-    "Symbol_overlapping_0MM" = "Gene_symbol"
-  )
   other_overlapping_columns <- c(
     "Nearest_Entrez_IDs", "Nearest_symbols",
     "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
   )
   if (is_CRISPRko) {
-    for (column_name in names(CRISPRko_overlapping_vec)) {
-      target_vec <- my_df[[CRISPRko_overlapping_vec[[column_name]]]]
-      target_list <- strsplit(target_vec, ", ", fixed = TRUE)
-
-      split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
-
-      split_list_list <- lapply(split_list, function(x) strsplit(x, ", ", fixed = TRUE))
-
-      contains_target <- vapply(seq_along(split_list_list),
-                                function(x) any(vapply(split_list_list[[x]], function(y) any(y %in% target_list[[x]]), logical(1))),
-                                logical(1)
-                                )
-      split_list_list <- lapply(seq_along(split_list_list),
-                                function(x) lapply(split_list_list[[x]], function(y) setdiff(y, target_list[[x]]))
-                                )
-      split_list_list <- lapply(split_list_list, function(x) x[lengths(x) >= 1])
-      split_list <- lapply(split_list_list,
-                           function(x) vapply(x, function(y) if (all(is.na(y))) NA_character_ else paste0(y, collapse = ", "), "")
-                           )
-      split_list <- mapply(setdiff, split_list, target_list)
-      split_list <- lapply(split_list, function(x) unique(x[x != "NA"]))
-
-      num_overlaps <- vapply(split_list, function(x) sum(!(is.na(x))), integer(1))
-      split_vec <- TruncateLongEntriesSplits(split_list, max_length = 20)
-
-      split_vec <- ifelse(contains_target | is.na(target_vec),
-                          split_vec,
-                          ifelse(num_overlaps == 0,
-                                 paste0("No overlaps with ", target_vec, "!"),
-                                 ifelse(num_overlaps == 1,
-                                        paste0(split_vec, " (not ", target_vec, "!)"),
-                                        paste0("Does not target ", target_vec, ", but ", split_vec)
-                                        )
-                                 )
-                          )
-      my_df[[column_name]] <- ifelse(my_df[["Is_control"]] == "Yes", NA_character_, split_vec)
-    }
+    my_df <- AdditionalTargetsCRISPRko(my_df)
   }
   for (column_name in intersect(other_overlapping_columns, colnames(my_df))) {
     split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
@@ -364,7 +468,10 @@ FormatFixedWidthInteger <- function(integer_vec) {
 AddPaddingToPlates <- function(CRISPR_df) {
   stopifnot("Plate_number" %in% colnames(CRISPR_df))
   CheckThatFactorIsInOrder(CRISPR_df[["Plate_number"]])
-  padding_mat <- matrix(nrow = 10, ncol = ncol(CRISPR_df), dimnames = list(NULL, colnames(CRISPR_df)))
+  padding_mat <- matrix(nrow = 10,
+                        ncol = ncol(CRISPR_df),
+                        dimnames = list(NULL, colnames(CRISPR_df))
+                        )
   CRISPR_plates_df_list <- split(CRISPR_df, CRISPR_df[["Plate_number"]])
   num_plates <- length(CRISPR_plates_df_list)
   use_seq <- seq_len(num_plates - 1)
@@ -373,7 +480,11 @@ AddPaddingToPlates <- function(CRISPR_df) {
                                     ),
                              CRISPR_plates_df_list[num_plates]
                              )
-  results_df <- do.call(rbind.data.frame, c(CRISPR_plates_df_list, list(make.row.names = FALSE, stringsAsFactors = FALSE)))
+  results_df <- do.call(rbind.data.frame,
+                        c(CRISPR_plates_df_list,
+                          list(make.row.names = FALSE, stringsAsFactors = FALSE)
+                          )
+                        )
   return(results_df)
 }
 
