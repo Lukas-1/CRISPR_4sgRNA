@@ -38,8 +38,6 @@ NumberTSSs <- function(locations_vec, min_space = 1001L) {
 
 
 NumberByNearestTSS <- function(positions_vec, TSS_number_vec, max_distance = 1001L) {
-  assign("delete_positions_vec", positions_vec, envir = globalenv())
-  assign("delete_TSS_number_vec", TSS_number_vec, envir = globalenv())
   stopifnot(length(positions_vec) == length(TSS_number_vec))
   are_unassigned <- is.na(TSS_number_vec) & !(is.na(positions_vec))
   if (!(any(are_unassigned))) {
@@ -48,7 +46,6 @@ NumberByNearestTSS <- function(positions_vec, TSS_number_vec, max_distance = 100
     results_vec <- TSS_number_vec
     for (i in which(are_unassigned)) {
       distances <- abs(positions_vec[!(are_unassigned)] - positions_vec[[i]])
-      assign("delete_distances", positions_vec, envir = globalenv())
       if (min(distances, na.rm = TRUE) < max_distance) {
         results_vec[[i]] <- TSS_number_vec[!(are_unassigned)][[which.min(distances)]]
       }
@@ -104,8 +101,6 @@ AllocateTSSs <- function(TSS_number_vec, original_TSS_vec, positions_vec, new_TS
 
 SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE) {
   MessageID(CRISPR_sub_df)
-
-  assign("delete_SeparateByTSS_CRISPR_sub_df", CRISPR_sub_df, envir = globalenv())
 
   reordered_list <- ReorderSubDfByLocation(CRISPR_sub_df, tolerate_divergent_chromosomes = tolerate_divergent_chromosomes)
   reordered_df <- reordered_list[["reordered_df"]]
