@@ -8,6 +8,7 @@
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
+source(file.path(general_functions_directory, "28) Merging the FANTOM5 and BioMart TSS data.R"))
 
 
 
@@ -321,26 +322,23 @@ rownames(FANTOM5_filtered_df) <- NULL
 
 # Construct a simplified BioMart data frame -------------------------------
 
-BioMart_tidied_df <- BioMart_df
+chromosomes_vec <- TidyBioMartChromosomes(BioMart_df[["Chromosome/scaffold name"]])
 
-BioMart_tidied_df[["Chromosome/scaffold name"]] <- ifelse(BioMart_tidied_df[["Chromosome/scaffold name"]] == "MT",
-                                                          "M",
-                                                          BioMart_tidied_df[["Chromosome/scaffold name"]]
-                                                          )
+BioMart_tidied_df <- BioMart_df
 
 BioMart_tidied_df <- data.frame(
   "Group"             = paste0(ifelse(is.na(BioMart_tidied_df[["NCBI gene ID"]]),
                                       "",
                                       paste0(BioMart_tidied_df[["NCBI gene ID"]], " | ")
                                       ),
-                               BioMart_tidied_df[["Gene name"]], " | ", "chr",
-                               BioMart_tidied_df[["Chromosome/scaffold name"]]
+                               BioMart_tidied_df[["Gene name"]], " | ",
+                               chromosomes_vec
                                ),
   "Entrez_ID"         = BioMart_tidied_df[["NCBI gene ID"]],
   "Gene_symbol"       = BioMart_tidied_df[["Gene name"]],
   "ENSG"              = BioMart_tidied_df[["Gene stable ID"]],
   "ENST"              = BioMart_tidied_df[["Transcript stable ID"]],
-  "Chromosome"        = paste0("chr", BioMart_tidied_df[["Chromosome/scaffold name"]]),
+  "Chromosome"        = chromosomes_vec,
   "Strand"            = ifelse(BioMart_tidied_df[["Strand"]] == -1, "-", "+"),
   "Gene_start"        = BioMart_tidied_df[["Gene start (bp)"]],
   "Gene_end"          = BioMart_tidied_df[["Gene end (bp)"]],
@@ -354,6 +352,7 @@ BioMart_tidied_df <- data.frame(
 )
 
 are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y", "MT")
+
 BioMart_filtered_df <- BioMart_tidied_df[are_on_chromosome, ]
 rownames(BioMart_filtered_df) <- NULL
 
@@ -367,55 +366,7 @@ length(intersect(unique(FANTOM5_filtered_df[["Group"]]), unique(BioMart_filtered
 length(unique(FANTOM5_filtered_df[["Group"]]))
 length(unique(BioMart_filtered_df[["Group"]]))
 
-common_columns <- c("Group", "Entrez_ID", "Gene_symbol", "Chromosome", "Strand")
-
-
-are_duplicated_FANTOM5 <- duplicated(FANTOM5_filtered_df[, c(common_columns, "TSS_start")])
-are_duplicated_BioMart <- duplicated(BioMart_filtered_df[, c(common_columns, "TSS")])
-
-table(are_duplicated_FANTOM5)
-table(are_duplicated_BioMart)
-
-
-combined_TSS_df <- rbind.data.frame(
-  data.frame(
-    "Source" = "FANTOM5",
-    FANTOM5_filtered_df[!(are_duplicated_FANTOM5), common_columns],
-    "TSS" = FANTOM5_filtered_df[["TSS_start"]][!(are_duplicated_FANTOM5)],
-    FANTOM5_filtered_df[!(are_duplicated_FANTOM5), "Score", drop = FALSE],
-    stringsAsFactors = FALSE
-  ),
-  unique(data.frame(
-    "Source" = "BioMart",
-    BioMart_filtered_df[!(are_duplicated_BioMart), c(common_columns, "TSS")],
-    "Score" = NA_integer_,
-    stringsAsFactors = FALSE
-  ), MARGIN = 1),
-  stringsAsFactors = FALSE,
-  make.row.names = FALSE
-)
-
-entrez_to_symbols_vec <- MapToEntrezs(entrez_IDs_vec = combined_TSS_df[["Entrez_ID"]])[["Gene_symbol"]]
-
-combined_TSS_df <- combined_TSS_df[order(GetMinEntrez(combined_TSS_df[["Entrez_ID"]]),
-                                         !(mapply(identical, entrez_to_symbols_vec, combined_TSS_df[["Gene_symbol"]])),
-                                         combined_TSS_df[["Group"]],
-                                         combined_TSS_df[["TSS"]]
-                                         ), ]
-
-common_columns <- c(common_columns, "TSS")
-
-are_duplicates_FANTOM5 <- duplicated(combined_TSS_df[, common_columns], fromLast = TRUE)
-are_duplicates_BioMart <- duplicated(combined_TSS_df[, common_columns], fromLast = FALSE)
-
-stopifnot(all(combined_TSS_df[["Source"]][are_duplicates_FANTOM5] == "FANTOM5"))
-stopifnot(all(combined_TSS_df[["Source"]][are_duplicates_BioMart] == "BioMart"))
-
-combined_TSS_df[["Source"]][are_duplicates_FANTOM5] <- "FANTOM5, BioMart"
-
-combined_TSS_df <- combined_TSS_df[!(are_duplicates_BioMart), ]
-
-row.names(combined_TSS_df) <- NULL
+combined_TSS_df <- MergeTSSData(FANTOM5_filtered_df, BioMart_filtered_df)
 
 
 
