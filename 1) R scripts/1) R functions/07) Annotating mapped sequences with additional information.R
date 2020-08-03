@@ -276,7 +276,10 @@ SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_se
   results_df <- data.frame(
     "Sequence"           = levels(references_fac),
     "PAM"                = PAM_vec,
-    ReturnClearMatches(found_seq_df[, all_column_names], have_clear_match, clear_match_indices_vec),
+    ReturnClearMatches(found_seq_df[, all_column_names],
+                       have_clear_match,
+                       clear_match_indices_vec
+                       ),
     "Num_0MM"            = sum_0MM_and_PAM_vec,
     "Num_5G_MM"          = sum_5G_MM_and_PAM_vec,
     "Num_1MM"            = sum_1MM_and_PAM_vec,
