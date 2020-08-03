@@ -61,17 +61,17 @@ sg4_allTFs_df <- AllocateAllGuidesToPlates(merged_replaced_CRISPRa_df,
                                            num_control_wells = 96
                                            )
 
-are_selected <- (sg4_allTFs_df[["Is_control"]] == "No") &
-                 !(duplicated(sg4_allTFs_df[["Combined_ID"]]))
+are_controls <- sg4_allTFs_df[["Is_control"]] == "Yes"
 
-table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected])
+are_selected <- are_controls & !(duplicated(sg4_allTFs_df[["Combined_ID"]]))
 
-are_selected_TSSs <- (sg4_allTFs_df[["Is_control"]] == "No") &
-                     !(duplicated(sg4_allTFs_df[["AltTSS_ID"]]))
+table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected], useNA = "ifany")
+
+are_selected_TSSs <- !(are_controls) & !(duplicated(sg4_allTFs_df[["AltTSS_ID"]]))
 
 sum(are_selected_TSSs) # Number of TSSs targeted by the library
 
-
+table(sg4_allTFs_df[["Num_TSSs"]][are_selected] > 1) # Number of genes with multiple TSSs
 
 
 
