@@ -95,13 +95,16 @@ vac_4sg_df <- AllocateAllGuidesToPlates(vacuolation_CRISPRi_df,
                                         reorder_df = FALSE
                                         )
 
-vac_4sg_df <- AssignPlateStrings(vac_4sg_df, use_prefix = "vac")
+
+vac_4sg_df[(vac_4sg_df[["Rank"]] %in% 1) & (vac_4sg_df[["Is_control"]] %in% "Yes"), ]
+
 
 
 
 
 # Re-order the data frame according to the plate layout -------------------
 
+vac_4sg_df[["Old_order"]] <- seq_len(nrow(vac_4sg_df))
 vac_4sg_reordered_df <- ReorderPlates(vac_4sg_df)
 
 
@@ -112,11 +115,24 @@ vac_4sg_reordered_df <- ReorderPlates(vac_4sg_df)
 
 are_controls <- vac_4sg_reordered_df[["Is_control"]] == "Yes"
 max_well_plate_2 <- max(vac_4sg_reordered_df[["Well_number"]][(vac_4sg_reordered_df[["Plate_number"]] == 2) & !(are_controls)])
-control_wells_seq <- seq(from = max_well_plate_2 + 1L,
-                         to = max_well_plate_2 + sum(are_controls),
+control_wells_seq <- rep(seq(from = max_well_plate_2 + 1L,
+                             to = max_well_plate_2 + sum(are_controls) / 4,
+                             ),
+                         each = 4
                          )
 vac_4sg_reordered_df[["Well_number"]][are_controls] <- control_wells_seq
 vac_4sg_reordered_df[["Plate_number"]][are_controls] <- 2L
+vac_4sg_reordered_df <- AssignPlateStrings(vac_4sg_reordered_df, use_prefix = "vac")
+
+
+
+
+# Restore the original plate order ----------------------------------------
+
+vac_4sg_df <- vac_4sg_reordered_df[order(vac_4sg_reordered_df[["Old_order"]]), ]
+row.names(vac_4sg_df) <- NULL
+vac_4sg_reordered_df <- vac_4sg_reordered_df[, colnames(vac_4sg_reordered_df) != "Old_order"]
+vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Old_order"]
 
 
 
