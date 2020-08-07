@@ -30,6 +30,7 @@ load(file.path(general_RData_directory, "01) Extract gene annotation data from t
 
 
 
+
 # Read in data ------------------------------------------------------------
 
 secretome_df <- as.data.frame(read_excel(file.path(secretome_directory, "2019 - The human secretome - Data S2.xlsx")),
