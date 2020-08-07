@@ -12,12 +12,23 @@ source(file.path(general_functions_directory, "23) Translating between Ensembl I
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory  <- "~/CRISPR"
-human_genome_directory <- file.path(CRISPR_root_directory, "2) Input data", "Human genome")
-Gencode_directory      <- file.path(human_genome_directory, "Gencode")
+CRISPR_root_directory   <- "~/CRISPR"
+human_genome_directory  <- file.path(CRISPR_root_directory, "2) Input data", "Human genome")
+Gencode_directory       <- file.path(human_genome_directory, "Gencode")
+general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
+
+
+
+
+
+# Load data ---------------------------------------------------------------
+
+load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Hs.eg.db Bioconductor database.RData"))
+
+
+
 
 
 
@@ -63,7 +74,7 @@ Collapsify <- function(input_list) {
            if (all(are_NA)) {
              return(NA_character_)
            } else {
-             paste0(x[!(are_NA)], collapse = ", ")
+             paste0(unique(x[!(are_NA)]), collapse = ", ")
            }
          },
          ""
@@ -158,18 +169,15 @@ table(lengths(gencode_ENST_ID_to_entrez_list))
 
 
 
+
+
+
 # Map Ensembl transcript IDs to Entrez IDs using the Ensembl file ---------
 
-unique_entrezs <- unique(Ensembl_Hs_entrez_df[["transcript_stable_id"]][are_integer_Ensembl_Hs])
-unique_entrezs <- unique_entrezs[order(as.integer(unique_entrezs))]
-
-ensembl_ENST_ID_to_entrez_list <- split(Ensembl_Hs_entrez_df[["xref"]],
-                                        factor(Ensembl_Hs_entrez_df[["transcript_stable_id"]],
-                                               levels = unique_entrezs
-                                               )
+ensembl_ENST_ID_to_entrez_list <- split(suppressWarnings(as.integer(Ensembl_Hs_entrez_df[["xref"]])),
+                                        Ensembl_Hs_entrez_df[["transcript_stable_id"]],
                                         )
 ensembl_ENST_ID_to_entrez_vec <- Collapsify(ensembl_ENST_ID_to_entrez_list)
-
 
 table(lengths(ensembl_ENST_ID_to_entrez_list))
 length(unique(Ensembl_Hs_entrez_df[["xref"]][are_integer_Ensembl_Hs]))
@@ -199,7 +207,9 @@ ID_splits <- strsplit(original_gencode_df[["attributes"]], ";", fixed = TRUE)
 
 ID_split_splits <- lapply(ID_splits, function(x) strsplit(x, "=", fixed = TRUE))
 
-ID_categories <- Collapsify(ID_split_splits)
+ID_categories <- lapply(ID_split_splits,
+                        function(x) vapply(x, function(y) y[[1]], "")
+                        )
 categories_table <- table(unlist(ID_categories))
 
 
@@ -223,31 +233,90 @@ ENSG_versions_vec <- ExtractIDs(ID_split_splits, "gene_id")
 ENST_versions_vec <- ExtractIDs(ID_split_splits, "transcript_id")
 ENST_IDs_vec      <- StripVersion(ENST_versions_vec)
 gene_symbols_vec  <- ExtractIDs(ID_split_splits, "gene_name")
+gene_types_vec    <- ExtractIDs(ID_split_splits, "gene_type")
+ccds_IDs_vec      <- ExtractIDs(ID_split_splits, "ccdsid")
+exon_versions_vec <- ExtractIDs(ID_split_splits, "exon_id")
+exon_numbers_vec  <- ExtractIDs(ID_split_splits, "exon_number")
 
+stopifnot(identical(sum(is.na(exon_numbers_vec)),
+                    sum(is.na(as.integer(exon_numbers_vec)))
+                    ))
+exon_numbers_vec <- as.integer(exon_numbers_vec)
+
+tags_vec          <- ExtractIDs(ID_split_splits, "tag")
+table(unlist(strsplit(tags_vec, ",", fixed = TRUE)))
 
 
 
 
 # Construct a new data frame ----------------------------------------------
 
+stopifnot(identical(unname(gencode_ENST_version_to_entrez_vec[ENST_versions_vec]),
+                    unname(gencode_ENST_ID_to_entrez_vec[ENST_IDs_vec])
+                    ))
+stopifnot(identical(unname(BioMart_ENST_version_to_entrez_vec[ENST_versions_vec]),
+                    unname(BioMart_ENST_ID_to_entrez_vec[ENST_IDs_vec])
+                    ))
+
 gencode_df <- data.frame(
-  "Ensembl_gene_version"              = ENSG_versions_vec,
-  "Ensembl_gene_ID"                   = StripVersion(ENSG_versions_vec),
-  "Ensembl_transcript_version"        = ENST_versions_vec,
-  "Ensembl_transcript_ID"             = ENST_IDs_vec,
-  "Gencode_ENST_version_to_entrez_ID" = gencode_ENST_version_to_entrez_vec[ENST_versions_vec],
-  "Gencode_ENST_ID_to_entrez_ID"      = gencode_ENST_ID_to_entrez_vec[ENST_IDs_vec],
-  "Ensembl_Hs_ENST_ID_to_entrez_ID"   = ensembl_ENST_ID_to_entrez_vec[ENST_IDs_vec],
-  "BioMart_ENST_version_to_entrez_ID" = BioMart_ENST_version_to_entrez_vec[ENST_versions_vec],
-  "BioMart_ENST_ID_to_entrez_ID"      = BioMart_ENST_ID_to_entrez_vec[ENST_IDs_vec],
-  "Gene_symbol"                       = gene_symbols_vec,
-  "Chromosome"                        = original_gencode_df[["seqid"]],
-  "Start"                             = original_gencode_df[["start"]],
-  "End"                               = original_gencode_df[["end"]],
-  "Strand"                            = original_gencode_df[["strand"]],
-  stringsAsFactors                    = FALSE
+  "Entrez_ID"                    = NA_character_,
+  "Entry_type"                   = original_gencode_df[["type"]],
+  "Ensembl_gene_version"         = ENSG_versions_vec,
+  "Ensembl_gene_ID"              = StripVersion(ENSG_versions_vec),
+  "Ensembl_transcript_version"   = ENST_versions_vec,
+  "Ensembl_transcript_ID"        = ENST_IDs_vec,
+  "Gencode_ENST_to_entrez_ID"    = gencode_ENST_version_to_entrez_vec[ENST_versions_vec],
+  "Ensembl_Hs_ENST_to_entrez_ID" = ensembl_ENST_ID_to_entrez_vec[ENST_IDs_vec],
+  "BioMart_ENST_to_entrez_ID"    = BioMart_ENST_version_to_entrez_vec[ENST_versions_vec],
+  "Gene_symbol"                  = gene_symbols_vec,
+  "Gene_type"                    = gene_types_vec,
+  "Chromosome"                   = original_gencode_df[["seqid"]],
+  "Start"                        = original_gencode_df[["start"]],
+  "End"                          = original_gencode_df[["end"]],
+  "Strand"                       = original_gencode_df[["strand"]],
+  "CCDS_ID"                      = ccds_IDs_vec,
+  "Exon_version"                 = exon_versions_vec,
+  "Exon_ID"                      = StripVersion(exon_versions_vec),
+  "Exon_number"                  = exon_numbers_vec,
+  stringsAsFactors               = FALSE
 )
 
+identical(is.na(gencode_df[["Gencode_ENST_to_entrez_ID"]]),
+          is.na(gencode_df[["Ensembl_Hs_ENST_to_entrez_ID"]])
+          )
+identical(is.na(gencode_df[["Gencode_ENST_to_entrez_ID"]]),
+          is.na(gencode_df[["BioMart_ENST_to_entrez_ID"]])
+          )
+
+any(grepl(",", gencode_df[["Gencode_ENST_to_entrez_ID"]], fixed = TRUE) &
+    (!(grepl(",", gencode_df[["Ensembl_Hs_ENST_to_entrez_ID"]], fixed = TRUE)) |
+     !(grepl(",", gencode_df[["BioMart_ENST_to_entrez_ID"]], fixed = TRUE))
+     )
+    )
+
+mapped_df <- MapEnsemblIDs(gencode_df)
+
+gencode_are_ambiguous <- grepl(",", gencode_df[["Gencode_ENST_to_entrez_ID"]], fixed = TRUE)
+ # It seems that ambiguous mappings from Gencode cannot be disambiguated using the consensus mappings
+stopifnot(all(is.na(mapped_df[["Consensus_entrez"]][gencode_are_ambiguous])))
+
+gencode_are_NA <- is.na(gencode_df[["Gencode_ENST_to_entrez_ID"]])
+gencode_df[["Entrez_ID"]] <- ifelse(gencode_are_NA,
+                                    mapped_df[["Consensus_entrez"]],
+                                    gencode_df[["Gencode_ENST_to_entrez_ID"]]
+                                    )
+
+
+
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "gencode_df",
+     file = file.path(general_RData_directory, "Process the annotations from GENCODE.RData")
+     )
 
 
 
