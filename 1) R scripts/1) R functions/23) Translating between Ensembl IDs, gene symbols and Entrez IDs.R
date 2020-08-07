@@ -73,6 +73,7 @@ MapEnsemblIDs <- function(input_df, warn = TRUE) {
     } else if (!(is.na(this_vec[["OrgHs_entrez"]]))) {
       if (grepl(", ", this_vec[["OrgHs_entrez"]], fixed = TRUE)) {
         if (!(grepl(", ", this_vec[["Symbol_to_entrez"]], fixed = TRUE)) &&
+            !(is.na(this_vec[["Symbol_to_entrez"]])) &&
             grepl(this_vec[["Symbol_to_entrez"]], this_vec[["OrgHs_entrez"]], fixed = TRUE)
             ) {
           this_vec[["Symbol_to_entrez"]]
