@@ -32,7 +32,7 @@ previous_versions_directory <- file.path(RData_directory, "5) Previous versions 
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
-load(file.path(general_RData_directory, "18) Read in additional gene lists.RData"))
+load(file.path(general_RData_directory, "17) Read in additional gene lists.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 load(file.path(previous_versions_directory, "02) CRISPRko transcription factor sub-library (1st version) - TF_v1_CRISPRko_df.RData"))
 
@@ -43,10 +43,12 @@ load(file.path(previous_versions_directory, "02) CRISPRko transcription factor s
 
 # Assign the sgRNAs to plates ---------------------------------------------
 
+legacy_PD_4sg_entrezs <- setdiff(PD_4sg_entrezs, c("51142", "11315", "9842")) # This is how the full library was ordered
+
 sg4_reordered_df <- AllocateAllGuides_v2(merged_CRISPRko_df,
                                          sublibraries_entrezs_list  = sublibraries_all_entrezs_list,
                                          previous_version_CRISPR_df = TF_v1_CRISPRko_df,
-                                         candidate_entrezs          = PD_4sg_entrezs
+                                         candidate_entrezs          = legacy_PD_4sg_entrezs
                                          )
 sg4_df <- RestoreOriginalOrder(sg4_reordered_df)
 
