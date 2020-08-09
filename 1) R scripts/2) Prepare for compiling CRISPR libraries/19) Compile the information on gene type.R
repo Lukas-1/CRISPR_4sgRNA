@@ -25,6 +25,16 @@ human_genome_directory  <- file.path(CRISPR_input_directory, "Human genome")
 
 
 
+
+# Load data ---------------------------------------------------------------
+
+load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
+load(file.path(general_RData_directory, "18) Process the annotations from GENCODE.RData"))
+
+
+
+
+
 # Read in data ------------------------------------------------------------
 
 # Downloaded from ftp://ftp.ncbi.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz
@@ -375,7 +385,7 @@ entrez_to_gene_type_df[entrez_to_gene_type_df[["Is_conflicting"]] %in% TRUE, ]
 # Save data ---------------------------------------------------------------
 
 save(list = c("entrez_to_gene_type_df", "BioMart_ENSG_gene_type_df"),
-     file = file.path(general_RData_directory, "17) Compile the information on gene type.RData")
+     file = file.path(general_RData_directory, "19) Compile the information on gene type.RData")
      )
 
 

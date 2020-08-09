@@ -157,12 +157,10 @@ gencode_ENST_version_to_entrez_list <- split(gencode_entrez_df[["Entrez_ID"]],
                                              )
 gencode_ENST_version_to_entrez_vec <- Collapsify(gencode_ENST_version_to_entrez_list)
 
-
 gencode_ENST_ID_to_entrez_list <- split(gencode_entrez_df[["Entrez_ID"]],
                                         gencode_entrez_df[["ENST_ID"]]
                                         )
 gencode_ENST_ID_to_entrez_vec <- Collapsify(gencode_ENST_ID_to_entrez_list)
-
 
 table(lengths(gencode_ENST_version_to_entrez_list))
 table(lengths(gencode_ENST_ID_to_entrez_list))
@@ -271,9 +269,9 @@ gencode_df <- data.frame(
   "Gene_symbol"                  = gene_symbols_vec,
   "Gene_type"                    = gene_types_vec,
   "Chromosome"                   = original_gencode_df[["seqid"]],
+  "Strand"                       = original_gencode_df[["strand"]],
   "Start"                        = original_gencode_df[["start"]],
   "End"                          = original_gencode_df[["end"]],
-  "Strand"                       = original_gencode_df[["strand"]],
   "CCDS_ID"                      = ccds_IDs_vec,
   "Exon_version"                 = exon_versions_vec,
   "Exon_ID"                      = StripVersion(exon_versions_vec),
@@ -315,7 +313,7 @@ gencode_df[["Entrez_ID"]] <- ifelse(gencode_are_NA,
 # Save data ---------------------------------------------------------------
 
 save(list = "gencode_df",
-     file = file.path(general_RData_directory, "Process the annotations from GENCODE.RData")
+     file = file.path(general_RData_directory, "18) Process the annotations from GENCODE.RData")
      )
 
 
