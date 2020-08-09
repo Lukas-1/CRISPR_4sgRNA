@@ -66,9 +66,6 @@ AdditionalTargetsCRISPRko <- function(CRISPRko_df) {
     "Symbol_overlapping_0MM" = "Gene_symbol"
   )
 
-  assign("start_CRISPRko_df", CRISPRko_df, envir = globalenv())
-  stop()
-
   for (column_name in names(CRISPRko_overlapping_vec)) {
     target_vec <- CRISPRko_df[[CRISPRko_overlapping_vec[[column_name]]]]
     target_list <- strsplit(target_vec, ", ", fixed = TRUE)
@@ -124,7 +121,6 @@ AdditionalTargetsCRISPRko <- function(CRISPRko_df) {
     are_all_NA <- vapply(split_list_list, function(x) all(is.na(x)), logical(1))
 
     are_unspecific <- contains_off_target & !(are_all_NA)
-
 
 
     library("TxDb.Hsapiens.UCSC.hg38.knownGene")
