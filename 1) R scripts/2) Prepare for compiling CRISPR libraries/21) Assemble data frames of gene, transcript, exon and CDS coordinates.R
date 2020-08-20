@@ -9,6 +9,7 @@ library("TxDb.Hsapiens.UCSC.hg38.knownGene")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
+source(file.path(general_functions_directory, "30) Determining gene types.R"))
 
 
 
@@ -38,6 +39,8 @@ load(file.path(general_RData_directory, "19) Compile the information on gene typ
 location_columns <- c("Chromosome", "Strand", "Start", "End")
 
 ResolveDuplicateFeatures <- function(locations_df) {
+
+  # Requires the CollapseNonNA function
 
   if ("Ensembl_transcript_ID" %in% colnames(locations_df)) {
     transcript_vec <- locations_df[["Ensembl_transcript_ID"]]
@@ -104,44 +107,15 @@ ResolveDuplicateFeatures <- function(locations_df) {
                            )
   integer_group_IDs <- as.integer(factor(group_IDs_long, levels = unique(group_IDs_long)))
 
-  assign("delete_integer_group_IDs", integer_group_IDs, envir = globalenv())
-
   sources_order <- c("TxDb", "BioMart", "Gencode")
   sources_vec <- tapply(locations_df[["Source"]],
                         integer_group_IDs,
-                        function(x) {
-                          unique_vec <- unique(x)
-                          unique_vec <- unique_vec[order(match(unique_vec, sources_order))]
-                          paste0(unique_vec, collapse = ", ")
-                        })
-  entrezs_vec <- tapply(locations_df[["Entrez_ID"]],
-                        integer_group_IDs,
-                        function(x) {
-                          if (all(is.na(x))) {
-                            return(NA_character_)
-                          } else {
-                            paste0(unique(x[!(is.na(x))]), collapse = ", ")
-                          }
-                        })
-  ENSG_vec <- tapply(locations_df[["Ensembl_gene_ID"]],
-                     integer_group_IDs,
-                     function(x) {
-                       if (all(is.na(x))) {
-                         return(NA_character_)
-                       } else {
-                         paste0(unique(x[!(is.na(x))]), collapse = ", ")
-                       }
-                     })
+                        function(x) CollapseNonNA(x, sources_order)
+                        )
 
-  symbols_vec <- tapply(locations_df[["Original_symbol"]],
-                        integer_group_IDs,
-                        function(x) {
-                          if (all(is.na(x))) {
-                            return(NA_character_)
-                          } else {
-                            paste0(unique(x[!(is.na(x))]), collapse = ", ")
-                          }
-                        })
+  entrezs_vec <- tapply(locations_df[["Entrez_ID"]],       integer_group_IDs, CollapseNonNA)
+  ENSG_vec    <- tapply(locations_df[["Ensembl_gene_ID"]], integer_group_IDs, CollapseNonNA)
+  symbols_vec <- tapply(locations_df[["Original_symbol"]], integer_group_IDs, CollapseNonNA)
 
   full_locations_df <- locations_df
 
@@ -151,7 +125,7 @@ ResolveDuplicateFeatures <- function(locations_df) {
   are_problematic <- (ENSG_vec != locations_df[["Ensembl_gene_ID"]]) %in% TRUE
 
   if (any(are_problematic)) {
-    message(paste0("Some locations (", sum(are_problematic), " in total) ",
+    message(paste0("Some locations (", sum(are_problematic), " in total)",
                    " mapped to more than one Ensembl gene ID."
                    )
             )
@@ -176,7 +150,6 @@ ResolveDuplicateFeatures <- function(locations_df) {
   locations_df[["Source"]] <- sources_vec
   locations_df[["Original_symbol"]] <- symbols_vec
 
-
   new_order <- order(GetMinEntrez(locations_df[["Entrez_ID"]]),
                      locations_df[["Ensembl_gene_ID"]],
                      match(locations_df[["Chromosome"]],
@@ -188,9 +161,30 @@ ResolveDuplicateFeatures <- function(locations_df) {
                      locations_df[["End"]]
                      )
   locations_df <- locations_df[new_order, ]
+
+  locations_df[["Gene_type"]] <- GetDfGeneTypes(locations_df)
+
   row.names(locations_df) <- NULL
   return(locations_df)
 }
+
+
+FixTxDb_columns <- function(TxDb_df, example_df) {
+  colnames(TxDb_df) <- c("Entrez_ID", location_columns)
+  TxDb_df[["Original_symbol"]] <- NA_character_
+  TxDb_df[["Ensembl_gene_ID"]] <- NA_character_
+  TxDb_df[["Source"]] <- "TxDb"
+
+  if ("Ensembl_transcript_ID" %in% colnames(example_df)) {
+    TxDb_df[["Ensembl_transcript_ID"]] <- NA_character_
+  }
+  if ("Exon_ID" %in% colnames(example_df)) {
+    TxDb_df[["Exon_ID"]] <- NA_character_
+  }
+  TxDb_df <- TxDb_df[, union(gene_columns, colnames(TxDb_df))]
+  return(TxDb_df)
+}
+
 
 
 
@@ -233,17 +227,17 @@ TxDb_columns <- c(
   "group_name", "seqnames", "strand", "start", "end"
 )
 location_columns <- c("Chromosome", "Strand", "Start", "End")
+
 gencode_columns <- c(
   "Entrez_ID", "Ensembl_gene_ID", "Ensembl_transcript_ID", "Exon_ID",
   "Gene_symbol", location_columns
 )
 
-gene_columns <- c(
-  "Entrez_ID", "Ensembl_gene_ID", "Original_symbol",
-  location_columns
-)
+exon_columns <- gencode_columns
+exon_columns[exon_columns == "Gene_symbol"] <- "Original_symbol"
 
-
+transcript_columns <- setdiff(exon_columns, "Exon_ID")
+gene_columns <- setdiff(transcript_columns, "Ensembl_transcript_ID")
 
 
 
@@ -263,12 +257,8 @@ row.names(gencode_genes_df) <- NULL
 colnames(BioMart_genes_df) <- gene_columns
 colnames(gencode_genes_df) <- gene_columns
 
+TxDb_genes_sel_df<- FixTxDb_columns(TxDb_genes_sel_df, gencode_genes_df)
 
-colnames(TxDb_genes_sel_df) <- c("Entrez_ID", location_columns)
-
-TxDb_genes_sel_df[["Original_symbol"]] <- NA_character_
-TxDb_genes_sel_df[["Ensembl_gene_ID"]] <- NA_character_
-TxDb_genes_sel_df[["Source"]] <- "TxDb"
 BioMart_genes_df[["Source"]] <- "BioMart"
 gencode_genes_df[["Source"]] <- "GENCODE"
 
@@ -285,6 +275,7 @@ gene_locations_df <- ResolveDuplicateFeatures(gene_locations_df)
 
 
 
+
 # Create a merged data frame of transcript coordinates --------------------
 
 BioMart_transcripts_df <- BioMart_tidied_df[, BioMart_columns]
@@ -295,20 +286,11 @@ gencode_transcripts_df <- gencode_df[gencode_df[["Entry_type"]] == "transcript",
 
 row.names(gencode_transcripts_df) <- NULL
 
-transcript_columns <- c(
-  "Entrez_ID", "Ensembl_gene_ID", "Ensembl_transcript_ID", "Original_symbol",
-  location_columns
-)
-
 colnames(BioMart_transcripts_df) <- transcript_columns
 colnames(gencode_transcripts_df) <- transcript_columns
 
-colnames(TxDb_transcripts_sel_df) <- c("Entrez_ID", location_columns)
+TxDb_transcripts_sel_df <- FixTxDb_columns(TxDb_transcripts_sel_df, gencode_transcripts_df)
 
-TxDb_transcripts_sel_df[["Original_symbol"]] <- NA_character_
-TxDb_transcripts_sel_df[["Ensembl_gene_ID"]] <- NA_character_
-TxDb_transcripts_sel_df[["Ensembl_transcript_ID"]] <- NA_character_
-TxDb_transcripts_sel_df[["Source"]] <- "TxDb"
 BioMart_transcripts_df[["Source"]] <- "BioMart"
 gencode_transcripts_df[["Source"]] <- "GENCODE"
 gencode_transcripts_df <- gencode_transcripts_df[, c(transcript_columns, "Source")]
@@ -334,21 +316,10 @@ gencode_exons_df <- gencode_df[gencode_df[["Entry_type"]] == "exon",
 
 row.names(gencode_exons_df) <- NULL
 
-exon_columns <- c(
-  "Entrez_ID", "Ensembl_gene_ID", "Ensembl_transcript_ID", "Exon_ID",
-  "Original_symbol",
-  location_columns
-)
-
 colnames(gencode_exons_df) <- exon_columns
 
-colnames(TxDb_exons_sel_df) <- c("Entrez_ID", location_columns)
+TxDb_exons_sel_df <- FixTxDb_columns(TxDb_exons_sel_df, gencode_exons_df)
 
-TxDb_exons_sel_df[["Original_symbol"]] <- NA_character_
-TxDb_exons_sel_df[["Ensembl_gene_ID"]] <- NA_character_
-TxDb_exons_sel_df[["Ensembl_transcript_ID"]] <- NA_character_
-TxDb_exons_sel_df[["Exon_ID"]] <- NA_character_
-TxDb_exons_sel_df[["Source"]] <- "TxDb"
 gencode_exons_df[["Source"]] <- "GENCODE"
 gencode_exons_df <- gencode_exons_df[, c(exon_columns, "Source")]
 
@@ -356,7 +327,6 @@ exon_locations_df <- rbind.data.frame(
   TxDb_exons_sel_df, gencode_exons_df,
   make.row.names = FALSE, stringsAsFactors = FALSE
 )
-
 
 exon_locations_df <- ResolveDuplicateFeatures(exon_locations_df)
 
@@ -370,32 +340,19 @@ TxDb_CDS_sel_df <- TxDb_exons_df[, TxDb_columns]
 gencode_CDS_df <- gencode_df[gencode_df[["Entry_type"]] == "CDS",
                              gencode_columns
                              ]
-
 row.names(gencode_CDS_df) <- NULL
 
-CDS_columns <- c(
-  "Entrez_ID", "Ensembl_gene_ID", "Ensembl_transcript_ID", "Exon_ID",
-  "Original_symbol",
-  location_columns
-)
+colnames(gencode_CDS_df) <- exon_columns
 
-colnames(gencode_CDS_df) <- CDS_columns
+TxDb_CDS_sel_df <- FixTxDb_columns(TxDb_CDS_sel_df, gencode_CDS_df)
 
-colnames(TxDb_CDS_sel_df) <- c("Entrez_ID", location_columns)
-
-TxDb_CDS_sel_df[["Original_symbol"]] <- NA_character_
-TxDb_CDS_sel_df[["Ensembl_gene_ID"]] <- NA_character_
-TxDb_CDS_sel_df[["Ensembl_transcript_ID"]] <- NA_character_
-TxDb_CDS_sel_df[["Exon_ID"]] <- NA_character_
-TxDb_CDS_sel_df[["Source"]] <- "TxDb"
 gencode_CDS_df[["Source"]] <- "GENCODE"
-gencode_CDS_df <- gencode_CDS_df[, c(CDS_columns, "Source")]
+gencode_CDS_df <- gencode_CDS_df[, c(exon_columns, "Source")]
 
 CDS_locations_df <- rbind.data.frame(
   TxDb_CDS_sel_df, gencode_CDS_df,
   make.row.names = FALSE, stringsAsFactors = FALSE
 )
-
 
 CDS_locations_df <- ResolveDuplicateFeatures(CDS_locations_df)
 
@@ -411,7 +368,6 @@ save(list = c("gene_locations_df", "transcript_locations_df",
               ),
      file = file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData")
      )
-
 
 
 
