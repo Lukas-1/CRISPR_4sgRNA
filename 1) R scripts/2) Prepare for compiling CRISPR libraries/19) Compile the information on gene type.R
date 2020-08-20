@@ -50,9 +50,6 @@ BioMart_gene_type_df <- read.table(file.path(human_genome_directory, "Ensembl", 
 
 
 
-
-
-
 # Define functions --------------------------------------------------------
 
 CollapseFunction <- function(char_vec) {
@@ -175,6 +172,15 @@ table(duplicated(BioMart_gene_type_df[[entrez_column]]))
 
 
 
+# Explore the GENCODE data frame ------------------------------------------
+
+stopifnot(identical(sort(unique(gencode_df[["Gene_type"]])),
+                    sort(unique(BioMart_gene_type_df[["Gene type"]]))
+                    ))
+
+
+
+
 # Reduce the BioMart table to Entrez ID and gene type ---------------------
 
 BioMart_Entrez_type_only_df <- unique(BioMart_gene_type_df[!(are_NA_entrezs), c(entrez_column, "Gene type") ])
@@ -207,7 +213,6 @@ collected_entrezs_vec <- sort(collected_entrezs_vec)
 
 
 
-
 # Ascertain that ENSG IDs are only for genes that lack Entrez IDs ---------
 
 NA_entrez_ENSGs_vec <- unique(BioMart_gene_type_df[["Gene stable ID"]][are_NA_entrezs])
@@ -220,7 +225,7 @@ stopifnot(all(is.na(BioMart_gene_type_df[[entrez_column]][are_NA_entrez_ENSG])))
 
 # Reduce the BioMart table to Ensembl gene ID and gene type ---------------
 
-BioMart_ENSG_gene_type_df <- unique(BioMart_gene_type_df[are_NA_entrezs, c("Gene stable ID", "Gene type") ])
+BioMart_ENSG_gene_type_df <- unique(BioMart_gene_type_df[are_NA_entrezs, c("Gene stable ID", "Gene type")])
 
 BioMart_ENSG_gene_type_df <- BioMart_ENSG_gene_type_df[order(BioMart_ENSG_gene_type_df[["Gene stable ID"]]), ]
 
@@ -228,6 +233,25 @@ colnames(BioMart_ENSG_gene_type_df) <- c("Ensembl_gene_ID", "Original_type")
 rownames(BioMart_ENSG_gene_type_df) <- NULL
 
 stopifnot(!(any(duplicated(BioMart_ENSG_gene_type_df[["Ensembl_gene_ID"]]))))
+
+
+
+
+# Reduce the GENCODE table to Ensembl gene ID and gene type ---------------
+
+gencode_ENSG_gene_type_df <- unique(gencode_df[, c("Ensembl_gene_ID", "Gene_type")])
+
+gencode_ENSG_gene_type_df <- gencode_ENSG_gene_type_df[order(gencode_ENSG_gene_type_df[["Ensembl_gene_ID"]]), ]
+rownames(gencode_ENSG_gene_type_df) <- NULL
+colnames(gencode_ENSG_gene_type_df)[[2]] <- "Original_type"
+
+gencode_ENSG_matches <- match(gencode_ENSG_gene_type_df[["Original_type"]],
+                              names(BioMart_gene_type_map)
+                              )
+gencode_ENSG_gene_type_df[, "Recoded_type"] <- BioMart_gene_type_map[gencode_ENSG_matches]
+gencode_ENSG_gene_type_df <- gencode_ENSG_gene_type_df[ c(1, 3, 2)]
+
+stopifnot(!(any(duplicated(gencode_ENSG_gene_type_df[["Ensembl_gene_ID"]]))))
 
 
 
@@ -384,7 +408,7 @@ entrez_to_gene_type_df[entrez_to_gene_type_df[["Is_conflicting"]] %in% TRUE, ]
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("entrez_to_gene_type_df", "BioMart_ENSG_gene_type_df"),
+save(list = c("entrez_to_gene_type_df", "BioMart_ENSG_gene_type_df", "gencode_ENSG_gene_type_df"),
      file = file.path(general_RData_directory, "19) Compile the information on gene type.RData")
      )
 
