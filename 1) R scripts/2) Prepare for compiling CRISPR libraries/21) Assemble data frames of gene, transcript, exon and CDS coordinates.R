@@ -9,7 +9,7 @@ library("TxDb.Hsapiens.UCSC.hg38.knownGene")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
-source(file.path(general_functions_directory, "30) Determining gene types.R"))
+source(file.path(general_functions_directory, "29) Determining gene types.R"))
 
 
 
@@ -37,6 +37,7 @@ load(file.path(general_RData_directory, "19) Compile the information on gene typ
 # Define functions --------------------------------------------------------
 
 location_columns <- c("Chromosome", "Strand", "Start", "End")
+all_chromosomes <- paste0("chr", c(1:23, "Y", "Y", "M"))
 
 ResolveDuplicateFeatures <- function(locations_df) {
 
@@ -48,9 +49,7 @@ ResolveDuplicateFeatures <- function(locations_df) {
     transcript_vec <- rep(NA, nrow(locations_df))
   }
 
-  new_order <- order(match(locations_df[["Chromosome"]],
-                           c(paste0("chr", 1:23), c("Y", "Y", "M"))
-                           ),
+  new_order <- order(match(locations_df[["Chromosome"]], all_chromosomes),
                      locations_df[["Chromosome"]],
                      match(locations_df[["Strand"]], c("+", "-")),
                      locations_df[["Start"]],
@@ -356,6 +355,41 @@ CDS_locations_df <- rbind.data.frame(
 
 CDS_locations_df <- ResolveDuplicateFeatures(CDS_locations_df)
 
+
+
+
+
+
+# Collate CDSs (protein-coding genes) or exons (non-coding genes) ---------
+
+
+# GetUniqueIDs <- function(char_vec) {
+#   unique(unlist(strsplit(char_vec, ", ", fixed = TRUE)))
+# }
+#
+# gene_unique_entrezs       <- GetUniqueIDs(gene_locations_df[["Entrez_ID"]])
+# transcript_unique_entrezs <- GetUniqueIDs(transcript_locations_df[["Entrez_ID"]])
+# exon_unique_entrezs       <- GetUniqueIDs(exon_locations_df[["Entrez_ID"]])
+# CDS_unique_entrezs        <- GetUniqueIDs(CDS_locations_df[["Entrez_ID"]])
+#
+# length(gene_unique_entrezs)
+# length(transcript_unique_entrezs)
+# length(exon_unique_entrezs)
+# length(CDS_unique_entrezs)
+#
+# length(unique(gene_locations_df[["Entrez_ID"]]))
+# length(unique(transcript_locations_df[["Entrez_ID"]]))
+# length(unique(exon_locations_df[["Entrez_ID"]]))
+# length(unique(CDS_locations_df[["Entrez_ID"]]))
+#
+#
+# missing_entrez <- setdiff(transcript_unique_entrezs, exon_unique_entrezs)
+# transcript_entrez_splits <- strsplit(transcript_locations_df[["Entrez_ID"]], ", ", fixed = TRUE)
+# have_missing_entrezs <- vapply(transcript_entrez_splits,
+#                                function(x) any(x %in% missing_entrez),
+#                                logical(1)
+#                                )
+# View(transcript_locations_df[have_missing_entrezs, ])
 
 
 
