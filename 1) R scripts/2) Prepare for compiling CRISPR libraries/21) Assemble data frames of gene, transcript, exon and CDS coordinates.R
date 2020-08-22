@@ -185,6 +185,25 @@ FixTxDb_columns <- function(TxDb_df, example_df) {
 }
 
 
+GetUniqueIDs <- function(char_vec) {
+  unique(unlist(strsplit(char_vec, ", ", fixed = TRUE)))
+}
+
+
+AreMissingInVec2 <- function(char_vec_1, char_vec_2) {
+  unique_vec_1 <- GetUniqueIDs(char_vec_1)
+  unique_vec_2 <- GetUniqueIDs(char_vec_2)
+  missing_IDs <- setdiff(unique_vec_1, unique_vec_2)
+  splits_list <- strsplit(char_vec_1, ", ", fixed = TRUE)
+  have_missing_IDs <- vapply(splits_list,
+                             function(x) any(x %in% missing_IDs),
+                             logical(1)
+                             )
+  return(have_missing_IDs)
+}
+
+
+
 
 
 
@@ -360,36 +379,50 @@ CDS_locations_df <- ResolveDuplicateFeatures(CDS_locations_df)
 
 
 
-# Collate CDSs (protein-coding genes) or exons (non-coding genes) ---------
+# Explore the results -----------------------------------------------------
+
+gene_unique_entrezs       <- GetUniqueIDs(gene_locations_df[["Entrez_ID"]])
+transcript_unique_entrezs <- GetUniqueIDs(transcript_locations_df[["Entrez_ID"]])
+exon_unique_entrezs       <- GetUniqueIDs(exon_locations_df[["Entrez_ID"]])
+CDS_unique_entrezs        <- GetUniqueIDs(CDS_locations_df[["Entrez_ID"]])
+
+length(gene_unique_entrezs)
+length(transcript_unique_entrezs)
+length(exon_unique_entrezs)
+length(CDS_unique_entrezs)
+
+have_missing_entrezs <- AreMissingInVec2(transcript_locations_df[["Entrez_ID"]],
+                                         exon_locations_df[["Entrez_ID"]]
+                                         )
+have_multiple_entrezs <- grepl(", ", transcript_locations_df[["Entrez_ID"]], fixed = TRUE)
+are_on_standard_chromosome <- transcript_locations_df[["Chromosome"]] %in% all_chromosomes
+stopifnot(!(any(have_missing_entrezs & are_on_standard_chromosome & !(have_multiple_entrezs))))
+# ==> None of the Entrez IDs that are present in the transcript data,
+#     but not in the exon data, seem particularly relevant.
 
 
-# GetUniqueIDs <- function(char_vec) {
-#   unique(unlist(strsplit(char_vec, ", ", fixed = TRUE)))
-# }
-#
-# gene_unique_entrezs       <- GetUniqueIDs(gene_locations_df[["Entrez_ID"]])
-# transcript_unique_entrezs <- GetUniqueIDs(transcript_locations_df[["Entrez_ID"]])
-# exon_unique_entrezs       <- GetUniqueIDs(exon_locations_df[["Entrez_ID"]])
-# CDS_unique_entrezs        <- GetUniqueIDs(CDS_locations_df[["Entrez_ID"]])
-#
-# length(gene_unique_entrezs)
-# length(transcript_unique_entrezs)
-# length(exon_unique_entrezs)
-# length(CDS_unique_entrezs)
-#
-# length(unique(gene_locations_df[["Entrez_ID"]]))
-# length(unique(transcript_locations_df[["Entrez_ID"]]))
-# length(unique(exon_locations_df[["Entrez_ID"]]))
-# length(unique(CDS_locations_df[["Entrez_ID"]]))
-#
-#
-# missing_entrez <- setdiff(transcript_unique_entrezs, exon_unique_entrezs)
-# transcript_entrez_splits <- strsplit(transcript_locations_df[["Entrez_ID"]], ", ", fixed = TRUE)
-# have_missing_entrezs <- vapply(transcript_entrez_splits,
-#                                function(x) any(x %in% missing_entrez),
-#                                logical(1)
-#                                )
-# View(transcript_locations_df[have_missing_entrezs, ])
+
+
+# Collect CDSs (protein-coding genes) or exons (non-coding genes) ---------
+
+have_missing_entrezs <- AreMissingInVec2(exon_locations_df[["Entrez_ID"]],
+                                         CDS_locations_df[["Entrez_ID"]]
+                                         )
+
+CDS_or_exon_locations_df <- rbind.data.frame(
+  data.frame(
+    CDS_locations_df,
+    "Entry" = "CDS",
+    stringsAsFactors = FALSE
+  ),
+  data.frame(
+    exon_locations_df[have_missing_entrezs, ],
+    "Entry" = "exon",
+    stringsAsFactors = FALSE
+  ),
+  stringsAsFactors = FALSE,
+  make.row.names = FALSE
+)
 
 
 
@@ -398,7 +431,8 @@ CDS_locations_df <- ResolveDuplicateFeatures(CDS_locations_df)
 # Save data ---------------------------------------------------------------
 
 save(list = c("gene_locations_df", "transcript_locations_df",
-              "exon_locations_df", "CDS_locations_df"
+              "exon_locations_df", "CDS_locations_df",
+              "CDS_or_exon_locations_df"
               ),
      file = file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData")
      )
