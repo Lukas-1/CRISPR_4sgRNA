@@ -29,6 +29,25 @@ RangesDfToGRangesObject <- function(ranges_df, strip_Chr = FALSE) {
 }
 
 
+LocationStringToDf <- function(location_char_vec) {
+  chromosome_splits <- strsplit(location_char_vec, "(", fixed = TRUE)
+  strand_vec <- sapply(chromosome_splits, "[[", 2)
+  strand_splits <- strsplit(strand_vec, ")", fixed = TRUE)
+  location_vec <- sapply(strand_splits, "[[", 2)
+  location_vec <- substr(location_vec, 2, nchar(location_vec))
+  location_splits <- strsplit(location_vec, "-", fixed = TRUE)
+  results_df <- data.frame(
+    "Chromosome" = sapply(chromosome_splits, "[[", 1),
+    "Strand"     = sapply(strand_splits, "[[", 1),
+    "Start"      = as.integer(sapply(location_splits, "[[", 1)),
+    "End"        = as.integer(sapply(location_splits, "[[", 2)),
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+  return(results_df)
+}
+
+
 
 TruncateLongEntries <- function(char_vec, use_sep = "; ", max_length = 10L) {
   splits_list <- strsplit(char_vec, use_sep, fixed = TRUE)
