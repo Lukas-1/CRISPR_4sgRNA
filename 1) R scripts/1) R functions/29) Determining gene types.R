@@ -87,8 +87,6 @@ GetDfGeneTypes <- function(genes_df) {
 
 
 
-
-
 GetGeneTypes <- function(entrezs_vec = NULL, ENSG_vec = NULL) {
 
   num_entries <- length(entrezs_vec)
@@ -131,11 +129,6 @@ GetGeneTypes <- function(entrezs_vec = NULL, ENSG_vec = NULL) {
                         )
   return(results_vec)
 }
-
-
-
-
-
 
 
 
