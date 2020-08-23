@@ -59,7 +59,10 @@ TruncateLongEntriesSplits <- function(splits_list, use_sep = "; ", max_length = 
   are_too_long <- lengths(splits_list) > max_length
   if (is.null(char_vec)) {
     char_vec <- rep(NA_character_, length(splits_list))
-    char_vec[!(are_too_long)] <- vapply(splits_list[!(are_too_long)], function(x) paste0(x, collapse = use_sep), "")
+    char_vec[!(are_too_long)] <- vapply(splits_list[!(are_too_long)],
+                                        function(x) paste0(x, collapse = use_sep),
+                                        ""
+                                        )
   }
   char_vec[are_too_long] <- vapply(splits_list[are_too_long], function(x) {
     all_the_same <- length(unique(x)) == 1
