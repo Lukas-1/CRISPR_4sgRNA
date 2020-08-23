@@ -26,7 +26,7 @@ MapEnsemblIDs <- function(input_df, warn = TRUE) {
 
   ## Create an Ensembl-Entrez mapping using BioMart
   message("Attempting to look up Ensembl-Entrez mappings in Ensembl's BioMart (requires an internet connection...)")
-  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))# host = "useast.ensembl.org"
+  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl")) # host = "useast.ensembl.org"
   ensembl_to_entrez_df <- getBM(
     filters = "ensembl_gene_id",
     attributes = c("ensembl_gene_id", "entrezgene_id"),
