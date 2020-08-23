@@ -5,6 +5,7 @@
 # Import packages and source code -----------------------------------------
 
 library("TxDb.Hsapiens.UCSC.hg38.knownGene")
+library("biomaRt")
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
@@ -130,7 +131,8 @@ ResolveDuplicateFeatures <- function(locations_df) {
             )
     data.frame(locations_df[are_problematic, colnames(locations_df) != "Ensembl_gene_ID"],
                "Old_ENSG" = locations_df[["Ensembl_gene_ID"]][are_problematic],
-               "New_ENSG" = ENSG_vec[are_problematic]
+               "New_ENSG" = ENSG_vec[are_problematic],
+               stringsAsFactors = FALSE
                )
     message("All transcript entries for problematic entries are listed below:")
     problematic_locations <- location_strings[!(are_duplicated)][are_problematic]
@@ -162,6 +164,24 @@ ResolveDuplicateFeatures <- function(locations_df) {
   locations_df <- locations_df[new_order, ]
 
   locations_df[["Gene_type"]] <- GetDfGeneTypes(locations_df)
+
+
+  ENSG_to_symbol_vec <- TranslateENSGtoSymbol(locations_df[["Ensembl_gene_ID"]])
+  entrez_to_symbol_vec <- MapToEntrezs(entrez_IDs_vec = locations_df[["Entrez_ID"]])[["Gene_symbol"]]
+  locations_df[["Gene_symbol"]] <- ifelse(is.na(entrez_to_symbol_vec),
+                                          ENSG_to_symbol_vec,
+                                          entrez_to_symbol_vec
+                                          )
+
+
+  all_columns <- c("Entrez_ID", "Ensembl_gene_ID",
+                   "Gene_symbol", "Original_symbol",
+                   "Gene_type", "Source",
+                   "Ensembl_transcript_ID", "Exon_ID",
+                   "Chromosome", "Strand", "Start", "End"
+                   )
+  column_matches <- order(match(colnames(locations_df), all_columns))
+  locations_df <- locations_df[, column_matches]
 
   row.names(locations_df) <- NULL
   return(locations_df)
@@ -204,19 +224,91 @@ AreMissingInVec2 <- function(char_vec_1, char_vec_2) {
 
 
 
+ENSGVectoSymbol <- function(ENSG_vec) {
 
+  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+  biomaRt_lookup_df <- getBM(
+    filters    = "ensembl_gene_id",
+    attributes = c("ensembl_gene_id", "external_gene_name"),
+    values     = ENSG_vec,
+    mart       = mart
+  )
+  biomaRt_package_matches <- match(ENSG_vec, biomaRt_lookup_df[["ensembl_gene_id"]])
+  BioMart_export_matches  <- match(ENSG_vec, BioMart_ENSG_to_symbol_df[["ENSG"]])
+  gencode_matches         <- match(ENSG_vec, gencode_ENSG_to_symbol_df[["Ensembl_gene_ID"]])
+
+  results_df <- data.frame(
+    "Ensembl_gene_ID"        = ENSG_vec,
+    "biomaRt_package_symbol" = biomaRt_lookup_df[["external_gene_name"]][biomaRt_package_matches],
+    "BioMart_export_symbol"  = BioMart_ENSG_to_symbol_df[["Gene_symbol"]][BioMart_export_matches],
+    "GENCODE_symbol"         = gencode_ENSG_to_symbol_df[["Gene_symbol"]][gencode_matches],
+    stringsAsFactors         = FALSE
+  )
+  return(results_df)
+}
+
+
+
+TranslateENSGtoSymbol <- function(comma_separated_ENSG_vec) {
+
+  ENSG_splits <- strsplit(comma_separated_ENSG_vec, ", ", fixed = TRUE)
+  expanded_df <- ExpandList(ENSG_splits)
+  are_NA <- is.na(expanded_df[["Value"]])
+  are_duplicated <- duplicated(expanded_df[["Value"]][!(are_NA)])
+
+  unique_vec <- expanded_df[["Value"]][!(are_NA)][!(are_duplicated)]
+  translated_df <- ENSGVectoSymbol(unique_vec)
+  unique_ENSG_vec <- ifelse(is.na(translated_df[["biomaRt_package_symbol"]]),
+                            ifelse(is.na(translated_df[["BioMart_export_symbol"]]),
+                                   translated_df[["GENCODE_symbol"]],
+                                   translated_df[["BioMart_export_symbol"]]
+                                   ),
+                            translated_df[["biomaRt_package_symbol"]]
+                            )
+
+  matches_vec <- match(expanded_df[["Value"]],
+                       unique_vec
+                       )
+
+  expanded_df[["Symbol"]] <- unique_ENSG_vec[matches_vec]
+
+  collapsed_symbols_vec <- tapply(expanded_df[["Symbol"]],
+                                  expanded_df[["List_index"]],
+                                  CollapseNonNA
+                                  )
+  return(collapsed_symbols_vec)
+}
+
+
+
+
+
+# Collect Ensembl ID-gene symbol mappings ---------------------------------
+
+BioMart_ENSG_to_symbol_df <- unique(BioMart_tidied_df[, c("ENSG", "Gene_symbol")])
+gencode_ENSG_to_symbol_df <- unique(gencode_df[, c("Ensembl_gene_ID", "Gene_symbol")])
+
+stopifnot(!(any(duplicated(BioMart_ENSG_to_symbol_df[["ENSG"]]))))
+stopifnot(!(any(duplicated(gencode_ENSG_to_symbol_df[["Ensembl_gene_ID"]]))))
 
 
 
 
 # Create data frames using TxDb.Hsapiens.UCSC.hg38.knownGene --------------
 
-TxDb_genes_df <- as.data.frame(genes(TxDb.Hsapiens.UCSC.hg38.knownGene,
-                                     single.strand.genes.only = FALSE
-                                     ))
-TxDb_transcripts_df <- as.data.frame(transcriptsBy(TxDb.Hsapiens.UCSC.hg38.knownGene))
-TxDb_exons_df <- as.data.frame(exonsBy(TxDb.Hsapiens.UCSC.hg38.knownGene, by = "gene"))
-TxDb_CDS_df <- as.data.frame(cdsBy(TxDb.Hsapiens.UCSC.hg38.knownGene, by = "gene"))
+MakeTxDbDf <- function(GRangesList_object) {
+  results_df <- as.data.frame(GRangesList_object, stringsAsFactors = FALSE)
+  results_df[["strand"]] <- as.character(results_df[["strand"]])
+  results_df[["seqnames"]] <- as.character(results_df[["seqnames"]])
+  return(results_df)
+}
+
+TxDb_genes_df <- MakeTxDbDf(genes(TxDb.Hsapiens.UCSC.hg38.knownGene,
+                                  single.strand.genes.only = FALSE
+                                  ))
+TxDb_transcripts_df <- MakeTxDbDf(transcriptsBy(TxDb.Hsapiens.UCSC.hg38.knownGene))
+TxDb_exons_df <- MakeTxDbDf(exonsBy(TxDb.Hsapiens.UCSC.hg38.knownGene, by = "gene"))
+TxDb_CDS_df <- MakeTxDbDf(cdsBy(TxDb.Hsapiens.UCSC.hg38.knownGene, by = "gene"))
 
 stopifnot(identical(sort(unique(TxDb_genes_df[["group_name"]])),
                     sort(unique(TxDb_transcripts_df[["group_name"]]))
@@ -227,9 +319,6 @@ stopifnot(identical(sort(unique(TxDb_genes_df[["group_name"]])),
 stopifnot(identical(sort(unique(TxDb_genes_df[["group_name"]])),
                     sort(unique(TxDb_exons_df[["group_name"]]))
                     ))
-
-
-
 
 
 
@@ -347,6 +436,7 @@ exon_locations_df <- rbind.data.frame(
 )
 
 exon_locations_df <- ResolveDuplicateFeatures(exon_locations_df)
+
 
 
 
