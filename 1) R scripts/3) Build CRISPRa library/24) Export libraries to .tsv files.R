@@ -30,7 +30,7 @@ load(file.path(general_RData_directory, "10) Compile genes that constitute the s
 load(file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")) # for candidates_CRISPRa_df
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRa_RData_directory, "23) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRa_RData_directory, "23) Allocate transcription factor sgRNAs to plates.RData"))
 load(file.path(previous_versions_directory, "01) CRISPRa transcription factor sub-library (1st version) - TF_v1_CRISPRa_df.RData"))
 
 
@@ -59,7 +59,8 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
                       "sgRNA_sequence", "PAM", "Original_PAM",
 
                       "Calabrese_rank", "GPP_rank", "hCRISPRa_v2_rank",
-                      "Predicted_score", "Empirical_score", "Off_target_stringency", "Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source",
+                      "Predicted_score", "Empirical_score", "Off_target_stringency",
+                      "Sublibrary", "hCRISPRa_v2_ID", "hCRISPRa_TSS_source",
                       "Best_TSS", "First_TSS", "Last_TSS", "Strand_of_TSS",
 
                       "Chromosome", "Strand",

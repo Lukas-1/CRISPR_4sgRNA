@@ -29,7 +29,7 @@ previous_versions_directory <- file.path(RData_directory, "5) Previous versions 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
-load(file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData"))
+load(file.path(CRISPRko_RData_directory, "15) Allocate transcription factor sgRNAs to plates.RData"))
 load(file.path(previous_versions_directory, "02) CRISPRko transcription factor sub-library (1st version) - TF_v1_CRISPRko_df.RData"))
 
 

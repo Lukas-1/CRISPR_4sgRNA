@@ -207,7 +207,7 @@ TF_sgRNA_plates_df <- CombinePlateDfList(combined_df_shuffled_list)
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_sgRNA_plates_df",
-     file = file.path(CRISPRko_RData_directory, "15) Allocate sgRNAs to plates.RData")
+     file = file.path(CRISPRko_RData_directory, "15) Allocate transcription factor sgRNAs to plates.RData")
      )
 
 
