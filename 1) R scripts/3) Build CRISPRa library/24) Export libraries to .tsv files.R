@@ -76,7 +76,8 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
                       "Num_0MM", "Num_1MM", "Num_5G_MM",
                       "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_Num_2or3MM",
                       "GuideScan_offtarget_category",
-                      "CRISPOR_Num_0MM", "CRISPOR_Num_1MM", "CRISPOR_Num_2MM", "CRISPOR_Num_3MM", "CRISPOR_Num_4MM",
+                      "CRISPOR_Num_0MM", "CRISPOR_Num_1MM", "CRISPOR_Num_2MM",
+                      "CRISPOR_Num_3MM", "CRISPOR_Num_4MM",
                       "CRISPOR_off_target_count", "CRISPOR_Num_2or3MM",
 
                       SNP_column_names,
