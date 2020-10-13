@@ -137,6 +137,7 @@ vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Old_order"]
 
 
 
+
 # Export the vacuolation plate layouts ------------------------------------
 
 vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Sublibrary_4sg"]

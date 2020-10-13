@@ -47,7 +47,6 @@ problematic_entrezs <- c(vacuolation_only_entrezs, problematic_entrezs)
 
 
 
-
 # Build data frames for submission to the GPP sgRNA designer --------------
 
 all_genes_df_list <- lapply(entrez_chunks_list, BuildDfForGPP)
@@ -56,6 +55,7 @@ vacuolation_df <- BuildDfForGPP(vacuolation_entrezs)
 vacuolation_only_df <- BuildDfForGPP(setdiff(vacuolation_entrezs, unlist(entrez_chunks_list, use.names = FALSE)))
 
 all_genes_df_list <- c(all_genes_df_list, list("Vacuolation_only" = vacuolation_only_df))
+
 
 
 
