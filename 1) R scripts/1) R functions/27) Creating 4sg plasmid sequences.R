@@ -46,7 +46,7 @@ ReplaceNNNLines <- function(lines_vec, four_guides) {
 
   ### Extract the positions of the 4 guides
 
-  matches_list <- gregexpr("[n]+[n ]*", lines_vec)
+  matches_list <- gregexpr("n+[n ]*", lines_vec)
   are_matches <- matches_list != -1
   lines_vec[are_matches]
 
