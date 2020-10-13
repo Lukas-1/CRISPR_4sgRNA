@@ -31,10 +31,15 @@ load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RDat
 
 # Define functions --------------------------------------------------------
 
-GetCodingSequence <- function(entrez_ID) {
-  cds_GRanges_object <- GenomicFeatures::cds(TxDb.Hsapiens.UCSC.hg38.knownGene,
-                                             filter = list("gene_id" = entrez_ID)
-                                             )
+GetCodingSequence <- function(entrez_ID, get_exons = FALSE) {
+  if (get_exons) {
+    UseFunction <- GenomicFeatures::exons
+  } else {
+    UseFunction <- GenomicFeatures::cds
+  }
+  cds_GRanges_object <- UseFunction(TxDb.Hsapiens.UCSC.hg38.knownGene,
+                                    filter = list("gene_id" = entrez_ID)
+                                    )
   results_df <- as.data.frame(cds_GRanges_object)
   colnames(results_df) <- c("Chromosome", "Start", "End", "Length", "Strand")
   results_df <- data.frame(
@@ -58,6 +63,18 @@ GetCodingSequence("100507027")
 
 GetCodingSequence("5350")[["Start"]] - 50
 GetCodingSequence("5350")[["End"]] + 50
+
+
+GetCodingSequence(SymbolsToEntrezIDs("HNRNPK"))
+GetCodingSequence(SymbolsToEntrezIDs("HNRNPK"), get_exons = TRUE)
+
+
+
+
+
+
+
+
 
 
 
