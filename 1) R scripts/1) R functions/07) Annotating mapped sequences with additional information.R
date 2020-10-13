@@ -32,14 +32,14 @@ human_genes_GRanges <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
 
 # Functions for retrieving sequences from locations -----------------------
 
-RetrieveSequences <- function(ranges_df) {
+RetrieveSequences <- function(ranges_df, use_genome = BSgenome.Hsapiens.UCSC.hg38) {
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
-  results_vec <- as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38))
+  results_vec <- as.character(motifRG::getSequence(GRanges_object, use_genome))
   return(results_vec)
 }
 
 
-GetNGGPAM <- function(ranges_df) {
+GetNGGPAM <- function(ranges_df, use_genome = BSgenome.Hsapiens.UCSC.hg38) {
   CheckRangesDf(ranges_df)
   start_vec <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 1L, ranges_df[["Start"]] - 3L)
   end_vec   <- ifelse(ranges_df[["Strand"]] == "+", ranges_df[["End"]] + 3L, ranges_df[["Start"]] - 1L)
@@ -48,7 +48,7 @@ GetNGGPAM <- function(ranges_df) {
     ranges   = IRanges(start = start_vec, end = end_vec),
     strand   = ranges_df[["Strand"]]
   )
-  results_vec <- as.character(motifRG::getSequence(GRanges_object, BSgenome.Hsapiens.UCSC.hg38))
+  results_vec <- as.character(motifRG::getSequence(GRanges_object, use_genome))
   return(results_vec)
 }
 
@@ -59,7 +59,15 @@ GetNGGPAM <- function(ranges_df) {
 
 # Functions for mapping from genomic locations to genes -------------------
 
-ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
+ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges, is_mouse = FALSE) {
+
+  if (is_mouse) {
+    eg_db_column <- "Symbol_Org_Mm_eg_db"
+    ncbi_column <- "Symbol_NCBI_Mm_info"
+  } else {
+    eg_db_column <- "Symbol_Org_Hs_eg_db"
+    ncbi_column <- "Symbol_NCBI_Hs_info"
+  }
 
   entrez_IDs_vec <- mcols(gene_models_GRanges)[, "gene_id"]
 
@@ -68,9 +76,9 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
   hits_entrezs_vec <- hits_entrezs_vec[new_order]
 
   entrez_matches <- match(hits_entrezs_vec, entrez_to_symbol_df[["Entrez_ID"]])
-  hits_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]),
-                             entrez_to_symbol_df[["Symbol_NCBI_Hs_info"]][entrez_matches],
-                             entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]
+  hits_symbols_vec <- ifelse(is.na(entrez_to_symbol_df[[eg_db_column]][entrez_matches]),
+                             entrez_to_symbol_df[[ncbi_column]][entrez_matches],
+                             entrez_to_symbol_df[[eg_db_column]][entrez_matches]
                              )
   query_vec <- queryHits(Hits_object)[new_order]
   query_fac <- factor(query_vec, levels = seq_len(num_queries))
@@ -84,6 +92,7 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
     stringsAsFactors = FALSE
   )
   if ("distance" %in% names(mcols(Hits_object))) {
+    stopifnot(length(unique(queryHits(Hits_object))) == num_queries) # This indicates that results for some queries are unavailable, and trying to extract the distance will result in an error
     results_df[["Distance"]] <- mcols(Hits_object)[, "distance"][new_order][unique(match(query_vec, query_vec))]
   }
   return(results_df)
@@ -91,14 +100,14 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges) {
 
 
 
-FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE) {
+FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE, is_mouse = FALSE) {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
   message("Finding genes that overlap with the specified genomic ranges...")
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
   hits_object <- findOverlaps(GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand, select = "all")
-  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges)
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges, is_mouse = is_mouse)
 
   results_df <- data.frame(
     ranges_df,
@@ -113,14 +122,15 @@ FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GR
 
 
 
-FindNearestGenes <- function(ranges_df) {
+FindNearestGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, is_mouse = FALSE) {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
   message("Finding the closest genes to the specified genomic ranges...")
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
-  hits_object <- distanceToNearest(GRanges_object, human_genes_GRanges, ignore.strand = TRUE, select = "all")
-  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), human_genes_GRanges)
+  hits_object <- distanceToNearest(GRanges_object, gene_models_GRanges, ignore.strand = TRUE, select = "all")
+
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges, is_mouse = is_mouse)
 
   results_df <- data.frame(
     ranges_df,

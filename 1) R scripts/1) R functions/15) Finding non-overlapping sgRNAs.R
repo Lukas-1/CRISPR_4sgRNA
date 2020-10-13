@@ -37,15 +37,14 @@ CreateCombinations <- function(sub_df_reordered,
 
   have_one_0MM <- (sub_df_reordered[["Num_0MM"]] == 1L) & !(is.na(sub_df_reordered[["Start"]]))
 
-  are_core_library <- grepl("Calabrese|hCRISPR|Brunello|TKOv3|Dolcetto", sub_df_reordered[["Source"]])
+  are_core_library <- grepl("Calabrese|hCRISPR|Brunello|TKOv3|Dolcetto|mCRISPR|Brie|Caprano|Dolomiti", sub_df_reordered[["Source"]])
 
-  is_CRISPRko <- "Entrez_source_Brunello" %in% names(sub_df_reordered)
+  is_CRISPRko <- "Exon_number_GPP" %in% names(sub_df_reordered)
   if (is_CRISPRko) {
     are_preferred <- are_core_library | (sub_df_reordered[["GPP_rank"]] %in% 1:10)
   } else {
-    hCRISPR_rank_column <- grep("_v2_rank", colnames(sub_df_reordered), fixed = TRUE)
-    are_preferred <- grepl("Calabrese", sub_df_reordered[["Source"]], fixed = TRUE) |
-                     grepl("Dolcetto", sub_df_reordered[["Source"]], fixed = TRUE) |
+    hCRISPR_rank_column <- grep("_v2_rank", names(sub_df_reordered), fixed = TRUE)
+    are_preferred <- grepl("Calabrese|Dolcetto|Caprano|Dolomiti", sub_df_reordered[["Source"]]) |
                      (sub_df_reordered[[hCRISPR_rank_column]] %in% 1:5)
   }
   combination_indices_mat <- combn(which(were_included), num_sgRNAs)
@@ -245,7 +244,7 @@ SortCombinations <- function(CRISPR_sub_df,
   }
 
   if (!(sgRNAs_found)) {
-    are_core_library <- grepl("Calabrese|hCRISPR|Brunello|TKOv3|Dolcetto", sub_df_reordered[["Source"]])
+    are_core_library <- grepl("Calabrese|hCRISPR|Brunello|TKOv3|Dolcetto|Brie|Caprano|Dolomiti", sub_df_reordered[["Source"]])
     sub_df_final <- sub_df_reordered[order(!(are_core_library), sub_df_reordered[["Rank"]]), ]
     sub_df_final[["Best_combination_rank"]] <- NA_integer_
     sub_df_final[["Spacing"]]               <- ifelse(sub_df_final[["Rank"]] %in% 1:4, 0L, NA_integer_)

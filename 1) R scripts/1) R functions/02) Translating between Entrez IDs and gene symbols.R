@@ -47,7 +47,19 @@ GetMinEntrez <- function(entrez_IDs_vec) {
 
 
 
-MapToEntrezs <- function(entrez_IDs_vec = NULL, symbols_vec = NULL, entrez_IDs_separator = ", ") {
+MapToEntrezs <- function(entrez_IDs_vec = NULL,
+                         symbols_vec = NULL,
+                         entrez_IDs_separator = ", ",
+                         is_mouse = FALSE
+                         ) {
+
+  if (is_mouse) {
+    eg_db_column <- "Symbol_Org_Mm_eg_db"
+    ncbi_column <- "Symbol_NCBI_Mm_info"
+  } else {
+    eg_db_column <- "Symbol_Org_Hs_eg_db"
+    ncbi_column <- "Symbol_NCBI_Hs_info"
+  }
 
   if (is.null(entrez_IDs_vec) && is.null(symbols_vec)) {
     stop("Either the entrez_IDs_vec or the symbols_vec parameter must be supplied!")
@@ -110,9 +122,9 @@ MapToEntrezs <- function(entrez_IDs_vec = NULL, symbols_vec = NULL, entrez_IDs_s
   expanded_entrezs_df <- ExpandList(strsplit(result_entrezs_vec, entrez_IDs_separator, fixed = TRUE))
   entrez_matches <- match(expanded_entrezs_df[["Value"]], entrez_to_symbol_df[["Entrez_ID"]])
 
-  backtranslated_symbols_vec_expanded <- ifelse(is.na(entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]),
-                                                entrez_to_symbol_df[["Symbol_NCBI_Hs_info"]][entrez_matches],
-                                                entrez_to_symbol_df[["Symbol_Org_Hs_eg_db"]][entrez_matches]
+  backtranslated_symbols_vec_expanded <- ifelse(is.na(entrez_to_symbol_df[[eg_db_column]][entrez_matches]),
+                                                entrez_to_symbol_df[[ncbi_column]][entrez_matches],
+                                                entrez_to_symbol_df[[eg_db_column]][entrez_matches]
                                                 )
   backtranslated_symbols_vec <- sapply(split(backtranslated_symbols_vec_expanded, expanded_entrezs_df[["List_index"]]),
                                        function(x) if (all(is.na(x))) NA_character_ else paste0(x, collapse = entrez_IDs_separator)

@@ -177,7 +177,7 @@ GetOffTargetCategory <- function(merged_CRISPR_df) {
 
 # Functions for resolving ambiguous gene IDs or sgRNA locations -----------
 
-AssignToGeneByNearbyTSS <- function(CRISPR_df, combined_TSS_df, prefix = "") {
+AssignToGeneByNearbyTSS <- function(CRISPR_df, combined_TSS_df, prefix = "", is_mouse = FALSE) {
 
   GRanges_object_TSSs <- GRanges(
     seqnames = sub("chr", "", combined_TSS_df[["Chromosome"]], fixed = TRUE),
@@ -222,7 +222,7 @@ AssignToGeneByNearbyTSS <- function(CRISPR_df, combined_TSS_df, prefix = "") {
     }
     assignment_vec[are_this_ID] <- paste0(prefix, assignment)
   }
-  results_df <- MapToEntrezs(new_entrezs_vec)
+  results_df <- MapToEntrezs(new_entrezs_vec, is_mouse = is_mouse)
   results_df <- data.frame(results_df, "Assignment" = assignment_vec, stringsAsFactors = FALSE, row.names = NULL)
   return(results_df)
 }
@@ -253,6 +253,11 @@ NoMatchForChromosome <- function(force_stop) {
 
 
 FindSingleLocationFromTSS <- function(location_df, chromosome, TSS_location = NA, force_stop = TRUE) {
+
+  assign("delete_location_df", location_df, envir = globalenv())
+  assign("delete_chromosome", chromosome, envir = globalenv())
+  assign("delete_TSS_location", TSS_location, envir = globalenv())
+
   are_valid <- substr(location_df[["PAM"]], 2, 3) == "GG"
   if (!(is.na(chromosome))) {
     are_valid <- are_valid & (location_df[["Chromosome"]] == chromosome)
@@ -468,7 +473,14 @@ MergeLocations <- function(merged_CRISPR_df, combined_TSS_df) {
 
 
 
-AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, combined_TSS_df, reorder_by_rank = TRUE, allow_5pG_MM = TRUE, minimal_version = FALSE) {
+AdjustPositionColumns <- function(merged_CRISPR_df,
+                                  guidescan_df,
+                                  combined_TSS_df,
+                                  reorder_by_rank = TRUE,
+                                  allow_5pG_MM = TRUE,
+                                  minimal_version = FALSE,
+                                  is_mouse = FALSE
+                                  ) {
 
   # Assign sgRNAs to their genomic locations
   merged_CRISPR_df <- MergeLocations(merged_CRISPR_df, combined_TSS_df)
@@ -479,14 +491,14 @@ AdjustPositionColumns <- function(merged_CRISPR_df, guidescan_df, combined_TSS_d
   are_NA <- is.na(merged_CRISPR_df[["Entrez_ID"]])
   merged_CRISPR_df[["Entrez_ID_assignment"]] <- ifelse(!(are_ambiguous | are_NA), "Unambiguous", NA_character_)
   if (any(are_ambiguous)) {
-    ambiguous_df <- AssignToGeneByNearbyTSS(merged_CRISPR_df[are_ambiguous, ], combined_TSS_df, prefix = "The gene symbol was ambiguous; ")
+    ambiguous_df <- AssignToGeneByNearbyTSS(merged_CRISPR_df[are_ambiguous, ], combined_TSS_df, prefix = "The gene symbol was ambiguous; ", is_mouse = is_mouse)
     merged_CRISPR_df[["Entrez_ID"]][are_ambiguous]            <- ifelse(is.na(ambiguous_df[["Entrez_ID"]]), merged_CRISPR_df[["Entrez_ID"]][are_ambiguous],   ambiguous_df[["Entrez_ID"]])
     merged_CRISPR_df[["Gene_symbol"]][are_ambiguous]          <- ifelse(is.na(ambiguous_df[["Entrez_ID"]]), merged_CRISPR_df[["Gene_symbol"]][are_ambiguous], ambiguous_df[["Gene_symbol"]])
     merged_CRISPR_df[["Combined_ID"]][are_ambiguous]          <- ifelse(is.na(ambiguous_df[["Entrez_ID"]]), merged_CRISPR_df[["Combined_ID"]][are_ambiguous], ambiguous_df[["Entrez_ID"]])
     merged_CRISPR_df[["Entrez_ID_assignment"]][are_ambiguous] <- ambiguous_df[["Assignment"]]
   }
   if (any(are_NA)) {
-    NA_df <- AssignToGeneByNearbyTSS(merged_CRISPR_df[are_NA, ], combined_TSS_df, prefix = "No Entrez ID was found for the gene symbol; ")
+    NA_df <- AssignToGeneByNearbyTSS(merged_CRISPR_df[are_NA, ], combined_TSS_df, prefix = "No Entrez ID was found for the gene symbol; ", is_mouse = is_mouse)
     merged_CRISPR_df[["Entrez_ID"]][are_NA]                   <- ifelse(is.na(NA_df[["Entrez_ID"]]), merged_CRISPR_df[["Entrez_ID"]][are_NA],   NA_df[["Entrez_ID"]])
     merged_CRISPR_df[["Gene_symbol"]][are_NA]                 <- ifelse(is.na(NA_df[["Entrez_ID"]]), merged_CRISPR_df[["Gene_symbol"]][are_NA], NA_df[["Gene_symbol"]])
     merged_CRISPR_df[["Combined_ID"]][are_NA]                 <- ifelse(is.na(NA_df[["Entrez_ID"]]), merged_CRISPR_df[["Combined_ID"]][are_NA], NA_df[["Entrez_ID"]])

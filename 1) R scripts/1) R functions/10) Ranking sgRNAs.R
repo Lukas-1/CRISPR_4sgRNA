@@ -98,6 +98,8 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
   is_CRISPRko <- "Exon_number_GPP" %in% names(CRISPR_sub_df)
 
   hCRISPR_rank_column <- grep("v2_rank", colnames(CRISPR_sub_df), fixed = TRUE, value = TRUE)
+  Doench_libraries <- c("Calabrese", "Dolcetto", "Caprano", "Dolomiti")
+  Doench_rank_column <- intersect(names(CRISPR_sub_df), paste0(Doench_libraries, "_rank"))
 
   list_for_ranking <- list(CRISPR_sub_df[["Is_control"]] == "No",
                            !(grepl("TTTT", CRISPR_sub_df[["sgRNA_sequence"]], ignore.case = TRUE)),
@@ -120,8 +122,7 @@ RankDf <- function(CRISPR_sub_df, allow_5pG_MM = FALSE) {
                            CRISPR_sub_df[["GuideScan_efficiency"]],
                            if ("CRISPOR_Doench_efficacy" %in% names(CRISPR_sub_df)) CRISPR_sub_df[["CRISPOR_Doench_efficacy"]]                      else NA_vec,
                            if (!(is_CRISPRko)) -(suppressWarnings(as.integer(CRISPR_sub_df[[hCRISPR_rank_column]]))) else NA_vec,
-                           if ("Calabrese_rank" %in% names(CRISPR_sub_df)) -(match(CRISPR_sub_df[["Calabrese_rank"]], c("1/2/3", "4/5/6")))         else NA_vec,
-                           if ("Dolcetto_rank" %in% names(CRISPR_sub_df))  -(match(CRISPR_sub_df[["Dolcetto_rank"]],  c("1/2/3", "4/5/6")))         else NA_vec,
+                           if (!(is_CRISPRko)) -(match(CRISPR_sub_df[[Doench_rank_column]], c("1/2/3", "4/5/6")))    else NA_vec,
                            -(CRISPR_sub_df[["GPP_rank"]])
                            )
   assign("delete_list_for_ranking", list_for_ranking, envir = globalenv())

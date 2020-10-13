@@ -32,8 +32,10 @@ export_columns <- c(
   "TSS_ID", "Rank", "Num_overlaps", "Source",
   "sgRNA_sequence", "PAM", "Sequence_with_primers",
   "Calabrese_rank", "Dolcetto_rank",
+  "Caprano_rank", "Dolomiti_rank",
   "GPP_rank",
-  "hCRISPRa_v2_rank", "hCRISPRi_v2_rank",
+  "mCRISPRa_v2_rank", "mCRISPRi_v2_rank",
+  "mCRISPRa_v2_rank", "mCRISPRi_v2_rank",
   "Predicted_score", "Empirical_score",
   "Chromosome", "Strand", "Cut_location", "Distance_from_TSS",
   "GuideScan_efficiency", "CRISPOR_Doench_efficacy",
@@ -293,8 +295,8 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL, previo
     CheckControlsNumber(are_selected, num_control_wells * 4)
     chosen_sequences <- sample(CRISPR_df[["sgRNA_sequence"]][are_selected], num_control_wells * 4)
   } else {
-    are_Doench <- grepl("Calabrese|Dolcetto", CRISPR_df[["Source"]])
-    are_hCRISPR_v2 <- grepl("hCRISPR", CRISPR_df[["Source"]], fixed = TRUE)
+    are_Doench <- grepl("Calabrese|Dolcetto|Caprano|Dolomiti", CRISPR_df[["Source"]])
+    are_hCRISPR_v2 <- grepl("[hm]CRISPR", CRISPR_df[["Source"]])
     are_Doench_controls <- are_Doench & are_good_controls
     are_hCRISPR_v2_controls <- are_hCRISPR_v2 & are_good_controls
     num_guides_Doench <- min(sum(are_Doench_controls), round((num_control_wells * 4) / 2))
@@ -621,11 +623,11 @@ AssignPlateStrings <- function(CRISPR_df, use_prefix = "h") {
       ) {
     plates_vec[CRISPR_df[["Plate_number"]] == 1] <- "5+"
   }
-  if ("Entrez_source_Brunello" %in% colnames(CRISPR_df)) {
+  if (("Entrez_source_Brunello" %in% names(CRISPR_df)) || ("Entrez_source_Brie" %in% names(CRISPR_df))) {
     modality_string <- "o"
-  } else if ("Entrez_source_Calabrese" %in% colnames(CRISPR_df)) {
+  } else if (("Entrez_source_Calabrese" %in% names(CRISPR_df)) || ("Entrez_source_Caprano" %in% names(CRISPR_df))) {
     modality_string <- "a"
-  } else if ("Entrez_source_Dolcetto" %in% colnames(CRISPR_df)) {
+  } else if (("Entrez_source_Dolcetto" %in% names(CRISPR_df)) || ("Entrez_source_Dolomiti" %in% names(CRISPR_df))) {
     modality_string <- "i"
   }
   plates_vec <- paste0(use_prefix, modality_string, "_", plates_vec,

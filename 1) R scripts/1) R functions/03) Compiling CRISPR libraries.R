@@ -14,7 +14,12 @@ CRISPR_library_sources <- c(
   "hCRISPRi-v2.1",
   "hCRISPRi-v2.0",
   "Brunello",
-  "TKOv3"
+  "TKOv3",
+
+  "Caprano",
+  "mCRISPRa-v2",
+  "Dolomiti",
+  "mCRISPRi-v2"
 )
 
 
@@ -34,7 +39,7 @@ AddHorlbeckTSSSource <- function(sgRNA_df, TSS_df) {
 Exchange5PrimeG <- function(CRISPR_df) {
   are_5prime_G <- !(is.na(CRISPR_df[["Start"]])) &
                   (CRISPR_df[["Num_0MM"]] == 0) & (CRISPR_df[["Num_5G_MM"]] == 1) &
-                  (grepl("hCRISPR", CRISPR_df[["Source"]], fixed = TRUE)) &
+                  (grepl("[hm]CRISPR", CRISPR_df[["Source"]])) &
                   (CRISPR_df[["Is_control"]] != "Yes") &
                   (CRISPR_df[["Exchanged_5pG"]] %in% "No")
   GRanges_object <- RangesDfToGRangesObject(CRISPR_df[are_5prime_G, ])
@@ -169,14 +174,18 @@ ResolveDf <- function(replicates_df, drop_columns, concatenate_columns) {
     any_resolved <- TRUE
   }
 
-  ### Deal with triplicates (two transcripts in the hCRISPR library, and also found in one of the other libraries) ###
-  if ((nrow(results_df) == 3) && any(c("hCRISPRa_v2_rank", "hCRISPRi_v2_rank") %in% colnames(results_df))) {
-    are_Horlbeck <- results_df[["Original_source"]] %in% c("hCRISPRa-v2", "hCRISPRi-v2.1")
-    are_not_Horlbeck <- results_df[["Original_source"]] %in% c("GPP", "Calabrese", "GPP, Calabrese", "Dolcetto", "GPP, Dolcetto")
+  ### Deal with triplicates (two transcripts in the hCRISPR/mCRISPR library, and also found in one of the other libraries) ###
+  if ((nrow(results_df) == 3) && any(c("hCRISPRa_v2_rank", "hCRISPRi_v2_rank", "mCRISPRa_v2_rank", "mCRISPRi_v2_rank") %in% colnames(results_df))) {
+    are_Horlbeck <- results_df[["Original_source"]] %in% c("hCRISPRa-v2", "hCRISPRi-v2.1", "mCRISPRa-v2", "mCRISPRi-v2")
+    are_not_Horlbeck <- results_df[["Original_source"]] %in% c("GPP", "Calabrese", "GPP, Calabrese", "Dolcetto", "GPP, Dolcetto",
+                                                               "Caprano", "GPP, Caprano", "Dolomiti", "GPP, Dolomiti"
+                                                               )
     if ((sum(are_Horlbeck) == 2) && (sum(are_not_Horlbeck) == 1)) {
       non_Horlbeck_columns <- c("GPP_rank", "Original_PAM",
                                 "Entrez_source_Calabrese", "Calabrese_rank",
-                                "Entrez_source_Dolcetto", "Dolcetto_rank"
+                                "Entrez_source_Dolcetto", "Dolcetto_rank",
+                                "Entrez_source_Caprano", "Caprano_rank",
+                                "Entrez_souce_Dolomiti", "Dolomiti_rank"
                                 )
       for (column_name in non_Horlbeck_columns) {
         results_df[[column_name]] <- results_df[[column_name]][are_not_Horlbeck]

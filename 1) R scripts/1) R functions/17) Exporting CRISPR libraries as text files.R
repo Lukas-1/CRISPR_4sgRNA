@@ -329,7 +329,7 @@ FormatForExcel <- function(my_df,
   }
 
   if (!(is_CRISPRko)) {
-    rank_column <- grep("^(Calabrese|Dolcetto)_", colnames(my_df))
+    rank_column <- grep("^(Calabrese|Dolcetto|Caprano|Dolomiti)_", colnames(my_df))
     # This is to prevent the cell value "1/2/3" from being converted into a date by Excel
     my_df[[rank_column]] <- gsub("/", " or ", my_df[[rank_column]], fixed = TRUE)
     my_df[[rank_column]] <- sub(" or ", ", ", my_df[[rank_column]], fixed = TRUE)

@@ -66,7 +66,10 @@ libraries_order <- c(
   "hCRISPRi-v2.0",
   "Brunello",
   "TKOv3",
-  "GPP"
+  "GPP",
+  "Caprano",
+  "mCRISPRa-v2",
+  "Dolomiti"
 )
 
 libraries_two_letters <- c(
@@ -77,7 +80,10 @@ libraries_two_letters <- c(
   "hCRISPRi-v2.0" = "v2",
   "Brunello"      = "B",
   "TKOv3"         = "T",
-  "GPP"           = "G"
+  "GPP"           = "G",
+  "Caprano"       = "Ca",
+  "mCRISPRa-v2"   = "v2",
+  "Dolomiti"      = "Do"
 )
 
 
@@ -296,6 +302,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
     }
     return(results_list)
   })
+  assign("delete_results_list_list", results_list_list, envir = globalenv())
   summary_df <- do.call(rbind.data.frame, c(results_list_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   return(summary_df)
 }
@@ -371,7 +378,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
 
 
 
-ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_lax_df = FALSE) {
+ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_lax_df = FALSE, is_mouse = FALSE) {
   ## requires 'collected_entrez_IDs' in the global environment
 
   ## Collect all Entrez IDs from various sources
@@ -389,7 +396,7 @@ ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_
   sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
   sgRNAs_all_genes_df[["Entrez_ID"]] <- sgRNAs_all_genes_df[["Combined_ID"]]
   sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, names(sgRNAs_all_genes_df) != "Combined_ID"]
-  sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df)
+  sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df, is_mouse = is_mouse)
   if (!(is.null(lax_CRISPR_df))) {
     are_different <- DifferUsingRelaxedLocations(sgRNAs_overview_df[["Entrez_ID"]], strict_CRISPR_df, lax_CRISPR_df)
     sgRNAs_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
@@ -402,9 +409,9 @@ ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_
 
 # Functions for exporting overview tables ---------------------------------
 
-FixSymbolsForSummaryDf <- function(reorganized_df) {
+FixSymbolsForSummaryDf <- function(reorganized_df, is_mouse = FALSE) {
   have_no_symbol <- is.na(reorganized_df[["Gene_symbol"]])
-  entrez_symbols_df <- MapToEntrezs(reorganized_df[["Entrez_ID"]][have_no_symbol])
+  entrez_symbols_df <- MapToEntrezs(reorganized_df[["Entrez_ID"]][have_no_symbol], is_mouse = is_mouse)
   could_be_mapped <- !(is.na(entrez_symbols_df[["Gene_symbol"]]))
   results_df <- reorganized_df
   results_df[["Gene_symbol"]][have_no_symbol][could_be_mapped] <- entrez_symbols_df[["Gene_symbol"]][could_be_mapped]
