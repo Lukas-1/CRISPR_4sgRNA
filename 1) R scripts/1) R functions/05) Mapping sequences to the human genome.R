@@ -11,7 +11,7 @@ library("BSgenome.Hsapiens.UCSC.hg38")
 
 
 
-# Loading global variables ------------------------------------------------
+# Load global variables ---------------------------------------------------
 
 chromosome_names <- paste0("chr", c(as.character(1:22), "X", "Y", "M"))
 message("Loading the human genome into RAM...")
@@ -54,7 +54,6 @@ FindSequence <- function(my_sequence) {
   results_list <- list()
 
   for (i in seq_along(chromosome_names)) {
-
     message(paste0("Searching chromosome ", substr(chromosome_names[[i]], 4, nchar(chromosome_names[[i]]))), "...")
 
     plus_matches  <- matchPattern(DS_sequence, chromosome_sequences_list[[i]], max.mismatch = 1)
