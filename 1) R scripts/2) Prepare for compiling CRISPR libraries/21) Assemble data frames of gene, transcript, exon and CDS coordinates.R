@@ -146,13 +146,13 @@ ResolveDuplicateFeatures <- function(locations_df) {
              "New_entrez" = entrezs_vec[are_different]
              )
 
-  locations_df[["Entrez_ID"]] <- entrezs_vec
-  locations_df[["Ensembl_gene_ID"]] <- ENSG_vec
+  locations_df[["Entrez_IDs"]] <- entrezs_vec
+  locations_df[["Ensembl_gene_IDs"]] <- ENSG_vec
   locations_df[["Source"]] <- sources_vec
   locations_df[["Original_symbol"]] <- symbols_vec
 
-  new_order <- order(GetMinEntrez(locations_df[["Entrez_ID"]]),
-                     locations_df[["Ensembl_gene_ID"]],
+  new_order <- order(GetMinEntrez(locations_df[["Entrez_IDs"]]),
+                     locations_df[["Ensembl_gene_IDs"]],
                      match(locations_df[["Chromosome"]],
                            c(paste0("chr", 1:23), c("Y", "Y", "M"))
                            ),
@@ -163,26 +163,35 @@ ResolveDuplicateFeatures <- function(locations_df) {
                      )
   locations_df <- locations_df[new_order, ]
 
-  locations_df[["Gene_type"]] <- GetDfGeneTypes(locations_df)
+  locations_df[["Gene_types"]] <- GetDfGeneTypes(locations_df)
 
 
-  ENSG_to_symbol_vec <- TranslateENSGtoSymbol(locations_df[["Ensembl_gene_ID"]])
-  entrez_to_symbol_vec <- MapToEntrezs(entrez_IDs_vec = locations_df[["Entrez_ID"]])[["Gene_symbol"]]
-  locations_df[["Gene_symbol"]] <- ifelse(is.na(entrez_to_symbol_vec),
-                                          ENSG_to_symbol_vec,
-                                          entrez_to_symbol_vec
-                                          )
+  ENSG_to_symbol_vec <- TranslateENSGtoSymbol(locations_df[["Ensembl_gene_IDs"]])
+  entrez_to_symbol_vec <- MapToEntrezs(entrez_IDs_vec = locations_df[["Entrez_IDs"]])[["Gene_symbol"]]
+  locations_df[["Gene_symbols"]] <- ifelse(is.na(entrez_to_symbol_vec),
+                                           ENSG_to_symbol_vec,
+                                           entrez_to_symbol_vec
+                                           )
 
 
-  all_columns <- c("Entrez_ID", "Ensembl_gene_ID",
-                   "Gene_symbol", "Original_symbol",
-                   "Gene_type", "Source",
+  ncbi_vec <- ifelse(is.na(locations_df[["Entrez_IDs"]]),
+                     NA_character_,
+                     paste0("ncbi:", locations_df[["Entrez_IDs"]])
+                     )
+  ncbi_vec <- gsub(", ", ", ncbi:", ncbi_vec, fixed = TRUE)
+  locations_df[["Gene_IDs"]] <- ifelse(is.na(ncbi_vec),
+                                       locations_df[["Ensembl_gene_IDs"]],
+                                       ncbi_vec
+                                       )
+
+  all_columns <- c("Gene_IDs", "Entrez_IDs", "Ensembl_gene_IDs",
+                   "Gene_symbols", "Original_symbol",
+                   "Gene_types", "Source",
                    "Ensembl_transcript_ID", "Exon_ID",
                    "Chromosome", "Strand", "Start", "End"
                    )
-  column_matches <- order(match(colnames(locations_df), all_columns))
-  locations_df <- locations_df[, column_matches]
-
+  columns_reordered <- intersect(all_columns, colnames(locations_df))
+  locations_df <- locations_df[, columns_reordered]
   row.names(locations_df) <- NULL
   return(locations_df)
 }
@@ -364,7 +373,7 @@ row.names(gencode_genes_df) <- NULL
 colnames(BioMart_genes_df) <- gene_columns
 colnames(gencode_genes_df) <- gene_columns
 
-TxDb_genes_sel_df<- FixTxDb_columns(TxDb_genes_sel_df, gencode_genes_df)
+TxDb_genes_sel_df <- FixTxDb_columns(TxDb_genes_sel_df, gencode_genes_df)
 
 BioMart_genes_df[["Source"]] <- "BioMart"
 gencode_genes_df[["Source"]] <- "GENCODE"
@@ -444,7 +453,7 @@ exon_locations_df <- ResolveDuplicateFeatures(exon_locations_df)
 
 # Create a merged data frame of CDS coordinates ---------------------------
 
-TxDb_CDS_sel_df <- TxDb_exons_df[, TxDb_columns]
+TxDb_CDS_sel_df <- TxDb_CDS_df[, TxDb_columns]
 gencode_CDS_df <- gencode_df[gencode_df[["Entry_type"]] == "CDS",
                              gencode_columns
                              ]
@@ -471,20 +480,20 @@ CDS_locations_df <- ResolveDuplicateFeatures(CDS_locations_df)
 
 # Explore the results -----------------------------------------------------
 
-gene_unique_entrezs       <- GetUniqueIDs(gene_locations_df[["Entrez_ID"]])
-transcript_unique_entrezs <- GetUniqueIDs(transcript_locations_df[["Entrez_ID"]])
-exon_unique_entrezs       <- GetUniqueIDs(exon_locations_df[["Entrez_ID"]])
-CDS_unique_entrezs        <- GetUniqueIDs(CDS_locations_df[["Entrez_ID"]])
+gene_unique_entrezs       <- GetUniqueIDs(gene_locations_df[["Entrez_IDs"]])
+transcript_unique_entrezs <- GetUniqueIDs(transcript_locations_df[["Entrez_IDs"]])
+exon_unique_entrezs       <- GetUniqueIDs(exon_locations_df[["Entrez_IDs"]])
+CDS_unique_entrezs        <- GetUniqueIDs(CDS_locations_df[["Entrez_IDs"]])
 
 length(gene_unique_entrezs)
 length(transcript_unique_entrezs)
 length(exon_unique_entrezs)
 length(CDS_unique_entrezs)
 
-have_missing_entrezs <- AreMissingInVec2(transcript_locations_df[["Entrez_ID"]],
-                                         exon_locations_df[["Entrez_ID"]]
+have_missing_entrezs <- AreMissingInVec2(transcript_locations_df[["Entrez_IDs"]],
+                                         exon_locations_df[["Entrez_IDs"]]
                                          )
-have_multiple_entrezs <- grepl(", ", transcript_locations_df[["Entrez_ID"]], fixed = TRUE)
+have_multiple_entrezs <- grepl(", ", transcript_locations_df[["Entrez_IDs"]], fixed = TRUE)
 are_on_standard_chromosome <- transcript_locations_df[["Chromosome"]] %in% all_chromosomes
 stopifnot(!(any(have_missing_entrezs & are_on_standard_chromosome & !(have_multiple_entrezs))))
 # ==> None of the Entrez IDs that are present in the transcript data,
@@ -495,8 +504,8 @@ stopifnot(!(any(have_missing_entrezs & are_on_standard_chromosome & !(have_multi
 
 # Collect CDSs (protein-coding genes) or exons (non-coding genes) ---------
 
-have_missing_entrezs <- AreMissingInVec2(exon_locations_df[["Entrez_ID"]],
-                                         CDS_locations_df[["Entrez_ID"]]
+have_missing_entrezs <- AreMissingInVec2(exon_locations_df[["Entrez_IDs"]],
+                                         CDS_locations_df[["Entrez_IDs"]]
                                          )
 
 CDS_or_exon_locations_df <- rbind.data.frame(
