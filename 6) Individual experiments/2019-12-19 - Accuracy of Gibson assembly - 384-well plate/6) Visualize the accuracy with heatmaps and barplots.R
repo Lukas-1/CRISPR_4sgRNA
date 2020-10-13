@@ -134,8 +134,6 @@ DrawColorTrapezoid <- function(start_x     = 0,
   }
 
 
-
-
   if (!(is.null(trapezoid_y))) {
     rect(xleft   = my_x_positions[[1]],
          xright  = my_x_positions[[2]],
@@ -157,7 +155,6 @@ DrawColorTrapezoid <- function(start_x     = 0,
            xpd     = NA
            )
     }
-
 
   }
 
@@ -421,7 +418,6 @@ DrawAccuracyHeatmap <- function(assembly_df) {
        )
 
   MakeEmptyPlot()
-
   return(invisible(NULL))
 }
 

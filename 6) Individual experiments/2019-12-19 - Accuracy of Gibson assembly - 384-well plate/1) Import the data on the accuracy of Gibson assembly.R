@@ -28,7 +28,7 @@ intermediate_R_objects_directory <- file.path(file_directory, "2) Intermediate R
 
 # Read in data ------------------------------------------------------------
 
-accuracies_df <- read.table(file.path(file_input_directory, "identical.perc.txt"),
+accuracies_df <- read.table(file.path(file_input_directory, "CCS5", "CCS5_identical.perc.txt"),
                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL,
                             check.names = FALSE
                             )
