@@ -136,11 +136,17 @@ MakeFASTADf <- function(CRISPR_df, combined_IDs) {
       stringsAsFactors = FALSE,
       row.names = NULL
     )
-    results_df <- results_df[!(is.na(PAM_vec)), ]
-    are_duplicated <- duplicated(results_df[, c("sgRNA_sequence", "PAM")])
-    results_df <- results_df[!(are_duplicated), ]
-    row.names(results_df) <- NULL
-    return(results_df)
+    are_invalid <- is.na(PAM_vec)
+    if (all(are_invalid)) {
+      message("All eligible sgRNAs had no valid PAM, and were thus ineligible for submission as a FASTA sequence!")
+      return(NULL)
+    } else {
+      results_df <- results_df[!(are_invalid), ]
+      are_duplicated <- duplicated(results_df[, c("sgRNA_sequence", "PAM")])
+      results_df <- results_df[!(are_duplicated), ]
+      row.names(results_df) <- NULL
+      return(results_df)
+    }
   }
 }
 
@@ -499,6 +505,8 @@ AddCombinedFilteredDf <- function(filtered_df_list) {
       names(combined_df_list) <- combined_names
       filtered_df_list <- c(filtered_df_list, combined_df_list)
     }
+  } else if ((length(filtered_df_list) == 1) && (nrow(filtered_df_list[[1]]) == 0)) {
+    message("Empty list supplied!")
   } else {
     message("CRISPOR scores for all entries are already available!")
   }

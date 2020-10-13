@@ -20,10 +20,16 @@ CombineDfChunks <- function(df_list, max_num_per_chunk = 12000L) {
     return(df_list)
   }
   current_sum <- nrow(df_list[[1]])
+  if (is.null(current_sum)) {
+    current_sum <- 0L
+  }
   current_chunk <- 1L
   chunk_vec <- c(1L, rep(NA_integer_, length(df_list) - 1))
   for (i in seq(from = 2, to = length(df_list), by = 1)) {
     current_nrow <- nrow(df_list[[i]])
+    if (is.null(current_nrow)) {
+      current_nrow <- 0L
+    }
     if ((current_sum + current_nrow) > max_num_per_chunk) {
       current_chunk <- current_chunk + 1L
       current_sum <- current_nrow
