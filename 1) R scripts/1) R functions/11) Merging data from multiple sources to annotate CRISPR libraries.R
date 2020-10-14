@@ -538,7 +538,9 @@ AdjustPositionColumns <- function(merged_CRISPR_df,
   merged_CRISPR_df <- ResolveDuplicates(merged_CRISPR_df,
                                         concatenate_columns = c("Sublibrary",
                                                                 "hCRISPRa_v2_ID", "hCRISPRa_TSS_source",
-                                                                "hCRISPRi_v2_ID", "hCRISPRi_TSS_source"
+                                                                "hCRISPRi_v2_ID", "hCRISPRi_TSS_source",
+                                                                "mCRISPRa_v2_ID", "mCRISPRa_TSS_source",
+                                                                "mCRISPRi_v2_ID", "mCRISPRi_TSS_source"
                                                                 )
                                         )
 
