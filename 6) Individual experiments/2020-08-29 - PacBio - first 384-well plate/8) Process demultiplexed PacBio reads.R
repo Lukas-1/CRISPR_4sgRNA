@@ -32,8 +32,7 @@ load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
-load(file.path(R_objects_directory, "6) Extract barcode sequences and quality scores.RData"))
-
+load(file.path(R_objects_directory, "7) Extract barcode sequences and quality scores.RData"))
 
 
 
@@ -918,7 +917,7 @@ ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
 save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
               "sl9_ccs3_df_list", "sl9_ccs5_df_list"
               ),
-     file = file.path(R_objects_directory, "7) Process demultiplexed PacBio reads.RData")
+     file = file.path(R_objects_directory, "8) Process demultiplexed PacBio reads.RData")
      )
 
 

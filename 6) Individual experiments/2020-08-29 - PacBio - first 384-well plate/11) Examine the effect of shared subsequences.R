@@ -31,7 +31,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "7) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "8) Process demultiplexed PacBio reads.RData"))
 
 
 
@@ -298,17 +298,6 @@ for (use_filtered in c(FALSE, TRUE)) {
 
 
 PlotBySharedSubsequence(sl7_ccs5_df_list[["original_summary_df"]], "Count_mean_sg1to4")
-
-
-count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
-summary_df <- sl7_ccs5_df_list[["original_summary_df"]]
-summary_df[["Perc_sg1to4"]] <- rowSums(as.matrix(summary_df[, count_columns])) / (summary_df[["Count_total"]] * 4)
-
-
-summary_df[["Perc_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns])) / summary_df[["Count_total"]]
-
-
-
 
 
 
