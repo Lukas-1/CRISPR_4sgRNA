@@ -105,12 +105,6 @@ GetBarcodes <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
 
     barcode_df_list <- lapply(seq_along(this_well_zmws), function(x) {
 
-      assign("delete_x", x, envir = globalenv())
-      assign("delete_ccs_seq", ccs_seq, envir = globalenv())
-      assign("delete_lima_seq", lima_seq, envir = globalenv())
-      assign("delete_ccs_qual", ccs_qual, envir = globalenv())
-      assign("delete_lima_qual", lima_qual, envir = globalenv())
-
       match_object <- matchPattern(lima_seq[[x]], ccs_seq[[x]])
       stopifnot(length(match_object) == 1)
 
