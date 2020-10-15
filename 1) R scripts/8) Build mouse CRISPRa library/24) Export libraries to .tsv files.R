@@ -34,6 +34,14 @@ load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guide
 
 
 
+# Create an empty SNP column ----------------------------------------------
+
+merged_replaced_CRISPRa_df[[preferred_AF_max_column]] <- NA_real_
+
+
+
+
+
 # Re-arrange the columns --------------------------------------------------
 
 selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entrez",
@@ -78,9 +86,13 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
 
                       "PAM_0MM", "PAM_1MM",
 
-                      "Locations_0MM", #"Entrez_nearest_0MM", "Symbol_nearest_0MM",
+                      "Locations_0MM",
 
-                      "Locations_1MM", "Sequences_1MM"
+                      "Locations_1MM", "Sequences_1MM",
+
+                      preferred_AF_max_column
+
+                      # "Entrez_nearest_0MM", "Symbol_nearest_0MM",
                       # "Entrez_nearest_1MM", "Symbol_nearest_1MM"
                       )
 
@@ -188,7 +200,8 @@ omit_columns <- c("Combined_ID", "Sublibrary", "mCRISPRa_v2_ID", "Original_PAM",
                   "TSS_searched_by_GuideScan", "TSS_regions",
                   "Best_combination_rank", "Original_rank",
 
-                  "TSS_number", "Num_TSSs", "Allocated_TSS", "mCRISPRa_v2_transcript", "AltTSS_ID",
+                  "TSS_number", "Num_TSSs", "Allocated_TSS",
+                  "mCRISPRa_v2_transcript", "AltTSS_ID",
                   "Spacing", "Overlaps_tolerance",
 
                   "Num_5G_MM",
@@ -205,7 +218,9 @@ omit_columns <- c("Combined_ID", "Sublibrary", "mCRISPRa_v2_ID", "Original_PAM",
                   "Best_TSS", "First_TSS", "Last_TSS",
                   "mCRISPRa_TSS_source", "Strand_of_TSS",
                   "Start", "End", "GuideScan_Num_2or3MM", "Original_entrez",
-                  "Entrez_source_mCRISPRa_v2", "Entrez_source_Caprano", "Off_target_stringency"
+                  "Entrez_source_mCRISPRa_v2", "Entrez_source_Caprano", "Off_target_stringency",
+
+                  preferred_AF_max_column
                   )
 
 

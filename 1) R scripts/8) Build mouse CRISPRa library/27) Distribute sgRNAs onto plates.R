@@ -38,6 +38,15 @@ load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guide
 
 
 
+# Create an empty SNP column ----------------------------------------------
+
+merged_replaced_CRISPRa_df[[preferred_AF_max_column]] <- NA_real_
+
+
+
+
+
+
 # Assign membrane sgRNAs to plates ----------------------------------------
 
 are_membrane <- (merged_replaced_CRISPRa_df[["Combined_ID"]] %in% membrane_het_df[["Entrez_ID"]]) |
@@ -84,6 +93,7 @@ membrane_4sg_reordered_df <- AssignPlateStrings(membrane_4sg_reordered_df, use_p
 
 
 
+
 # Restore the original plate order ----------------------------------------
 
 membrane_4sg_df <- membrane_4sg_reordered_df[order(membrane_4sg_reordered_df[["Old_order"]]), ]
@@ -93,10 +103,14 @@ membrane_4sg_df <- membrane_4sg_df[, names(membrane_4sg_df) != "Old_order"]
 
 
 
+
+
 # Export the membrane heterogeneity plate layouts -------------------------
 
 membrane_4sg_df <- membrane_4sg_df[, names(membrane_4sg_df) != "Sublibrary_4sg"]
 membrane_4sg_reordered_df <- membrane_4sg_reordered_df[, names(membrane_4sg_reordered_df) != "Sublibrary_4sg"]
+
+export_columns <- setdiff(export_columns, preferred_AF_max_column)
 
 ExportPlates(membrane_4sg_df, "Membrane_4sg_original_order", sub_folder = "Plate layout - membrane")
 ExportPlates(membrane_4sg_reordered_df, "Membrane_4sg_reordered", sub_folder = "Plate layout - membrane")
@@ -109,6 +123,14 @@ for (i in 1:4) {
                add_padding_between_plates = TRUE
                )
 }
+
+
+
+
+# Remove the empty SNP column ---------------------------------------------
+
+membrane_4sg_df <- membrane_4sg_df[, names(membrane_4sg_df) != preferred_AF_max_column]
+membrane_4sg_reordered_df <- membrane_4sg_reordered_df[, names(membrane_4sg_reordered_df) != preferred_AF_max_column]
 
 
 
