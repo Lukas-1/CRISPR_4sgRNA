@@ -59,7 +59,6 @@ membrane_4sg_df <- AllocateAllGuidesToPlates(membrane_CRISPRa_df,
 
 
 
-
 # Re-order the data frame according to the plate layout -------------------
 
 membrane_4sg_df[["Old_order"]] <- seq_len(nrow(membrane_4sg_df))
@@ -85,22 +84,19 @@ membrane_4sg_reordered_df <- AssignPlateStrings(membrane_4sg_reordered_df, use_p
 
 
 
-
 # Restore the original plate order ----------------------------------------
 
 membrane_4sg_df <- membrane_4sg_reordered_df[order(membrane_4sg_reordered_df[["Old_order"]]), ]
 row.names(membrane_4sg_df) <- NULL
-membrane_4sg_reordered_df <- membrane_4sg_reordered_df[, colnames(membrane_4sg_reordered_df) != "Old_order"]
-membrane_4sg_df <- membrane_4sg_df[, colnames(membrane_4sg_df) != "Old_order"]
-
-
+membrane_4sg_reordered_df <- membrane_4sg_reordered_df[, names(membrane_4sg_reordered_df) != "Old_order"]
+membrane_4sg_df <- membrane_4sg_df[, names(membrane_4sg_df) != "Old_order"]
 
 
 
 # Export the membrane heterogeneity plate layouts -------------------------
 
-membrane_4sg_df <- membrane_4sg_df[, colnames(membrane_4sg_df) != "Sublibrary_4sg"]
-membrane_4sg_reordered_df <- membrane_4sg_reordered_df[, colnames(membrane_4sg_reordered_df) != "Sublibrary_4sg"]
+membrane_4sg_df <- membrane_4sg_df[, names(membrane_4sg_df) != "Sublibrary_4sg"]
+membrane_4sg_reordered_df <- membrane_4sg_reordered_df[, names(membrane_4sg_reordered_df) != "Sublibrary_4sg"]
 
 ExportPlates(membrane_4sg_df, "Membrane_4sg_original_order", sub_folder = "Plate layout - membrane")
 ExportPlates(membrane_4sg_reordered_df, "Membrane_4sg_reordered", sub_folder = "Plate layout - membrane")
@@ -122,10 +118,5 @@ for (i in 1:4) {
 save(list = c("membrane_4sg_df", "membrane_4sg_reordered_df"),
      file = file.path(CRISPRa_RData_directory, "27) Distribute sgRNAs for the whole genome onto plates.RData")
      )
-
-
-
-
-
 
 
