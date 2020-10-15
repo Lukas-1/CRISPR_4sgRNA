@@ -48,7 +48,6 @@ merged_replaced_CRISPRa_df[[preferred_AF_max_column]] <- NA_real_
 
 
 
-
 # Create an overview data frame -------------------------------------------
 
 sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRa_df, is_mouse = TRUE)

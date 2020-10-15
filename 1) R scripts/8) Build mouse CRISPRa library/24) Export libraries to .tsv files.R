@@ -23,11 +23,11 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "Mouse 
 
 
 
+
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Read in gene lists.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
-
 
 
 
