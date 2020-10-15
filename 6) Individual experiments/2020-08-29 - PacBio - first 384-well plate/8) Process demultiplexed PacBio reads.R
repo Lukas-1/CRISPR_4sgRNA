@@ -31,7 +31,6 @@ load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
 load(file.path(R_objects_directory, "7) Extract barcode sequences and quality scores.RData"))
 
 
@@ -195,7 +194,7 @@ ContainSequences <- function(query_seq, target_seq) {
 
   results_mat <- cbind(contain_mat,
                        contain_num_mat,
-                       "orientation_fwd" = are_fwd,
+                       "orientation_fwd_sg" = are_fwd,
                        "inconsistent_orientation" = have_duplication | have_inversion
                        )
   return(results_mat)
@@ -223,7 +222,7 @@ StatsForWell <- function(well_number, use_reads, bam_wells_vec) {
     contain_sg_cr_mat[, 1:8],
     "all_4_promoters" = contain_sg_prom_mat[, "at_least_4"],
     "whole_plasmid"   = contain_plasmid_mat[, 1],
-    contain_sg_cr_mat[, "orientation_fwd", drop = FALSE]
+    contain_sg_cr_mat[, "orientation_fwd_sg", drop = FALSE]
   )
   stopifnot(!(any(results_mat[, "all_4_promoters"] < results_mat[, "whole_plasmid"])))
 
@@ -303,29 +302,30 @@ MakeDfForReads <- function(use_reads,
 
 
 
-GetMeanQualities <- function(use_reads) {
-  ShortRead::alphabetScore(use_reads[["qual"]]) /
-  width(use_reads[["qual"]])
+
+GetMeanQuality <- function(qualities, rescale = TRUE) {
+  if (!(identical("PhredQuality", as.character(class(qualities))))) {
+    qualities <- PhredQuality(qualities)
+  }
+  mean_qualities <- ShortRead::alphabetScore(qualities) / width(qualities)
+  if (rescale) {
+    mean_qualities <- mean_qualities / 93 * 100
+  }
+  return(mean_qualities)
 }
 
 
-
-## DELETE THIS!!!!
-# GetOriginalMeanQualities <- function(lima_reads, ccs_reads) {
-#   matches_vec <- match(lima_reads[["qname"]], ccs_reads[["qname"]])
-#   stopifnot(!(anyNA(matches_vec)))
-#   mean_qualities <- ShortRead::alphabetScore(ccs_reads[["qual"]]) /
-#                     width(ccs_reads[["qual"]])
-#   return(mean_qualities[matches_vec])
-# }
-
-
 ProcessBarcodesDf <- function(barcodes_df) {
-  # matches_vec <- match(lima_reads[["qname"]], ccs_reads[["qname"]])
-  # stopifnot(!(anyNA(matches_vec)))
-  # mean_qualities <- ShortRead::alphabetScore(ccs_reads[["qual"]]) /
-  #                   width(ccs_reads[["qual"]])
-  # return(mean_qualities[matches_vec])
+  results_df <- data.frame(
+    "Correct_barcodes"    = as.integer(barcodes_df[["Match_template"]]),
+    "Row_bc_length"       = nchar(barcodes_df[["Row_barcode"]]),
+    "Column_bc_length"    = nchar(barcodes_df[["Column_barcode"]]),
+    "Row_mean_quality"    = GetMeanQuality(barcodes_df[["Row_quality"]]),
+    "Column_mean_quality" = GetMeanQuality(barcodes_df[["Column_quality"]]),
+    barcodes_df[, c("Row_barcode", "Column_barcode", "Row_quality", "Column_quality")],
+    "Orientation_fwd"     = as.integer(barcodes_df[["Is_forward"]])
+  )
+  return(results_df)
 }
 
 
@@ -570,7 +570,7 @@ CreateCrossContamMat <- function(contamin_mat_list, reads_report_df) {
 
 AnalyzeWells <- function(use_reads,
                          report_df,
-                         ccs_reads         = NULL,
+                         barcodes_df,
                          counts_df         = NULL,
                          counts_384_df     = NULL,
                          close_well_range  = 3L,
@@ -582,7 +582,7 @@ AnalyzeWells <- function(use_reads,
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
 
   reads_report_df <- MakeDfForReads(use_reads, report_df)
-  reads_report_df[["Mean_quality"]] <- GetMeanQualities(use_reads)
+  reads_report_df[["Mean_quality"]] <- GetMeanQuality(use_reads[["qual"]])
 
   pass_bc <- (reads_report_df[["BC_combined_score"]] >= bc_min_comb_score) &
              (reads_report_df[["BC_score_lead"]] >= bc_min_score_lead)
@@ -691,6 +691,32 @@ AnalyzeWells <- function(use_reads,
     stringsAsFactors = FALSE,
     row.names = NULL
   )
+
+
+
+  stopifnot(identical(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]]))
+
+  barcodes_expanded_df <- ProcessBarcodesDf(barcodes_df)
+
+
+  all_columns <- c(
+    "ZMW", "Well_number", "Length",
+    "Correct_barcodes", "Row_bc_length", "Column_bc_length",
+    "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
+    "Row_quality", "Column_quality",
+    "BC_combined_score", "BC_score_lead", "Mean_quality",
+    "Passes_filters", "Passes_barcode_filters", "Passes_read_filters",
+    "Contam_guides", "Contam_genes", "Contam_well",
+    "Min_distance", "Random_distance", "Mean_distance", "Distances",
+    "sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4", "at_least_1", "at_least_2",
+    "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
+    "Orientation_fwd"
+  )
+
+  individual_ZMWs_df <- data.frame(individual_ZMWs_df,
+                                   barcodes_expanded_df,
+                                   stringsAsFactors = FALSE
+                                   )[, all_columns]
 
 
   ## Create summary data frames
@@ -804,27 +830,29 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 
 
-
 # Create the summary data frames ------------------------------------------
 
 sl7_ccs3_df_list <- AnalyzeWells(sl7_ccs3_lima,
                                  sl7_ccs3_report_df,
-                                 sl7_ccs3_ccs,
+                                 sl7_ccs3_barcodes_df,
                                  sl7_ccs3_counts_df,
                                  sl7_ccs3_384_counts_df
                                  )
 sl7_ccs5_df_list <- AnalyzeWells(sl7_ccs5_lima,
                                  sl7_ccs5_report_df,
-                                 sl7_ccs5_ccs,
+                                 sl7_ccs5_barcodes_df,
                                  sl7_ccs5_counts_df,
                                  sl7_ccs5_384_counts_df
                                  )
 
-sl9_ccs3_df_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_ccs3_ccs)
-sl9_ccs5_df_list <- AnalyzeWells(sl9_ccs5_lima, sl9_ccs5_report_df, sl9_ccs3_ccs)
+sl9_ccs3_df_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_ccs3_barcodes_df)
+sl9_ccs5_df_list <- AnalyzeWells(sl9_ccs5_lima, sl9_ccs5_report_df, sl9_ccs5_barcodes_df)
 
 
-## Check for equivalence
+
+
+
+# Check for equivalence with the read counts of the FGCZ ------------------
 
 CheckCountsAreEqual <- function(reanalysis_df, fgcz_df) {
   stopifnot(identical(reanalysis_df[["Count_total"]], fgcz_df[["tot"]]))
@@ -835,7 +863,6 @@ CheckCountsAreEqual <- function(reanalysis_df, fgcz_df) {
   }
   return(invisible(NULL))
 }
-
 
 CheckCountsAreEqual(sl7_ccs3_df_list[["original_summary_df"]],
                     ccs3_fgcz_accuracies_df
@@ -903,9 +930,6 @@ ExportIndivTable(sl9_ccs5_df_list[["individual_reads_df"]],
 ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
             "SmrtLink9/SmrtLink9_CCS5_999_contaminations"
             )
-
-
-
 
 
 
