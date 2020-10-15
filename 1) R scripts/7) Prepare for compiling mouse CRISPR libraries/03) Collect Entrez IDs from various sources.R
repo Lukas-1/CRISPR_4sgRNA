@@ -70,7 +70,7 @@ NCBI_gene_ASN1_vec_list <- lapply(NCBI_gene_ASN1_files, function(x) readLines(fi
 
 # Collect Entrez IDs from tabulated NCBI and Ensembl data -----------------
 
-NCBI_Mm_info_df <- NCBI_Mm_info_df[NCBI_Mm_info_df[["#tax_id"]] == "9606", ]
+NCBI_Mm_info_df <- NCBI_Mm_info_df[NCBI_Mm_info_df[["#tax_id"]] == "10090", ]
 NCBI_entrezs_vec <- unique(as.character(NCBI_Mm_info_df[["GeneID"]][NCBI_Mm_info_df[["type_of_gene"]] == "protein-coding"]))
 
 Ensembl_Mm_have_entrez <- !(is.na(suppressWarnings(as.integer(Ensembl_Mm_entrez_df[["xref"]]))))

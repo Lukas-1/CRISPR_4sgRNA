@@ -46,8 +46,11 @@ rm(human_genes_GRanges)
 are_mapped <- !(is.na(merged_replaced_CRISPRa_df[["Start"]]))
 are_mitochondrial <- merged_replaced_CRISPRa_df[["Chromosome"]] %in% "chrM" # The TxDb.Mmusculus.UCSC.mm10.knownGene object does not contain mitochondrial genes
 
-mapped_indices <- rep(NA_integer_, length(are_mapped))
-mapped_indices[are_mapped] <- seq_len(sum(are_mapped))
+are_eligible <- are_mapped & !(are_mitochondrial)
+
+mapped_indices <- rep(NA_integer_, length(are_eligible))
+mapped_indices[are_eligible] <- seq_len(sum(are_eligible))
+
 
 
 
@@ -57,7 +60,8 @@ mapped_indices[are_mapped] <- seq_len(sum(are_mapped))
 location_columns <- c("Chromosome", "Strand", "Start", "End")
 nearest_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Distance")
 
-nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[are_mapped & !(are_mitochondrial), location_columns],
+
+nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[are_eligible, location_columns],
                                      mouse_genes_mm10_GRanges,
                                      is_mouse = TRUE
                                      )[, nearest_columns]
@@ -82,11 +86,6 @@ merged_replaced_CRISPRa_df <- data.frame(merged_replaced_CRISPRa_df,
 save(list = "merged_replaced_CRISPRa_df",
      file = file.path(CRISPRa_RData_directory, "14) Find the nearest genes to each sgRNA.RData")
      )
-
-
-
-
-
 
 
 
