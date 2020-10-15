@@ -6,13 +6,16 @@
 
 library("ShortRead") # For processing the quality scores
 
+CRISPR_root_directory  <- "~/CRISPR"
+file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory  <- file.path(file_directory, "1) R functions")
+
+source(file.path(R_functions_directory, "2) Functions for analyzing reads.R"))
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
-file_directory            <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 file_input_directory      <- file.path(file_directory, "2) Input")
 R_objects_directory       <- file.path(file_directory, "3) R objects")
 
@@ -59,7 +62,6 @@ sl7_ccs5_384_counts_df <- ReadTable(sl7_ccs5_counts_384_file)
 
 ccs3_fgcz_accuracies_df <- ReadTable(file.path(raw_data_directory, "FGCZ/ccs_3_99/lima_26/blastn/identical.perc.txt"))
 ccs5_fgcz_accuracies_df <- ReadTable(file.path(raw_data_directory, "FGCZ/ccs_5_999/lima_26/blastn/identical.perc.txt"))
-
 
 
 
@@ -300,33 +302,6 @@ MakeDfForReads <- function(use_reads,
   return(results_df)
 }
 
-
-
-
-GetMeanQuality <- function(qualities, rescale = TRUE) {
-  if (!(identical("PhredQuality", as.character(class(qualities))))) {
-    qualities <- PhredQuality(qualities)
-  }
-  mean_qualities <- ShortRead::alphabetScore(qualities) / width(qualities)
-  if (rescale) {
-    mean_qualities <- mean_qualities / 93 * 100
-  }
-  return(mean_qualities)
-}
-
-
-ProcessBarcodesDf <- function(barcodes_df) {
-  results_df <- data.frame(
-    "Correct_barcodes"    = as.integer(barcodes_df[["Match_template"]]),
-    "Row_bc_length"       = nchar(barcodes_df[["Row_barcode"]]),
-    "Column_bc_length"    = nchar(barcodes_df[["Column_barcode"]]),
-    "Row_mean_quality"    = GetMeanQuality(barcodes_df[["Row_quality"]]),
-    "Column_mean_quality" = GetMeanQuality(barcodes_df[["Column_quality"]]),
-    barcodes_df[, c("Row_barcode", "Column_barcode", "Row_quality", "Column_quality")],
-    "Orientation_fwd"     = as.integer(barcodes_df[["Is_forward"]])
-  )
-  return(results_df)
-}
 
 
 
@@ -696,8 +671,7 @@ AnalyzeWells <- function(use_reads,
 
   stopifnot(identical(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]]))
 
-  barcodes_expanded_df <- ProcessBarcodesDf(barcodes_df)
-
+  barcodes_df <- barcodes_df[, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
 
   all_columns <- c(
     "ZMW", "Well_number", "Length",
@@ -714,7 +688,7 @@ AnalyzeWells <- function(use_reads,
   )
 
   individual_ZMWs_df <- data.frame(individual_ZMWs_df,
-                                   barcodes_expanded_df,
+                                   barcodes_df,
                                    stringsAsFactors = FALSE
                                    )[, all_columns]
 
@@ -941,86 +915,10 @@ ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
 save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
               "sl9_ccs3_df_list", "sl9_ccs5_df_list"
               ),
-     file = file.path(R_objects_directory, "8) Process demultiplexed PacBio reads.RData")
+     file = file.path(R_objects_directory, "9) Process demultiplexed PacBio reads.RData")
      )
 
 
-
-
-
-# Check for associations with contaminations ------------------------------
-
-use_reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
-
-bc_comb_cutoff <- 80
-bc_lead_cutoff <- 40
-close_well_range <- 3L
-are_poor_barcodes <- (use_reads_df[["BC_combined_score"]] < bc_comb_cutoff) &
-                     (use_reads_df[["BC_score_lead"]] < bc_lead_cutoff)
-
-are_close_contams <- use_reads_df[["Random_distance"]] <= close_well_range
-
-are_standard_lengths <- use_reads_df[["Length"]] %in% 2223:2229
-
-are_contaminated <- use_reads_df[["Contam_guides"]] >= 1
-
-
-fisher.test(table("are_contam" = are_contaminated,
-                  "bad_bc"     = are_poor_barcodes
-                  ))
-
-fisher.test(table("are_close" = are_close_contams,
-                  "bad_bc"    = are_poor_barcodes
-                  ))
-wilcox.test(use_reads_df[["Random_distance"]] ~
-              are_poor_barcodes
-            )
-
-
-
-fisher.test(table("are_contam"      = are_contaminated,
-                  "standard_length" = are_standard_lengths
-                  ))
-
-fisher.test(table("standard_length" = are_standard_lengths,
-                  "bad_bc"          = are_poor_barcodes
-                  ))
-
-
-
-
-# sl7_ccs3_df_list[[2]][["BC_score_lead"]][sl7_ccs3_df_list[[2]][["Contam_guides"]] >= 1]
-#
-#
-# counts_wells_mat <- do.call(rbind,
-#                             tapply(seq_len(ncol(all_counts_mat)),
-#                                    reads_report_df[["Well_number"]][have_well],
-#                                    function(x) rowSums(all_counts_mat[, x])
-#                                    )
-#                             )
-#
-#
-# counts_wells_copy_mat <- counts_wells_mat
-# diag(counts_wells_copy_mat) <- 0
-#
-#
-#   MakeEmptyPlot()
-#
-#
-#   ## Draw the heatmap
-#
-#   numeric_mat <- counts_wells_copy_mat / max(counts_wells_copy_mat)
-#
-#   ColorFunction <- colorRampPalette(brewer.pal(9, "Blues"))
-#
-#   my_breaks <- c(0, 0.8, 0.9, 1.01)
-#
-#   my_cmap <- makecmap(numeric_mat, colFn = ColorFunction)
-#   my_color_mat <- cmap(numeric_mat, my_cmap)
-#   Do_cimage(my_color_mat)
-#   x_range <- par("usr")[[2]] - par("usr")[[1]]
-#
-#
 
 
 

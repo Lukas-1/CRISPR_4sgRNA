@@ -1,4 +1,4 @@
-### 11th October 2020 ###
+### 15th October 2020 ###
 
 
 
@@ -6,16 +6,18 @@
 
 library("Rsamtools")
 
+CRISPR_root_directory  <- "~/CRISPR"
+file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory  <- file.path(file_directory, "1) R functions")
+
+source(file.path(R_functions_directory, "2) Functions for analyzing reads.R"))
+
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
-file_directory            <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
-file_input_directory      <- file.path(file_directory, "2) Input")
-R_objects_directory       <- file.path(file_directory, "3) R objects")
-
+R_objects_directory <- file.path(file_directory, "3) R objects")
 
 
 
@@ -32,15 +34,6 @@ load(file.path(R_objects_directory, "7) Process demultiplexed PacBio reads.RData
 
 
 # Define functions --------------------------------------------------------
-
-GetWellNumbers <- function(lima_report_df) {
-  combo_IDs_vec <- paste0(lima_report_df[["IdxLowestNamed"]], "--",
-                          lima_report_df[["IdxHighestNamed"]]
-                          )
-  barcodes_to_wells_map[combo_IDs_vec]
-}
-
-
 
 GetBarcodes <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
 
@@ -155,14 +148,59 @@ GetBarcodes <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
 
 
 
+ProcessBarcodesDf <- function(barcodes_df, include_original_columns = T) {
+
+  contains_mat <- matrix(nrow = nrow(barcodes_df), ncol = 6)
+  colnames(contains_mat) <- c("Contains_row_barcode",
+                             "Starts_with_row_barcode",
+                             "Ends_with_row_barcode",
+                             "Contains_column_barcode",
+                             "Starts_with_column_barcode",
+                             "Ends_with_column_barcode"
+                             )
+  for (i in seq_len(384)) {
+
+    are_this_well <- barcodes_df[["Well"]] %in% i
+    row_bc <- row_bc_vec[[i]]
+    column_bc <- column_bc_vec[[i]]
+
+    contains_mat[are_this_well, "Contains_row_barcode"]       <- grepl(row_bc, barcodes_df[["Row_barcode"]][are_this_well], fixed = TRUE)
+    contains_mat[are_this_well, "Starts_with_row_barcode"]    <- grepl(paste0("^", row_bc), barcodes_df[["Row_barcode"]][are_this_well])
+    contains_mat[are_this_well, "Ends_with_row_barcode"]      <- grepl(paste0(row_bc, "$"), barcodes_df[["Row_barcode"]][are_this_well])
+    contains_mat[are_this_well, "Contains_column_barcode"]    <- grepl(column_bc, barcodes_df[["Column_barcode"]][are_this_well], fixed = TRUE)
+    contains_mat[are_this_well, "Starts_with_column_barcode"] <- grepl(paste0("^", column_bc), barcodes_df[["Column_barcode"]][are_this_well])
+    contains_mat[are_this_well, "Ends_with_column_barcode"]   <- grepl(paste0(column_bc, "$"), barcodes_df[["Column_barcode"]][are_this_well])
+  }
+
+  mode(contains_mat) <- "integer"
+
+  results_df <- data.frame(
+    barcodes_df[, c("Well", "ZMW")],
+    "Correct_barcodes"    = as.integer(barcodes_df[["Match_template"]]),
+    "Row_bc_length"       = nchar(barcodes_df[["Row_barcode"]]),
+    "Column_bc_length"    = nchar(barcodes_df[["Column_barcode"]]),
+    "Row_mean_quality"    = GetMeanQuality(barcodes_df[["Row_quality"]]),
+    "Column_mean_quality" = GetMeanQuality(barcodes_df[["Column_quality"]]),
+    barcodes_df[, c("Row_barcode", "Column_barcode", "Row_quality", "Column_quality")],
+    "Orientation_fwd"     = as.integer(barcodes_df[["Is_forward"]]),
+    contains_mat
+  )
+  return(results_df)
+}
+
+
+
+
+
 
 
 # Extract barcodes --------------------------------------------------------
 
-sl7_ccs3_barcodes_df <- GetBarcodes(use_sl7 = TRUE, use_ccs3 = TRUE)
-sl7_ccs5_barcodes_df <- GetBarcodes(use_sl7 = TRUE, use_ccs3 = FALSE)
-sl9_ccs3_barcodes_df <- GetBarcodes(use_sl7 = FALSE, use_ccs3 = TRUE)
-sl9_ccs5_barcodes_df <- GetBarcodes(use_sl7 = FALSE, use_ccs3 = FALSE)
+sl7_ccs3_barcodes_df <- ProcessBarcodesDf(sl7_ccs3_barcodes_df)
+sl7_ccs5_barcodes_df <- ProcessBarcodesDf(sl7_ccs5_barcodes_df)
+sl9_ccs3_barcodes_df <- ProcessBarcodesDf(sl9_ccs3_barcodes_df)
+sl9_ccs5_barcodes_df <- ProcessBarcodesDf(sl9_ccs5_barcodes_df)
+
 
 
 

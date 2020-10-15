@@ -30,7 +30,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 load(file.path(R_objects_directory, "1) Export barcodes.RData"))
 load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "8) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "9) Process demultiplexed PacBio reads.RData"))
 
 
 

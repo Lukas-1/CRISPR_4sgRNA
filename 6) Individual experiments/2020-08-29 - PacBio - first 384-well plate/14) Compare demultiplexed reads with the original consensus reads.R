@@ -26,11 +26,11 @@ four_seq_output_directory <- file.path(file_output_directory, "4 sequences")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "4) Create reference sequences for each well - barcodes.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
-load(file.path(R_objects_directory, "7) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "9) Process demultiplexed PacBio reads.RData"))
 
 
 
@@ -55,24 +55,24 @@ Get4Sequences <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
   if (use_ccs3) {
     if (use_sl7) {
       ccs_list <- sl7_ccs3_ccs
-      lima_list <- sl7_ccs3_reads
+      lima_list <- sl7_ccs3_lima
       reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
       output_folder <- "SmrtLink7_CCS3"
     } else {
       ccs_list <- sl9_ccs3_ccs
-      lima_list <- sl9_ccs3_reads
+      lima_list <- sl9_ccs3_lima
       reads_df <- sl9_ccs3_df_list[["individual_reads_df"]]
       output_folder <- "SmrtLink7_CCS5"
     }
   } else {
     if (use_sl7) {
       ccs_list <- sl7_ccs5_ccs
-      lima_list <- sl7_ccs5_reads
+      lima_list <- sl7_ccs5_lima
       reads_df <- sl7_ccs5_df_list[["individual_reads_df"]]
       output_folder <- "SmrtLink9_CCS3"
     } else {
       ccs_list <- sl9_ccs5_ccs
-      lima_list <- sl9_ccs5_reads
+      lima_list <- sl9_ccs5_lima
       reads_df <- sl9_ccs5_df_list[["individual_reads_df"]]
       output_folder <- "SmrtLink9_CCS3"
     }
@@ -175,21 +175,21 @@ AlignmentsForZMW <- function(zmw, use_ccs3 = TRUE, use_sl7 = TRUE, display_align
   if (use_ccs3) {
     if (use_sl7) {
       ccs_list <- sl7_ccs3_ccs
-      lima_list <- sl7_ccs3_reads
+      lima_list <- sl7_ccs3_lima
       reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
     } else {
       ccs_list <- sl9_ccs3_ccs
-      lima_list <- sl9_ccs3_reads
+      lima_list <- sl9_ccs3_lima
       reads_df <- sl9_ccs3_df_list[["individual_reads_df"]]
     }
   } else {
     if (use_sl7) {
       ccs_list <- sl7_ccs5_ccs
-      lima_list <- sl7_ccs5_reads
+      lima_list <- sl7_ccs5_lima
       reads_df <- sl7_ccs5_df_list[["individual_reads_df"]]
     } else {
       ccs_list <- sl9_ccs5_ccs
-      lima_list <- sl9_ccs5_reads
+      lima_list <- sl9_ccs5_lima
       reads_df <- sl9_ccs5_df_list[["individual_reads_df"]]
     }
   }
