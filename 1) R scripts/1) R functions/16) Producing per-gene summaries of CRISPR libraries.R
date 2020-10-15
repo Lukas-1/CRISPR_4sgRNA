@@ -41,6 +41,7 @@ MeetCriteria <- function(CRISPR_df, allow_curated = FALSE) {
                     (((CRISPR_df[["GuideScan_specificity"]] < 0.2) %in% TRUE) |
                       (is.na(CRISPR_df[["GuideScan_specificity"]]) & ((CRISPR_df[["CRISPOR_3MM_specificity"]] < 0.2) %in% TRUE))) |
                     (("Exon_number_GPP" %in% names(CRISPR_df)) & (CRISPR_df[["CRISPOR_Graf_status"]] %in% c("ggc", "tt")))
+  stopifnot(length(are_to_exclude) == nrow(CRISPR_df))
   if (!(allow_curated)) {
     are_to_exclude <- are_to_exclude | (CRISPR_df[["Source"]] == "Curated")
   }
