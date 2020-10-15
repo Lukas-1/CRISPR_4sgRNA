@@ -45,7 +45,6 @@ membrane_df <- data.frame(read_excel(membrane_hits_path),
 
 
 
-
 # Collect Entrez IDs from the membrane screen -----------------------------
 
 membrane_symbols_vec <- c(membrane_df[["Enriched Hits"]], membrane_df[["Decreased Hits"]])
@@ -55,14 +54,21 @@ membrane_mapped_df <- MapToEntrezs(symbols_vec = membrane_symbols_vec, is_mouse 
 
 stopifnot(all(membrane_mapped_df[["Original_symbol"]] == ""))
 
+
+are_enriched <- membrane_mapped_df[["Gene_symbol"]] %in% membrane_df[["Enriched Hits"]]
+are_depleted <- membrane_mapped_df[["Gene_symbol"]] %in% membrane_df
+
+stopifnot(!(any(are_enriched & are_depleted)))
+
 membrane_het_df <- data.frame(
   membrane_mapped_df,
-  "Category" = ifelse(membrane_mapped_df[["Gene_symbol"]] %in% membrane_df[["Enriched Hits"]],
-                      "Enriched", "Depleted"
-                      ),
+  "Category" = ifelse(are_enriched, "Enriched", "Depleted"),
+  "Num_occurrences" = table(membrane_mapped_df[["Entrez_ID"]])[membrane_mapped_df[["Entrez_ID"]]],
   stringsAsFactors = FALSE
 )
 
+membrane_het_df <- membrane_het_df[!(duplicated(membrane_het_df)), ]
+row.names(membrane_het_df) <- NULL
 
 
 
