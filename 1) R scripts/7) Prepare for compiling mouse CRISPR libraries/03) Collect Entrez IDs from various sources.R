@@ -195,7 +195,7 @@ if (!(all(collected_entrezs_df[["Is_in_NCBI_gene"]]))) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("collected_entrez_IDs", "collected_entrezs_df"),
-     file = file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData")
+     file = file.path(general_RData_directory, "03) Collect Entrez IDs from various sources.RData")
      )
 
 

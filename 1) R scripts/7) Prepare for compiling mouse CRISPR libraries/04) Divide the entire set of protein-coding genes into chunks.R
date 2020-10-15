@@ -57,7 +57,7 @@ names(entrez_chunks_list) <- LETTERS[seq_along(entrez_chunks_list)]
 # Save data ---------------------------------------------------------------
 
 save(entrez_chunks_list,
-     file = file.path(general_RData_directory, "09) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData")
+     file = file.path(general_RData_directory, "04) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData")
      )
 
 
