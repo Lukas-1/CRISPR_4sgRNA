@@ -55,6 +55,27 @@ are_poor_quality <- use_df[["Mean_quality"]] < mean_quality_cutoff
 
 
 
+# Try something -----------------------------------------------------------
+
+ccs3_df <- sl7_ccs3_df_list[["individual_reads_df"]]
+ccs5_df <- sl7_ccs5_df_list[["individual_reads_df"]]
+
+matches_vec <- match(ccs5_df[["ZMW"]], ccs3_df[["ZMW"]])
+
+replica_ccs5_df <- ccs3_df[matches_vec, ]
+row.names(replica_ccs5_df) <- NULL
+
+identical(replica_ccs5_df[, names(replica_ccs5_df) != "Random_distance"], ccs5_df[, names(replica_ccs5_df) != "Random_distance"])
+
+are_identical <- vapply(seq_len(nrow(replica_ccs5_df)),
+                        function(x) identical(replica_ccs5_df[x, ], ccs5_df[x, ]),
+                        logical(1)
+                        )
+
+replica_ccs5_df[!(are_identical), ]
+
+
+
 
 # Check for associations with contaminations ------------------------------
 

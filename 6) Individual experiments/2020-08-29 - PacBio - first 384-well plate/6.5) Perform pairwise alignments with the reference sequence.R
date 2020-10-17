@@ -34,30 +34,16 @@ load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RDat
 
 # Define functions --------------------------------------------------------
 
-GetBarcodes <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
+PairWiseAlignments <- function(use_sl7 = TRUE) {
 
   barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
 
-  if (use_ccs3) {
-    if (use_sl7) {
-      ccs_list <- sl7_ccs3_ccs
-      lima_list <- sl7_ccs3_lima
-      report_df <- sl7_ccs3_report_df
-    } else {
-      ccs_list <- sl9_ccs3_ccs
-      lima_list <- sl9_ccs3_lima
-      report_df <- sl9_ccs3_report_df
-    }
+  if (use_sl7) {
+    ccs_list <- sl7_ccs3_ccs
+    report_df <- sl7_ccs3_report_df
   } else {
-    if (use_sl7) {
-      ccs_list <- sl7_ccs5_ccs
-      lima_list <- sl7_ccs5_lima
-      report_df <- sl7_ccs5_report_df
-    } else {
-      ccs_list <- sl9_ccs5_ccs
-      lima_list <- sl9_ccs5_lima
-      report_df <- sl9_ccs5_report_df
-    }
+    ccs_list <- sl9_ccs3_ccs
+    report_df <- sl9_ccs3_report_df
   }
 
   lima_zmws <- as.integer(substr(lima_list[["qname"]], 22, nchar(lima_list[["qname"]]) - 4))
@@ -149,44 +135,67 @@ GetBarcodes <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
 
 
 
-ProcessBarcodesDf <- function(barcodes_df, include_original_columns = T) {
 
-  contains_mat <- matrix(nrow = nrow(barcodes_df), ncol = 6)
-  colnames(contains_mat) <- c("Contains_row_barcode",
-                             "Starts_with_row_barcode",
-                             "Ends_with_row_barcode",
-                             "Contains_column_barcode",
-                             "Starts_with_column_barcode",
-                             "Ends_with_column_barcode"
-                             )
-  for (i in seq_len(384)) {
 
-    are_this_well <- barcodes_df[["Well"]] %in% i
-    row_bc <- row_bc_vec[[i]]
-    column_bc <- column_bc_vec[[i]]
+ExtractAlignedSequences <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
 
-    contains_mat[are_this_well, "Contains_row_barcode"]       <- grepl(row_bc, barcodes_df[["Row_barcode"]][are_this_well], fixed = TRUE)
-    contains_mat[are_this_well, "Starts_with_row_barcode"]    <- grepl(paste0("^", row_bc), barcodes_df[["Row_barcode"]][are_this_well])
-    contains_mat[are_this_well, "Ends_with_row_barcode"]      <- grepl(paste0(row_bc, "$"), barcodes_df[["Row_barcode"]][are_this_well])
-    contains_mat[are_this_well, "Contains_column_barcode"]    <- grepl(column_bc, barcodes_df[["Column_barcode"]][are_this_well], fixed = TRUE)
-    contains_mat[are_this_well, "Starts_with_column_barcode"] <- grepl(paste0("^", column_bc), barcodes_df[["Column_barcode"]][are_this_well])
-    contains_mat[are_this_well, "Ends_with_column_barcode"]   <- grepl(paste0(column_bc, "$"), barcodes_df[["Column_barcode"]][are_this_well])
+  barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+
+  if (use_sl7) {
+    ccs_list <- sl7_ccs3_ccs
+    report_df <- sl7_ccs3_report_df
+  } else {
+    ccs_list <- sl9_ccs3_ccs
+    report_df <- sl9_ccs3_report_df
   }
 
-  mode(contains_mat) <- "integer"
+  ccs_zmws <- as.integer(substr(ccs_list[["qname"]],  22, nchar(ccs_list[["qname"]])  - 4))
+  ccs_well_numbers <- GetWellNumbers(report_df)
 
-  results_df <- data.frame(
-    barcodes_df[, c("Well", "ZMW")],
-    "Correct_barcodes"    = as.integer(barcodes_df[["Match_template"]]),
-    "Row_bc_length"       = nchar(barcodes_df[["Row_barcode"]]),
-    "Column_bc_length"    = nchar(barcodes_df[["Column_barcode"]]),
-    "Row_mean_quality"    = GetMeanQuality(barcodes_df[["Row_quality"]]),
-    "Column_mean_quality" = GetMeanQuality(barcodes_df[["Column_quality"]]),
-    barcodes_df[, c("Row_barcode", "Column_barcode", "Row_quality", "Column_quality")],
-    "Orientation_fwd"     = as.integer(barcodes_df[["Is_forward"]]),
-    contains_mat
-  )
-  return(results_df)
+  stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
+
+  alignments_list <- lapply(seq_len(384), function(well_number) {
+
+    message(paste0("Processing well #", well_number, "..."))
+
+    are_this_well <- ccs_well_numbers %in% well_number
+    ccs_seq <- ccs_list[["seq"]][are_this_well]
+    ccs_qual <- ccs_list[["qual"]][are_this_well]
+
+    plasmid <- DNAStringSet(barcoded_plasmids[[well_number]])
+    row_template <- row_bc_vec[[well_number]]
+    column_template <- column_bc_vec[[well_number]]
+
+    fwd_alignments <- pairwiseAlignment(ccs_seq, plasmid, type = "global")
+    rev_alignments <- pairwiseAlignment(reverseComplement(ccs_seq), plasmid, type = "global")
+    are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
+
+    meta_df <- data.frame("ZMW"             = ccs_zmws[are_this_well],
+                          "Orientation_fwd" = are_forward_vec,
+                          "Score_fwd"       = score(fwd_alignments),
+                          "Score_rev"       = score(rev_alignments),
+                          stringsAsFactors = FALSE
+                          )
+
+    assign("delete_fwd_alignments", fwd_alignments, envir = globalenv())
+    assign("delete_rev_alignments", rev_alignments, envir = globalenv())
+    assign("delete_are_forward_vec", are_forward_vec, envir = globalenv())
+    combined_alignments <- do.call(c, lapply(seq_along(are_forward_vec),
+                                             function(x) {
+                                               if (are_forward_vec[[x]]) {
+                                                 fwd_alignments[x]
+                                               } else {
+                                                 rev_alignments[x]
+                                               }
+                                             })
+                                   )
+    results_list <- list(
+      "meta_df" = meta_df,
+      "alignments" = combined_alignments
+    )
+    return(results_list)
+  })
+  return(alignments_list)
 }
 
 
@@ -197,25 +206,16 @@ ProcessBarcodesDf <- function(barcodes_df, include_original_columns = T) {
 
 # Extract barcodes --------------------------------------------------------
 
-sl7_ccs3_barcodes_df <- GetBarcodes(use_sl7 = TRUE, use_ccs3 = TRUE)
-sl7_ccs5_barcodes_df <- GetBarcodes(use_sl7 = TRUE, use_ccs3 = FALSE)
-sl9_ccs3_barcodes_df <- GetBarcodes(use_sl7 = FALSE, use_ccs3 = TRUE)
-sl9_ccs5_barcodes_df <- GetBarcodes(use_sl7 = FALSE, use_ccs3 = FALSE)
-
-sl7_ccs3_barcodes_df <- ProcessBarcodesDf(sl7_ccs3_barcodes_df)
-sl7_ccs5_barcodes_df <- ProcessBarcodesDf(sl7_ccs5_barcodes_df)
-sl9_ccs3_barcodes_df <- ProcessBarcodesDf(sl9_ccs3_barcodes_df)
-sl9_ccs5_barcodes_df <- ProcessBarcodesDf(sl9_ccs5_barcodes_df)
-
-
+sl7_alignments_list <- ExtractAlignedSequences(use_sl7 = TRUE)
+sl9_alignments_list <- ExtractAlignedSequences(use_sl7 = FALSE)
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = paste0(c("sl7_ccs3", "sl7_ccs5", "sl9_ccs3", "sl9_ccs5"), "_barcodes_df"),
-     file = file.path(R_objects_directory, "7) Extract barcode sequences and quality scores.RData")
+save(list = paste0("sl7", c(7, 9), "_alignments_list"),
+     file = file.path(R_objects_directory, "6.5) Perform pairwise alignments with the reference sequence.RData")
      )
 
 
