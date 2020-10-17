@@ -53,6 +53,13 @@ sl9_CCS5_lima_report_file <- file.path(reanalysis_directory, "SmrtLink9_CCS5/lim
 
 
 
+# Define functions --------------------------------------------------------
+
+ExtractZMWs <- function(reads_list) {
+  as.integer(substr(reads_list[["qname"]], 22, nchar(reads_list[["qname"]]) - 4))
+}
+
+
 # Define import functions -------------------------------------------------
 
 # ReadAndProcessFastq <- function(fastq_directory) {
@@ -120,21 +127,46 @@ sl9_ccs5_report_df <- ReadLimaReport(sl9_CCS5_lima_report_file)
 
 
 
+# Extract the ZMWs that are retained in CCS5 ------------------------------
+
+sl7_ccs5_lima_zmws <- ExtractZMWs(sl7_ccs5_lima)
+sl9_ccs5_lima_zmws <- ExtractZMWs(sl9_ccs5_lima)
+
+
+
+
 # Save data ---------------------------------------------------------------
 
-sl_ccs_combos <- c("sl7_ccs3", "sl7_ccs5", "sl9_ccs3", "sl9_ccs5")
+ccs3_combos <- paste0("sl", c(7, 9), "_ccs3_")
+ccs5_combos <- paste0("sl", c(7, 9), "_ccs5_")
 
-save(list = paste0(sl_ccs_combos, "_ccs"),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData")
+save(list = paste0(ccs3_combos, "ccs"),
+     file = file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData")
      )
 
-save(list = c(paste0(sl_ccs_combos, "_lima"),
-              paste0(sl_ccs_combos, "_report_df")
+save(list = c(paste0(ccs3_combos, "lima"),
+              paste0(ccs3_combos, "report_df")
               ),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData")
+     file = file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData")
      )
 
 
+
+save(list = c("sl7_ccs5_lima_zmws",  "sl9_ccs5_lima_zmws"),
+     file = file.path(R_objects_directory, "5) Read in PacBio data - ccs5 ZMWs.RData")
+     )
+
+
+
+save(list = paste0(ccs5_combos, "ccs"),
+     file = file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs5.RData")
+     )
+
+save(list = c(paste0(ccs5_combos, "lima"),
+              paste0(ccs5_combos, "report_df")
+              ),
+     file = file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs5.RData")
+     )
 
 
 

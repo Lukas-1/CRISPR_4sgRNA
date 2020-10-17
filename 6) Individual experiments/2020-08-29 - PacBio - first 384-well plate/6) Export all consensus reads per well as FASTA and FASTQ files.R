@@ -23,8 +23,9 @@ fastq_output_directory    <- file.path(file_output_directory, "Fastq")
 load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - ccs5 ZMWs.RData"))
 
 
 
@@ -47,7 +48,8 @@ ExportSequences <- function(lima_reads,
                             fastq_output_dir,
                             ccs_reads = NULL,
                             append_to_file_name = "",
-                            prefer_ccs = TRUE
+                            prefer_ccs = TRUE,
+                            use_zmws = NULL
                             ) {
 
   file_names <- paste0("well",
@@ -56,6 +58,10 @@ ExportSequences <- function(lima_reads,
                        )
 
   lima_zmws <- as.integer(substr(lima_reads[["qname"]], 22, nchar(lima_reads[["qname"]]) - 4))
+  if (!(is.null(use_zmws))) {
+    stopifnot(all(use_zmws %in% lima_zmws))
+    lima_zmws <- use_zmws
+  }
 
   ccs_zmws <- as.integer(substr(report_df[["ZMW"]], 22, nchar(report_df[["ZMW"]])))
 
@@ -106,12 +112,13 @@ ExportSequences(sl7_ccs3_lima,
                 ccs_reads = sl7_ccs3_ccs
                 )
 
-ExportSequences(sl7_ccs5_lima,
-                sl7_ccs5_report_df,
+ExportSequences(sl7_ccs3_lima,
+                sl7_ccs3_report_df,
                 fasta_output_dir = file.path(fasta_output_directory, "SmrtLink7_CCS5"),
                 fastq_output_dir = file.path(fastq_output_directory, "SmrtLink7_CCS5"),
                 append_to_file_name = "_ccs5",
-                ccs_reads = sl7_ccs5_ccs
+                ccs_reads = sl7_ccs3_ccs,
+                use_zmws = sl7_ccs5_lima_zmws
                 )
 
 ExportSequences(sl9_ccs3_lima,
@@ -122,18 +129,14 @@ ExportSequences(sl9_ccs3_lima,
                 ccs_reads = sl9_ccs3_ccs
                 )
 
-ExportSequences(sl9_ccs5_lima,
-                sl9_ccs5_report_df,
+ExportSequences(sl9_ccs3_lima,
+                sl9_ccs3_report_df,
                 fasta_output_dir = file.path(fasta_output_directory, "SmrtLink9_CCS5"),
                 fastq_output_dir = file.path(fastq_output_directory, "SmrtLink9_CCS5"),
                 append_to_file_name = "_ccs5",
-                ccs_reads = sl9_ccs5_ccs
+                ccs_reads = sl9_ccs3_ccs,
+                use_zmws = sl9_ccs5_lima_zmws
                 )
-
-
-
-
-
 
 
 

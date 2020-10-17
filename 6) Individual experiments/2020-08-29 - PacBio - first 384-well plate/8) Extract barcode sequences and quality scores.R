@@ -25,8 +25,8 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
 
 
 

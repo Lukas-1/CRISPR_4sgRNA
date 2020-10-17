@@ -33,7 +33,7 @@ reanalysis_directory      <- file.path(raw_data_directory, "LukasAnalysis")
 load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(R_objects_directory, "8) Extract barcode sequences and quality scores.RData"))
 
 
@@ -205,11 +205,11 @@ ContainSequences <- function(query_seq, target_seq) {
 
 
 
-StatsForWell <- function(well_number, use_reads, bam_wells_vec) {
+StatsForWell <- function(well_number, reads_list, bam_wells_vec) {
 
   are_this_well <- bam_wells_vec %in% well_number
   num_reads <- sum(are_this_well)
-  well_sequences <- use_reads[["seq"]][are_this_well, ]
+  well_sequences <- reads_list[["seq"]][are_this_well, ]
 
   sg_sequences <- vapply(1:4, function(x) guides_ref_list[[x]][[well_number]], "")
   sg_with_promoter_seq <- vapply(1:4, function(x) guides_with_promoters_list[[x]][[well_number]], "")
@@ -243,7 +243,7 @@ GetZMWs <- function(char_vec) {
 
 
 
-MakeDfForReads <- function(use_reads,
+MakeDfForReads <- function(reads_list,
                            report_df,
                            counts_df = NULL,
                            counts_384_df = NULL
@@ -277,14 +277,14 @@ MakeDfForReads <- function(use_reads,
   ## Assign the sequences to wells
 
   profile_ZMWs <- GetZMWs(report_df[["ZMW"]])
-  bam_ZMWs <- GetZMWs(use_reads[["qname"]])
+  bam_ZMWs <- GetZMWs(reads_list[["qname"]])
 
   matches_vec <- match(bam_ZMWs, profile_ZMWs)
 
   results_df <- data.frame(
     "ZMW"               = bam_ZMWs,
     "Well_number"       = report_df[["Well_number"]][matches_vec],
-    "Length"            = width(use_reads[["seq"]]),
+    "Length"            = width(reads_list[["seq"]]),
     "BC_combined_score" = report_df[["ScoreCombined"]][matches_vec],
     "BC_score_lead"     = report_df[["ScoreLead"]][matches_vec],
     stringsAsFactors    = FALSE
@@ -314,7 +314,7 @@ GetMode <- function(vec) {
 
 
 
-GetContaminationMat <- function(query_seq, use_reads, bam_wells_vec) {
+GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec) {
 
   stopifnot("guides_ref_list" %in% ls(envir = globalenv()))
 
@@ -324,7 +324,7 @@ GetContaminationMat <- function(query_seq, use_reads, bam_wells_vec) {
 
   have_well <- !(is.na(bam_wells_vec))
 
-  counts_mat <- vcountPDict(PDict_object, use_reads[["seq"]][have_well, ])
+  counts_mat <- vcountPDict(PDict_object, reads_list[["seq"]][have_well, ])
 
   row_list <- vector(mode = "list", length = 384)
   row_list[are_usual_length] <- lapply(seq_len(nrow(counts_mat)),
@@ -335,7 +335,7 @@ GetContaminationMat <- function(query_seq, use_reads, bam_wells_vec) {
 
   unusual_list <- lapply(seq_len(sum(!(are_usual_length))),
                          function(x) vcountPattern(unusual_seq[[x]],
-                                                   use_reads[["seq"]][have_well, ]
+                                                   reads_list[["seq"]][have_well, ]
                                                    )
                          )
 
@@ -543,7 +543,7 @@ CreateCrossContamMat <- function(contamin_mat_list, reads_report_df) {
 
 
 
-AnalyzeWells <- function(use_reads,
+AnalyzeWells <- function(reads_list,
                          report_df,
                          barcodes_df,
                          counts_df         = NULL,
@@ -556,8 +556,8 @@ AnalyzeWells <- function(use_reads,
 
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
 
-  reads_report_df <- MakeDfForReads(use_reads, report_df)
-  reads_report_df[["Mean_quality"]] <- GetMeanQuality(use_reads[["qual"]])
+  reads_report_df <- MakeDfForReads(reads_list, report_df)
+  reads_report_df[["Mean_quality"]] <- GetMeanQuality(reads_list[["qual"]])
 
   pass_bc <- (reads_report_df[["BC_combined_score"]] >= bc_min_comb_score) &
              (reads_report_df[["BC_score_lead"]] >= bc_min_score_lead)
@@ -572,7 +572,7 @@ AnalyzeWells <- function(use_reads,
 
   contamin_mat_list <- lapply(guides_ref_list,
                               function(x) GetContaminationMat(x,
-                                                              use_reads,
+                                                              reads_list,
                                                               reads_report_df[["Well_number"]]
                                                               )
                               )
@@ -642,7 +642,7 @@ AnalyzeWells <- function(use_reads,
 
   well_stats_mat_list <- lapply(seq_len(384),
                                 function(x) StatsForWell(x,
-                                                         use_reads,
+                                                         reads_list,
                                                          reads_report_df[["Well_number"]]
                                                          )
                                 )
@@ -812,16 +812,17 @@ sl7_ccs3_df_list <- AnalyzeWells(sl7_ccs3_lima,
                                  sl7_ccs3_counts_df,
                                  sl7_ccs3_384_counts_df
                                  )
+
+sl9_ccs3_df_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_ccs3_barcodes_df)
+
+
+sl9_ccs5_df_list <- AnalyzeWells(sl9_ccs5_lima, sl9_ccs5_report_df, sl9_ccs5_barcodes_df)
 sl7_ccs5_df_list <- AnalyzeWells(sl7_ccs5_lima,
                                  sl7_ccs5_report_df,
                                  sl7_ccs5_barcodes_df,
                                  sl7_ccs5_counts_df,
                                  sl7_ccs5_384_counts_df
                                  )
-
-sl9_ccs3_df_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_ccs3_barcodes_df)
-sl9_ccs5_df_list <- AnalyzeWells(sl9_ccs5_lima, sl9_ccs5_report_df, sl9_ccs5_barcodes_df)
-
 
 
 
