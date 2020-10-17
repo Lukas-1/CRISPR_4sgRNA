@@ -246,7 +246,7 @@ sl9_ccs5_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE, use_ccs3 = FA
 # Save data ---------------------------------------------------------------
 
 save(list = paste0(c("sl7_ccs3", "sl7_ccs5", "sl9_ccs3", "sl9_ccs5"), "_barcodes_df"),
-     file = file.path(R_objects_directory, "7) Extract barcode sequences and quality scores.RData")
+     file = file.path(R_objects_directory, "9) Extract barcode sequences and quality scores.RData")
      )
 
 

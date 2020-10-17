@@ -30,7 +30,7 @@ load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
-load(file.path(R_objects_directory, "9) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
 
 
 
