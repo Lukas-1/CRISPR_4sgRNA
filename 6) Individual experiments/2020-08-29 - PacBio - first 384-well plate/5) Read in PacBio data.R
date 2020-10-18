@@ -6,13 +6,18 @@
 
 library("Rsamtools")
 
+CRISPR_root_directory  <- "~/CRISPR"
+file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory  <- file.path(file_directory, "1) R functions")
+
+source(file.path(R_functions_directory, "2) Functions for analyzing reads.R"))
+
+
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
-file_directory            <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 file_input_directory      <- file.path(file_directory, "2) Input")
 R_objects_directory       <- file.path(file_directory, "3) R objects")
 
@@ -51,13 +56,25 @@ sl9_CCS5_lima_report_file <- file.path(reanalysis_directory, "SmrtLink9_CCS5/lim
 
 
 
+# Load data ---------------------------------------------------------------
+
+load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
+
+
 
 
 # Define functions --------------------------------------------------------
 
-ExtractZMWs <- function(reads_list) {
-  as.integer(substr(reads_list[["qname"]], 22, nchar(reads_list[["qname"]]) - 4))
+ExtractZMWs <- function(report_df, lima_list) {
+  ccs_well_numbers <- GetWellNumbers(report_df)
+  report_zmws <- as.integer(substr(report_df[["ZMW"]], 22, nchar(report_df[["ZMW"]])))
+  lima_zmws <- as.integer(substr(lima_list[["qname"]], 22, nchar(lima_list[["qname"]]) - 4))
+
+  result_zmws <- report_zmws[!(is.na(ccs_well_numbers)) & (report_zmws %in% lima_zmws)]
+  return(result_zmws)
 }
+
+
 
 
 # Define import functions -------------------------------------------------
@@ -129,8 +146,11 @@ sl9_ccs5_report_df <- ReadLimaReport(sl9_CCS5_lima_report_file)
 
 # Extract the ZMWs that are retained in CCS5 ------------------------------
 
-sl7_ccs5_lima_zmws <- ExtractZMWs(sl7_ccs5_lima)
-sl9_ccs5_lima_zmws <- ExtractZMWs(sl9_ccs5_lima)
+sl7_ccs5_lima_zmws <- ExtractZMWs(sl7_ccs5_report_df, sl7_ccs5_lima)
+sl9_ccs5_lima_zmws <- ExtractZMWs(sl9_ccs5_report_df, sl9_ccs5_lima)
+
+
+
 
 
 

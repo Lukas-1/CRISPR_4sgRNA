@@ -34,6 +34,7 @@ load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(R_objects_directory, "5) Read in PacBio data - ccs5 ZMWs.RData"))
 load(file.path(R_objects_directory, "8) Extract barcode sequences and quality scores.RData"))
 
 
@@ -495,17 +496,15 @@ CreateSummaryDf <- function(reads_df,
 
 
 
-CreateCrossContamMat <- function(contamin_mat_list, reads_report_df) {
-
-  have_well <- !(is.na(reads_report_df[["Well_number"]]))
+CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec) {
 
   all_comb_mat <- t(combn(seq_len(384), 2))
   colnames(all_comb_mat) <- paste0("well", 1:2, "_ID")
 
   counts_wells_mat_list <- lapply(1:4, function(sg_number) {
     do.call(rbind,
-            tapply(seq_len(sum(have_well)),
-                   reads_report_df[["Well_number"]][have_well],
+            tapply(seq_along(well_numbers_vec),
+                   well_numbers_vec,
                    function(x) rowSums(contamin_mat_list[[sg_number]][, x])
                    )
             )
@@ -548,7 +547,6 @@ AnalyzeWells <- function(reads_list,
                          barcodes_df,
                          counts_df         = NULL,
                          counts_384_df     = NULL,
-                         close_well_range  = 3L,
                          bc_min_comb_score = 80,
                          bc_min_score_lead = 40,
                          min_mean_quality  = 85
@@ -581,8 +579,6 @@ AnalyzeWells <- function(reads_list,
   contamin_mat <- Reduce(`+`, contamin_mat_list)
   have_contamin_mat <- contamin_mat >= 1
   distance_mat <- DistanceForContam(contamin_mat, reads_report_df[["Well_number"]])
-
-  cross_contam_mat <- CreateCrossContamMat(contamin_mat_list, reads_report_df)
 
   reads_report_df[["Contam_guides"]]   <- NA_integer_
   reads_report_df[["Contam_genes"]]    <- NA_integer_
@@ -693,25 +689,58 @@ AnalyzeWells <- function(reads_list,
                                    )[, all_columns]
 
 
-  ## Create summary data frames
 
-  unfiltered_summary_df <- CreateSummaryDf(individual_ZMWs_df,
+  results_list <- list(
+    "individual_reads_df" = individual_ZMWs_df,
+    "contamin_mat_list"   = contamin_mat_list
+  )
+  return(results_list)
+}
+
+
+
+
+SummarizeWells <- function(analysis_list, use_zmws = NULL, close_well_range = 3L) {
+
+  stopifnot(identical(unique(vapply(analysis_list[["contamin_mat_list"]], ncol, integer(1))),
+                      nrow(analysis_list[["individual_reads_df"]])
+                      ))
+
+  reads_df <- analysis_list[["individual_reads_df"]]
+  contamin_mat_list <- analysis_list[["contamin_mat_list"]]
+  if (!(is.null(use_zmws))) {
+    zmw_matches <- match(use_zmws, reads_df[["ZMW"]])
+    stopifnot(!(anyNA(zmw_matches)))
+    reads_df <- reads_df[zmw_matches, ]
+    row.names(reads_df) <- NULL
+    contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, zmw_matches])
+  }
+
+  unfiltered_summary_df <- CreateSummaryDf(reads_df,
                                            filter_reads = FALSE,
                                            close_well_range = close_well_range
                                            )
-  filtered_summary_df   <- CreateSummaryDf(individual_ZMWs_df,
+  filtered_summary_df   <- CreateSummaryDf(reads_df,
                                            filter_reads = TRUE,
                                            close_well_range = close_well_range
+                                           )
+
+  cross_contam_mat <- CreateCrossContamMat(contamin_mat_list,
+                                           reads_df[["Well_number"]]
                                            )
 
   results_list <- list(
     "original_summary_df" = unfiltered_summary_df,
     "filtered_summary_df" = filtered_summary_df,
-    "individual_reads_df" = individual_ZMWs_df,
+    "individual_reads_df" = reads_df,
     "contaminations_mat"  = cross_contam_mat
   )
   return(results_list)
 }
+
+
+
+
 
 
 
@@ -804,25 +833,30 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 
 
+# Process the data on the level of individual reads -----------------------
+
+sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs3_lima,
+                                       sl7_ccs3_report_df,
+                                       sl7_ccs3_barcodes_df,
+                                       sl7_ccs3_counts_df,
+                                       sl7_ccs3_384_counts_df
+                                       )
+
+sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_ccs3_barcodes_df)
+
+
+
+
 # Create the summary data frames ------------------------------------------
 
-sl7_ccs3_df_list <- AnalyzeWells(sl7_ccs3_lima,
-                                 sl7_ccs3_report_df,
-                                 sl7_ccs3_barcodes_df,
-                                 sl7_ccs3_counts_df,
-                                 sl7_ccs3_384_counts_df
-                                 )
+sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list)
+sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list)
 
-sl9_ccs3_df_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_ccs3_barcodes_df)
+sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws)
+sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws)
 
 
-sl9_ccs5_df_list <- AnalyzeWells(sl9_ccs5_lima, sl9_ccs5_report_df, sl9_ccs5_barcodes_df)
-sl7_ccs5_df_list <- AnalyzeWells(sl7_ccs5_lima,
-                                 sl7_ccs5_report_df,
-                                 sl7_ccs5_barcodes_df,
-                                 sl7_ccs5_counts_df,
-                                 sl7_ccs5_384_counts_df
-                                 )
+
 
 
 
