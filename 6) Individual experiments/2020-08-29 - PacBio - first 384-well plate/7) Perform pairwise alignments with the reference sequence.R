@@ -34,110 +34,7 @@ load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - cc
 
 # Define functions --------------------------------------------------------
 
-PairWiseAlignments <- function(use_sl7 = TRUE) {
-
-  barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
-
-  if (use_sl7) {
-    ccs_list <- sl7_ccs3_ccs
-    report_df <- sl7_ccs3_report_df
-  } else {
-    ccs_list <- sl9_ccs3_ccs
-    report_df <- sl9_ccs3_report_df
-  }
-
-  lima_zmws <- as.integer(substr(lima_list[["qname"]], 22, nchar(lima_list[["qname"]]) - 4))
-  ccs_zmws  <- as.integer(substr(ccs_list[["qname"]],  22, nchar(ccs_list[["qname"]])  - 4))
-
-  ccs_well_numbers <- GetWellNumbers(report_df)
-  lima_well_numbers <- ccs_well_numbers[match(lima_zmws, ccs_zmws)]
-
-  stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
-
-  well_barcodes_df_list <- lapply(seq_len(384), function(well_number) {
-
-    message(paste0("Processing well #", well_number, "..."))
-
-    are_this_well <- lima_well_numbers %in% well_number
-    this_well_zmws <- lima_zmws[are_this_well]
-
-    lima_seq <- lima_list[["seq"]][are_this_well]
-    lima_qual <- lima_list[["qual"]][are_this_well]
-
-    ccs_matches <- match(this_well_zmws, ccs_zmws)
-    stopifnot(!(anyNA(ccs_matches)))
-    ccs_seq <- ccs_list[["seq"]][ccs_matches]
-    ccs_qual <- ccs_list[["qual"]][ccs_matches]
-
-    plasmid <- DNAStringSet(barcoded_plasmids[[well_number]])
-    row_template <- row_bc_vec[[well_number]]
-    column_template <- column_bc_vec[[well_number]]
-
-    fwd_alignments <- pairwiseAlignment(ccs_seq, plasmid, type = "global")
-    rev_alignments <- pairwiseAlignment(reverseComplement(ccs_seq), plasmid, type = "global")
-    are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
-
-    barcode_df_list <- lapply(seq_along(this_well_zmws), function(x) {
-
-      this_lima <- as.character(lima_seq[[x]])
-      this_ccs <- as.character(ccs_seq[[x]])
-      this_ccs_qual <- as.character(ccs_qual[[x]])
-
-      match_pos <- as.integer(regexpr(this_lima, this_ccs, fixed = TRUE))
-      lima_length <- nchar(this_lima)
-      ccs_length <- nchar(this_ccs)
-      stopifnot(match_pos != -1)
-
-      first_bc_seq <- substr(this_ccs, 1, match_pos - 1)
-      second_bc_seq <- substr(this_ccs, match_pos + lima_length, ccs_length)
-
-      first_bc_qual <- substr(this_ccs_qual, 1, match_pos - 1)
-      second_bc_qual <- substr(this_ccs_qual, match_pos + lima_length, ccs_length)
-
-      stopifnot(identical(as.character(lima_qual[[x]]),
-                          substr(this_ccs_qual, match_pos, match_pos + lima_length - 1)
-                          )
-                ) ## DELETE THIS LATER
-
-      if (are_forward_vec[[x]]) {
-        column_barcode <- first_bc_seq
-        column_quality <- first_bc_qual
-        row_barcode <- second_bc_seq
-        row_quality <- second_bc_qual
-      } else {
-        column_barcode <- as.character(reverseComplement(DNAString(second_bc_seq)))
-        column_quality <- reverse(second_bc_qual)
-        row_barcode <- as.character(reverseComplement(DNAString(first_bc_seq)))
-        row_quality <- reverse(first_bc_qual)
-      }
-
-      match_template <- (row_barcode == row_template) && (column_barcode == column_template)
-
-      result_list <- list(
-        "ZMW"            = this_well_zmws[[x]],
-        "Match_template" = match_template,
-        "Is_forward"     = are_forward_vec[[x]],
-        "Row_barcode"    = row_barcode,
-        "Row_quality"    = row_quality,
-        "Column_barcode" = column_barcode,
-        "Column_quality" = column_quality
-      )
-      return(result_list)
-    })
-    barcode_well_df <- do.call(rbind.data.frame, c(barcode_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-    barcode_well_df <- data.frame("Well" = well_number, barcode_well_df, stringsAsFactors = FALSE)
-    return(barcode_well_df)
-  })
-
-  results_df <- do.call(rbind.data.frame, c(well_barcodes_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-  return(results_df)
-}
-
-
-
-
-
-ExtractAlignedSequences <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
+ExtractAlignedSequences <- function(use_sl7 = TRUE) {
 
   barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
 
@@ -177,18 +74,13 @@ ExtractAlignedSequences <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
                           stringsAsFactors = FALSE
                           )
 
-    assign("delete_fwd_alignments", fwd_alignments, envir = globalenv())
-    assign("delete_rev_alignments", rev_alignments, envir = globalenv())
-    assign("delete_are_forward_vec", are_forward_vec, envir = globalenv())
-    combined_alignments <- do.call(c, lapply(seq_along(are_forward_vec),
-                                             function(x) {
-                                               if (are_forward_vec[[x]]) {
-                                                 fwd_alignments[x]
-                                               } else {
-                                                 rev_alignments[x]
-                                               }
-                                             })
-                                   )
+    new_indices <- c(which(are_forward_vec), which(!(are_forward_vec)))
+
+    combined_alignments <- c(fwd_alignments[are_forward_vec],
+                             rev_alignments[!(are_forward_vec)]
+                             )
+    combined_alignments <- combined_alignments[order(new_indices)]
+
     results_list <- list(
       "meta_df" = meta_df,
       "alignments" = combined_alignments
