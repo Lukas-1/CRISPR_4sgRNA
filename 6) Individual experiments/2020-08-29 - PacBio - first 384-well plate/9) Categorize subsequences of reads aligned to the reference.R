@@ -29,6 +29,7 @@ load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData
 load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData"))
 load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(R_objects_directory, "7) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
@@ -55,72 +56,38 @@ AdjustForsgRNALength <- function(features_df, sg_vec) {
 
 
 
-ExtractAlignedSequences <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
+ExtractAlignedSequences <- function(use_sl7 = TRUE) {
 
   stopifnot(all(c("features_df", "features_mat_list", "barcoded_plasmids") %in% ls(envir = globalenv())))
 
-
-  if (use_ccs3) {
-    if (use_sl7) {
-      ccs_list <- sl7_ccs3_ccs
-      report_df <- sl7_ccs3_report_df
-    } else {
-      ccs_list <- sl9_ccs3_ccs
-      report_df <- sl9_ccs3_report_df
-    }
+  if (use_sl7) {
+    alignments_list <- sl7_alignments_list
   } else {
-    if (use_sl7) {
-      ccs_list <- sl7_ccs5_ccs
-      report_df <- sl7_ccs5_report_df
-    } else {
-      ccs_list <- sl9_ccs5_ccs
-      report_df <- sl9_ccs5_report_df
-    }
+    alignments_list <- sl9_alignments_list
   }
-
-  ccs_zmws <- as.integer(substr(ccs_list[["qname"]],  22, nchar(ccs_list[["qname"]])  - 4))
-  ccs_well_numbers <- GetWellNumbers(report_df)
-
-  stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
 
   num_features <- nrow(features_df)
 
-  well_barcodes_df_list <- lapply(seq_len(384), function(well_number) {
+  well_list <- lapply(seq_len(384), function(well_number) {
 
     message(paste0("Processing well #", well_number, "..."))
 
-    are_this_well <- ccs_well_numbers %in% well_number
-    ccs_seq <- ccs_list[["seq"]][are_this_well]
-    ccs_qual <- ccs_list[["qual"]][are_this_well]
+    well_alignments <- alignments_list[[well_number]][["alignments"]]
 
-    plasmid <- DNAStringSet(barcoded_plasmids[[well_number]])
-    row_template <- row_bc_vec[[well_number]]
-    column_template <- column_bc_vec[[well_number]]
+    aligned_plasmid_vec <- as.character(alignedSubject(well_alignments))
+    aligned_read_vec <- as.character(alignedPattern(well_alignments))
 
-    fwd_alignments <- pairwiseAlignment(ccs_seq, plasmid, type = "global")
-    rev_alignments <- pairwiseAlignment(reverseComplement(ccs_seq), plasmid, type = "global")
-    are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
+    aligned_plasmid_char_list <- strsplit(aligned_plasmid_vec, "")
+    aligned_read_char_list <- strsplit(aligned_read_vec, "")
 
-    extracted_list <- lapply(seq_len(sum(are_this_well)), function(x) {
+    extracted_list <- lapply(seq_along(well_alignments), function(x) {
 
-      if (are_forward_vec[[x]]) {
-        use_alignment <- fwd_alignments[x]
-      } else {
-        use_alignment <- rev_alignments[x]
-      }
-
-      aligned_plasmid_seq <- alignedSubject(use_alignment)
-      aligned_plasmid_chars <- strsplit(as.character(aligned_plasmid_seq), "")[[1]]
-
-      aligned_read_seq <- alignedPattern(use_alignment)
-      aligned_read_chars <- strsplit(as.character(aligned_read_seq), "")[[1]]
-
-      original_numbers <- cumsum(aligned_plasmid_chars != "-")
+      original_numbers <- cumsum(aligned_plasmid_char_list[[x]] != "-")
       # stopifnot(max(original_numbers) == 2245)
       # stopifnot(original_numbers[[length(original_numbers)]] == 2245)
 
       extracted_sequences <- vapply(features_indices_list[[well_number]],
-                                    function(x) paste0(aligned_read_chars[original_numbers %in% x], collapse = ""),
+                                    function(y) paste0(aligned_read_char_list[[x]][original_numbers %in% y], collapse = ""),
                                     ""
                                     )
       are_the_same <- vapply(seq_len(num_features),
@@ -150,9 +117,9 @@ ExtractAlignedSequences <- function(use_ccs3 = TRUE, use_sl7 = TRUE) {
                          )
     return(results_list)
   })
-  extracted_sequences_mat <- do.call(rbind, lapply(results_list, function(x) x[["extracted_sequences_mat"]]))
-  are_the_same_mat <- do.call(rbind, lapply(results_list, function(x) x[["are_the_same_mat"]]))
-  extracted_sequences_mat <- do.call(rbind, lapply(results_list, function(x) x[["are_mostly_lost_mat"]]))
+  extracted_sequences_mat <- do.call(rbind, lapply(well_list, function(x) x[["extracted_sequences_mat"]]))
+  are_the_same_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_the_same_mat"]]))
+  extracted_sequences_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_mostly_lost_mat"]]))
   colnames(extracted_sequences_mat) <- features_df[["Features"]]
   colnames(are_the_same_mat)        <- features_df[["Features"]]
   colnames(extracted_sequences_mat) <- features_df[["Features"]]
@@ -229,14 +196,10 @@ features_templates_list <- lapply(seq_len(384), function(x) {
 
 
 
+# Extract sequences -------------------------------------------------------
 
-
-# Extract barcodes --------------------------------------------------------
-
-sl7_ccs3_alignments_df <- ExtractAlignedSequences(use_sl7 = TRUE, use_ccs3 = TRUE)
-sl7_ccs5_alignments_df <- ExtractAlignedSequences(use_sl7 = TRUE, use_ccs3 = FALSE)
-sl9_ccs3_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE, use_ccs3 = TRUE)
-sl9_ccs5_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE, use_ccs3 = FALSE)
+sl7_alignments_df <- ExtractAlignedSequences(use_sl7 = TRUE)
+sl9_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE)
 
 
 
@@ -245,7 +208,7 @@ sl9_ccs5_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE, use_ccs3 = FA
 
 # Save data ---------------------------------------------------------------
 
-save(list = paste0(c("sl7_ccs3", "sl7_ccs5", "sl9_ccs3", "sl9_ccs5"), "_barcodes_df"),
+save(list = paste0("sl", c(7, 9), "_alignments_df"),
      file = file.path(R_objects_directory, "9) Extract barcode sequences and quality scores.RData")
      )
 
