@@ -51,7 +51,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
 
   stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
 
-  alignments_list <- lapply(seq_len(384), function(well_number) {
+  alignments_df_list <- lapply(seq_len(384), function(well_number) {
 
     message(paste0("Processing well #", well_number, "..."))
 
@@ -67,27 +67,33 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
     rev_alignments <- pairwiseAlignment(reverseComplement(ccs_seq), plasmid, type = "global")
     are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
 
-    meta_df <- data.frame("ZMW"             = ccs_zmws[are_this_well],
-                          "Orientation_fwd" = are_forward_vec,
-                          "Score_fwd"       = score(fwd_alignments),
-                          "Score_rev"       = score(rev_alignments),
-                          stringsAsFactors = FALSE
-                          )
+    new_order <- order(c(which(are_forward_vec), which(!(are_forward_vec))))
 
-    new_indices <- c(which(are_forward_vec), which(!(are_forward_vec)))
+    aligned_plasmid_vec <- c(as.character(alignedSubject(fwd_alignments)[are_forward_vec]),
+                             as.character(alignedSubject(rev_alignments)[!(are_forward_vec)])
+                             )[new_order]
+    aligned_read_vec <- c(as.character(alignedPattern(fwd_alignments)[are_forward_vec]),
+                          as.character(alignedPattern(rev_alignments)[!(are_forward_vec)])
+                          )[new_order]
 
-    combined_alignments <- c(fwd_alignments[are_forward_vec],
-                             rev_alignments[!(are_forward_vec)]
-                             )
-    combined_alignments <- combined_alignments[order(new_indices)]
-
-    results_list <- list(
-      "meta_df" = meta_df,
-      "alignments" = combined_alignments
-    )
-    return(results_list)
+    alignments_df <- data.frame("Well_number"     = well_number,
+                                "ZMW"             = ccs_zmws[are_this_well],
+                                "Orientation_fwd" = are_forward_vec,
+                                "Score_fwd"       = score(fwd_alignments),
+                                "Score_rev"       = score(rev_alignments),
+                                "Aligned_plasmid" = aligned_plasmid_vec,
+                                "Aligned_read"    = aligned_read_vec,
+                                stringsAsFactors = FALSE
+                                )
+    return(alignments_df)
   })
-  return(alignments_list)
+  results_df <- do.call(rbind.data.frame, c(alignments_df_list,
+                                            list(stringsAsFactors = FALSE,
+                                                 make.row.names = FALSE
+                                                 )
+                                            )
+                        )
+  return(results_df)
 }
 
 
