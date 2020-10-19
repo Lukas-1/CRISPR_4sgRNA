@@ -46,7 +46,9 @@ HGNC_df <- read.table(file.path(human_genome_directory, "HGNC", "Custom_HGNC_dow
 # The two FANTOM5 files were downloaded from: https://figshare.com/articles/Re-processing_of_the_data_generated_by_the_FANTOM5_project_hg38_v3_CAGE_peaks/4880063/4
 # on 21 July 2019
 FANTOM5_ann_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover+new_CAGE_peaks_phase1and2_annot.txt"),
-                             sep = "\t", quote = "", stringsAsFactors = FALSE, header = TRUE, row.names = NULL, fill = TRUE, check.names = FALSE, comment.char = ""
+                             sep = "\t", quote = "", stringsAsFactors = FALSE,
+                             header = TRUE, row.names = NULL, fill = TRUE,
+                             check.names = FALSE, comment.char = ""
                              )
 
 FANTOM5_bed_df <- read.table(file.path(FANTOM5_input_directory, "hg38_liftover_CAGE_peaks_phase1and2.bed"),
