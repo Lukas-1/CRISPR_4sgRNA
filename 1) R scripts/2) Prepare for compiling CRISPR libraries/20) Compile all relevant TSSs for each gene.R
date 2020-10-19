@@ -26,7 +26,7 @@ general_RData_directory <- file.path(RData_directory, "1) General")
 
 load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
 load(file.path(general_RData_directory, "07) Compile TSS (transcription start site) data.RData"))
-load(file.path(general_RData_directory, "17) Compile the information on gene type.RData"))
+load(file.path(general_RData_directory, "19) Compile the information on gene type.RData"))
 
 
 
@@ -43,7 +43,8 @@ FANTOM5_entrez_matches <- match(FANTOM5_df[["Entrez_ID"]],
 
 # FANTOM5_df[["Symbol_from_entrez"]] <- MapToEntrezs(entrez_IDs_vec = FANTOM5_df[["Entrez_ID"]])[["Gene_symbol"]]
 
-grep(", ", FANTOM5_df[["Entrez_ID"]], fixed = TRUE)
+# grep(", ", FANTOM5_df[["Entrez_ID"]], fixed = TRUE, value = TRUE)
+# grep(", ", FANTOM5_df[["Gene_symbol"]], fixed = TRUE, value = TRUE)
 
 
 
@@ -190,7 +191,7 @@ expanded_info_df <- entrez_info_df[expanded_matches, ]
 
 expanded_groups <- factor(expanded_entrezs_df[["List_index"]])
 
-info_list <- sapply(colnames(expanded_info_df), function(x) {
+info_list <- sapply(names(expanded_info_df), function(x) {
   tapply(expanded_info_df[[x]],
          expanded_groups,
          function(y) {
@@ -198,7 +199,7 @@ info_list <- sapply(colnames(expanded_info_df), function(x) {
              NA_character_
            } else {
              y_vec <- unique(y[!(is.na(y))])
-             paste0(unique(y[!(is.na(y))]), collapse = ", ")
+             paste0(unique(y_vec), collapse = ", ")
            }
          }
          )
@@ -355,6 +356,16 @@ all_TSS_df[["Is_chosen_TSS"]] <- unlist(tapply(
   use.names = FALSE
 )
 
+
+
+
+# Add a column indicating the consistency of chromosomal locations --------
+
+stopifnot(!(anyNA(all_TSS_df[["Chromosome"]])))
+all_TSS_df[["Has_consistent_chromosome"]] <- mapply(identical,
+                                                    all_TSS_df[["Chromosome"]],
+                                                    all_TSS_df[["Entrez_chromosome"]]
+                                                    )
 
 
 
