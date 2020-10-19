@@ -119,15 +119,14 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
   })
   extracted_sequences_mat <- do.call(rbind, lapply(well_list, function(x) x[["extracted_sequences_mat"]]))
   are_the_same_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_the_same_mat"]]))
-  extracted_sequences_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_mostly_lost_mat"]]))
+  are_mostly_lost_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_mostly_lost_mat"]]))
   colnames(extracted_sequences_mat) <- features_df[["Features"]]
   colnames(are_the_same_mat)        <- features_df[["Features"]]
-  colnames(extracted_sequences_mat) <- features_df[["Features"]]
+  colnames(are_mostly_lost_mat)     <- features_df[["Features"]]
   results_list <- list("extracted_sequences_mat" = extracted_sequences_mat,
                        "are_the_same_mat"        = are_the_same_mat,
                        "are_mostly_lost_mat"     = are_mostly_lost_mat
                        )
-
   return(results_list)
 }
 
