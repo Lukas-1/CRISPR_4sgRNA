@@ -29,16 +29,33 @@ RangesDfToGRangesObject <- function(ranges_df, strip_Chr = FALSE) {
 }
 
 
+
+LocationsDfToGPosObject <- function(locations_df) {
+  GPos_object <- GPos(
+    seqnames = locations_df[["Chromosome"]],
+    pos      = locations_df[["Cut_location"]],
+    strand   = locations_df[["Strand"]]
+  )
+  return(GPos_object)
+}
+
+
+
+
+
 LocationStringToDf <- function(location_char_vec) {
-  chromosome_splits <- strsplit(location_char_vec, "(", fixed = TRUE)
-  strand_vec <- sapply(chromosome_splits, "[[", 2)
-  strand_splits <- strsplit(strand_vec, ")", fixed = TRUE)
-  location_vec <- sapply(strand_splits, "[[", 2)
-  location_vec <- substr(location_vec, 2, nchar(location_vec))
-  location_splits <- strsplit(location_vec, "-", fixed = TRUE)
+
+  first_split_list <- strsplit(location_char_vec, ":", fixed = TRUE)
+  first_half_vec <- sapply(first_split_list, "[[", 1)
+  second_half_vec <- sapply(first_split_list, "[[", 2)
+
+  nchar_first_half_vec <- nchar(first_half_vec)
+  strand_pos <- nchar_first_half_vec - 1
+  location_splits <- strsplit(second_half_vec, "-", fixed = TRUE)
+
   results_df <- data.frame(
-    "Chromosome" = sapply(chromosome_splits, "[[", 1),
-    "Strand"     = sapply(strand_splits, "[[", 1),
+    "Chromosome" = substr(first_half_vec, 1, nchar_first_half_vec - 3),
+    "Strand"     = substr(first_half_vec, strand_pos, strand_pos),
     "Start"      = as.integer(sapply(location_splits, "[[", 1)),
     "End"        = as.integer(sapply(location_splits, "[[", 2)),
     stringsAsFactors = FALSE,
