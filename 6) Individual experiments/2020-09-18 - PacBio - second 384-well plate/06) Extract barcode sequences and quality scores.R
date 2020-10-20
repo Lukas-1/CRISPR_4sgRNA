@@ -38,6 +38,16 @@ load(file.path(p2_R_objects_directory, "05) Perform pairwise alignments with the
 
 # Extract barcodes --------------------------------------------------------
 
+############################
+### DELETE THIS LATER!!! ###
+############################
+sl7_ccs3_ccs <- sl7_ccs5_ccs
+sl7_ccs3_lima <- sl7_ccs5_lima
+sl7_ccs3_report_df <- sl7_ccs5_report_df
+############################
+############################
+############################
+
 sl7_barcodes_df <- GetBarcodes(use_sl7 = TRUE, wells_vec = sg_sequences_df[["Well_number"]])
 # sl9_barcodes_df <- GetBarcodes(use_sl7 = FALSE)
 
