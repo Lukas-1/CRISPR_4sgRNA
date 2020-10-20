@@ -20,7 +20,7 @@ plate2_directory        <- file.path(CRISPR_root_directory, "6) Individual exper
 p1_R_objects_directory  <- file.path(plate1_directory, "3) R objects")
 p2_R_objects_directory  <- file.path(plate2_directory, "2) R objects")
 
-file_output_directory   <- file.path(p2_R_objects_directory, "3) Output")
+file_output_directory   <- file.path(plate2_directory, "3) Output")
 tables_output_directory <- file.path(file_output_directory, "Tables")
 
 
