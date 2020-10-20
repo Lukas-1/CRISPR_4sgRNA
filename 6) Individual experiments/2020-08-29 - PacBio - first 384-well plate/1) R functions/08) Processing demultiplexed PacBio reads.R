@@ -486,7 +486,7 @@ CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec 
     sub_mat <- t(mapply(function(x, y) {
       x_index <- wells_vec == x
       y_index <- wells_vec == y
-      c(use_mat[x_index, y_index], use_mat[x_index, y_index])
+      c(use_mat[x_index, y_index], use_mat[y_index, x_index])
     },
     all_comb_mat[, 1],
     all_comb_mat[, 2]
