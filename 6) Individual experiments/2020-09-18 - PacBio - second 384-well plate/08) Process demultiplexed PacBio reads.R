@@ -53,10 +53,16 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Process the data on the level of individual reads -----------------------
 
-# sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs3_lima, sl7_ccs3_report_df, sl7_barcodes_df)
-sl7_ccs5_analysis_list <- AnalyzeWells(sl7_ccs5_lima, sl7_ccs5_report_df, sl7_barcodes_df)
+sl7_ccs5_analysis_list <- AnalyzeWells(sl7_ccs5_lima, sl7_ccs5_report_df, sl7_barcodes_df,
+                                       wells_vec = sg_sequences_df[["Well_number"]]
+                                       )
 
-# sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_barcodes_df)
+# sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs3_lima, sl7_ccs3_report_df, sl7_barcodes_df,
+#                                        wells_vec = sg_sequences_df[["Well_number"]]
+#                                        )
+# sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_barcodes_df,
+#                                        wells_vec = sg_sequences_df[["Well_number"]]
+#                                        )
 
 
 
@@ -64,14 +70,17 @@ sl7_ccs5_analysis_list <- AnalyzeWells(sl7_ccs5_lima, sl7_ccs5_report_df, sl7_ba
 
 # Create the summary data frames ------------------------------------------
 
-sl7_ccs3_df_list <- SummarizeWells(sl7_ccs5_analysis_list)
+sl7_ccs3_df_list <- SummarizeWells(sl7_ccs5_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
 
-# sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list)
-# sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list)
+# sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
+# sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
 #
-# sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws)
-# sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws)
-
+# sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws,
+#                                    wells_vec = sg_sequences_df[["Well_number"]]
+#                                    )
+# sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws,
+#                                    wells_vec = sg_sequences_df[["Well_number"]]
+#                                    )
 
 
 
