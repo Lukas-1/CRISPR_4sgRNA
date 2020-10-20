@@ -19,7 +19,6 @@ file_input_directory        <- file.path(file_directory, "2) Input")
 R_objects_directory         <- file.path(file_directory, "3) R objects")
 
 metadata_directory          <- file.path(file_input_directory, "Metadata")
-sg_sequences_file           <- file.path(metadata_directory, "1-384 sgRNA summary.xlsm")
 tracRNAs_file               <- file.path(metadata_directory, "tracRNAs_4sg.txt")
 promoters_file              <- file.path(metadata_directory, "promoters_4sg.txt")
 full_plasmid_file           <- file.path(metadata_directory, "reference with 4sg and barcode example.fa")
@@ -60,9 +59,6 @@ plasmid_lines_vec <- read.table(full_plasmid_file, header = FALSE, skip = 1,
 
 
 ReplaceNNNLines <- function(lines_vec, sequences_vec) {
-
-  assign("delete_lines_vec", lines_vec, envir = globalenv())
-  assign("delete_sequences_vec", sequences_vec, envir = globalenv())
 
   ### Extract the positions of the 4 guides
 
@@ -149,50 +145,6 @@ ReplaceNNNLines <- function(lines_vec, sequences_vec) {
 
 
 
-ExportVectorsForGene <- function(symbol_or_entrez, CRISPR_df) {
-
-  if (!(is.na(suppressWarnings(as.integer(symbol_or_entrez))))) {
-    are_this_gene <- CRISPR_df[["Entrez_ID"]] %in% as.character(symbol_or_entrez)
-  } else {
-    are_this_gene <- CRISPR_df[["Gene_symbol"]] %in% symbol_or_entrez
-  }
-  are_top4 <- CRISPR_df[["Rank"]] %in% 1:4
-  are_chosen <- are_this_gene & are_top4
-  num_guides <- sum(are_chosen)
-  num_TSSs <- num_guides / 4
-
-  if (num_guides == 0) {
-    stop(paste0("The gene '", symbol_or_entrez, "' was not found!"))
-  }
-  stopifnot((num_guides %% 4) == 0)
-
-  if (num_TSSs > 1) {
-    file_name_postfixes <- paste0("_TSS", seq_len(num_TSSs))
-  } else {
-    file_name_postfixes <- ""
-  }
-  sequences_list <- split(CRISPR_df[["sgRNA_sequence"]][are_chosen],
-                          rep(seq_len(num_TSSs), each = 4)
-                          )
-  for (i in seq_along(sequences_list)) {
-    new_lines <- ReplaceNNNLines(sequence_lines, sequences_list[[i]])
-    file_name <- paste0("4sg_inserted_vector_",
-                        symbol_or_entrez,
-                        file_name_postfixes[[i]],
-                        ".gbk"
-                        )
-    write.table(x         = c(prior_lines, new_lines, after_lines),
-                file      = file.path(plasmid_output_directory, file_name),
-                col.names = FALSE,
-                row.names = FALSE,
-                quote     = FALSE
-                )
-  }
-  return(invisible(NULL))
-}
-
-
-
 ReadInPlasmids <- function(file_path) {
 
   lines_vec <- scan(file = file_path, what = character(), sep = "\n")
@@ -211,17 +163,6 @@ ReadInPlasmids <- function(file_path) {
     "following" = following_lines
   )
   return(result_list)
-}
-
-
-PlasmidForWell <- function(well_number) {
-  stopifnot("plasmid_list" %in% ls(envir = globalenv()))
-  search_string <- paste0("_well", well_number, ".gbk")
-  plasmid_name <- grep(search_string, names(plasmid_list), fixed = TRUE)
-  if (length(plasmid_name) == 0) {
-    plasmid_name <- "pYJA5_with_4sg_20bp.gbk"
-  }
-  return(plasmid_name)
 }
 
 
