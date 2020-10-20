@@ -4,6 +4,12 @@
 
 
 
+# Import packages and source code -----------------------------------------
+
+library("Biostrings")
+
+
+
 # Define functions --------------------------------------------------------
 
 GetBarcodes <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {

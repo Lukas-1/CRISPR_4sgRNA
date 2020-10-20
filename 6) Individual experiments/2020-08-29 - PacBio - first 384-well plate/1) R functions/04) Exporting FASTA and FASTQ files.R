@@ -2,6 +2,14 @@
 
 
 
+
+# Import packages and source code -----------------------------------------
+
+library("Biostrings")
+
+
+
+
 # Define functions --------------------------------------------------------
 
 ExportSequences <- function(lima_reads,

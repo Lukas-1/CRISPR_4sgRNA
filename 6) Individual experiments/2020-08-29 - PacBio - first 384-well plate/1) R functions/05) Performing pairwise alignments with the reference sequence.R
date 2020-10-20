@@ -2,6 +2,11 @@
 
 
 
+# Import packages and source code -----------------------------------------
+
+library("Biostrings")
+
+
 
 # Define functions --------------------------------------------------------
 

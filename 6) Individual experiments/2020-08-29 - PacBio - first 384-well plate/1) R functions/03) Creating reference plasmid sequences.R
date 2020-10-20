@@ -3,6 +3,14 @@
 
 
 
+
+# Import packages and source code -----------------------------------------
+
+library("Biostrings")
+
+
+
+
 # Define functions --------------------------------------------------------
 
 ReplaceNNNLines <- function(lines_vec, sequences_vec) {

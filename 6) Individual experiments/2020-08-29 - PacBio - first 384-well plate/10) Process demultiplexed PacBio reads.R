@@ -4,8 +4,6 @@
 
 # Import packages and source code -----------------------------------------
 
-library("ShortRead") # For processing the quality scores
-
 CRISPR_root_directory  <- "~/CRISPR"
 file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory  <- file.path(file_directory, "1) R functions")

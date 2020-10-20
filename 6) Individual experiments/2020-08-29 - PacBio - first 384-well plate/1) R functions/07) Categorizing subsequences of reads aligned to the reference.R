@@ -4,6 +4,12 @@
 
 
 
+# Import packages and source code -----------------------------------------
+
+library("Biostrings")
+
+
+
 
 # Define feature positions ------------------------------------------------
 

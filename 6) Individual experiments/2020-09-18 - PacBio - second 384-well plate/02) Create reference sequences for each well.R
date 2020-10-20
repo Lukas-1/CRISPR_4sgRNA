@@ -3,10 +3,7 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
-
-library("Biostrings")
 
 CRISPR_root_directory <- "~/CRISPR"
 plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")

@@ -2,6 +2,13 @@
 
 
 
+
+# Import packages and source code -----------------------------------------
+
+library("ShortRead") # For processing the quality scores
+
+
+
 # Define functions --------------------------------------------------------
 
 MakeDistanceList <- function(manhattan_distance = FALSE, matrix_format = FALSE) {
