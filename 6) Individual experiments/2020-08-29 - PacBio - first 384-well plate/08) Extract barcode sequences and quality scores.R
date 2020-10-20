@@ -23,11 +23,11 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(R_objects_directory, "7) Perform pairwise alignments with the reference sequence.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(R_objects_directory, "07) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
@@ -43,12 +43,12 @@ GetBarcodes <- function(use_sl7 = TRUE) {
     ccs_list <- sl7_ccs3_ccs
     lima_list <- sl7_ccs3_lima
     report_df <- sl7_ccs3_report_df
-    alignments_list <- sl7_alignments_list
+    alignments_df <- sl7_alignments_df
   } else {
     ccs_list <- sl9_ccs3_ccs
     lima_list <- sl9_ccs3_lima
     report_df <- sl9_ccs3_report_df
-    alignments_list <- sl9_alignments_list
+    alignments_df <- sl9_alignments_df
   }
 
   lima_zmws <- as.integer(substr(lima_list[["qname"]], 22, nchar(lima_list[["qname"]]) - 4))
@@ -57,7 +57,16 @@ GetBarcodes <- function(use_sl7 = TRUE) {
   ccs_well_numbers <- GetWellNumbers(report_df)
   lima_well_numbers <- ccs_well_numbers[match(lima_zmws, ccs_zmws)]
 
+  lima_seq_vec <- as.character(lima_list[["seq"]])
+  lima_qual_vec <- as.character(lima_list[["qual"]])
+
+  ccs_seq_vec <- as.character(ccs_list[["seq"]])
+  ccs_qual_vec <- as.character(ccs_list[["qual"]])
+
   stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
+
+  alignment_matches <- match(ccs_zmws, alignments_df[["ZMW"]])
+  are_fwd_reordered <- alignments_df[["Orientation_fwd"]][alignment_matches]
 
   well_barcodes_df_list <- lapply(seq_len(384), function(well_number) {
 
@@ -66,42 +75,35 @@ GetBarcodes <- function(use_sl7 = TRUE) {
     are_this_well <- lima_well_numbers %in% well_number
     this_well_zmws <- lima_zmws[are_this_well]
 
-    lima_seq <- lima_list[["seq"]][are_this_well]
-    lima_qual <- lima_list[["qual"]][are_this_well]
+    lima_seq <- lima_seq_vec[are_this_well]
+    lima_qual <- lima_qual_vec[are_this_well]
 
     ccs_matches <- match(this_well_zmws, ccs_zmws)
     stopifnot(!(anyNA(ccs_matches)))
-    ccs_seq <- ccs_list[["seq"]][ccs_matches]
-    ccs_qual <- ccs_list[["qual"]][ccs_matches]
+    ccs_seq <- ccs_seq_vec[ccs_matches]
+    ccs_qual <- ccs_qual_vec[ccs_matches]
 
-    alignment_matches <- match(this_well_zmws,
-                               alignments_list[[well_number]][["meta_df"]][["ZMW"]]
-                               )
-    stopifnot(!(anyNA(alignment_matches)))
-    are_forward_vec <- alignments_list[[well_number]][["meta_df"]][["Orientation_fwd"]][alignment_matches]
+    are_forward_vec <- are_fwd_reordered[ccs_matches]
+    stopifnot(!(anyNA(are_forward_vec)))
 
     row_template <- row_bc_vec[[well_number]]
     column_template <- column_bc_vec[[well_number]]
 
     barcode_df_list <- lapply(seq_along(this_well_zmws), function(x) {
 
-      this_lima <- as.character(lima_seq[[x]])
-      this_ccs <- as.character(ccs_seq[[x]])
-      this_ccs_qual <- as.character(ccs_qual[[x]])
-
-      match_pos <- as.integer(regexpr(this_lima, this_ccs, fixed = TRUE))
-      lima_length <- nchar(this_lima)
-      ccs_length <- nchar(this_ccs)
+      match_pos <- as.integer(regexpr(lima_seq[[x]], ccs_seq[[x]], fixed = TRUE))
+      lima_length <- nchar(lima_seq[[x]])
+      ccs_length <- nchar(ccs_seq[[x]])
       stopifnot(match_pos != -1)
 
-      first_bc_seq <- substr(this_ccs, 1, match_pos - 1)
-      second_bc_seq <- substr(this_ccs, match_pos + lima_length, ccs_length)
+      first_bc_seq <- substr(ccs_seq[[x]], 1, match_pos - 1)
+      second_bc_seq <- substr(ccs_seq[[x]], match_pos + lima_length, ccs_length)
 
-      first_bc_qual <- substr(this_ccs_qual, 1, match_pos - 1)
-      second_bc_qual <- substr(this_ccs_qual, match_pos + lima_length, ccs_length)
+      first_bc_qual <- substr(ccs_qual[[x]], 1, match_pos - 1)
+      second_bc_qual <- substr(ccs_qual[[x]], match_pos + lima_length, ccs_length)
 
       stopifnot(identical(as.character(lima_qual[[x]]),
-                          substr(this_ccs_qual, match_pos, match_pos + lima_length - 1)
+                          substr(ccs_qual[[x]], match_pos, match_pos + lima_length - 1)
                           )
                 ) ## DELETE THIS LATER
 
@@ -200,7 +202,7 @@ sl9_barcodes_df <- GetBarcodes(use_sl7 = FALSE)
 # Save data ---------------------------------------------------------------
 
 save(list = paste0(c("sl7", "sl9"), "_barcodes_df"),
-     file = file.path(R_objects_directory, "8) Extract barcode sequences and quality scores.RData")
+     file = file.path(R_objects_directory, "08) Extract barcode sequences and quality scores.RData")
      )
 
 
