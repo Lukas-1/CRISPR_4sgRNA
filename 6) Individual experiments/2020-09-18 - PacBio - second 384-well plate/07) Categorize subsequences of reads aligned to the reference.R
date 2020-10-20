@@ -84,7 +84,7 @@ features_templates_list[wells_vec] <- lapply(wells_vec, function(x) {
 
 # Extract sequences -------------------------------------------------------
 
-sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE)
+sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE, wells_vec = sg_sequences_df[["Well_number"]])
 # sl9_extracted_df <- ExtractAlignedSequences(use_sl7 = FALSE)
 
 
