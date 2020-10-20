@@ -17,8 +17,8 @@ file_input_directory   <- file.path(file_directory, "2) Input")
 intermediate_directory <- file.path(file_directory, "4) Intermediate files")
 R_objects_directory    <- file.path(file_directory, "3) R objects")
 
-metadata_directory    <- file.path(file_input_directory, "Metadata")
-barcodes_file         <- file.path(metadata_directory, "Barcoded primers.xlsx")
+metadata_directory     <- file.path(file_input_directory, "Metadata")
+barcodes_file          <- file.path(metadata_directory, "Barcoded primers.xlsx")
 
 
 
