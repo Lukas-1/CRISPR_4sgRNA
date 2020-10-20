@@ -114,7 +114,6 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
                                   function(y) paste0(aligned_plasmid_char_list[[x]][y], collapse = ""),
                                   ""
                                   )
-
       extracted_sequences <- vapply(feature_indices,
                                     function(y) paste0(aligned_read_char_list[[x]][y], collapse = ""),
                                     ""
