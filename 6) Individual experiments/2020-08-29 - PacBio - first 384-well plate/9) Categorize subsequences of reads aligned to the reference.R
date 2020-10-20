@@ -24,12 +24,11 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(R_objects_directory, "7) Perform pairwise alignments with the reference sequence.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "07) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
@@ -61,74 +60,167 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
   stopifnot(all(c("features_df", "features_mat_list", "barcoded_plasmids") %in% ls(envir = globalenv())))
 
   if (use_sl7) {
-    alignments_list <- sl7_alignments_list
+    alignments_df <- sl7_alignments_df
+    ccs_list <- sl7_ccs3_ccs
   } else {
-    alignments_list <- sl9_alignments_list
+    alignments_df <- sl9_alignments_df
+    ccs_list <- sl9_ccs3_ccs
   }
 
-  num_features <- nrow(features_df)
+  qualities_vec <- as.character(ccs_list[["qual"]])
+  ccs_zmws  <- as.integer(substr(ccs_list[["qname"]], 22, nchar(ccs_list[["qname"]]) - 4))
 
-  well_list <- lapply(seq_len(384), function(well_number) {
+  num_features <- nrow(features_df)
+  features_vec <- features_df[["Feature"]]
+
+  well_df_list <- lapply(seq_len(384), function(well_number) {
 
     message(paste0("Processing well #", well_number, "..."))
 
-    well_alignments <- alignments_list[[well_number]][["alignments"]]
+    are_this_well <- alignments_df[["Well_number"]] == well_number
 
-    aligned_plasmid_vec <- as.character(alignedSubject(well_alignments))
-    aligned_read_vec <- as.character(alignedPattern(well_alignments))
+    aligned_plasmid_vec <- alignments_df[["Aligned_plasmid"]][are_this_well]
+    aligned_read_vec <- alignments_df[["Aligned_read"]][are_this_well]
 
     aligned_plasmid_char_list <- strsplit(aligned_plasmid_vec, "")
     aligned_read_char_list <- strsplit(aligned_read_vec, "")
 
-    extracted_list <- lapply(seq_along(well_alignments), function(x) {
+    this_well_zmws <- alignments_df[["ZMW"]][are_this_well]
+    zmw_matches <- match(this_well_zmws, ccs_zmws)
+    unaligned_qual_vec <- qualities_vec[zmw_matches]
+    unaligned_qual_char_list <- strsplit(unaligned_qual_vec, "")
 
-      original_numbers <- cumsum(aligned_plasmid_char_list[[x]] != "-")
-      # stopifnot(max(original_numbers) == 2245)
+    num_reads <- length(this_well_zmws)
+
+    extracted_mat_list <- lapply(seq_len(num_reads), function(x) {
+
+      plasmid_char_numbers <- cumsum(aligned_plasmid_char_list[[x]] != "-")
+
+      are_gaps <- aligned_read_char_list[[x]] == "-"
+      read_char_numbers <- cumsum(!(are_gaps))
+      aligned_qual_char_vec <- unaligned_qual_char_list[[x]][read_char_numbers]
+      aligned_qual_char_vec[are_gaps] <- " "
+
+      original_read_length <- length(unaligned_qual_char_list[[x]])
+      stopifnot(max(read_char_numbers) == original_read_length)
+      stopifnot(sum(!(are_gaps)) == original_read_length)
       # stopifnot(original_numbers[[length(original_numbers)]] == 2245)
 
-      extracted_sequences <- vapply(features_indices_list[[well_number]],
-                                    function(y) paste0(aligned_read_char_list[[x]][original_numbers %in% y], collapse = ""),
-                                    ""
-                                    )
-      are_the_same <- vapply(seq_len(num_features),
-                             function(x) extracted_sequences[[x]] == features_templates_list[[well_number]][[x]],
-                             logical(1)
-                             )
-
-      are_mostly_lost <- vapply(extracted_sequences,
-                                function(x) sum(strsplit(x, "") == "-") > (nchar(x) / 2),
-                                logical(1)
+      feature_indices <- lapply(features_indices_list[[well_number]],
+                                function(x) which(plasmid_char_numbers %in% x)
                                 )
 
-      results_list <- list(
-        "extracted_sequences" = extracted_sequences,
-        "are_the_same"        = are_the_same,
-        "are_mostly_lost"     = are_mostly_lost
-      )
+      aligned_templates <- vapply(feature_indices,
+                                  function(y) paste0(aligned_plasmid_char_list[[x]][y], collapse = ""),
+                                  ""
+                                  )
 
-      return(results_list)
+      extracted_sequences <- vapply(feature_indices,
+                                    function(y) paste0(aligned_read_char_list[[x]][y], collapse = ""),
+                                    ""
+                                    )
+      extracted_qualities <- vapply(feature_indices,
+                                    function(x) paste0(aligned_qual_char_vec[x], collapse = ""),
+                                    ""
+                                    )
+
+      extracted_mat <- cbind(
+        "Aligned_template" = aligned_templates,
+        "Aligned_read"     = extracted_sequences,
+        "Quality"          = extracted_qualities
+      )
+      return(extracted_mat)
     })
-    extracted_sequences_mat <- do.call(rbind, lapply(extracted_list, function(x) x[["extracted_sequences"]]))
-    are_the_same_mat <- do.call(rbind, lapply(extracted_list, function(x) x[["are_the_same"]]))
-    are_mostly_lost_mat <- do.call(rbind, lapply(extracted_list, function(x) x[["are_mostly_lost"]]))
-    results_list <- list("extracted_sequences_mat" = extracted_sequences_mat,
-                         "are_the_same_mat"        = are_the_same_mat,
-                         "are_mostly_lost_mat"     = are_mostly_lost_mat
-                         )
-    return(results_list)
+    well_mat <- do.call(rbind, extracted_mat_list)
+
+    well_df <- data.frame(
+      "Well_number" = well_number,
+      "ZMW"         = this_well_zmws,
+      "Feature"     = rep(features_vec, times = num_reads),
+      "Template"    = rep(features_templates_list[[well_number]], times = num_reads),
+      well_mat,
+      stringsAsFactors = FALSE
+    )
+    return(well_df)
   })
-  extracted_sequences_mat <- do.call(rbind, lapply(well_list, function(x) x[["extracted_sequences_mat"]]))
-  are_the_same_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_the_same_mat"]]))
-  are_mostly_lost_mat <- do.call(rbind, lapply(well_list, function(x) x[["are_mostly_lost_mat"]]))
-  colnames(extracted_sequences_mat) <- features_df[["Features"]]
-  colnames(are_the_same_mat)        <- features_df[["Features"]]
-  colnames(are_mostly_lost_mat)     <- features_df[["Features"]]
-  results_list <- list("extracted_sequences_mat" = extracted_sequences_mat,
-                       "are_the_same_mat"        = are_the_same_mat,
-                       "are_mostly_lost_mat"     = are_mostly_lost_mat
-                       )
-  return(results_list)
+  results_df <- do.call(rbind.data.frame, c(well_df_list, stringsAsFactors = FALSE, make.row.names = FALSE))
+  results_df <- ProcessExtractedDf(results_df)
+  return(results_df)
 }
+
+
+
+ProcessExtractedDf <- function(extracted_df) {
+
+  quality_int_list <- as(PhredQuality(extracted_df[["Quality"]]), "IntegerList")
+  quality_int_list <- lapply(quality_int_list, function(x) x[x != -1L])
+
+  mean_quality_vec <- vapply(quality_int_list,
+                             function(x) if (length(x) == 0) NA_real_ else mean(x),
+                             numeric(1)
+                             )
+
+  sequence_splits <- strsplit(extracted_df[["Aligned_read"]], "", fixed = TRUE)
+
+  num_bases_lost <- vapply(sequence_splits, function(x) sum(x == "-"), integer(1))
+
+  sequence_lengths <- nchar(extracted_df[["Aligned_read"]])
+
+  results_df <- data.frame(
+    extracted_df,
+    "Is_correct"     = extracted_df[["Template"]] == extracted_df[["Aligned_read"]],
+    "Mean_quality"   = mean_quality_vec,
+    "Num_missing"    = num_bases_lost,
+    "Mostly_deleted" = num_bases_lost >= (sequence_lengths / 2)
+  )
+  return(results_df)
+}
+
+
+
+#### DELETE THIS COMMENTED OUT CODE!!!
+# AmendAlignedSequences <- function(use_sl7 = TRUE) {
+#
+#   if (use_sl7) {
+#     alignments_list <- sl7_alignments_list
+#     extracted_list <- sl7_extracted_list
+#   } else {
+#     alignments_list <- sl9_alignments_list
+#     extracted_list <- sl9_extracted_list
+#   }
+#
+#   feature_names <- features_df[["Feature"]]
+#
+#   sequences_mat <- extracted_list[["extracted_sequences_mat"]]
+#   colnames(sequences_mat) <- paste0("Sequence_", feature_names)
+#
+#   are_the_same_mat <- extracted_list[["are_the_same_mat"]]
+#   colnames(are_the_same_mat) <- paste0("Are_correct_", feature_names)
+#
+#   are_mostly_lost_mat <- extracted_list[["are_mostly_lost_mat"]]
+#   colnames(are_mostly_lost_mat) <- paste0("Are_lost_", feature_names)
+#
+#   well_df_list <- lapply(seq_len(384), function(well_number) {
+#     message(paste0("Processing well #", well_number, "..."))
+#     results_df <- alignments_list[[well_number]][["meta_df"]][, c("ZMW", "Orientation_fwd")]
+#     results_df <- data.frame("Well_number" = well_number,
+#                              results_df,
+#                              stringsAsFactors = FALSE
+#                              )
+#     return(results_df)
+#   })
+#
+#   results_df <- data.frame(
+#     do.call(rbind.data.frame, c(well_df_list, stringsAsFactors = FALSE, make.row.names = FALSE)),
+#     sequences_mat,
+#     are_the_same_mat,
+#     are_mostly_lost_mat,
+#     stringsAsFactors = FALSE
+#   )
+#   return(results_df)
+# }
+#
+#
 
 
 
@@ -197,22 +289,17 @@ features_templates_list <- lapply(seq_len(384), function(x) {
 
 # Extract sequences -------------------------------------------------------
 
-sl7_alignments_df <- ExtractAlignedSequences(use_sl7 = TRUE)
-sl9_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE)
-
-
+sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE)
+sl9_extracted_df <- ExtractAlignedSequences(use_sl7 = FALSE)
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = paste0("sl", c(7, 9), "_alignments_df"),
-     file = file.path(R_objects_directory, "9) Extract barcode sequences and quality scores.RData")
+save(list = paste0("sl", c(7, 9), "_extracted_df"),
+     file = file.path(R_objects_directory, "09) Categorize subsequences of reads aligned to the reference.RData")
      )
-
-
-
 
 
 
