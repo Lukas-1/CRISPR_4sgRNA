@@ -149,6 +149,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
     )
     return(well_df)
   })
+  message("Collating the final data frame...")
   results_df <- do.call(rbind.data.frame, c(well_df_list, stringsAsFactors = FALSE, make.row.names = FALSE))
   results_df <- ProcessExtractedDf(results_df)
   return(results_df)

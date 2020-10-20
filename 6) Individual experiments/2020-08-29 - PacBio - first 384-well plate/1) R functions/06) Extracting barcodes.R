@@ -114,6 +114,7 @@ GetBarcodes <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
     return(barcode_well_df)
   })
 
+  message("Collating the final data frame...")
   results_df <- do.call(rbind.data.frame, c(well_barcodes_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   results_df <- ProcessBarcodesDf(results_df)
   return(results_df)
