@@ -62,7 +62,7 @@ AdjustForsgRNALength <- function(features_df, sg_vec) {
 
 
 
-ExtractAlignedSequences <- function(use_sl7 = TRUE) {
+ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
 
   stopifnot(all(c("features_df", "features_mat_list", "barcoded_plasmids") %in% ls(envir = globalenv())))
 
@@ -80,7 +80,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
   num_features <- nrow(features_df)
   features_vec <- features_df[["Feature"]]
 
-  well_df_list <- lapply(seq_len(384), function(well_number) {
+  well_df_list <- lapply(wells_vec, function(well_number) {
 
     message(paste0("Processing well #", well_number, "..."))
 
