@@ -8,13 +8,18 @@
 
 library("Biostrings")
 
+CRISPR_root_directory <- "~/CRISPR"
+file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory <- file.path(file_directory, "1) R functions")
+
+source(file.path(R_functions_directory, "3) Creating reference plasmid sequences.R"))
+
+
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory       <- "~/CRISPR"
-file_directory              <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 file_input_directory        <- file.path(file_directory, "2) Input")
 R_objects_directory         <- file.path(file_directory, "3) R objects")
 
@@ -39,7 +44,6 @@ load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RDat
 
 
 
-
 # Read in data ------------------------------------------------------------
 
 tracRNAs_vec <- read.table(tracRNAs_file, header = FALSE,
@@ -54,117 +58,17 @@ plasmid_lines_vec <- read.table(full_plasmid_file, header = FALSE, skip = 1,
 
 
 
-
 # Define functions --------------------------------------------------------
 
-
-ReplaceNNNLines <- function(lines_vec, sequences_vec) {
-
-  ### Extract the positions of the 4 guides
-
-  matches_list <- gregexpr("n+[n ]*", lines_vec)
-  are_matches <- matches_list != -1
-
-
-  ### Group locations that span two lines
-
-  match_numbers <- rep(NA_integer_, sum(are_matches))
-  current_number <- 0L
-  for (i in seq_along(match_numbers)) {
-    if (i == 1) {
-      previous_reaches_line_end <- FALSE
-    } else {
-      previous_reaches_line_end <- grepl("n+[n ]*$", lines_vec[are_matches][[i - 1]])
-    }
-    if (previous_reaches_line_end) {
-      starts_from_line_start <- grepl("^[n 0-9]*n", lines_vec[are_matches][[i]])
-      if (!(starts_from_line_start)) {
-        current_number <- current_number + 1L
-      }
-    } else {
-      current_number <- current_number + 1L
-    }
-    match_numbers[[i]] <- current_number
+PlasmidForWell <- function(well_number) {
+  stopifnot("plasmid_list" %in% ls(envir = globalenv()))
+  search_string <- paste0("_well", well_number, ".gbk")
+  plasmid_name <- grep(search_string, names(plasmid_list), fixed = TRUE)
+  if (length(plasmid_name) == 0) {
+    plasmid_name <- "pYJA5_with_4sg_20bp.gbk"
   }
-
-  ### Prepare for replacements
-
-  stopifnot(all(match_numbers %in% 1:6))
-
-  only_matches_list_list <- split(matches_list[are_matches], match_numbers)
-  indices_list <- split(seq_len(sum(are_matches)), match_numbers)
-
-  new_lines_vec <- rep(NA_character_, sum(are_matches))
-
-
-  ### Replace the 4 guide sequences
-
-  for (i in seq_along(only_matches_list_list)) {
-    sum_replaced <- 0L
-    for (j in indices_list[[i]]) {
-      match_index <- which(are_matches)[[j]]
-      nnn_start <- matches_list[[match_index]][[1]]
-      nnn_length <- attributes(matches_list[[match_index]])[["match.length"]]
-      nnn_end <- nnn_start + nnn_length - 1L
-      nnn_string <- substr(lines_vec[[match_index]], nnn_start, nnn_end)
-      nnn_chars <- strsplit(nnn_string, "", fixed = TRUE)[[1]]
-      replacement_chars <- rep(NA_character_, nnn_length)
-      for (char_index in seq_len(nnn_length)) {
-        if (nnn_chars[[char_index]] == " ") {
-          replacement_chars[[char_index]] <- " "
-        } else {
-          sum_replaced <- sum_replaced + 1L
-          assign("delete_sequences_vec", sequences_vec, envir = globalenv())
-          replacement_chars[[char_index]] <- substr(sequences_vec[[i]],
-                                                    sum_replaced,
-                                                    sum_replaced
-                                                    )
-        }
-      }
-      replacement_string <- paste0(replacement_chars, collapse = "")
-      if (nnn_start != 1) {
-        string_before <- substr(lines_vec[[match_index]], 1, nnn_start - 1L)
-      } else {
-        string_before <- ""
-      }
-      line_length <- nchar(lines_vec[[match_index]])
-      if (nnn_end != line_length) {
-        string_after <- substr(lines_vec[[match_index]], nnn_end + 1L, line_length)
-      } else {
-        string_after <- ""
-      }
-      new_lines_vec[[j]] <- paste0(string_before, replacement_string, string_after)
-    }
-  }
-
-  results_vec <- lines_vec
-  results_vec[are_matches] <- new_lines_vec
-  return(results_vec)
+  return(plasmid_name)
 }
-
-
-
-
-ReadInPlasmids <- function(file_path) {
-
-  lines_vec <- scan(file = file_path, what = character(), sep = "\n")
-
-  first_index <- which(lines_vec == "ORIGIN") + 1L
-  preceding_lines <- lines_vec[seq_len(first_index - 1)]
-  last_index <- first_index + 37L
-  following_seq <- seq(from = last_index + 1, to = length(lines_vec))
-  following_lines <- lines_vec[following_seq]
-  sequence_seq <- seq(from = first_index, to = last_index)
-  sequence_lines <- lines_vec[sequence_seq]
-
-  result_list <- list(
-    "preceding" = preceding_lines,
-    "sequence"  = sequence_lines,
-    "following" = following_lines
-  )
-  return(result_list)
-}
-
 
 
 
@@ -247,25 +151,6 @@ for (i in seq_len(384)) {
               quote     = FALSE
               )
 }
-
-
-
-
-
-
-# Map barcode IDs to wells ------------------------------------------------
-
-all_barcodes_df <- expand.grid(paste0("RevBC", seq_len(24)),
-                               paste0("FwdBC", seq_len(16)),
-                               KEEP.OUT.ATTRS = FALSE,
-                               stringsAsFactors = FALSE
-                               )[, 2:1]
-barcodes_to_wells_map <- seq_len(384)
-names(barcodes_to_wells_map) <- paste0(all_barcodes_df[[1]],
-                                       "--",
-                                       all_barcodes_df[[2]]
-                                       )
-
 
 
 
