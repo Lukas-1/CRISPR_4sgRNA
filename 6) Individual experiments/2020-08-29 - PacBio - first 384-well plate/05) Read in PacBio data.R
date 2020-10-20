@@ -58,7 +58,7 @@ sl9_CCS5_lima_report_file <- file.path(reanalysis_directory, "SmrtLink9_CCS5/lim
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 
 
 
