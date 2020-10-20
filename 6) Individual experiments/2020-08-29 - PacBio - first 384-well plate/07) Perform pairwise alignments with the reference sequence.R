@@ -23,10 +23,10 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
 
 
 
@@ -101,16 +101,16 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE) {
 
 # Extract barcodes --------------------------------------------------------
 
-sl7_alignments_list <- ExtractAlignedSequences(use_sl7 = TRUE)
-sl9_alignments_list <- ExtractAlignedSequences(use_sl7 = FALSE)
+sl7_alignments_df <- ExtractAlignedSequences(use_sl7 = TRUE)
+sl9_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE)
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = paste0("sl", c(7, 9), "_alignments_list"),
-     file = file.path(R_objects_directory, "7) Perform pairwise alignments with the reference sequence.RData")
+save(list = paste0("sl", c(7, 9), "_alignments_df"),
+     file = file.path(R_objects_directory, "07) Perform pairwise alignments with the reference sequence.RData")
      )
 
 

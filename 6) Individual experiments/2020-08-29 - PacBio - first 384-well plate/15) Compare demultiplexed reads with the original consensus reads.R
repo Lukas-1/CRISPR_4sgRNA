@@ -26,10 +26,12 @@ four_seq_output_directory <- file.path(file_output_directory, "4 sequences")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - consensus reads.RData"))
-load(file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs5.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs5.RData"))
 load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
 
 

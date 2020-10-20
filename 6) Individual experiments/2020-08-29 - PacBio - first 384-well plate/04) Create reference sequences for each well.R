@@ -34,8 +34,8 @@ reference_output_directory  <- file.path(file_output_directory, "Reference seque
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 
 
 
@@ -335,11 +335,11 @@ names(barcodes_to_wells_map) <- paste0(all_barcodes_df[[1]],
 save(list = c("guides_ref_list", "guides_with_promoters_list",
               "plasmid_string", "plasmids_vec"
               ),
-     file = file.path(R_objects_directory, "4) Create reference sequences for each well - raw sequences.RData")
+     file = file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData")
      )
 
 save(list = "plasmid_list",
-     file = file.path(R_objects_directory, "4) Create reference sequences for each well - annotated plasmid.RData")
+     file = file.path(R_objects_directory, "04) Create reference sequences for each well - annotated plasmid.RData")
      )
 
 

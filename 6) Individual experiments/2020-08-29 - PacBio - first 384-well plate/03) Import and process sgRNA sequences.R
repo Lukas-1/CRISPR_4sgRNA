@@ -71,7 +71,7 @@ sg_sequences_df <- data.frame(
 # Save data ---------------------------------------------------------------
 
 save(list = "sg_sequences_df",
-     file = file.path(R_objects_directory, "3) Import and process sgRNA sequences.RData")
+     file = file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData")
      )
 
 

@@ -24,7 +24,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "1) Process and export barcodes.RData"))
+load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 
 
 

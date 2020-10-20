@@ -169,7 +169,7 @@ save(list = c("barcode_combos_df",
               "column_bc_vec", "row_bc_vec",
               "barcodes_to_wells_map"
               ),
-     file = file.path(R_objects_directory, "1) Process and export barcodes.RData")
+     file = file.path(R_objects_directory, "01) Process and export barcodes.RData")
      )
 
 

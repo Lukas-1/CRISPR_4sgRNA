@@ -161,31 +161,31 @@ ccs3_combos <- paste0("sl", c(7, 9), "_ccs3_")
 ccs5_combos <- paste0("sl", c(7, 9), "_ccs5_")
 
 save(list = paste0(ccs3_combos, "ccs"),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs3.RData")
+     file = file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData")
      )
 
 save(list = c(paste0(ccs3_combos, "lima"),
               paste0(ccs3_combos, "report_df")
               ),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs3.RData")
+     file = file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData")
      )
 
 
 
 save(list = c("sl7_ccs5_lima_zmws",  "sl9_ccs5_lima_zmws"),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - ccs5 ZMWs.RData")
+     file = file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData")
      )
 
 
 
 save(list = paste0(ccs5_combos, "ccs"),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - consensus reads - ccs5.RData")
+     file = file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs5.RData")
      )
 
 save(list = c(paste0(ccs5_combos, "lima"),
               paste0(ccs5_combos, "report_df")
               ),
-     file = file.path(R_objects_directory, "5) Read in PacBio data - demultiplexed - ccs5.RData")
+     file = file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs5.RData")
      )
 
 
