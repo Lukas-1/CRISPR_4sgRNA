@@ -70,7 +70,7 @@ sl7_ccs5_analysis_list <- AnalyzeWells(sl7_ccs5_lima, sl7_ccs5_report_df, sl7_ba
 
 # Create the summary data frames ------------------------------------------
 
-sl7_ccs3_df_list <- SummarizeWells(sl7_ccs5_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
+sl7_ccs5_df_list <- SummarizeWells(sl7_ccs5_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
 
 # sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
 # sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
