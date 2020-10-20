@@ -146,6 +146,25 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
     contains_mat[are_this_well, "Ends_with_column_barcode"]   <- grepl(paste0(column_bc, "$"), barcodes_df[["Column_barcode"]][are_this_well])
   }
 
+  unexpected_col_bc <- (contains_mat[, "Starts_with_column_barcode"] |
+                        contains_mat[, "Contains_column_barcode"]) &
+                       !(contains_mat[, "Ends_with_column_barcode"])
+
+  unexpected_row_bc <- (contains_mat[, "Ends_with_row_barcode"] |
+                        contains_mat[, "Contains_row_barcode"]) &
+                       !(contains_mat[, "Starts_with_row_barcode"])
+
+  if (any(unexpected_col_bc)) {
+    stop("Unexpected column barcode!")
+  }
+  if (any(unexpected_row_bc)) {
+    stop("Unexpected row barcode!")
+  }
+  redundant_columns <- c("Starts_with_column_barcode", "Ends_with_row_barcode",
+                         "Contains_column_barcode", "Contains_row_barcode"
+                         )
+  contains_mat <- contains_mat[, !(colnames(contains_mat) %in% redundant_columns)]
+
   mode(contains_mat) <- "integer"
 
   results_df <- data.frame(
@@ -161,4 +180,6 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
   )
   return(results_df)
 }
+
+
 
