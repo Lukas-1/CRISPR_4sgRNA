@@ -178,53 +178,6 @@ ProcessExtractedDf <- function(extracted_df) {
 
 
 
-#### DELETE THIS COMMENTED OUT CODE!!!
-# AmendAlignedSequences <- function(use_sl7 = TRUE) {
-#
-#   if (use_sl7) {
-#     alignments_list <- sl7_alignments_list
-#     extracted_list <- sl7_extracted_list
-#   } else {
-#     alignments_list <- sl9_alignments_list
-#     extracted_list <- sl9_extracted_list
-#   }
-#
-#   feature_names <- features_df[["Feature"]]
-#
-#   sequences_mat <- extracted_list[["extracted_sequences_mat"]]
-#   colnames(sequences_mat) <- paste0("Sequence_", feature_names)
-#
-#   are_the_same_mat <- extracted_list[["are_the_same_mat"]]
-#   colnames(are_the_same_mat) <- paste0("Are_correct_", feature_names)
-#
-#   are_mostly_lost_mat <- extracted_list[["are_mostly_lost_mat"]]
-#   colnames(are_mostly_lost_mat) <- paste0("Are_lost_", feature_names)
-#
-#   well_df_list <- lapply(seq_len(384), function(well_number) {
-#     message(paste0("Processing well #", well_number, "..."))
-#     results_df <- alignments_list[[well_number]][["meta_df"]][, c("ZMW", "Orientation_fwd")]
-#     results_df <- data.frame("Well_number" = well_number,
-#                              results_df,
-#                              stringsAsFactors = FALSE
-#                              )
-#     return(results_df)
-#   })
-#
-#   results_df <- data.frame(
-#     do.call(rbind.data.frame, c(well_df_list, stringsAsFactors = FALSE, make.row.names = FALSE)),
-#     sequences_mat,
-#     are_the_same_mat,
-#     are_mostly_lost_mat,
-#     stringsAsFactors = FALSE
-#   )
-#   return(results_df)
-# }
-#
-#
-
-
-
-
 
 
 # Define all important features, and generate per-well coordinates --------
