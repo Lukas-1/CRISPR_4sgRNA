@@ -26,14 +26,11 @@ sg_sequences_file      <- file.path(metadata_directory, "sgRNA reference.xlsx")
 
 
 
-
 # Read in data ------------------------------------------------------------
 
 gRNAs_excel_df <- as.data.frame(read_excel(sg_sequences_file),
                                 stringsAsFactors = FALSE, check.names = FALSE
                                 )
-
-
 
 
 

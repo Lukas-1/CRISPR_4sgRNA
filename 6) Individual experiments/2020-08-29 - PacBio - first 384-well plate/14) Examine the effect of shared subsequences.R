@@ -11,7 +11,7 @@ CRISPR_root_directory  <- "~/CRISPR"
 file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory  <- file.path(file_directory, "1) R functions")
 
-source(file.path(R_functions_directory, "1) Define titles and labels.R"))
+source(file.path(R_functions_directory, "01) Define titles and labels.R"))
 
 
 

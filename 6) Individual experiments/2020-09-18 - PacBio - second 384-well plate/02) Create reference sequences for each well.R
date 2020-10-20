@@ -12,7 +12,8 @@ CRISPR_root_directory <- "~/CRISPR"
 plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
-source(file.path(R_functions_directory, "3) Creating reference plasmid sequences.R"))
+source(file.path(R_functions_directory, "03) Creating reference plasmid sequences.R"))
+
 
 
 
@@ -81,7 +82,6 @@ PlasmidForRow <- function(row_index) {
 
 
 
-
 # Read in annotated plasmid sequences -------------------------------------
 
 plasmid_files <- list.files(annotated_plasmid_directory)
@@ -89,7 +89,6 @@ plasmid_files <- list.files(annotated_plasmid_directory)
 plasmid_list <- sapply(plasmid_files, function(x) {
   ReadInPlasmids(file.path(annotated_plasmid_directory, x))
 }, simplify = FALSE)
-
 
 
 
