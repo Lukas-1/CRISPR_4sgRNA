@@ -172,7 +172,7 @@ save(list = c(paste0(ccs3_combos, "lima"),
 
 
 
-save(list = c("sl7_ccs5_lima_zmws",  "sl9_ccs5_lima_zmws"),
+save(list = paste0(ccs5_combos, "lima_zmws"),
      file = file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData")
      )
 
