@@ -85,15 +85,36 @@ ContainSequences <- function(query_seq, target_seq) {
   are_fwd <- rowSums(contain_fwd_mat) > 0
   are_rev <- rowSums(contain_rev_mat) > 0
 
-  stopifnot(!(any(contain_fwd_mat == 2)))
-  stopifnot(!(any(contain_rev_mat == 2)))
 
-  contain_mat <- contain_fwd_mat + contain_rev_mat
+  num_duplicated_fwd <- sum(contain_fwd_mat > 1)
+  num_duplicated_rev <- sum(contain_rev_mat > 1)
+
+  sent_message <- FALSE
+
+  if (num_duplicated_fwd != 0) {
+    message(paste0("The same sequence was found more than once for ",
+                   num_duplicated_fwd, " read",
+                   if (num_duplicated_fwd == 1) "" else "",
+                   " in the forward direction!"
+                   ))
+    sent_message <- TRUE
+  }
+  if (num_duplicated_rev != 0) {
+    message(paste0("The same sequence was found more than once for ",
+                   num_duplicated_rev, " read",
+                   if (num_duplicated_rev == 1) "" else "s",
+                   " in the reverse direction!"
+                   ))
+    sent_message <- TRUE
+  }
+  # stopifnot(!(any(contain_fwd_mat == 2)))
+  # stopifnot(!(any(contain_rev_mat == 2)))
+
+  contain_mat <- (contain_fwd_mat > 0) + (contain_rev_mat > 0)
 
   same_guide_twice_mat <- contain_mat > 1
   have_duplication <- rowSums(same_guide_twice_mat) > 0
 
-  sent_message <- FALSE
   if (any(have_duplication)) {
     message(paste0("For ", sum(same_guide_twice_mat), " out of 4 * ",
                    num_targets, " searches, the same query matched in both the",
@@ -146,18 +167,20 @@ ContainSequences <- function(query_seq, target_seq) {
 
 
 
-StatsForWell <- function(well_number, reads_list, bam_wells_vec) {
+StatsForWell <- function(well_number, reads_list, bam_wells_vec, wells_vec = seq_len(384)) {
+
+  well_index <- which(wells_vec == well_number)
 
   are_this_well <- bam_wells_vec %in% well_number
   num_reads <- sum(are_this_well)
   well_sequences <- reads_list[["seq"]][are_this_well, ]
 
-  sg_sequences <- vapply(1:4, function(x) guides_ref_list[[x]][[well_number]], "")
-  sg_with_promoter_seq <- vapply(1:4, function(x) guides_with_promoters_list[[x]][[well_number]], "")
+  sg_sequences <- vapply(1:4, function(x) guides_ref_list[[x]][[well_index]], "")
+  sg_with_promoter_seq <- vapply(1:4, function(x) guides_with_promoters_list[[x]][[well_index]], "")
 
   contain_sg_cr_mat   <- ContainSequences(sg_sequences, well_sequences)
   contain_sg_prom_mat <- ContainSequences(sg_with_promoter_seq, well_sequences)
-  contain_plasmid_mat <- ContainSequences(plasmids_vec[[well_number]], well_sequences)
+  contain_plasmid_mat <- ContainSequences(plasmids_vec[[well_index]], well_sequences)
 
   colnames(contain_sg_cr_mat)[1:4] <- paste0("sg", 1:4, "_cr", 1:4)
   colnames(contain_sg_cr_mat)[colnames(contain_sg_cr_mat) == "at_least_4"] <- "all_4"
@@ -288,7 +311,7 @@ GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec 
 
   ## If the sequence of two wells is exactly the same,
   ## perhaps it shouldn't count as a contamination...
-  same_seq_list <- lapply(wells_vec,
+  same_seq_list <- lapply(seq_along(wells_vec),
                           function(x) which(query_seq %in% vapply(guides_ref_list, function(y) y[[x]], ""))
                           )
   are_this_well_list <- lapply(same_seq_list,
@@ -296,7 +319,7 @@ GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec 
                                )
 
   contamination_mat <- all_counts_mat
-  for (i in wells_vec) {
+  for (i in seq_along(wells_vec)) {
     contamination_mat[i, are_this_well_list[[i]]] <- 0L
   }
   return(contamination_mat)
@@ -311,6 +334,9 @@ CreateSummaryDf <- function(reads_df,
                             close_well_range = 3L,
                             wells_vec = seq_len(384)
                             ) {
+
+  assign("delete_reads_df", reads_df, envir = globalenv())
+  assign("delete_wells_vec", wells_vec, envir = globalenv())
 
   if (filter_reads) {
     reads_df <- reads_df[reads_df[["Passes_filters"]] == 1, ]
@@ -367,7 +393,7 @@ CreateSummaryDf <- function(reads_df,
                                 integer(1)
                                 ) - 1L
 
-  num_expected_close_wells <- plate_num_close_vec * (num_contaminants / (length(wells_vec) - 1))
+  num_expected_close_wells <- plate_num_close_vec[wells_vec] * (num_contaminants / (length(wells_vec) - 1))
 
   per_well_distances_vec <- tapply(reads_df[["Mean_distance"]],
                                    wells_fac,
@@ -427,7 +453,7 @@ CreateSummaryDf <- function(reads_df,
     "Num_from_close_wells"   = num_close_contaminants_rand,
     "Expected_close_wells"   = num_expected_close_wells,
     "Mean_distance"          = per_well_distances_vec,
-    "Expected_distance"      = expected_distances_vec,
+    "Expected_distance"      = expected_distances_vec[wells_vec],
     "Distance_p_value"       = p_val_vec,
     stringsAsFactors         = FALSE,
     row.names                = NULL
@@ -438,6 +464,10 @@ CreateSummaryDf <- function(reads_df,
 
 
 CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec = seq_len(384)) {
+
+  assign("delete_contamin_mat_list", contamin_mat_list, envir = globalenv())
+  assign("delete_well_numbers_vec", well_numbers_vec, envir = globalenv())
+  assign("delete_wells_vec", wells_vec, envir = globalenv())
 
   all_comb_mat <- t(combn(wells_vec, 2))
   colnames(all_comb_mat) <- paste0("well", 1:2, "_ID")
@@ -453,11 +483,14 @@ CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec 
 
   cross_contam_mat <- do.call(cbind, lapply(1:4, function(sg_number) {
     use_mat <- counts_wells_mat_list[[sg_number]]
-    sub_mat <- t(mapply(function(x, y) c(use_mat[x, y], use_mat[y, x]),
-                        all_comb_mat[, 1],
-                        all_comb_mat[, 2]
-                        )
-                 )
+    sub_mat <- t(mapply(function(x, y) {
+      x_index <- wells_vec == x
+      y_index <- wells_vec == y
+      c(use_mat[x_index, y_index], use_mat[x_index, y_index])
+    },
+    all_comb_mat[, 1],
+    all_comb_mat[, 2]
+    ))
     colnames(sub_mat) <- c(paste0("w2_sg", sg_number, "_in_well1"),
                            paste0("w1_sg", sg_number, "_in_well2")
                            )
@@ -585,7 +618,8 @@ AnalyzeWells <- function(reads_list,
   well_stats_mat_list <- lapply(wells_vec,
                                 function(x) StatsForWell(x,
                                                          reads_list,
-                                                         reads_report_df[["Well_number"]]
+                                                         reads_report_df[["Well_number"]],
+                                                         wells_vec = wells_vec
                                                          )
                                 )
 
@@ -595,6 +629,7 @@ AnalyzeWells <- function(reads_list,
 
   ZMW_mat <- do.call(rbind, well_stats_mat_list)
 
+
   report_for_wells_df <- do.call(rbind.data.frame,
                                  c(split(reads_report_df, reads_report_df[["Well_number"]]),
                                    list(stringsAsFactors = FALSE,
@@ -602,14 +637,14 @@ AnalyzeWells <- function(reads_list,
                                         )
                                  ))
 
+  are_real_wells <- report_for_wells_df[["Well_number"]] %in% wells_vec
+
   individual_ZMWs_df <- data.frame(
-    report_for_wells_df,
+    report_for_wells_df[are_real_wells, ],
     ZMW_mat,
     stringsAsFactors = FALSE,
     row.names = NULL
   )
-
-
 
   stopifnot(identical(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]]))
 
@@ -630,11 +665,11 @@ AnalyzeWells <- function(reads_list,
   )
 
   individual_ZMWs_df <- data.frame(individual_ZMWs_df,
-                                   barcodes_df,
+                                   barcodes_df[are_real_wells, ],
                                    stringsAsFactors = FALSE
                                    )[, all_columns]
 
-
+  contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
 
   results_list <- list(
     "individual_reads_df" = individual_ZMWs_df,
