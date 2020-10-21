@@ -16,6 +16,11 @@ GetBarcodes <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
 
   barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
 
+  row_constant_fwd    <- as.character(reverseComplement(DNAString(row_constant_region)))
+  column_constant_fwd <- column_constant_region
+  row_constant_rev    <- row_constant_region
+  column_constant_rev <- as.character(reverseComplement(DNAString(column_constant_region)))
+
   if (use_sl7) {
     ccs_list <- sl7_ccs3_ccs
     lima_list <- sl7_ccs3_lima
@@ -96,16 +101,31 @@ GetBarcodes <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
         row_quality <- reverse(first_bc_qual)
       }
 
-      match_template <- (row_barcode == row_template) && (column_barcode == column_template)
+      column_search_regex_fwd <- paste0("^", first_bc_seq, column_constant_fwd)
+      row_search_regex_fwd <- paste0(row_constant_fwd, second_bc_seq, "$")
+      match_flank_column_fwd <- grepl(column_search_regex_fwd, ccs_seq[[x]])
+      match_flank_row_fwd <- grepl(row_search_regex_fwd, ccs_seq[[x]])
+
+      column_search_regex_rev <- paste0(column_constant_rev, second_bc_seq, "$")
+      row_search_regex_rev <- paste0("^", first_bc_seq, row_constant_rev)
+      match_flank_column_rev <- grepl(column_search_regex_rev, ccs_seq[[x]])
+      match_flank_row_rev <- grepl(row_search_regex_rev, ccs_seq[[x]])
+
+      ## Use an unbiased approach to identify flanking sequences, that does not rely on the sequence alignment
+      match_flanking_row <- match_flank_row_fwd || match_flank_row_rev
+      match_flanking_column <- match_flank_column_fwd || match_flank_column_rev
 
       result_list <- list(
-        "ZMW"            = this_well_zmws[[x]],
-        "Match_template" = match_template,
-        "Is_forward"     = are_forward_vec[[x]],
-        "Row_barcode"    = row_barcode,
-        "Row_quality"    = row_quality,
-        "Column_barcode" = column_barcode,
-        "Column_quality" = column_quality
+        "ZMW"                   = this_well_zmws[[x]],
+        "Match_template_row"    = row_barcode == row_template,
+        "Match_template_column" = column_barcode == column_template,
+        "Match_flanking_row"    = match_flanking_row,
+        "Match_flanking_column" = match_flanking_column,
+        "Is_forward"            = are_forward_vec[[x]],
+        "Row_barcode"           = row_barcode,
+        "Row_quality"           = row_quality,
+        "Column_barcode"        = column_barcode,
+        "Column_quality"        = column_quality
       )
       return(result_list)
     })
@@ -126,12 +146,12 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
 
   contains_mat <- matrix(nrow = nrow(barcodes_df), ncol = 6)
   colnames(contains_mat) <- c("Contains_row_barcode",
-                             "Starts_with_row_barcode",
-                             "Ends_with_row_barcode",
-                             "Contains_column_barcode",
-                             "Starts_with_column_barcode",
-                             "Ends_with_column_barcode"
-                             )
+                              "Starts_with_row_barcode",
+                              "Ends_with_row_barcode",
+                              "Contains_column_barcode",
+                              "Starts_with_column_barcode",
+                              "Ends_with_column_barcode"
+                              )
   for (i in wells_vec) {
 
     are_this_well <- barcodes_df[["Well"]] %in% i
@@ -169,13 +189,18 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
 
   results_df <- data.frame(
     barcodes_df[, c("Well", "ZMW")],
-    "Correct_barcodes"    = as.integer(barcodes_df[["Match_template"]]),
-    "Row_bc_length"       = nchar(barcodes_df[["Row_barcode"]]),
-    "Column_bc_length"    = nchar(barcodes_df[["Column_barcode"]]),
-    "Row_mean_quality"    = GetMeanQuality(barcodes_df[["Row_quality"]]),
-    "Column_mean_quality" = GetMeanQuality(barcodes_df[["Column_quality"]]),
+    "Correct_barcodes"     = as.integer(barcodes_df[["Match_template_row"]] & barcodes_df[["Match_template_column"]]),
+    "Correct_row"          = as.integer(barcodes_df[["Match_template_row"]]),
+    "Correct_column"       = as.integer(barcodes_df[["Match_template_column"]]),
+    "Correct_flanks"       = as.integer(barcodes_df[["Match_flanking_row"]] & barcodes_df[["Match_flanking_column"]]),
+    "Correct_flank_row"    = as.integer(barcodes_df[["Match_flanking_row"]]),
+    "Correct_flank_column" = as.integer(barcodes_df[["Match_flanking_column"]]),
+    "Row_bc_length"        = nchar(barcodes_df[["Row_barcode"]]),
+    "Column_bc_length"     = nchar(barcodes_df[["Column_barcode"]]),
+    "Row_mean_quality"     = GetMeanQuality(barcodes_df[["Row_quality"]]),
+    "Column_mean_quality"  = GetMeanQuality(barcodes_df[["Column_quality"]]),
     barcodes_df[, c("Row_barcode", "Column_barcode", "Row_quality", "Column_quality")],
-    "Orientation_fwd"     = as.integer(barcodes_df[["Is_forward"]]),
+    "Orientation_fwd"      = as.integer(barcodes_df[["Is_forward"]]),
     contains_mat
   )
   return(results_df)
