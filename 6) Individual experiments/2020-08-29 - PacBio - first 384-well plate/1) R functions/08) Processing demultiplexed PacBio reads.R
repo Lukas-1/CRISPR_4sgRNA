@@ -521,8 +521,9 @@ AnalyzeWells <- function(reads_list,
                          barcodes_df,
                          counts_df         = NULL,
                          counts_384_df     = NULL,
-                         bc_min_comb_score = 80,
-                         bc_min_score_lead = 40,
+                         bc_min_comb_score = 60,
+                         bc_min_score_lead = 30,
+                         bc_length_cutoff  = 8L,
                          min_mean_quality  = 85,
                          wells_vec         = seq_len(384)
                          ) {
@@ -531,14 +532,6 @@ AnalyzeWells <- function(reads_list,
 
   reads_report_df <- MakeDfForReads(reads_list, report_df)
   reads_report_df[["Mean_quality"]] <- GetMeanQuality(reads_list[["qual"]])
-
-  pass_bc <- (reads_report_df[["BC_combined_score"]] >= bc_min_comb_score) &
-             (reads_report_df[["BC_score_lead"]] >= bc_min_score_lead)
-  pass_rq <- reads_report_df[["Mean_quality"]] >= min_mean_quality
-  pass_filters <- pass_bc & pass_rq
-  reads_report_df[["Passes_filters"]]         <- as.integer(pass_filters)
-  reads_report_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
-  reads_report_df[["Passes_read_filters"]]    <- as.integer(pass_rq)
 
 
   ## Add data on contaminations / wrong barcodes
@@ -650,6 +643,39 @@ AnalyzeWells <- function(reads_list,
 
   barcodes_df <- barcodes_df[, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
 
+  # assign("delete_df", data.frame(individual_ZMWs_df,
+  #                                  barcodes_df[are_real_wells, ],
+  #                                  stringsAsFactors = FALSE
+  #                                  ),
+  #        envir = globalenv())
+
+  individual_ZMWs_df <- data.frame(individual_ZMWs_df,
+                                   barcodes_df,
+                                   stringsAsFactors = FALSE
+                                   )
+
+
+
+  have_correct_row <- individual_ZMWs_df[["Starts_with_row_barcode"]] |
+                      ((individual_ZMWs_df[["Row_bc_length"]] >= bc_length_cutoff) &
+                        individual_ZMWs_df[["Correct_row_flank"]])
+
+  have_correct_column <- individual_ZMWs_df[["Ends_with_column_barcode"]] |
+                         ((individual_ZMWs_df[["Column_bc_length"]] >= bc_length_cutoff) &
+                           individual_ZMWs_df[["Correct_column_flank"]])
+
+
+  pass_bc <- have_correct_row & have_correct_column &
+             (individual_ZMWs_df[["BC_combined_score"]] >= bc_min_comb_score) &
+             (individual_ZMWs_df[["BC_score_lead"]] >= bc_min_score_lead)
+
+  pass_rq <- individual_ZMWs_df[["Mean_quality"]] >= min_mean_quality
+  pass_filters <- pass_bc & pass_rq
+  individual_ZMWs_df[["Passes_filters"]]         <- as.integer(pass_filters)
+  individual_ZMWs_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
+  individual_ZMWs_df[["Passes_read_filters"]]    <- as.integer(pass_rq)
+
+
   all_columns <- c(
     "ZMW", "Well_number", "Length",
 
@@ -671,17 +697,8 @@ AnalyzeWells <- function(reads_list,
     "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
     "Orientation_fwd"
   )
+  individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
 
-  # assign("delete_df", data.frame(individual_ZMWs_df,
-  #                                  barcodes_df[are_real_wells, ],
-  #                                  stringsAsFactors = FALSE
-  #                                  ),
-  #        envir = globalenv())
-
-  individual_ZMWs_df <- data.frame(individual_ZMWs_df,
-                                   barcodes_df,
-                                   stringsAsFactors = FALSE
-                                   )[, all_columns]
 
   contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
 
