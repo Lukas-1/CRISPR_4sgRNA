@@ -13,6 +13,7 @@ source(file.path(R_functions_directory, "06) Extracting barcodes.R"))
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 R_objects_directory <- file.path(file_directory, "3) R objects")
