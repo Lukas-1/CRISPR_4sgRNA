@@ -5,9 +5,9 @@
 # Import packages and source code -----------------------------------------
 
 
-CRISPR_root_directory  <- "~/CRISPR"
-file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
-R_functions_directory  <- file.path(file_directory, "1) R functions")
+CRISPR_root_directory <- "~/CRISPR"
+file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory <- file.path(file_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "01) Define titles and labels.R"))
 source(file.path(R_functions_directory, "10) Examining the effect of shared subsequences.R"))
@@ -17,10 +17,8 @@ source(file.path(R_functions_directory, "10) Examining the effect of shared subs
 
 # Define folder paths -----------------------------------------------------
 
-file_input_directory   <- file.path(file_directory, "2) Input")
 file_output_directory  <- file.path(file_directory, "5) Output")
 R_objects_directory    <- file.path(file_directory, "3) R objects")
-
 plots_output_directory <- file.path(file_output_directory, "Figures")
 
 
