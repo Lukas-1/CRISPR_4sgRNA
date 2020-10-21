@@ -22,6 +22,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(R_objects_directory, "08) Extract barcode sequences and quality scores.RData"))
 load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
 
 
@@ -29,16 +30,52 @@ load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RDat
 
 
 
+# Analyze just the barcodes data frame ------------------------------------
+
+barcodes_df <- sl7_barcodes_df
+
+table(sl7_barcodes_df[["Starts_with_column_barcode"]] &
+      !(sl7_barcodes_df[["Ends_with_column_barcode"]])
+      )
+table(sl7_barcodes_df[["Ends_with_column_barcode"]] &
+      !(sl7_barcodes_df[["Starts_with_column_barcode"]])
+      )
+table(sl7_barcodes_df[["Starts_with_row_barcode"]] &
+      !(sl7_barcodes_df[["Ends_with_row_barcode"]])
+      )
+table(sl7_barcodes_df[["Ends_with_row_barcode"]] &
+      !(sl7_barcodes_df[["Starts_with_row_barcode"]])
+      )
+
+table(sl7_barcodes_df[["Contains_column_barcode"]] &
+      !(sl7_barcodes_df[["Ends_with_column_barcode"]])
+      )
+table(sl7_barcodes_df[["Contains_row_barcode"]] &
+      !(sl7_barcodes_df[["Starts_with_row_barcode"]])
+      )
+
+
+
+# Define the "individual reads" data frame to be used ---------------------
+
+use_df <- sl7_ccs5_df_list[["individual_reads_df"]]
+use_df <- use_df[order(use_df[["Well_number"]]), ]
+row.names(use_df) <- NULL
+
+
+
+
 
 # Check various cutoffs ---------------------------------------------------
 
-use_df <- sl7_ccs3_df_list[["individual_reads_df"]]
 
 combined_score_cutoff <- 80
 score_lead_cutoff <- 40
 
 mean_quality_cutoff <- 85
 
+
+table(use_df[["BC_combined_score"]] < 100, useNA = "ifany")
 
 table(use_df[["BC_combined_score"]] < 80, useNA = "ifany")
 table(use_df[["BC_score_lead"]] < 40, useNA = "ifany")
@@ -55,25 +92,23 @@ are_poor_quality <- use_df[["Mean_quality"]] < mean_quality_cutoff
 
 
 
-# Try something -----------------------------------------------------------
+# Analyze short barcodes --------------------------------------------------
 
-ccs3_df <- sl7_ccs3_df_list[["individual_reads_df"]]
-ccs5_df <- sl7_ccs5_df_list[["individual_reads_df"]]
+table(use_df[["Row_bc_length"]])
+table(use_df[["Column_bc_length"]])
 
-matches_vec <- match(ccs5_df[["ZMW"]], ccs3_df[["ZMW"]])
+short_barcode_cutoff <- 7
 
-replica_ccs5_df <- ccs3_df[matches_vec, ]
-row.names(replica_ccs5_df) <- NULL
+are_short_bc <- (use_df[["Row_bc_length"]] <= short_barcode_cutoff) |
+                (use_df[["Column_bc_length"]] <= short_barcode_cutoff)
 
-identical(replica_ccs5_df[, names(replica_ccs5_df) != "Random_distance"], ccs5_df[, names(replica_ccs5_df) != "Random_distance"])
 
-are_identical <- vapply(seq_len(nrow(replica_ccs5_df)),
-                        function(x) identical(replica_ccs5_df[x, ], ccs5_df[x, ]),
-                        logical(1)
-                        )
+table(use_df[["BC_combined_score"]][are_short_bc])
 
-replica_ccs5_df[!(are_identical), ]
 
+use_df[are_short_bc & !(are_poor_barcodes), ]
+
+goo
 
 
 
