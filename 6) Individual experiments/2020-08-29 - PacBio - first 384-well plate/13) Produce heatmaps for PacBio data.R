@@ -93,10 +93,10 @@ for (smrtlink_version in c(7, 9)) {
           height   = use_height,
           width    = use_width,
           units    = "in"
-      )
+          )
       DrawAccuracyHeatmap(summary_df, main_title = main_title,
                           reorder_wells = reorder_wells
-      )
+                          )
       dev.off()
     }
 
