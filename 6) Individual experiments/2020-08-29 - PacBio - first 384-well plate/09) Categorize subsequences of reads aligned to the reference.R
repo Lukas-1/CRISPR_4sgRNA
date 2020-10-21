@@ -66,8 +66,6 @@ features_templates_list <- lapply(seq_len(384), function(x) {
 
 
 
-
-
 # Extract sequences -------------------------------------------------------
 
 sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE)
