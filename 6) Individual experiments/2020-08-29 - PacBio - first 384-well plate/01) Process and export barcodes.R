@@ -41,8 +41,8 @@ TidyBarcodes <- function(barcodes_vec) {
 are_row_barcodes    <- grepl("2PF_", barcodes_df[[1]], fixed = TRUE)
 are_column_barcodes <- grepl("2PR_", barcodes_df[[1]], fixed = TRUE)
 
-original_row_barcodes    <- TidyBarcodes(barcodes_df[[2]][are_row_barcodes])
-original_column_barcodes <- TidyBarcodes(barcodes_df[[2]][are_column_barcodes])
+original_row_barcodes    <- barcodes_df[[2]][are_row_barcodes]
+original_column_barcodes <- barcodes_df[[2]][are_column_barcodes]
 
 row_constant_region <- unique(substr(original_row_barcodes, 11, nchar(original_row_barcodes)))
 column_constant_region <- unique(substr(original_column_barcodes, 11, nchar(original_column_barcodes)))
