@@ -19,18 +19,22 @@ features_list <- list(
 
   "promoter1_hU6"  = c(177, 426),
   "sg1"            = c(427, 446),
+  "sg1_cr1"        = c(427, 532),
   "tracrRNA1"      = c(447, 532),
 
   "promoter2_mU6"  = c(850, 1165),
   "sg2"            = c(1166, 1185),
+  "sg2_cr2"        = c(1166, 1273),
   "tracrRNA2"      = c(1186, 1273),
 
   "promoter3_hH1"  = c(1281, 1504),
   "sg3"            = c(1505, 1524),
+  "sg3_cr3"        = c(1505, 1612),
   "tracrRNA3"      = c(1525, 1612),
 
   "promoter4_h7SK" = c(1620, 1863),
   "sg4"            = c(1864, 1883),
+  "sg4_cr4"        = c(1864, 1969),
   "tracrRNA4"      = c(1884, 1969),
 
   "row_primer"     = c(2216, 2235),
