@@ -44,10 +44,14 @@ PlotBySharedSubsequence <- function(summary_df, show_column) {
     summary_df[["Count_mean_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
   }
 
-  are_empty <- sg_sequences_df[["Empty_well"]]
+  if ("Empty_well" %in% names(sg_sequences_df)) {
+    are_to_include <- !(sg_sequences_df[["Empty_well"]])
+  } else {
+    are_to_include <- rep(TRUE, nrow(sg_sequences_df))
+  }
 
-  shared_bp_vec <- sg_sequences_df[["Longest_subsequence"]][!(are_empty)]
-  numeric_vec <- summary_df[[show_column]][!(are_empty)]
+  shared_bp_vec <- sg_sequences_df[["Longest_subsequence"]][are_to_include]
+  numeric_vec <- summary_df[[show_column]][are_to_include]
 
   light_color <- brewer.pal(9, "Blues")[[2]]
   dark_color <- brewer.pal(9, "Blues")[[7]]
@@ -56,7 +60,7 @@ PlotBySharedSubsequence <- function(summary_df, show_column) {
   is_percentage <- grepl("^(Count|Num)_", show_column)
 
   if (is_percentage) {
-    numeric_vec <- numeric_vec / summary_df[["Count_total"]][!(are_empty)]
+    numeric_vec <- numeric_vec / summary_df[["Count_total"]][are_to_include]
     y_limits <- c(0, 1)
   } else {
     numeric_vec <- numeric_vec
