@@ -652,9 +652,17 @@ AnalyzeWells <- function(reads_list,
 
   all_columns <- c(
     "ZMW", "Well_number", "Length",
-    "Correct_barcodes", "Row_bc_length", "Column_bc_length",
+
+    "Correct_barcodes", "Correct_row", "Correct_column",
+    "Correct_flanks", "Correct_row_flank", "Correct_column_flank",
+
+    "Starts_with_row_barcode", "Ends_with_column_barcode",
+
+    "Row_bc_length", "Column_bc_length",
+
     "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
     "Row_quality", "Column_quality",
+
     "BC_combined_score", "BC_score_lead", "Mean_quality",
     "Passes_filters", "Passes_barcode_filters", "Passes_read_filters",
     "Contam_guides", "Contam_genes", "Contam_well",
@@ -664,8 +672,14 @@ AnalyzeWells <- function(reads_list,
     "Orientation_fwd"
   )
 
+  # assign("delete_df", data.frame(individual_ZMWs_df,
+  #                                  barcodes_df[are_real_wells, ],
+  #                                  stringsAsFactors = FALSE
+  #                                  ),
+  #        envir = globalenv())
+
   individual_ZMWs_df <- data.frame(individual_ZMWs_df,
-                                   barcodes_df[are_real_wells, ],
+                                   barcodes_df,
                                    stringsAsFactors = FALSE
                                    )[, all_columns]
 
