@@ -30,32 +30,6 @@ load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RDat
 
 
 
-# Analyze just the barcodes data frame ------------------------------------
-
-barcodes_df <- sl7_barcodes_df
-
-table(sl7_barcodes_df[["Starts_with_column_barcode"]] &
-      !(sl7_barcodes_df[["Ends_with_column_barcode"]])
-      )
-table(sl7_barcodes_df[["Ends_with_column_barcode"]] &
-      !(sl7_barcodes_df[["Starts_with_column_barcode"]])
-      )
-table(sl7_barcodes_df[["Starts_with_row_barcode"]] &
-      !(sl7_barcodes_df[["Ends_with_row_barcode"]])
-      )
-table(sl7_barcodes_df[["Ends_with_row_barcode"]] &
-      !(sl7_barcodes_df[["Starts_with_row_barcode"]])
-      )
-
-table(sl7_barcodes_df[["Contains_column_barcode"]] &
-      !(sl7_barcodes_df[["Ends_with_column_barcode"]])
-      )
-table(sl7_barcodes_df[["Contains_row_barcode"]] &
-      !(sl7_barcodes_df[["Starts_with_row_barcode"]])
-      )
-
-
-
 # Define the "individual reads" data frame to be used ---------------------
 
 use_df <- sl7_ccs5_df_list[["individual_reads_df"]]
