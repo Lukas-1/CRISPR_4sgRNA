@@ -32,7 +32,6 @@ load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RDat
 
 
 
-
 # Define plot titles ------------------------------------------------------
 
 ccs3_title <- expression(plain({"Long-read sequencing of plasmids" *

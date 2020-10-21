@@ -38,8 +38,6 @@ load(file.path(p2_R_objects_directory, "05) Perform pairwise alignments with the
 
 
 
-
-
 # Define all important features, and generate per-well coordinates --------
 
 features_mat <- do.call(rbind, features_list)
