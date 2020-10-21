@@ -59,6 +59,11 @@ names(wells_map) <- paste0(wells_df[[1]], wells_df[[2]])
 # Process guides ----------------------------------------------------------
 
 is_empty_row <- apply(gRNAs_excel_df, 1, function(x) all(is.na(x)))
+
+block_vec <- rep(1L, nrow(gRNAs_excel_df))
+block_vec[seq_along(block_vec) > which(is_empty_row)] <- 2L
+
+block_vec <- block_vec[!(is_empty_row)]
 gRNAs_excel_df <- gRNAs_excel_df[!(is_empty_row), ]
 
 plasmid_names_splits <- strsplit(gRNAs_excel_df[["Plasmid ID"]], " ", fixed = TRUE)
@@ -85,10 +90,12 @@ colnames(guide_seq_mat) <- paste0("Sequence_sg", 1:4)
 
 sg_sequences_df <- data.frame(
   "Well_number"         = wells_map[gRNAs_excel_df[["Wells"]]],
+  "Well_code"           = gRNAs_excel_df[["Wells"]],
   "Target_gene"         = plasmid_names,
   "Modality"            = modalities_map[raw_modalities],
   guide_seq_mat,
   "Longest_subsequence" = apply(guide_seq_mat, 1, LongestSharedSubsequence),
+  "Block"               = block_vec,
   stringsAsFactors      = FALSE,
   row.names             = NULL
 )
