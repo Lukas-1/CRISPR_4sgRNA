@@ -372,6 +372,16 @@ CreateSummaryDf <- function(reads_df,
   colnames(summary_perc_mat) <- paste0("Perc_", colnames(summary_perc_mat))
 
 
+  ## Process alteration categories ##
+
+  alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
+  alteration_counts_mat <- do.call(rbind,
+                                   tapply(seq_len(nrow(reads_df)),
+                                          wells_fac,
+                                          function(x) colSums(alterations_mat[x, ])
+                                          )
+                                   )
+
   ## Process contaminations / wrong barcodes
 
   are_contaminated <- reads_df[["Contam_guides"]] >= 1
@@ -455,6 +465,7 @@ CreateSummaryDf <- function(reads_df,
     "Mean_distance"          = per_well_distances_vec,
     "Expected_distance"      = expected_distances_vec[wells_vec],
     "Distance_p_value"       = p_val_vec,
+    alteration_counts_mat,
     stringsAsFactors         = FALSE,
     row.names                = NULL
   )
@@ -516,9 +527,77 @@ CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec 
 
 
 
+
+CheckThatFactorIsInOrder <- function(my_factor) {
+  stopifnot(identical(length(unique(my_factor)),
+                      length(rle(as.integer(my_factor))[["lengths"]])
+                      )
+            )
+}
+
+
+
+AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
+
+  CheckThatFactorIsInOrder(extracted_df[["ZMW"]])
+  stopifnot(length(unique(table(extracted_df[["ZMW"]]))) == 1)
+  stopifnot(length(unique(table(extracted_df[["Feature"]]))) == 1)
+
+  if (!(is.null(use_ZMWs))) {
+    unique_zmws <- unique(extracted_df[["ZMW"]])
+    zmw_matches <- match(use_ZMWs, unique_zmws)
+    stopifnot(!(anyNA(zmw_matches)))
+  }
+
+  use_features <- c(paste0("sg", 1:4),
+                    paste0("sg", 1:4, "_cr", 1:4)
+                    )
+
+  categories_vec_list <- sapply(use_features, function(x) {
+    are_this_feature <- extracted_df[["Feature"]] == x
+    categories_sub_vec <- extracted_df[["Category"]][are_this_feature]
+    if (!(is.null(use_ZMWs))) {
+      categories_sub_vec <- categories_sub_vec[zmw_matches]
+    }
+    return(categories_sub_vec)
+  }, simplify = FALSE)
+
+  results_mat <- do.call(cbind, categories_vec_list)
+  colnames(results_mat) <- paste0(colnames(results_mat), "_category")
+  return(results_mat)
+}
+
+
+
+AlterationCategoriesToIntegerMat <- function(input_df) {
+
+  suffix_regex <- "_category$"
+  categories_columns <- grep(suffix_regex, colnames(input_df), value = TRUE)
+  all_features <- sub(suffix_regex, "", categories_columns)
+
+  all_categories <- c("Correct", "Mutation", "Deletion", "Contamination")
+
+  features_mat_list <- lapply(seq_along(all_features), function(x) {
+    categories_list <- lapply(all_categories, function(y) {
+      input_df[[categories_columns[[x]]]] == y
+    })
+    categories_mat <- do.call(cbind, categories_list)
+    colnames(categories_mat) <- paste0(all_categories, "_", all_features[[x]])
+    return(categories_mat)
+  })
+
+  features_mat <- do.call(cbind, features_mat_list)
+  mode(features_mat) <- "integer"
+  return(features_mat)
+}
+
+
+
+
 AnalyzeWells <- function(reads_list,
                          report_df,
                          barcodes_df,
+                         extracted_df,
                          counts_df         = NULL,
                          counts_384_df     = NULL,
                          bc_min_comb_score = 60,
@@ -671,10 +750,17 @@ AnalyzeWells <- function(reads_list,
 
   pass_rq <- individual_ZMWs_df[["Mean_quality"]] >= min_mean_quality
   pass_filters <- pass_bc & pass_rq
+
   individual_ZMWs_df[["Passes_filters"]]         <- as.integer(pass_filters)
   individual_ZMWs_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
   individual_ZMWs_df[["Passes_read_filters"]]    <- as.integer(pass_rq)
 
+  alterations_mat <- AddAlterationCategories(extracted_df, individual_ZMWs_df[["ZMW"]])
+  individual_ZMWs_df <- data.frame(
+    individual_ZMWs_df,
+    alterations_mat,
+    stringsAsFactors = FALSE
+  )
 
   all_columns <- c(
     "ZMW", "Well_number", "Length",
@@ -689,6 +775,9 @@ AnalyzeWells <- function(reads_list,
     "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
     "Row_quality", "Column_quality",
 
+    "sg1_category", "sg2_category", "sg3_category", "sg4_category",
+    "sg1_cr1_category", "sg2_cr2_category", "sg3_cr3_category", "sg4_cr4_category",
+
     "BC_combined_score", "BC_score_lead", "Mean_quality",
     "Passes_filters", "Passes_barcode_filters", "Passes_read_filters",
     "Contam_guides", "Contam_genes", "Contam_well",
@@ -697,6 +786,7 @@ AnalyzeWells <- function(reads_list,
     "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
     "Orientation_fwd"
   )
+  assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
   individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
 
 

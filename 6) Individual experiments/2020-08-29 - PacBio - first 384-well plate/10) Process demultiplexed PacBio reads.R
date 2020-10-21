@@ -36,6 +36,7 @@ load(file.path(R_objects_directory, "04) Create reference sequences for each wel
 load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData"))
 load(file.path(R_objects_directory, "08) Extract barcode sequences and quality scores.RData"))
+load(file.path(R_objects_directory, "09) Categorize subsequences of reads aligned to the reference.RData"))
 
 
 
@@ -82,11 +83,14 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs3_lima,
                                        sl7_ccs3_report_df,
                                        sl7_barcodes_df,
+                                       sl7_extracted_df,
                                        sl7_ccs3_counts_df,
                                        sl7_ccs3_384_counts_df
                                        )
 
-sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df, sl9_barcodes_df)
+sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df,
+                                       sl9_barcodes_df, sl9_extracted_df
+                                       )
 
 
 

@@ -36,6 +36,7 @@ load(file.path(p2_R_objects_directory, "02) Create reference sequences for each 
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "06) Extract barcode sequences and quality scores.RData"))
+load(file.path(p2_R_objects_directory, "07) Categorize subsequences of reads aligned to the reference.RData"))
 
 
 
@@ -53,7 +54,8 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Process the data on the level of individual reads -----------------------
 
-sl7_ccs5_analysis_list <- AnalyzeWells(sl7_ccs5_lima, sl7_ccs5_report_df, sl7_barcodes_df,
+sl7_ccs5_analysis_list <- AnalyzeWells(sl7_ccs5_lima, sl7_ccs5_report_df,
+                                       sl7_barcodes_df, sl7_extracted_df,
                                        wells_vec = sg_sequences_df[["Well_number"]]
                                        )
 
