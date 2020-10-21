@@ -190,16 +190,42 @@ Palify <- function(myhex, fraction_pale = 0.5) {
 
 
 
+AddVerticalWhiteSpace <- function(color_matrix, groups_vec, whitespace_color = "#FFFFFF00", divider_width = 2L) {
+  assign("delete_color_matrix", color_matrix, envir = globalenv())
+
+  if (ncol(color_matrix) != length(groups_vec)) {
+    stop("The number of columns of the color matrix must match the length of the group labels!")
+  }
+  num_groups <- length(unique(groups_vec))
+  whitespace_bar <- as.matrix(rep(whitespace_color, nrow(color_matrix)))
+  colnames(whitespace_bar) <- "divider"
+  whitespace_bar <- whitespace_bar[, rep(1, divider_width)]
+  indices_list <- lapply(unique(groups_vec), function(x) which(x == groups_vec))
+  assign("delete_groups_vecs", groups_vec, envir = globalenv())
+  assign("delete_color_matrix", color_matrix, envir = globalenv())
+  assign("delete_indices_list", indices_list, envir = globalenv())
+  assign("delete_whitespace_bar", whitespace_bar, envir = globalenv())
+  assign("delete_divider_width", divider_width, envir = globalenv())
+  matrices_list <- do.call(c, lapply(seq_len(num_groups - 1), function(x) list(color_matrix[, indices_list[[x]], drop = FALSE], whitespace_bar)))
+  matrices_list <- c(matrices_list, list(color_matrix[, indices_list[[num_groups]], drop = FALSE]))
+  assign("delete_matrices_list", matrices_list, envir = globalenv())
+  results_matrix <- do.call(cbind, matrices_list)
+  return(results_matrix)
+}
+
+
+
 
 DrawAccuracyHeatmap <- function(summary_df,
-                                main_title    = NULL,
-                                ColorFunction = colorRampPalette(rev(viridis::magma(100))), # colorRampPalette(brewer.pal(9, "YlGnBu")),
-                                reorder_wells = TRUE,
+                                main_title          = NULL,
+                                ColorFunction       = colorRampPalette(rev(viridis::magma(100))), # colorRampPalette(brewer.pal(9, "YlGnBu")),
+                                reorder_wells       = TRUE,
                                 show_zero_in_legend = FALSE,
-                                wells_vec     = seq_len(384)
+                                gap_weight          = 2L
                                 ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
+
 
   percent_columns <- paste0("Perc_sg", 1:4, "_cr", 1:4)
 
@@ -212,10 +238,16 @@ DrawAccuracyHeatmap <- function(summary_df,
                        mean_accuracies
                        )
   } else {
-    new_order <- seq_along(wells_vec)
+    new_order <- seq_len(nrow(summary_df))
   }
 
-  use_indices <- new_order[!(sg_sequences_df[["Empty_well"]])[new_order]]
+  if ("Empty_well" %in% names(sg_sequences_df)) {
+    are_to_include <- !(sg_sequences_df[["Empty_well"]])
+  } else {
+    are_to_include <- rep(TRUE, nrow(sg_sequences_df))
+  }
+
+  use_indices <- new_order[are_to_include[new_order]]
   summary_df <- summary_df[use_indices, ]
   rownames(summary_df) <- NULL
 
@@ -261,7 +293,7 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   ## Draw a vertical barplot
 
-  are_at_least_50 <-  summary_df[["Perc_all_4"]] >= 50
+  are_at_least_50 <- summary_df[["Perc_all_4"]] >= 50
   num_above_50 <- sum(are_at_least_50)
   over_50_fraction <- num_above_50 / num_wells
 
@@ -276,15 +308,6 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   # lighter_color <- "#ECEBE9"
   # darker_color <- toupper("#15396d")
-
-  rect(xleft   = 0,
-       xright  = 1,
-       ybottom = 0,
-       ytop    = 1,
-       col     = six_colors[[1]],
-       border  = NA
-       )
-
   # other_color <- "#6E1566"
   # other_color <- "#380030"
   # five_colors <- c(colorRampPalette(c(lighter_color, darker_color))(5)[2:5],
@@ -293,10 +316,37 @@ DrawAccuracyHeatmap <- function(summary_df,
   five_columns <- paste0("Perc_",
                          c(paste0("at_least_", 1:3), "all_4", "all_4_promoters")
                          )
+
+
+  add_gap <- (!(reorder_wells)) && ("Block" %in% names(sg_sequences_df))
+  if (add_gap) {
+    block_vec <- sg_sequences_df[["Block"]][are_to_include]
+    wells_seq <- rep(NA, num_wells)
+    current_index <- 0L
+    current_block <- block_vec[[1]]
+    for (i in seq_len(num_wells)) {
+      if (current_block != block_vec[[i]]) {
+        current_block <- block_vec[[i]]
+        current_index <- current_index + gap_weight
+      }
+      current_index <- current_index + 1L
+      wells_seq[[i]] <- current_index
+    }
+  } else {
+    wells_seq <- seq_len(num_wells)
+  }
+
   for (i in seq_len(num_wells)) {
+    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
+         xright  = (wells_seq[[i]] / max(wells_seq)),
+         ybottom = 0,
+         ytop    = 1,
+         col     = six_colors[[1]],
+         border  = NA
+         )
     for (j in seq_along(five_columns)) {
-      rect(xleft   = (i - 1) / num_wells,
-           xright  = (i / num_wells),
+      rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
+           xright  = (wells_seq[[i]] / max(wells_seq)),
            ybottom = 0,
            ytop    = summary_df[[five_columns[[j]]]][[i]] / 100,
            col     = six_colors[2:6][[j]],
@@ -304,7 +354,6 @@ DrawAccuracyHeatmap <- function(summary_df,
            )
     }
   }
-
 
 
   tick_locations <- axTicks(2)
@@ -373,8 +422,8 @@ DrawAccuracyHeatmap <- function(summary_df,
          )
   } else {
     for (i in seq_len(num_wells)) {
-      rect(xleft   = (i - 1) / num_wells,
-           xright  = (i / num_wells),
+      rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
+           xright  = (wells_seq[[i]] / max(wells_seq)),
            ybottom = 0,
            ytop    = 1,
            col     = two_grey_colors[[as.integer(are_at_least_50[[i]]) + 1]],
@@ -406,6 +455,17 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   my_cmap <- makecmap(numeric_mat, colFn = ColorFunction, breaks = my_breaks)
   my_color_mat <- cmap(numeric_mat, my_cmap)
+
+
+  assign("delete_my_color_mat", my_color_mat, envir = globalenv())
+
+  if (add_gap) {
+    my_color_mat <- AddVerticalWhiteSpace(my_color_mat,
+                                          groups_vec = block_vec,
+                                          divider_width = gap_weight
+                                          )
+  }
+
   Do_cimage(my_color_mat)
   x_range <- par("usr")[[2]] - par("usr")[[1]]
 
@@ -440,7 +500,6 @@ DrawAccuracyHeatmap <- function(summary_df,
        font   = 2,
        cex    = 0.9
        )
-
 
   trapezoid_seq <- seq(trapezoid_start_x, 1, by = ((1 - trapezoid_start_x) / 5))
 
@@ -478,8 +537,8 @@ DrawAccuracyHeatmap <- function(summary_df,
   homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
 
   for (i in seq_len(num_wells)) {
-    rect(xleft   = (i - 1) / num_wells,
-         xright  = (i / num_wells),
+    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
+         xright  = (wells_seq[[i]] / max(wells_seq)),
          ybottom = 0,
          ytop    = 1,
          col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
