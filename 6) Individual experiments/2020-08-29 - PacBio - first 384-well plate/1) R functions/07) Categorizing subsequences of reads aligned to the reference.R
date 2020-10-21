@@ -141,7 +141,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
 
     well_df <- data.frame(
       "Well_number" = well_number,
-      "ZMW"         = this_well_zmws,
+      "ZMW"         = rep(this_well_zmws, each = num_features),
       "Feature"     = rep(features_vec, times = num_reads),
       "Template"    = rep(features_templates_list[[well_number]], times = num_reads),
       well_mat,
@@ -150,7 +150,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
     return(well_df)
   })
   message("Collating the final data frame...")
-  results_df <- do.call(rbind.data.frame, c(well_df_list, stringsAsFactors = FALSE, make.row.names = FALSE))
+  results_df <- do.call(rbind.data.frame, c(well_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   results_df <- ProcessExtractedDf(results_df)
   return(results_df)
 }
@@ -180,6 +180,26 @@ ProcessExtractedDf <- function(extracted_df) {
     "Num_missing"    = num_bases_lost,
     "Mostly_deleted" = num_bases_lost >= (sequence_lengths / 2)
   )
+
+  category_vec <- ifelse(results_df[["Is_correct"]],
+                         "Correct",
+                         ifelse(results_df[["Mostly_deleted"]],
+                                "Deletion",
+                                "Mutation"
+                                )
+                         )
+
+  contamination_possible <- !(results_df[["Is_correct"]] | results_df[["Mostly_deleted"]])
+  are_contamination <- rep(FALSE, nrow(results_df))
+  for (i in 1:4) {
+    are_this_number <- extracted_df[["Feature"]] == paste0("sg", i)
+    guides_vec <- sg_sequences_df[[paste0("Sequence_sg", i)]]
+    are_eligible <- are_this_number & contamination_possible
+    are_contamination[are_eligible] <- extracted_df[["Aligned_read"]][are_eligible] %in% guides_vec
+  }
+  stopifnot(all(category_vec[are_contamination] == "Mutation"))
+  category_vec[are_contamination] <- "Contamination"
+  results_df[["Category"]] <- category_vec
   return(results_df)
 }
 
