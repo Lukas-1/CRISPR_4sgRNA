@@ -32,28 +32,6 @@ load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RDat
 
 
 
-# Define plot titles ------------------------------------------------------
-
-ccs3_title <- expression(plain({"Long-read sequencing of plasmids" *
-                               " (" >= "3 consensus reads "} *
-                               "and " >= "99% accuracy)"
-                               ))
-
-ccs5_title <- expression(plain({"Long-read sequencing of plasmids" *
-                               " (" >= "5 consensus reads "} *
-                               "and " >= "99.9% accuracy)"
-                               ))
-
-
-
-# Define plot dimensions --------------------------------------------------
-
-use_height <- 7
-use_width <- 6.5
-
-
-
-
 # Set up loop -------------------------------------------------------------
 
 for (smrtlink_version in c(7, 9)) {
@@ -119,7 +97,6 @@ for (smrtlink_version in c(7, 9)) {
             paste0(file_name_prefix, " - CCS3 (99) - filtered"),
             main_title = ccs3_title
             )
-
 
 
 

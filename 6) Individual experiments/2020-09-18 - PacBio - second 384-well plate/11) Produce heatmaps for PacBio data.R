@@ -41,27 +41,6 @@ sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] %in% 
 
 
 
-# Define plot titles ------------------------------------------------------
-
-ccs3_title <- expression(plain({"Long-read sequencing of plasmids" *
-                               " (" >= "3 consensus reads "} *
-                               "and " >= "99% accuracy)"
-                               ))
-
-ccs5_title <- expression(plain({"Long-read sequencing of plasmids" *
-                               " (" >= "5 consensus reads "} *
-                               "and " >= "99.9% accuracy)"
-                               ))
-
-
-
-# Define plot dimensions --------------------------------------------------
-
-use_height <- 7
-use_width <- 6.5
-
-
-
 
 # Set up loop -------------------------------------------------------------
 

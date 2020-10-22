@@ -34,30 +34,7 @@ load(file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.R
 
 
 
-
-# Define parameters -------------------------------------------------------
-
-pdf_height <- 6
-pdf_width <- 9
-
-use_mar <- c(4.5, 4, 5.7, 2.5)
-
-
-
-
 # Draw plots --------------------------------------------------------------
-
-exclude_vars <- "Longest_subsequence"
-exclude_vars <- c(
-  exclude_vars,
-  "Num_contam_wells",
-  "Num_low_barcode_scores",
-  "Num_low_quality_scores",
-  "Num_low_bc_or_qual",
-  "Mean_read_quality"
-)
-
-use_vars <-  setdiff(names(titles_list), exclude_vars)
 
 old_mar <- par(mar = use_mar)
 

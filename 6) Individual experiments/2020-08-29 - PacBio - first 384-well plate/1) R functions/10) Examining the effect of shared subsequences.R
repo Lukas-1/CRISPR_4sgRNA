@@ -12,6 +12,26 @@ library("beeswarm")
 
 
 
+# Define constants --------------------------------------------------------
+
+pdf_height <- 5.4
+pdf_width <- 7.2
+use_mar <- c(4.5, 4, 5.7, 2.5)
+
+exclude_vars <- "Longest_subsequence"
+exclude_vars <- c(
+  exclude_vars,
+  "Num_contam_wells",
+  "Num_low_barcode_scores",
+  "Num_low_quality_scores",
+  "Num_low_bc_or_qual",
+  "Mean_read_quality"
+)
+
+use_vars <-  setdiff(names(titles_list), exclude_vars)
+
+
+
 
 # Define functions --------------------------------------------------------
 
