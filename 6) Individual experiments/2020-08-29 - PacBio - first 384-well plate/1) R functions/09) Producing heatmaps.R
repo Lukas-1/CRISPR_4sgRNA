@@ -13,6 +13,33 @@ library("scales")
 
 
 
+
+# Define plot dimensions --------------------------------------------------
+
+use_height <- 7
+use_width <- 6.5
+
+
+
+
+
+# Define plot titles ------------------------------------------------------
+
+ccs3_title <- expression(plain({"Long-read sequencing of plasmids" *
+                               " (" >= "3 consensus reads "} *
+                               "and " >= "99% accuracy)"
+                               ))
+
+ccs5_title <- expression(plain({"Long-read sequencing of plasmids" *
+                               " (" >= "5 consensus reads "} *
+                               "and " >= "99.9% accuracy)"
+                               ))
+
+
+
+
+
+
 # Define functions --------------------------------------------------------
 
 MakeEmptyPlot <- function(y_limits = c(0, 1)) {
@@ -257,9 +284,9 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   space_height <- 1
   golden_ratio <- (1 + sqrt(5)) / 2
-  layout(cbind(rep(1, 9),
-               3:(9 + 3 - 1),
-               rep(2, 9)
+  layout(cbind(rep(1, 11),
+               3:(11 + 3 - 1),
+               rep(2, 11)
                ),
          widths  = c(0.1, 0.8, 0.1),
          heights = c(space_height * 2.7,
@@ -268,7 +295,9 @@ DrawAccuracyHeatmap <- function(summary_df,
                      space_height * 0.5,
                      space_height * 1.2,
                      3 * golden_ratio,
-                     space_height * 1.5,
+                     space_height * 2,
+                     space_height * 2.2,
+                     space_height * 0.5,
                      space_height * 0.5,
                      space_height * 1
                      )
@@ -293,9 +322,9 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   ## Draw a vertical barplot
 
-  are_at_least_50 <- summary_df[["Perc_all_4"]] >= 50
-  num_above_50 <- sum(are_at_least_50)
-  over_50_fraction <- num_above_50 / num_wells
+  are_at_least_75 <- summary_df[["Perc_all_4"]] >= 75
+  num_above_75 <- sum(are_at_least_75)
+  over_75_fraction <- num_above_75 / num_wells
 
 
   # six_colors <- c(colorRampPalette(brewer.pal(11, "PuOr"))(21)[[11]],
@@ -367,6 +396,8 @@ DrawAccuracyHeatmap <- function(summary_df,
        lwd      = 0.75,
        cex.axis = 0.9
        )
+  box(lwd = 0.5, xpd = NA)
+
 
   color_text_vec <- c('bold(color1("% plasmids with ") * color1("" >= "") *',
                       'scriptscriptstyle(" ") *',
@@ -412,8 +443,8 @@ DrawAccuracyHeatmap <- function(summary_df,
   two_grey_colors <- c("gray77", "gray40")
 
   if (reorder_wells) {
-    rect(xleft   = c(0, 1 - over_50_fraction),
-         xright  = c(1 - over_50_fraction, 1),
+    rect(xleft   = c(0, 1 - over_75_fraction),
+         xright  = c(1 - over_75_fraction, 1),
          ybottom = 0,
          ytop    = 1,
          border  = NA,
@@ -426,7 +457,7 @@ DrawAccuracyHeatmap <- function(summary_df,
            xright  = (wells_seq[[i]] / max(wells_seq)),
            ybottom = 0,
            ytop    = 1,
-           col     = two_grey_colors[[as.integer(are_at_least_50[[i]]) + 1]],
+           col     = two_grey_colors[[as.integer(are_at_least_75[[i]]) + 1]],
            border  = NA
            )
     }
@@ -435,9 +466,9 @@ DrawAccuracyHeatmap <- function(summary_df,
   text(x      = 0.5,
        y      = -0.65,
        adj    = c(0.5, 0.5),
-       labels = bquote(bold(.(as.character(num_above_50)) *  " / " *
+       labels = bquote(bold(.(as.character(num_above_75)) *  " / " *
                             .(as.character(num_wells)) * " genes " *
-                              "had 4 correct gRNAs in " >= "50% of reads"
+                              "had 4 correct gRNAs in " >= "75% of reads"
                             )),
        font   = 2,
        col    = "black",
@@ -526,8 +557,48 @@ DrawAccuracyHeatmap <- function(summary_df,
            lwd  = 0.5,
            lend = "butt"
            )
+
+
   MakeEmptyPlot()
 
+  ## Draw a vertical barplot
+
+  perc_truncated <- summary_df[["Num_under_2kb"]] / summary_df[["Count_total"]]
+
+  two_colors <- c("gray88", "gray40")
+
+  for (i in seq_len(num_wells)) {
+    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
+         xright  = (wells_seq[[i]] / max(wells_seq)),
+         ybottom = 0,
+         ytop    = 1,
+         col     = two_colors[[1]],
+         border  = NA
+         )
+    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
+         xright  = (wells_seq[[i]] / max(wells_seq)),
+         ybottom = 0,
+         ytop    = perc_truncated[[i]],
+         col     = two_colors[[2]],
+         border  = NA
+         )
+  }
+
+  text(x      = 0.5,
+       y      = 1.18,
+       adj    = c(0.5, 0.5),
+       labels = expression(bold("% short plasmids ("  <  "2 kb)")),
+       font   = 2,
+       col    = "black",
+       xpd    = NA
+       )
+
+  MakeEmptyPlot()
+
+
+
+
+  MakeEmptyPlot()
 
   ## Draw the strip indicating genes with homologies >=8 bp
 
@@ -559,6 +630,9 @@ DrawAccuracyHeatmap <- function(summary_df,
        )
 
   MakeEmptyPlot()
+
+
+
   return(invisible(NULL))
 }
 
