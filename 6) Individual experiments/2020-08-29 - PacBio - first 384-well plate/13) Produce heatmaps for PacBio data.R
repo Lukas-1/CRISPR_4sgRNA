@@ -48,7 +48,7 @@ ccs5_title <- expression(plain({"Long-read sequencing of plasmids" *
 
 # Define plot dimensions --------------------------------------------------
 
-use_height <- 5
+use_height <- 7
 use_width <- 6.5
 
 
