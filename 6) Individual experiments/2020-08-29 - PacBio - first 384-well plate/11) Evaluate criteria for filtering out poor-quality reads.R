@@ -22,6 +22,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "08) Extract barcode sequences and quality scores.RData"))
 load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
 
@@ -141,6 +142,11 @@ only_8_bp <- (use_df[["Column_bc_length"]] <= 8) | (use_df[["Row_bc_length"]] <=
 use_df[are_correct & are_poor_barcodes, ]
 use_df[are_correct & are_poor_barcodes & only_8_bp, ]
 
+use_df[!(are_correct) & !(are_poor_barcodes), ]
+
+use_df[!(use_df[["Passes_barcode_filters"]]), ]
+
+
 
 fisher.test(table("are_contam" = are_contaminated[are_correct],
                   "bad_bc"     = are_poor_barcodes[are_correct]
@@ -151,8 +157,7 @@ fisher.test(table("are_contam" = are_contaminated[are_correct & !(are_very_poor_
                   ))
 
 
-
-
+table(use_df[["Passes_read_filters"]][use_df[["Passes_barcode_filters"]] == 1])
 
 
 
@@ -179,13 +184,13 @@ use_df[are_short_bc & !(are_poor_barcodes), ]
 
 
 
+# Evaluate some summary metrics -------------------------------------------
 
+summary_df <- sl7_ccs5_df_list[["filtered_summary_df"]]
+summary_df <- summary_df[!(sg_sequences_df[["Empty_well"]]), ]
 
-
-
-
-
-
+table(summary_df["Perc_at_least_1"] > 95)
+table(summary_df["Perc_all_4"] > 75)
 
 
 
