@@ -155,6 +155,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
   })
   message("Collating the final data frame...")
   results_df <- do.call(rbind.data.frame, c(well_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  message("Processing the final data frame...")
   results_df <- ProcessExtractedDf(results_df)
   return(results_df)
 }
@@ -193,16 +194,40 @@ ProcessExtractedDf <- function(extracted_df) {
                                 )
                          )
 
+
+
+
   contamination_possible <- !(results_df[["Is_correct"]] | results_df[["Mostly_deleted"]])
-  are_contamination <- rep(FALSE, nrow(results_df))
+
+  sg_list <- lapply(1:4, function(x) sg_sequences_df[[paste0("Sequence_sg", x)]])
+
+  all_guides_vec <- unlist(sg_list)
+
+  tracrRNA_matches <- match(paste0("tracrRNA", 1:4), features_df[["Feature"]])
+  tracrRNA_sequences <- features_templates_list[[1]][tracrRNA_matches]
+
+  all_tracRNAs_vec <- unlist(lapply(tracrRNA_sequences, function(x) paste0(all_guides_vec, x)))
+
+  are_contamination_sg <- rep(FALSE, nrow(results_df))
   for (i in 1:4) {
-    are_this_number <- extracted_df[["Feature"]] == paste0("sg", i)
-    guides_vec <- sg_sequences_df[[paste0("Sequence_sg", i)]]
-    are_eligible <- are_this_number & contamination_possible
-    are_contamination[are_eligible] <- extracted_df[["Aligned_read"]][are_eligible] %in% guides_vec
+    are_this_sg <- extracted_df[["Feature"]] == paste0("sg", i)
+    are_eligible <- are_this_sg & contamination_possible
+    are_contamination_sg[are_eligible] <- extracted_df[["Aligned_read"]][are_eligible] %in% all_guides_vec
   }
-  stopifnot(all(category_vec[are_contamination] == "Mutation"))
-  category_vec[are_contamination] <- "Contamination"
+  stopifnot(all(category_vec[are_contamination_sg] == "Mutation"))
+
+  are_contamination_sg_cr <- rep(FALSE, nrow(results_df))
+  for (i in 1:4) {
+    are_this_sg_cr <- extracted_df[["Feature"]] == paste0("sg", i, "_cr", i)
+    are_eligible <- are_this_sg_cr & contamination_possible
+    are_contamination_sg_cr[are_eligible] <- extracted_df[["Aligned_read"]][are_eligible] %in% all_tracRNAs_vec
+  }
+  stopifnot(all(category_vec[are_contamination_sg_cr] == "Mutation"))
+  stopifnot(!(any(are_contamination_sg & are_contamination_sg_cr)))
+
+  category_vec[are_contamination_sg] <- "Contamination"
+  category_vec[are_contamination_sg_cr] <- "Contamination"
+
   results_df[["Category"]] <- category_vec
   return(results_df)
 }
