@@ -10,6 +10,7 @@ R_functions_directory  <- file.path(file_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "02) Analyzing reads.R"))
 source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio reads.R"))
+source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R"))
 
 
 
@@ -188,6 +189,60 @@ ExportIndivTable(sl9_ccs5_df_list[["individual_reads_df"]],
 ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
             "SmrtLink9/SmrtLink9_CCS5_999_contaminations"
             )
+
+
+
+
+
+
+# Export sequences --------------------------------------------------------
+
+sl7_passing <- sl7_ccs3_df_list[["individual_reads_df"]][["ZMW"]][sl7_ccs3_df_list[["individual_reads_df"]][["Passes_barcode_filters"]] == 1]
+sl9_passing <- sl9_ccs3_df_list[["individual_reads_df"]][["ZMW"]][sl9_ccs3_df_list[["individual_reads_df"]][["Passes_barcode_filters"]] == 1]
+
+load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
+
+fasta_output_directory <- file.path(file_output_directory, "Fasta")
+fastq_output_directory <- file.path(file_output_directory, "Fastq")
+
+
+ExportSequences(sl7_ccs3_lima,
+                sl7_ccs3_report_df,
+                fasta_output_dir = file.path(fasta_output_directory, "Filtered_SmrtLink7_CCS3"),
+                fastq_output_dir = file.path(fastq_output_directory, "Filtered_SmrtLink7_CCS3"),
+                append_to_file_name = "_ccs3",
+                ccs_reads = sl7_ccs3_ccs,
+                use_zmws = sl7_passing
+                )
+
+ExportSequences(sl7_ccs3_lima,
+                sl7_ccs3_report_df,
+                fasta_output_dir = file.path(fasta_output_directory, "Filtered_SmrtLink7_CCS5"),
+                fastq_output_dir = file.path(fastq_output_directory, "Filtered_SmrtLink7_CCS5"),
+                append_to_file_name = "_ccs5",
+                ccs_reads = sl7_ccs3_ccs,
+                use_zmws = intersect(sl7_ccs5_lima_zmws, sl7_passing)
+                )
+
+ExportSequences(sl9_ccs3_lima,
+                sl9_ccs3_report_df,
+                fasta_output_dir = file.path(fasta_output_directory, "Filtered_SmrtLink9_CCS3"),
+                fastq_output_dir = file.path(fastq_output_directory, "Filtered_SmrtLink9_CCS3"),
+                append_to_file_name = "_ccs3",
+                ccs_reads = sl9_ccs3_ccs,
+                use_zmws = sl9_passing
+                )
+
+ExportSequences(sl9_ccs3_lima,
+                sl9_ccs3_report_df,
+                fasta_output_dir = file.path(fasta_output_directory, "Filtered_SmrtLink9_CCS5"),
+                fastq_output_dir = file.path(fastq_output_directory, "Filtered_SmrtLink9_CCS5"),
+                append_to_file_name = "_ccs5",
+                ccs_reads = sl9_ccs3_ccs,
+                use_zmws = intersect(sl9_ccs5_lima_zmws, sl9_passing)
+                )
+
+
 
 
 
