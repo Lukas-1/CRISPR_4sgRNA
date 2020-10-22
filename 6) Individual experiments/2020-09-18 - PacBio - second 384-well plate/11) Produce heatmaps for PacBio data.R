@@ -32,6 +32,13 @@ load(file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.R
 
 
 
+# Exclude 4 problematic wells, for the time being -------------------------
+
+sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] %in% c(2, 171, 284, 285),
+                                         TRUE, FALSE
+                                         )
+
+
 
 
 # Define plot titles ------------------------------------------------------
@@ -50,7 +57,7 @@ ccs5_title <- expression(plain({"Long-read sequencing of plasmids" *
 
 # Define plot dimensions --------------------------------------------------
 
-use_height <- 5
+use_height <- 7
 use_width <- 6.5
 
 
