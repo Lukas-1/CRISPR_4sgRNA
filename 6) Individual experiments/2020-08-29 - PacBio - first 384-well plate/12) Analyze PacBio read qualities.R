@@ -36,7 +36,6 @@ load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RDat
 
 
 
-
 # Define functions --------------------------------------------------------
 
 MakeEmptyPlot <- function(x_limits = c(0, 1), y_limits = c(0, 1)) {
