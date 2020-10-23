@@ -35,7 +35,6 @@ load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RDat
 
 
 
-
 # Draw plots --------------------------------------------------------------
 
 old_mar <- par(mar = use_mar)
