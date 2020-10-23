@@ -34,8 +34,6 @@ load(file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.R
 
 
 
-
-
 # Set up loop -------------------------------------------------------------
 
 for (smrtlink_version in c(7)) {
