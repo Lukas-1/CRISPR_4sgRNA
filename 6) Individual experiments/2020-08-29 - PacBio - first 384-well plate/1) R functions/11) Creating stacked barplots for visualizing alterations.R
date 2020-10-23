@@ -174,20 +174,11 @@ DrawAlterationBarplot <- function(summary_df,
 
   add_gap <- (!(reorder_wells)) && ("Block" %in% names(sg_sequences_df))
   if (add_gap) {
-    block_vec <- sg_sequences_df[["Block"]][are_to_include]
-    wells_seq <- rep(NA, num_wells)
-    current_index <- 0L
-    current_block <- block_vec[[1]]
-    for (i in seq_len(num_wells)) {
-      if (current_block != block_vec[[i]]) {
-        current_block <- block_vec[[i]]
-        current_index <- current_index + gap_weight
-      }
-      current_index <- current_index + 1L
-      wells_seq[[i]] <- current_index
-    }
+    positions_vec <- GappedPositionsVec(sg_sequences_df[["Block"]][are_to_include],
+                                        gap_weight = gap_weight
+                                        )
   } else {
-    wells_seq <- seq_len(num_wells)
+    positions_vec <- seq_len(num_wells)
   }
 
 
@@ -209,7 +200,7 @@ DrawAlterationBarplot <- function(summary_df,
 
 
   MakeEmptyPlot()
-  PlotBarplotMat(column_mat_list[[1]], four_colors, wells_seq)
+  PlotBarplotMat(column_mat_list[[1]], four_colors, positions_vec)
   SideTextAndAxes("sg1")
 
 
@@ -227,17 +218,17 @@ DrawAlterationBarplot <- function(summary_df,
   MakeEmptyPlot()
 
   MakeEmptyPlot()
-  PlotBarplotMat(column_mat_list[[2]], four_colors, wells_seq)
+  PlotBarplotMat(column_mat_list[[2]], four_colors, positions_vec)
   SideTextAndAxes("sg2")
   MakeEmptyPlot()
 
   MakeEmptyPlot()
-  PlotBarplotMat(column_mat_list[[3]], four_colors, wells_seq)
+  PlotBarplotMat(column_mat_list[[3]], four_colors, positions_vec)
   SideTextAndAxes("sg3")
   MakeEmptyPlot()
 
   MakeEmptyPlot()
-  PlotBarplotMat(column_mat_list[[4]], four_colors, wells_seq)
+  PlotBarplotMat(column_mat_list[[4]], four_colors, positions_vec)
   SideTextAndAxes("sg4")
   MakeEmptyPlot()
 

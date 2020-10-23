@@ -242,6 +242,23 @@ AddVerticalWhiteSpace <- function(color_matrix, groups_vec, whitespace_color = "
 
 
 
+GappedPositionsVec <- function(groups_vec, gap_weight = 2L) {
+  positions_vec <- rep(NA, length(groups_vec))
+  current_index <- 0L
+  current_block <- groups_vec[[1]]
+  for (i in seq_along(groups_vec)) {
+    if (current_block != groups_vec[[i]]) {
+      current_block <- groups_vec[[i]]
+      current_index <- current_index + gap_weight
+    }
+    current_index <- current_index + 1L
+    positions_vec[[i]] <- current_index
+  }
+  return(positions_vec)
+}
+
+
+
 
 DrawAccuracyHeatmap <- function(summary_df,
                                 main_title          = NULL,
@@ -350,32 +367,22 @@ DrawAccuracyHeatmap <- function(summary_df,
   add_gap <- (!(reorder_wells)) && ("Block" %in% names(sg_sequences_df))
   if (add_gap) {
     block_vec <- sg_sequences_df[["Block"]][are_to_include]
-    wells_seq <- rep(NA, num_wells)
-    current_index <- 0L
-    current_block <- block_vec[[1]]
-    for (i in seq_len(num_wells)) {
-      if (current_block != block_vec[[i]]) {
-        current_block <- block_vec[[i]]
-        current_index <- current_index + gap_weight
-      }
-      current_index <- current_index + 1L
-      wells_seq[[i]] <- current_index
-    }
+    positions_vec <- GappedPositionsVec(block_vec, gap_weight = gap_weight)
   } else {
-    wells_seq <- seq_len(num_wells)
+    positions_vec <- seq_len(num_wells)
   }
 
   for (i in seq_len(num_wells)) {
-    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
-         xright  = (wells_seq[[i]] / max(wells_seq)),
+    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+         xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = 1,
          col     = six_colors[[1]],
          border  = NA
          )
     for (j in seq_along(five_columns)) {
-      rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
-           xright  = (wells_seq[[i]] / max(wells_seq)),
+      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+           xright  = (positions_vec[[i]] / max(positions_vec)),
            ybottom = 0,
            ytop    = summary_df[[five_columns[[j]]]][[i]] / 100,
            col     = six_colors[2:6][[j]],
@@ -453,8 +460,8 @@ DrawAccuracyHeatmap <- function(summary_df,
          )
   } else {
     for (i in seq_len(num_wells)) {
-      rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
-           xright  = (wells_seq[[i]] / max(wells_seq)),
+      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+           xright  = (positions_vec[[i]] / max(positions_vec)),
            ybottom = 0,
            ytop    = 1,
            col     = two_grey_colors[[as.integer(are_at_least_75[[i]]) + 1]],
@@ -568,15 +575,15 @@ DrawAccuracyHeatmap <- function(summary_df,
   two_colors <- c("gray88", "gray40")
 
   for (i in seq_len(num_wells)) {
-    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
-         xright  = (wells_seq[[i]] / max(wells_seq)),
+    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+         xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = 1,
          col     = two_colors[[1]],
          border  = NA
          )
-    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
-         xright  = (wells_seq[[i]] / max(wells_seq)),
+    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+         xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = perc_truncated[[i]],
          col     = two_colors[[2]],
@@ -608,8 +615,8 @@ DrawAccuracyHeatmap <- function(summary_df,
   homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
 
   for (i in seq_len(num_wells)) {
-    rect(xleft   = (wells_seq[[i]] - 1) / max(wells_seq),
-         xright  = (wells_seq[[i]] / max(wells_seq)),
+    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+         xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = 1,
          col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
@@ -630,7 +637,6 @@ DrawAccuracyHeatmap <- function(summary_df,
        )
 
   MakeEmptyPlot()
-
 
 
   return(invisible(NULL))
