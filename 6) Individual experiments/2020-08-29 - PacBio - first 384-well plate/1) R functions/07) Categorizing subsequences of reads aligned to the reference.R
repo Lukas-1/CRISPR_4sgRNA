@@ -22,6 +22,8 @@ features_list <- list(
   "sg1_cr1"        = c(427, 532),
   "tracrRNA1"      = c(447, 532),
 
+  "TpR_DHFR"       = c(606, 842),
+
   "promoter2_mU6"  = c(850, 1165),
   "sg2"            = c(1166, 1185),
   "sg2_cr2"        = c(1166, 1273),
@@ -195,17 +197,16 @@ ProcessExtractedDf <- function(extracted_df) {
                          )
 
 
-
+  ## Check for contaminations
 
   contamination_possible <- !(results_df[["Is_correct"]] | results_df[["Mostly_deleted"]])
 
   sg_list <- lapply(1:4, function(x) sg_sequences_df[[paste0("Sequence_sg", x)]])
 
-  all_guides_vec <- unlist(sg_list)
+  all_guides_vec <- toupper(unlist(sg_list))
 
   tracrRNA_matches <- match(paste0("tracrRNA", 1:4), features_df[["Feature"]])
   tracrRNA_sequences <- features_templates_list[[1]][tracrRNA_matches]
-
   all_tracRNAs_vec <- unlist(lapply(tracrRNA_sequences, function(x) paste0(all_guides_vec, x)))
 
   are_contamination_sg <- rep(FALSE, nrow(results_df))
@@ -214,19 +215,46 @@ ProcessExtractedDf <- function(extracted_df) {
     are_eligible <- are_this_sg & contamination_possible
     are_contamination_sg[are_eligible] <- extracted_df[["Aligned_read"]][are_eligible] %in% all_guides_vec
   }
-  stopifnot(all(category_vec[are_contamination_sg] == "Mutation"))
-
   are_contamination_sg_cr <- rep(FALSE, nrow(results_df))
   for (i in 1:4) {
     are_this_sg_cr <- extracted_df[["Feature"]] == paste0("sg", i, "_cr", i)
     are_eligible <- are_this_sg_cr & contamination_possible
     are_contamination_sg_cr[are_eligible] <- extracted_df[["Aligned_read"]][are_eligible] %in% all_tracRNAs_vec
   }
-  stopifnot(all(category_vec[are_contamination_sg_cr] == "Mutation"))
   stopifnot(!(any(are_contamination_sg & are_contamination_sg_cr)))
+  are_contamination <- are_contamination_sg | are_contamination_sg_cr
+  stopifnot(all(category_vec[are_contamination] == "Mutation"))
+  category_vec[are_contamination] <- "Contamination"
 
-  category_vec[are_contamination_sg] <- "Contamination"
-  category_vec[are_contamination_sg_cr] <- "Contamination"
+
+  ## Check for small insertions that may or may not be considered to fall within
+  ## the sgRNA + tracrRNA region
+  wells_vec <- unique(extracted_df[["Well_number"]])
+  insertion_possible <- !(results_df[["Is_correct"]] | results_df[["Mostly_deleted"]] | are_contamination)
+  have_flanking_insertion <- rep(FALSE, nrow(results_df))
+  for (include_tracrRNA in c(FALSE, TRUE)) {
+    for (i in 1:4) {
+      if (include_tracrRNA) {
+        this_feature <- paste0("sg", i, "_cr", i)
+      } else {
+        this_feature <- paste0("sg", i)
+      }
+      message(paste0("Checking for flanking insertions for ", this_feature, "..."))
+      are_this_feature <- extracted_df[["Feature"]] == this_feature
+      for (well_number in wells_vec) {
+        are_this_well <-(extracted_df[["Well_number"]] == well_number) & are_this_feature
+        well_template <- unique(extracted_df[["Template"]][are_this_well])
+        are_selected <- are_this_well & insertion_possible
+        have_flanking_insertion[are_selected] <- grepl(well_template,
+                                                       extracted_df[["Aligned_read"]][are_selected],
+                                                       fixed = TRUE
+                                                       )
+      }
+    }
+  }
+
+  category_vec[have_flanking_insertion] <- "Flanking insertion"
+
 
   results_df[["Category"]] <- category_vec
   return(results_df)
