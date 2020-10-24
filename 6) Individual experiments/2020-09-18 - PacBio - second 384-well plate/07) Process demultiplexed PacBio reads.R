@@ -19,7 +19,6 @@ source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio rea
 plate2_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
 p1_R_objects_directory  <- file.path(plate1_directory, "3) R objects")
 p2_R_objects_directory  <- file.path(plate2_directory, "2) R objects")
-
 file_output_directory   <- file.path(plate2_directory, "3) Output")
 tables_output_directory <- file.path(file_output_directory, "Tables")
 
@@ -35,8 +34,8 @@ load(file.path(p2_R_objects_directory, "02) Create reference sequences for each 
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs5.RData"))
-load(file.path(p2_R_objects_directory, "06) Extract barcode sequences and quality scores.RData"))
-load(file.path(p2_R_objects_directory, "07) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(p2_R_objects_directory, "05) Extract barcode sequences and quality scores.RData"))
+load(file.path(p2_R_objects_directory, "06) Categorize subsequences of reads aligned to the reference.RData"))
 
 
 
@@ -154,11 +153,11 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
 # save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
 #               "sl9_ccs3_df_list", "sl9_ccs5_df_list"
 #               ),
-#      file = file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.RData")
+#      file = file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData")
 #      )
 
 save(list = "sl7_ccs5_df_list",
-     file = file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.RData")
+     file = file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData")
      )
 
 

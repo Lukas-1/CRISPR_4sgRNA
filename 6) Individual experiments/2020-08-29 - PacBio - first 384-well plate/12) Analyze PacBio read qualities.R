@@ -20,7 +20,6 @@ source(file.path(R_functions_directory, "01) Define titles and labels.R"))
 file_input_directory   <- file.path(file_directory, "2) Input")
 file_output_directory  <- file.path(file_directory, "5) Output")
 R_objects_directory    <- file.path(file_directory, "3) R objects")
-
 plots_output_directory <- file.path(file_output_directory, "Figures")
 
 
@@ -30,7 +29,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
 
@@ -44,49 +43,6 @@ MakeEmptyPlot <- function(x_limits = c(0, 1), y_limits = c(0, 1)) {
        )
 }
 
-
-# BarSubPlot <- function(numeric_vec, show_column, y_limits) {
-#
-#   is_percentage <- grepl("^(Count|Num)_", show_column)
-#
-#   MakeEmptyPlot(y_limits = y_limits)
-#
-#   num_bars <- length(numeric_vec)
-#
-#   tick_locations <- axTicks(2)
-#   if (is_percentage) {
-#     tick_labels <- paste0(tick_locations * 100, "%")
-#   } else {
-#     tick_labels <- TRUE
-#   }
-#
-#   abline(h = tick_locations, col = "gray94")
-#   if (is_percentage) {
-#     abline(h = seq(0.1, 0.9, 0.2), col = "gray98")
-#   }
-#
-#   for (i in seq_len(num_bars)) {
-#     rect(xleft   = (i - 1) / num_bars,
-#          xright  = (i / num_bars),
-#          ybottom = 0,
-#          ytop    = numeric_vec[[i]],
-#          col     = brewer.pal(9, "Blues")[[9]],
-#          border  = NA
-#          )
-#   }
-#
-#
-#   axis(2,
-#        labels   = tick_labels,
-#        at       = tick_locations,
-#        las      = 1,
-#        mgp      = c(3, 0.45, 0),
-#        tcl      = -0.35,
-#        lwd      = 0.75,
-#        cex.axis = 0.9
-#        )
-#   box(lwd = 0.75)
-# }
 
 
 
@@ -381,10 +337,7 @@ WellLayoutBarplot <- function(summary_df,
            font   = 2
            )
     }
-
-
   }
-
   return(invisible(NULL))
 }
 
@@ -529,8 +482,6 @@ BarPlotPanel <- function(summary_df,
 
 
 
-
-
 # Start loop --------------------------------------------------------------
 
 for (use_filtered in c(FALSE, TRUE)) {
@@ -616,8 +567,6 @@ for (use_filtered in c(FALSE, TRUE)) {
     }
   }
 }
-
-
 
 
 

@@ -31,7 +31,7 @@ load(file.path(p2_R_objects_directory, "02) Create reference sequences for each 
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs5.RData"))
-load(file.path(p2_R_objects_directory, "05) Perform pairwise alignments with the reference sequence.RData"))
+load(file.path(p2_R_objects_directory, "04) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
@@ -62,7 +62,7 @@ sl7_barcodes_df <- GetBarcodes(use_sl7 = TRUE, wells_vec = sg_sequences_df[["Wel
 #      )
 
 save(list = paste0(c("sl7"), "_barcodes_df"),
-     file = file.path(p2_R_objects_directory, "06) Extract barcode sequences and quality scores.RData")
+     file = file.path(p2_R_objects_directory, "05) Extract barcode sequences and quality scores.RData")
      )
 
 

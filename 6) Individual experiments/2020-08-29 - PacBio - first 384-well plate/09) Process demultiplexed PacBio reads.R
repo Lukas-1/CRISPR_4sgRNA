@@ -36,8 +36,8 @@ load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RDat
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData"))
-load(file.path(R_objects_directory, "08) Extract barcode sequences and quality scores.RData"))
-load(file.path(R_objects_directory, "09) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(R_objects_directory, "07) Extract barcode sequences and quality scores.RData"))
+load(file.path(R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
 
 
 
@@ -254,7 +254,7 @@ ExportSequences(sl9_ccs3_lima,
 save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
               "sl9_ccs3_df_list", "sl9_ccs5_df_list"
               ),
-     file = file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData")
+     file = file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData")
      )
 
 

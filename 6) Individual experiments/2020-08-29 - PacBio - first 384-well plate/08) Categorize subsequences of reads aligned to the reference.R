@@ -27,7 +27,7 @@ load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "07) Perform pairwise alignments with the reference sequence.RData"))
+load(file.path(R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
@@ -78,7 +78,7 @@ sl9_extracted_df <- ExtractAlignedSequences(use_sl7 = FALSE)
 # Save data ---------------------------------------------------------------
 
 save(list = paste0("sl", c(7, 9), "_extracted_df"),
-     file = file.path(R_objects_directory, "09) Categorize subsequences of reads aligned to the reference.RData")
+     file = file.path(R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData")
      )
 
 

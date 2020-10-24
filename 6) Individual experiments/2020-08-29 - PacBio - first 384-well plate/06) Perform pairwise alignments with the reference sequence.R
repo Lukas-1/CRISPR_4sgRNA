@@ -41,7 +41,7 @@ sl9_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE)
 # Save data ---------------------------------------------------------------
 
 save(list = paste0("sl", c(7, 9), "_alignments_df"),
-     file = file.path(R_objects_directory, "07) Perform pairwise alignments with the reference sequence.RData")
+     file = file.path(R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData")
      )
 
 

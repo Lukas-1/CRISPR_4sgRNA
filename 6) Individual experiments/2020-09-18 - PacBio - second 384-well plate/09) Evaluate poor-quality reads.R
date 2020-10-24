@@ -18,8 +18,8 @@ p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(p2_R_objects_directory, "06) Extract barcode sequences and quality scores.RData"))
-load(file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.RData"))
+load(file.path(p2_R_objects_directory, "05) Extract barcode sequences and quality scores.RData"))
+load(file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData"))
 
 
 

@@ -23,8 +23,8 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "08) Extract barcode sequences and quality scores.RData"))
-load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "07) Extract barcode sequences and quality scores.RData"))
+load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
 
@@ -191,6 +191,7 @@ summary_df <- summary_df[!(sg_sequences_df[["Empty_well"]]), ]
 
 table(summary_df["Perc_at_least_1"] > 95)
 table(summary_df["Perc_all_4"] > 75)
+
 
 
 

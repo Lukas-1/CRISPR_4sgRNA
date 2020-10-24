@@ -28,7 +28,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 # Load data ---------------------------------------------------------------
 
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
-load(file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.RData"))
+load(file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData"))
 
 
 

@@ -32,7 +32,7 @@ load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads -
 load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs5.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs5.RData"))
-load(file.path(R_objects_directory, "10) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
 
