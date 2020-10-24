@@ -66,10 +66,10 @@ features_indices_list[wells_vec] <- lapply(features_mat_list[wells_vec], functio
 })
 
 
-barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+barcoded_plasmids <- toupper(paste0(column_bc_vec, plasmids_vec, row_bc_vec))
 
-features_templates_list[wells_vec] <- lapply(wells_vec, function(x) {
-  use_mat <- features_mat_list[[x]]
+features_templates_list[wells_vec] <- lapply(seq_along(wells_vec), function(x) {
+  use_mat <- features_mat_list[[wells_vec[[x]]]]
   vapply(seq_len(nrow(use_mat)),
          function(y) substr(barcoded_plasmids[[x]], use_mat[y, "Start"], use_mat[y, "End"]),
          ""
