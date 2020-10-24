@@ -782,7 +782,7 @@ AnalyzeWells <- function(reads_list,
     "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
     "Row_quality", "Column_quality",
 
-    paste0(c("TpR_THFR", paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4)),
+    paste0(c("TpR_DHFR", paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4)),
            "_category"
            ),
 
