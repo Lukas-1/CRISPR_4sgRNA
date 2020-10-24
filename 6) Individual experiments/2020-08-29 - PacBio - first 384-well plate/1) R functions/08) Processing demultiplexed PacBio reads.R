@@ -563,6 +563,7 @@ AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
   }, simplify = FALSE)
 
   results_mat <- do.call(cbind, categories_vec_list)
+  results_mat[results_mat == "Flanking insertion"] <- "Correct"
   colnames(results_mat) <- paste0(colnames(results_mat), "_category")
   return(results_mat)
 }
