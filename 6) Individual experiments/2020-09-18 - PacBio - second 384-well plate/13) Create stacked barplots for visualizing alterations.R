@@ -34,6 +34,16 @@ load(file.path(p2_R_objects_directory, "08) Process demultiplexed PacBio reads.R
 
 
 
+# Exclude 4 problematic wells, for the time being -------------------------
+
+sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] %in% c(2, 171, 284, 285),
+                                          TRUE, FALSE
+                                          )
+
+
+
+
+
 # Set up loop -------------------------------------------------------------
 
 for (smrtlink_version in c(7)) {
