@@ -261,11 +261,12 @@ GappedPositionsVec <- function(groups_vec, gap_weight = 2L) {
 
 
 DrawAccuracyHeatmap <- function(summary_df,
-                                main_title          = NULL,
-                                ColorFunction       = colorRampPalette(rev(viridis::magma(100))), # colorRampPalette(brewer.pal(9, "YlGnBu")),
-                                reorder_wells       = TRUE,
-                                show_zero_in_legend = FALSE,
-                                gap_weight          = 2L
+                                main_title             = NULL,
+                                ColorFunction          = colorRampPalette(rev(viridis::magma(100))), # colorRampPalette(brewer.pal(9, "YlGnBu")),
+                                reorder_wells          = TRUE,
+                                show_zero_in_legend    = FALSE,
+                                gap_weight             = 2L,
+                                show_correct_promoters = FALSE
                                 ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -350,8 +351,6 @@ DrawAccuracyHeatmap <- function(summary_df,
   #                 colorRampPalette(brewer.pal(11, "RdBu"))(21)[[20]]
   #                 )
 
-  six_colors <- vapply(colorRampPalette(rev(viridis::magma(100)))(6), Palify, fraction_pale = 0.3, "")
-
   # lighter_color <- "#ECEBE9"
   # darker_color <- toupper("#15396d")
   # other_color <- "#6E1566"
@@ -359,9 +358,6 @@ DrawAccuracyHeatmap <- function(summary_df,
   # five_colors <- c(colorRampPalette(c(lighter_color, darker_color))(5)[2:5],
   #                  other_color #colorRampPalette(c(darker_color, other_color))(5)[[4]]
   #                  )
-  five_columns <- paste0("Perc_",
-                         c(paste0("at_least_", 1:3), "all_4", "all_4_promoters")
-                         )
 
 
   add_gap <- (!(reorder_wells)) && ("Block" %in% names(sg_sequences_df))
@@ -372,20 +368,33 @@ DrawAccuracyHeatmap <- function(summary_df,
     positions_vec <- seq_len(num_wells)
   }
 
+  barplot_columns <- paste0("Perc_", c(paste0("at_least_", 1:3), "all_4"))
+  if (show_correct_promoters) {
+    barplot_columns <- c(barplot_columns, "Perc_all_4_promoters")
+    barplot_colors <- ColorFunction(6)
+    barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.3, "")
+    BarPlotColorFun <- ColorFunction
+  } else {
+    BarPlotColorFun <- colorRampPalette(ColorFunction(100)[1:86])
+    barplot_colors <- BarPlotColorFun(5)
+    barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.2, "")
+  }
+
+
   for (i in seq_len(num_wells)) {
     rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
          xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = 1,
-         col     = six_colors[[1]],
+         col     = barplot_colors[[1]],
          border  = NA
          )
-    for (j in seq_along(five_columns)) {
+    for (j in seq_along(barplot_columns)) {
       rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
            xright  = (positions_vec[[i]] / max(positions_vec)),
            ybottom = 0,
-           ytop    = summary_df[[five_columns[[j]]]][[i]] / 100,
-           col     = six_colors[2:6][[j]],
+           ytop    = summary_df[[barplot_columns[[j]]]][[i]] / 100,
+           col     = barplot_colors[2:length(barplot_colors)][[j]],
            border  = NA
            )
     }
@@ -406,23 +415,36 @@ DrawAccuracyHeatmap <- function(summary_df,
   box(lwd = 0.5, xpd = NA)
 
 
-  color_text_vec <- c('bold(color1("% plasmids with ") * color1("" >= "") *',
-                      'scriptscriptstyle(" ") *',
-                      'color2("0,") * ',
-                      'color1(" ") * color3("1,") * ',
-                      'color1(" ") * color4("2,") * ',
-                      'color1(" ") * color5("3,") * ',
-                      'color1(" ") * color6("4") * ',
-                      'color1(" correct gRNAs ") * ',
-                      'color7("or an entirely correct construct"))'
-                      )
+  if (show_correct_promoters) {
+    color_text_vec <- c('bold(color1("% plasmids with ") * color1("" >= "") *',
+                        'scriptscriptstyle(" ") *',
+                        'color2("0,") * ',
+                        'color1(" ") * color3("1,") * ',
+                        'color1(" ") * color4("2,") * ',
+                        'color1(" ") * color5("3,") * ',
+                        'color1(" ") * color6("4") * ',
+                        'color1(" correct gRNAs ") * ',
+                        'color7("or an entirely correct construct"))'
+                        )
+  } else {
+    color_text_vec <- c('bold(color1("% plasmids with ") * color1("" >= "") *',
+                        'scriptscriptstyle(" ") *',
+                        'color2("0,") * ',
+                        'color1(" ") * color3("1,") * ',
+                        'color1(" ") * color4("2,") * ',
+                        'color1(" ") * color5("3,") * ',
+                        'color1(" or ") * color6("4") * ',
+                        'color1(" correct gRNAs (including the tracrRNA)"))'
+                        )
+  }
 
-  use_colors <- c("#000000",
-                  Darken(six_colors[[1]], factor = 1.3),
-                  colorRampPalette(rev(viridis::magma(100)))(7)[2:6]
-                  )
 
-  color_indices <- seq_along(use_colors)
+  text_colors <- c("#000000",
+                   Darken(barplot_colors[[1]], factor = 1.3),
+                   BarPlotColorFun(length(barplot_colors) + 1)[2:(length(barplot_colors))]
+                   )
+
+  color_indices <- seq_along(text_colors)
   text_indices <- seq_along(color_text_vec)
   if (!(show_zero_in_legend)) {
     are_zero <- grepl('"0,"', color_text_vec, fixed = TRUE)
@@ -437,7 +459,7 @@ DrawAccuracyHeatmap <- function(summary_df,
          labels = VerticalAdjust(parse(text = MakeInvisible(color_text, j))),
          adj    = c(0.5, 0),
          xpd    = NA,
-         col    = use_colors[[j]]
+         col    = text_colors[[j]]
          )
   }
 
