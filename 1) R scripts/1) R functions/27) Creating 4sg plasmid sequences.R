@@ -138,6 +138,9 @@ ExportVectorsForGene <- function(symbol_or_entrez, CRISPR_df) {
   } else {
     are_this_gene <- CRISPR_df[["Gene_symbol"]] %in% symbol_or_entrez
   }
+  if (!(any(are_this_gene))) { # might be a control....
+    are_this_gene <- CRISPR_df[["Combined_ID"]] %in% symbol_or_entrez
+  }
   are_top4 <- CRISPR_df[["Rank"]] %in% 1:4
   are_chosen <- are_this_gene & are_top4
   num_guides <- sum(are_chosen)
