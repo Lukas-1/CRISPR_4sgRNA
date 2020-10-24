@@ -17,14 +17,14 @@ source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R")
 
 # Define folder paths -----------------------------------------------------
 
-file_input_directory      <- file.path(file_directory, "2) Input")
-R_objects_directory       <- file.path(file_directory, "3) R objects")
+file_input_directory    <- file.path(file_directory, "2) Input")
+R_objects_directory     <- file.path(file_directory, "3) R objects")
 
-file_output_directory     <- file.path(file_directory, "5) Output")
-tables_output_directory   <- file.path(file_output_directory, "Tables")
+file_output_directory   <- file.path(file_directory, "5) Output")
+tables_output_directory <- file.path(file_output_directory, "Tables")
 
-raw_data_directory        <- file.path(file_input_directory, "Raw data")
-reanalysis_directory      <- file.path(raw_data_directory, "LukasAnalysis")
+raw_data_directory      <- file.path(file_input_directory, "Raw data")
+reanalysis_directory    <- file.path(raw_data_directory, "LukasAnalysis")
 
 
 
