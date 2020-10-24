@@ -550,7 +550,8 @@ AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
   }
 
   use_features <- c(paste0("sg", 1:4),
-                    paste0("sg", 1:4, "_cr", 1:4)
+                    paste0("sg", 1:4, "_cr", 1:4),
+                    "TpR_DHFR"
                     )
 
   categories_vec_list <- sapply(use_features, function(x) {
@@ -571,22 +572,27 @@ AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
 
 
 AlterationCategoriesToIntegerMat <- function(input_df) {
-
   suffix_regex <- "_category$"
   categories_columns <- grep(suffix_regex, colnames(input_df), value = TRUE)
   all_features <- sub(suffix_regex, "", categories_columns)
-
-  all_categories <- c("Correct", "Mutation", "Deletion", "Contamination")
-
+  basic_categories <- c("Correct", "Mutation", "Deletion")
+  contam_categories <- c(basic_categories, "Contamination")
+  contamination_categories <- c(paste0("sg", 1:4),
+                                paste0("sg", 1:4, "_cr", 1:4)
+                                )
   features_mat_list <- lapply(seq_along(all_features), function(x) {
-    categories_list <- lapply(all_categories, function(y) {
+    if (x %in% contamination_categories) {
+      use_categories <- contam_categories
+    } else {
+      use_categories <- basic_categories
+    }
+    categories_list <- lapply(use_categories, function(y) {
       input_df[[categories_columns[[x]]]] == y
     })
     categories_mat <- do.call(cbind, categories_list)
-    colnames(categories_mat) <- paste0(all_categories, "_", all_features[[x]])
+    colnames(categories_mat) <- paste0(use_categories, "_", all_features[[x]])
     return(categories_mat)
   })
-
   features_mat <- do.call(cbind, features_mat_list)
   mode(features_mat) <- "integer"
   return(features_mat)
@@ -776,8 +782,9 @@ AnalyzeWells <- function(reads_list,
     "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
     "Row_quality", "Column_quality",
 
-    "sg1_category", "sg2_category", "sg3_category", "sg4_category",
-    "sg1_cr1_category", "sg2_cr2_category", "sg3_cr3_category", "sg4_cr4_category",
+    paste0(c("TpR_THFR", paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4)),
+           "_category"
+           ),
 
     "BC_combined_score", "BC_score_lead", "Mean_quality",
     "Passes_filters", "Passes_barcode_filters", "Passes_read_filters",
