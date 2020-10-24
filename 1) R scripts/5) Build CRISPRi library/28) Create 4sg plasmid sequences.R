@@ -44,13 +44,17 @@ export_genes <- c(
 )
 
 
+export_genes <- c(
+  c(paste0("LSM", c(1, 3, 5, 6, 7, 8)), "PRPF31")
+)
+
 export_genes %in% sg4_df[["Gene_symbol"]]
 
 for (gene_symbol in export_genes) {
   ExportVectorsForGene(gene_symbol, sg4_df)
 }
 
-
+ExportVectorsForGene("Control_1", vac_4sg_df)
 
 
 
