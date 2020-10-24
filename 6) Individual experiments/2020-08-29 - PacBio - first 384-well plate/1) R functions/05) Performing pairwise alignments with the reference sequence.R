@@ -27,7 +27,9 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
 
   stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
 
-  alignments_df_list <- lapply(wells_vec, function(well_number) {
+  alignments_df_list <- lapply(seq_along(wells_vec), function(x) {
+
+    well_number <- wells_vec[[x]]
 
     message(paste0("Processing well #", well_number, "..."))
 
@@ -35,7 +37,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
     ccs_seq <- ccs_list[["seq"]][are_this_well]
     ccs_qual <- ccs_list[["qual"]][are_this_well]
 
-    plasmid <- DNAStringSet(barcoded_plasmids[[well_number]])
+    plasmid <- DNAStringSet(barcoded_plasmids[[x]])
     row_template <- row_bc_vec[[well_number]]
     column_template <- column_bc_vec[[well_number]]
 
