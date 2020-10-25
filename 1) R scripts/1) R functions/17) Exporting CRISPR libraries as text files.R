@@ -358,10 +358,6 @@ FormatForExcel <- function(my_df,
 
   my_df[["Color"]] <- ones_and_zeros_vec + 1L
 
-  assign("delete_my_df_9348", my_df, envir = globalenv())
-  assign("delete_remove_columns", remove_columns, envir = globalenv())
-  assign("delete_add_padding_between_plates", add_padding_between_plates, envir = globalenv())
-
   if (add_padding_between_plates) {
     my_df <- AddPaddingToPlates(my_df)
     my_df[["Color"]][is.na(my_df[["Color"]])] <- 5L
