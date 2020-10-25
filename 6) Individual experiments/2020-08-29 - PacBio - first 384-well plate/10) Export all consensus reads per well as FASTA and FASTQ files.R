@@ -78,8 +78,10 @@ for (filter_reads in c(FALSE, TRUE)) {
       sub_folder <- paste0(first_half, "_all_reads")
     }
 
-    message(paste0("Exporting reads into the '", sub_folder, "' subfolders..."))
+    message(paste0("Exporting reads into the '", sub_folder, "' folders..."))
 
+
+    message("Exporting reads for SmrtLink7_CCS3...")
     ExportSequences(sl7_ccs3_lima,
                     sl7_ccs3_report_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink7_CCS3"),
@@ -90,6 +92,7 @@ for (filter_reads in c(FALSE, TRUE)) {
                     split_into_chunks = split_reads
                     )
 
+    message("Exporting reads for SmrtLink7_CCS5...")
     ExportSequences(sl7_ccs3_lima,
                     sl7_ccs3_report_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink7_CCS5"),
@@ -100,6 +103,7 @@ for (filter_reads in c(FALSE, TRUE)) {
                     split_into_chunks = split_reads
                     )
 
+    message("Exporting reads for SmrtLink9_CCS3...")
     ExportSequences(sl9_ccs3_lima,
                     sl9_ccs3_report_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS3"),
@@ -110,6 +114,7 @@ for (filter_reads in c(FALSE, TRUE)) {
                     split_into_chunks = split_reads
                     )
 
+    message("Exporting reads for SmrtLink9_CCS5...")
     ExportSequences(sl9_ccs3_lima,
                     sl9_ccs3_report_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS5"),

@@ -99,6 +99,8 @@ for (filter_reads in c(FALSE, TRUE)) {
                     wells_vec = sg_sequences_df[["Well_number"]]
                     )
 
+
+    # message("Exporting reads for SmrtLink7_CCS3...")
     # ExportSequences(sl7_ccs3_lima,
     #                 sl7_ccs3_report_df,
     #                 fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink7_CCS3"),
@@ -110,6 +112,7 @@ for (filter_reads in c(FALSE, TRUE)) {
     #                 wells_vec = sg_sequences_df[["Well_number"]]
     #                 )
     #
+    # message("Exporting reads for SmrtLink7_CCS5...")
     # ExportSequences(sl7_ccs3_lima,
     #                 sl7_ccs3_report_df,
     #                 fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink7_CCS5"),
@@ -121,6 +124,7 @@ for (filter_reads in c(FALSE, TRUE)) {
     #                 wells_vec = sg_sequences_df[["Well_number"]]
     #                 )
     #
+    # message("Exporting reads for SmrtLink9_CCS3...")
     # ExportSequences(sl9_ccs3_lima,
     #                 sl9_ccs3_report_df,
     #                 fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS3"),
@@ -132,6 +136,7 @@ for (filter_reads in c(FALSE, TRUE)) {
     #                 wells_vec = sg_sequences_df[["Well_number"]]
     #                 )
     #
+    # message("Exporting reads for SmrtLink9_CCS5...")
     # ExportSequences(sl9_ccs3_lima,
     #                 sl9_ccs3_report_df,
     #                 fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS5"),
