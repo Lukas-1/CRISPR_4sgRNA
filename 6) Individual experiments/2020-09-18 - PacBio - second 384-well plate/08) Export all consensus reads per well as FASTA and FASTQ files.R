@@ -69,7 +69,7 @@ for (filter_reads in c(FALSE, TRUE)) {
       # use_sl7_ccs3_zmws <- sl7_passing_zmws
       # use_sl7_ccs5_zmws <- intersect(sl7_ccs5_lima_zmws, sl7_passing_zmws)
       # use_sl9_ccs3_zmws <- sl9_passing_zmws
-      # use_sl9_ccs5_zmws <- intersect(sl7_ccs5_lima_zmws, sl9_passing_zmws)
+      # use_sl9_ccs5_zmws <- intersect(sl9_ccs5_lima_zmws, sl9_passing_zmws)
       use_sl7_ccs5_zmws <- sl7_passing_zmws
     } else {
       first_half <- "Unfiltered"
@@ -126,7 +126,8 @@ for (filter_reads in c(FALSE, TRUE)) {
     #                 fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS3"),
     #                 fastq_output_dir = file.path(fastq_output_directory, sub_folder, "SmrtLink9_CCS3"),
     #                 append_to_file_name = "_ccs3",
-    #                 ccs_reads = use_sl9_ccs3_zmws,
+    #                 ccs_reads = sl9_ccs3_ccs,
+    #                 use_zmws = use_sl9_ccs3_zmws,
     #                 split_into_chunks = split_reads,
     #                 wells_vec = sg_sequences_df[["Well_number"]]
     #                 )

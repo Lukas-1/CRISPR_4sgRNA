@@ -106,6 +106,7 @@ for (filter_reads in c(FALSE, TRUE)) {
                     fastq_output_dir = file.path(fastq_output_directory, sub_folder, "SmrtLink9_CCS3"),
                     append_to_file_name = "_ccs3",
                     ccs_reads = sl9_ccs3_ccs,
+                    use_zmws = use_sl9_ccs3_zmws,
                     split_into_chunks = split_reads
                     )
 
