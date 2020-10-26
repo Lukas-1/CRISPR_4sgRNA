@@ -564,7 +564,6 @@ AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
   }, simplify = FALSE)
 
   results_mat <- do.call(cbind, categories_vec_list)
-  results_mat[results_mat == "Flanking insertion"] <- "Correct"
   colnames(results_mat) <- paste0(colnames(results_mat), "_category")
   return(results_mat)
 }
@@ -575,27 +574,30 @@ AlterationCategoriesToIntegerMat <- function(input_df) {
   suffix_regex <- "_category$"
   categories_columns <- grep(suffix_regex, colnames(input_df), value = TRUE)
   all_features <- sub(suffix_regex, "", categories_columns)
+  features_mat <- as.matrix(input_df[, categories_columns])
+  features_mat[features_mat == "Flanking insertion"] <- "Correct"
+
   basic_categories <- c("Correct", "Mutation", "Deletion")
   contam_categories <- c(basic_categories, "Contamination")
   contamination_categories <- c(paste0("sg", 1:4),
                                 paste0("sg", 1:4, "_cr", 1:4)
                                 )
-  features_mat_list <- lapply(seq_along(all_features), function(x) {
+  results_mat_list <- lapply(seq_along(all_features), function(x) {
     if (x %in% contamination_categories) {
       use_categories <- contam_categories
     } else {
       use_categories <- basic_categories
     }
     categories_list <- lapply(use_categories, function(y) {
-      input_df[[categories_columns[[x]]]] == y
+      features_mat[, categories_columns[[x]]] == y
     })
     categories_mat <- do.call(cbind, categories_list)
     colnames(categories_mat) <- paste0(use_categories, "_", all_features[[x]])
     return(categories_mat)
   })
-  features_mat <- do.call(cbind, features_mat_list)
-  mode(features_mat) <- "integer"
-  return(features_mat)
+  results_mat <- do.call(cbind, results_mat_list)
+  mode(results_mat) <- "integer"
+  return(results_mat)
 }
 
 
