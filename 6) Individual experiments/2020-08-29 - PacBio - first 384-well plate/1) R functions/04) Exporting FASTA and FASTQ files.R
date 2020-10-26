@@ -60,7 +60,8 @@ ExportSequences <- function(lima_reads,
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
 
-  well_names <- paste0("well", formatC(seq_len(384), flag = "0", width = 3))
+  wells_formatted <- formatC(seq_len(384), flag = "0", width = 3)
+  well_names <- paste0("well", wells_formatted)
   file_names <- paste0(well_names, append_to_file_name)
 
   lima_zmws <- as.integer(substr(lima_reads[["qname"]], 22, nchar(lima_reads[["qname"]]) - 4))
@@ -93,7 +94,7 @@ ExportSequences <- function(lima_reads,
     export_fastq <- QualityScaledBStringSet(export_seq, export_qual)
 
     if (split_into_chunks) {
-      message(paste0("Exporting reads for ", well_names[[i]]), "...")
+      message(paste0("Exporting reads for well ", wells_formatted[[i]]), "...")
       num_reads <- length(this_well_zmws)
       chunks_df <- BuildChunksDf(num_reads, chunk_size)
       fasta_folder <- file.path(fasta_output_dir, well_names[[i]])
@@ -116,5 +117,8 @@ ExportSequences <- function(lima_reads,
       writeXStringSet(export_seq, filepath = fasta_path)
       writeQualityScaledXStringSet(export_fastq, filepath = fastq_path)
     }
+  }
+  if (split_into_chunks) {
+    message("")
   }
 }
