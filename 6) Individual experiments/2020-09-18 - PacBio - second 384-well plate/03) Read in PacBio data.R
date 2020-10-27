@@ -24,7 +24,7 @@ p1_R_objects_directory    <- file.path(plate1_directory, "3) R objects")
 p2_R_objects_directory    <- file.path(plate2_directory, "2) R objects")
 
 file_input_directory      <- file.path(plate2_directory, "1) Input")
-raw_data_directory        <- file.path(file_input_directory, "Raw data")
+raw_data_directory        <- file.path(file_input_directory, "Raw data", "Analysis")
 
 ccs_bam_name <- "m54073_200523_132654.ccs.bam"
 ccs_sl7_sub_path <- file.path("ccs/tasks/pbcoretools.tasks.auto_ccs_outputs-0", ccs_bam_name)
