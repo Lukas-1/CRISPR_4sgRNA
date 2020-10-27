@@ -62,7 +62,6 @@ plasmid_lines_vec <- read.table(full_plasmid_file, header = FALSE, skip = 1,
 # Define functions --------------------------------------------------------
 
 PlasmidForRow <- function(row_index) {
-  print(row_index)
   stopifnot("plasmid_list" %in% ls(envir = globalenv()))
   sg_seq <- sg_sequences_df[row_index, paste0("Sequence_sg", 1:4)]
   sg_lengths <- nchar(sg_seq)
