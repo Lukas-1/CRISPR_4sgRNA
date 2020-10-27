@@ -149,13 +149,9 @@ ccs5_combos <- paste0("sl", c(7), "_ccs5_")
 #      file = file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData")
 #      )
 
-
-
 save(list = paste0(ccs5_combos, "lima_zmws"),
      file = file.path(p2_R_objects_directory, "03) Read in PacBio data - ccs5 ZMWs.RData")
      )
-
-
 
 save(list = paste0(ccs5_combos, "ccs"),
      file = file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData")
