@@ -583,7 +583,7 @@ AlterationCategoriesToIntegerMat <- function(input_df) {
                                 paste0("sg", 1:4, "_cr", 1:4)
                                 )
   results_mat_list <- lapply(seq_along(all_features), function(x) {
-    if (x %in% contamination_categories) {
+    if (all_features[[x]] %in% contamination_categories) {
       use_categories <- contam_categories
     } else {
       use_categories <- basic_categories
