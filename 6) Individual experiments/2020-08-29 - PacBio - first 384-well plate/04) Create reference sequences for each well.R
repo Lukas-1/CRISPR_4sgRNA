@@ -130,13 +130,27 @@ plasmid_lines_list <- lapply(seq_len(384), function(x) {
 
 
 
+# Export the plain plasmid sequences --------------------------------------
+
+well_names <- paste0("Well", formatC(seq_len(384), flag = "0", width = 3))
+barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+fasta_titles <- paste0(">", well_names)
+fasta_list <- lapply(seq_len(384),
+                     function(x) c(fasta_titles[[x]], barcoded_plasmids[[x]], "")
+                     )
+
+write.table(unlist(fasta_list),
+            file = file.path(file_output_directory, "reference_sequences.fa"),
+            quote = FALSE, row.names = FALSE, col.names = FALSE,
+            )
+
+
+
+
 # Export the annotated plasmids -------------------------------------------
 
 for (i in seq_len(384)) {
-  file_name <- paste0("Well",
-                      formatC(i, flag = "0", width = 3),
-                      "_barcoded_cassette.gbk"
-                      )
+  file_name <- paste0(well_names[[i]], "_barcoded_cassette.gbk")
   use_plasmid <- PlasmidForWell(i)
   export_lines <- c(plasmid_list[[use_plasmid]][["preceding"]],
                     plasmid_lines_list[[i]],
