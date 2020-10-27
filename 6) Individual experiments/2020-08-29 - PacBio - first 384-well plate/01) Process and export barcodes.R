@@ -94,12 +94,10 @@ colnames(sample_name_df)[[2]] <- paste0(
 
 
 
-
 # Create the barcode name map (PacBio ID to well number) ------------------
 
 barcodes_to_wells_map <- seq_len(384)
 names(barcodes_to_wells_map) <- sample_name_df[["Barcode"]]
-
 
 
 
@@ -140,17 +138,16 @@ barcode_and_constant_region_fastas <- lapply(seq_along(export_with_constant_regi
 
 
 
-
 # Export barcodes ---------------------------------------------------------
 
 write.table(unlist(only_barcodes_fastas),
             file = file.path(intermediate_directory, "barcodes_first384.fa"),
-            quote = FALSE, row.names = FALSE, col.names = FALSE,
+            quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 
 write.table(unlist(barcode_and_constant_region_fastas),
             file = file.path(intermediate_directory, "barcodes_first384_with_constant_region.fa"),
-            quote = FALSE, row.names = FALSE, col.names = FALSE,
+            quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 
 write.csv(sample_name_df,
