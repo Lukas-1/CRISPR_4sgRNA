@@ -328,8 +328,6 @@ AlignmentsForZMW(5112773)
 
 alignment <- AlignmentsForZMW(32965024)
 
-BrowseSeqs(alignment)
-
 
 
 alignment <- AlignmentsForZMW(59244630)
