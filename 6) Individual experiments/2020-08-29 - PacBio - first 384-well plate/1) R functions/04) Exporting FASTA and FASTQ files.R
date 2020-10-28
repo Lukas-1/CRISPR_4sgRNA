@@ -58,8 +58,6 @@ ExportSequences <- function(lima_reads,
                             wells_vec           = seq_len(384)
                             ) {
 
-  stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
-
   wells_formatted <- formatC(seq_len(384), flag = "0", width = 3)
   well_names <- paste0("well", wells_formatted)
   file_names <- paste0(well_names, append_to_file_name)
@@ -122,3 +120,5 @@ ExportSequences <- function(lima_reads,
     message("")
   }
 }
+
+

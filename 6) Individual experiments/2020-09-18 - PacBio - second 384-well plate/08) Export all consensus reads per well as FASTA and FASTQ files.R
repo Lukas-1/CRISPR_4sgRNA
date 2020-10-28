@@ -18,14 +18,13 @@ source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R")
 
 # Define folder paths -----------------------------------------------------
 
-plate2_directory          <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
+plate2_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
+p1_R_objects_directory <- file.path(plate1_directory, "3) R objects")
+p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
 
-p1_R_objects_directory    <- file.path(plate1_directory, "3) R objects")
-p2_R_objects_directory    <- file.path(plate2_directory, "2) R objects")
-
-file_output_directory     <- file.path(plate2_directory, "3) Output")
-fasta_output_directory    <- file.path(file_output_directory, "Fasta")
-fastq_output_directory    <- file.path(file_output_directory, "Fastq")
+file_output_directory  <- file.path(plate2_directory, "3) Output")
+fasta_output_directory <- file.path(file_output_directory, "Fasta")
+fastq_output_directory <- file.path(file_output_directory, "Fastq")
 
 
 
@@ -34,7 +33,6 @@ fastq_output_directory    <- file.path(file_output_directory, "Fastq")
 # Load data ---------------------------------------------------------------
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))

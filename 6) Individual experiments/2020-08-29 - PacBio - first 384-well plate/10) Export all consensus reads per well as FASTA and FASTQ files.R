@@ -31,7 +31,6 @@ fastq_output_directory <- file.path(file_output_directory, "Fastq")
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
