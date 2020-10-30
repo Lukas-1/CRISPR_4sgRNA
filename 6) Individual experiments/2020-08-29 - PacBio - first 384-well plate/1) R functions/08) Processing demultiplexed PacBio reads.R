@@ -331,15 +331,16 @@ GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec 
 
 CreateSummaryDf <- function(reads_df,
                             filter_reads = FALSE,
+                            filter_subsequences = FALSE,
                             close_well_range = 3L,
                             wells_vec = seq_len(384)
                             ) {
 
-  assign("delete_reads_df", reads_df, envir = globalenv())
-  assign("delete_wells_vec", wells_vec, envir = globalenv())
-
   if (filter_reads) {
     reads_df <- reads_df[reads_df[["Passes_filters"]] == 1, ]
+  }
+  if (filter_subsequences) {
+    reads_df <- reads_df[reads_df[["Passes_sg_quality"]] == 1, ]
   }
 
   wells_fac <- factor(reads_df[["Well_number"]])
@@ -357,7 +358,7 @@ CreateSummaryDf <- function(reads_df,
   summary_counts_mat <- do.call(rbind,
                                 tapply(seq_len(nrow(reads_df)),
                                        wells_fac,
-                                       function(x) colSums(well_stats_mat[x, ])
+                                       function(x) colSums(well_stats_mat[x, , drop = FALSE])
                                        )
                                 )
   mode(summary_counts_mat) <- "integer"
@@ -378,7 +379,7 @@ CreateSummaryDf <- function(reads_df,
   alteration_counts_mat <- do.call(rbind,
                                    tapply(seq_len(nrow(reads_df)),
                                           wells_fac,
-                                          function(x) colSums(alterations_mat[x, ])
+                                          function(x) colSums(alterations_mat[x, , drop = FALSE])
                                           )
                                    )
 
@@ -447,7 +448,7 @@ CreateSummaryDf <- function(reads_df,
     "Num_low_barcode_scores" = tapply(reads_df[["Passes_barcode_filters"]],
                                       wells_fac, function(x) sum(x == 0)
                                       ),
-    "Num_low_quality_scores" = tapply(reads_df[["Passes_read_filters"]],
+    "Num_low_quality_scores" = tapply(reads_df[["Passes_read_quality"]],
                                       wells_fac, function(x) sum(x == 0)
                                       ),
     "Num_low_bc_or_qual"     = tapply(reads_df[["Passes_filters"]],
@@ -537,7 +538,7 @@ CheckThatFactorIsInOrder <- function(my_factor) {
 
 
 
-AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
+GetFeaturesData <- function(extracted_df, use_ZMWs = NULL, get_quality = FALSE) {
 
   CheckThatFactorIsInOrder(extracted_df[["ZMW"]])
   stopifnot(length(unique(table(extracted_df[["ZMW"]]))) == 1)
@@ -550,13 +551,21 @@ AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
   }
 
   use_features <- c(paste0("sg", 1:4),
-                    paste0("sg", 1:4, "_cr", 1:4),
-                    "TpR_DHFR"
+                    paste0("sg", 1:4, "_cr", 1:4)
                     )
+
+  if (get_quality) {
+    extract_column <- "Mean_quality"
+    column_suffix <- "quality"
+  } else {
+    use_features <- c(use_features, "TpR_DHFR")
+    extract_column <- "Category"
+    column_suffix <- "category"
+  }
 
   categories_vec_list <- sapply(use_features, function(x) {
     are_this_feature <- extracted_df[["Feature"]] == x
-    categories_sub_vec <- extracted_df[["Category"]][are_this_feature]
+    categories_sub_vec <- extracted_df[[extract_column]][are_this_feature]
     if (!(is.null(use_ZMWs))) {
       categories_sub_vec <- categories_sub_vec[zmw_matches]
     }
@@ -564,9 +573,13 @@ AddAlterationCategories <- function(extracted_df, use_ZMWs = NULL) {
   }, simplify = FALSE)
 
   results_mat <- do.call(cbind, categories_vec_list)
-  colnames(results_mat) <- paste0(colnames(results_mat), "_category")
+  colnames(results_mat) <- paste0(colnames(results_mat), "_", column_suffix)
   return(results_mat)
 }
+
+
+
+
 
 
 
@@ -612,7 +625,7 @@ AnalyzeWells <- function(reads_list,
                          bc_min_comb_score = 60,
                          bc_min_score_lead = 30,
                          bc_length_cutoff  = 8L,
-                         min_mean_quality  = 85,
+                         min_mean_quality  = 85 / 93 * 100,
                          wells_vec         = seq_len(384)
                          ) {
 
@@ -731,12 +744,6 @@ AnalyzeWells <- function(reads_list,
 
   barcodes_df <- barcodes_df[, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
 
-  # assign("delete_df", data.frame(individual_ZMWs_df,
-  #                                  barcodes_df[are_real_wells, ],
-  #                                  stringsAsFactors = FALSE
-  #                                  ),
-  #        envir = globalenv())
-
   individual_ZMWs_df <- data.frame(individual_ZMWs_df,
                                    barcodes_df,
                                    stringsAsFactors = FALSE
@@ -757,19 +764,30 @@ AnalyzeWells <- function(reads_list,
              (individual_ZMWs_df[["BC_combined_score"]] >= bc_min_comb_score) &
              (individual_ZMWs_df[["BC_score_lead"]] >= bc_min_score_lead)
 
-  pass_rq <- individual_ZMWs_df[["Mean_quality"]] >= min_mean_quality
+  pass_rq <- (individual_ZMWs_df[["Mean_quality"]]) >= min_mean_quality
   pass_filters <- pass_bc & pass_rq
 
   individual_ZMWs_df[["Passes_filters"]]         <- as.integer(pass_filters)
   individual_ZMWs_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
-  individual_ZMWs_df[["Passes_read_filters"]]    <- as.integer(pass_rq)
+  individual_ZMWs_df[["Passes_read_quality"]]    <- as.integer(pass_rq)
 
-  alterations_mat <- AddAlterationCategories(extracted_df, individual_ZMWs_df[["ZMW"]])
+  alterations_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]])
+  subqualities_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]], get_quality = TRUE)
+  subqualities_mat <- subqualities_mat / 93 * 100
+
+  are_poor_quality_mat <- subqualities_mat < min_mean_quality
+  are_poor_quality_mat[is.na(are_poor_quality_mat)] <- FALSE
+
+  individual_ZMWs_df[["Passes_sg_quality"]] <- as.integer(rowSums(are_poor_quality_mat) == 0)
+
   individual_ZMWs_df <- data.frame(
     individual_ZMWs_df,
     alterations_mat,
+    subqualities_mat,
     stringsAsFactors = FALSE
   )
+
+  sg_features <- c(paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4))
 
   all_columns <- c(
     "ZMW", "Well_number", "Length",
@@ -784,12 +802,13 @@ AnalyzeWells <- function(reads_list,
     "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
     "Row_quality", "Column_quality",
 
-    paste0(c("TpR_DHFR", paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4)),
-           "_category"
-           ),
+    paste0(c("TpR_DHFR", sg_features), "_category"),
+
+    paste0(sg_features, "_quality"),
 
     "BC_combined_score", "BC_score_lead", "Mean_quality",
-    "Passes_filters", "Passes_barcode_filters", "Passes_read_filters",
+    "Passes_filters", "Passes_barcode_filters", "Passes_read_quality",
+    "Passes_sg_quality",
     "Contam_guides", "Contam_genes", "Contam_well",
     "Min_distance", "Random_distance", "Mean_distance", "Distances",
     "sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4", "at_least_1", "at_least_2",
@@ -842,15 +861,20 @@ SummarizeWells <- function(analysis_list,
                                            close_well_range = close_well_range,
                                            wells_vec = wells_vec
                                            )
-
+  filtered_gRNAs_df     <- CreateSummaryDf(reads_df,
+                                           filter_reads = TRUE,
+                                           filter_subsequences = TRUE,
+                                           close_well_range = close_well_range,
+                                           wells_vec = wells_vec
+                                           )
   cross_contam_mat <- CreateCrossContamMat(contamin_mat_list,
                                            reads_df[["Well_number"]],
                                            wells_vec = wells_vec
                                            )
-
   results_list <- list(
     "original_summary_df" = unfiltered_summary_df,
     "filtered_summary_df" = filtered_summary_df,
+    "filtered_gRNAs_df"   = filtered_gRNAs_df,
     "individual_reads_df" = reads_df,
     "contaminations_mat"  = cross_contam_mat
   )
@@ -916,7 +940,7 @@ ExportTable <- function(export_df,
 ExportIndivTable <- function(indiv_reads_df, ...) {
   indiv_reads_df[["Mean_quality"]] <- round(indiv_reads_df[["Mean_quality"]], digits = 1)
   exclude_columns <- c("Min_distance", "Random_distance", "Mean_distance",
-                       "Passes_barcode_filters", "Passes_read_filters"
+                       "Passes_barcode_filters", "Passes_read_quality"
                        )
   indiv_reads_df <- indiv_reads_df[, !(colnames(indiv_reads_df) %in% exclude_columns)]
   ExportTable(indiv_reads_df, ...)

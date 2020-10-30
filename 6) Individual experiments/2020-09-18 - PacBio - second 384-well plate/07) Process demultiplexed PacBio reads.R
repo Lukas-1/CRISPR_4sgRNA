@@ -94,6 +94,9 @@ sl7_ccs5_df_list <- SummarizeWells(sl7_ccs5_analysis_list, wells_vec = sg_sequen
 # ExportSummaryTable(sl7_ccs3_df_list[["filtered_summary_df"]],
 #                    "SmrtLink7/SmrtLink7_CCS3_99_summary_per_well_filtered"
 #                    )
+# ExportSummaryTable(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+#                    "SmrtLink7/SmrtLink7_CCS3_99_summary_per_well_filtered_gRNAs"
+#                    )
 # ExportIndivTable(sl7_ccs3_df_list[["individual_reads_df"]],
 #                  "SmrtLink7/SmrtLink7_CCS3_99_individual_reads"
 #                  )
@@ -107,6 +110,9 @@ ExportSummaryTable(sl7_ccs5_df_list[["original_summary_df"]],
                    )
 ExportSummaryTable(sl7_ccs5_df_list[["filtered_summary_df"]],
                    "SmrtLink7/SmrtLink7_CCS5_999_summary_per_well_filtered"
+                   )
+ExportSummaryTable(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+                   "SmrtLink7/SmrtLink7_CCS5_999_summary_per_well_filtered_gRNAs"
                    )
 ExportIndivTable(sl7_ccs5_df_list[["individual_reads_df"]],
                  "SmrtLink7/SmrtLink7_CCS5_999_individual_reads"
@@ -123,6 +129,9 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
 # ExportSummaryTable(sl9_ccs3_df_list[["filtered_summary_df"]],
 #                    "SmrtLink9/SmrtLink9_CCS3_99_summary_per_well_filtered"
 #                    )
+# ExportSummaryTable(sl9_ccs3_df_list[["filtered_gRNAs_df"]],
+#                    "SmrtLink9/SmrtLink9_CCS3_99_summary_per_well_filtered_gRNAs"
+#                    )
 # ExportIndivTable(sl9_ccs3_df_list[["individual_reads_df"]],
 #                  "SmrtLink9/SmrtLink9_CCS3_99_individual_reads"
 #                  )
@@ -130,11 +139,16 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
 #             "SmrtLink9/SmrtLink9_CCS3_99_contaminations"
 #             )
 #
+#
+#
 # ExportSummaryTable(sl9_ccs5_df_list[["original_summary_df"]],
 #                    "SmrtLink9/SmrtLink9_CCS5_999_summary_per_well_original"
 #                    )
 # ExportSummaryTable(sl9_ccs5_df_list[["filtered_summary_df"]],
 #                    "SmrtLink9/SmrtLink9_CCS5_999_summary_per_well_filtered"
+#                    )
+# ExportSummaryTable(sl9_ccs5_df_list[["filtered_gRNAs_df"]],
+#                    "SmrtLink9/SmrtLink9_CCS5_999_summary_per_well_filtered_gRNAs"
 #                    )
 # ExportIndivTable(sl9_ccs5_df_list[["individual_reads_df"]],
 #                  "SmrtLink9/SmrtLink9_CCS5_999_individual_reads"
@@ -142,7 +156,7 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
 # ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
 #             "SmrtLink9/SmrtLink9_CCS5_999_contaminations"
 #             )
-
+#
 
 
 

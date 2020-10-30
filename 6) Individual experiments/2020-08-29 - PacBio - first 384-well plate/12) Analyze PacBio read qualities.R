@@ -484,7 +484,7 @@ BarPlotPanel <- function(summary_df,
 
 # Start loop --------------------------------------------------------------
 
-for (use_filtered in c(FALSE, TRUE)) {
+for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
   for (smrtlink_version in c(7, 9)) {
     for (highlight_homologies in c(FALSE, TRUE)) {
       for (show_well_numbers in c(FALSE, TRUE)) {
@@ -495,12 +495,15 @@ for (use_filtered in c(FALSE, TRUE)) {
 
         file_prefix <- paste0("Quality control - SmrtLink ", smrtlink_version, " - ")
 
-        if (use_filtered) {
-          file_postfix <- " - filtered"
-          df_name <- "filtered_summary_df"
-        } else {
+        if (filter_category == "original") {
           file_postfix <- " - original"
           df_name <- "original_summary_df"
+        } else if (filter_category == "filtered reads") {
+          file_postfix <- " - filtered"
+          df_name <- "filtered_summary_df"
+        } else if (filter_category == "filtered gRNAs") {
+          file_postfix <- " - filtered gRNAs"
+          df_name <- "filtered_gRNAs_df"
         }
         if (highlight_homologies) {
           file_postfix <- paste0(file_postfix, " - homologies indicated")

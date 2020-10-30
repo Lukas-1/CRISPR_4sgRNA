@@ -48,17 +48,20 @@ for (var in use_vars) {
 
 # Start loop --------------------------------------------------------------
 
-for (use_filtered in c(FALSE, TRUE)) {
+for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
   for (smrtlink_version in c(7)) {
-  # for (smrtlink_version in c(7, 9)) {
+
     file_prefix <- paste0("Shared subsequences - SmrtLink ", smrtlink_version, " - ")
 
-    if (use_filtered) {
-      file_postfix <- " - filtered"
-      df_name <- "filtered_summary_df"
-    } else {
+    if (filter_category == "original") {
       file_postfix <- " - original"
       df_name <- "original_summary_df"
+    } else if (filter_category == "filtered reads") {
+      file_postfix <- " - filtered"
+      df_name <- "filtered_summary_df"
+    } else if (filter_category == "filtered gRNAs") {
+      file_postfix <- " - filtered gRNAs"
+      df_name <- "filtered_gRNAs_df"
     }
     file_postfix <- paste0(file_postfix, ".pdf")
 
@@ -69,8 +72,6 @@ for (use_filtered in c(FALSE, TRUE)) {
       ccs3_df_list <- sl9_ccs3_df_list
       ccs5_df_list <- sl9_ccs5_df_list
     }
-
-
 
     # Export plots ------------------------------------------------------------
 
@@ -84,7 +85,7 @@ for (use_filtered in c(FALSE, TRUE)) {
     #     )
     # par("mar" = use_mar)
     # for (var in use_vars) {
-    #   PlotBySharedSubsequence(ccs3_df_list[["original_summary_df"]], var)
+    #   PlotBySharedSubsequence(ccs3_df_list[[df_name]], var)
     # }
     # dev.off()
 
@@ -99,7 +100,7 @@ for (use_filtered in c(FALSE, TRUE)) {
         )
     par("mar" = use_mar)
     for (var in use_vars) {
-      PlotBySharedSubsequence(ccs5_df_list[["original_summary_df"]], var)
+      PlotBySharedSubsequence(ccs5_df_list[[df_name]], var)
     }
     dev.off()
 

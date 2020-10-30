@@ -52,11 +52,17 @@ for (smrtlink_version in c(7, 9)) {
     DrawAlterationBarplot(sl7_ccs5_df_list[["filtered_summary_df"]],
                           main_title = ccs5_title, reorder_wells = reorder_wells
                           )
+    DrawAlterationBarplot(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+                          main_title = ccs5_title, reorder_wells = reorder_wells
+                          )
 
     DrawAlterationBarplot(sl7_ccs3_df_list[["original_summary_df"]],
                           main_title = ccs3_title, reorder_wells = reorder_wells
                           )
     DrawAlterationBarplot(sl7_ccs3_df_list[["filtered_summary_df"]],
+                          main_title = ccs3_title, reorder_wells = reorder_wells
+                          )
+    DrawAlterationBarplot(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
                           main_title = ccs3_title, reorder_wells = reorder_wells
                           )
 
@@ -88,6 +94,10 @@ for (smrtlink_version in c(7, 9)) {
             paste0(file_name_prefix, " - CCS5 (99.9) - filtered"),
             main_title = ccs5_title
             )
+    SavePNG(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+            paste0(file_name_prefix, " - CCS5 (99.9) - filtered gRNAs"),
+            main_title = ccs5_title
+            )
 
     SavePNG(sl7_ccs3_df_list[["original_summary_df"]],
             paste0(file_name_prefix, " - CCS3 (99) - original"),
@@ -97,7 +107,10 @@ for (smrtlink_version in c(7, 9)) {
             paste0(file_name_prefix, " - CCS3 (99) - filtered"),
             main_title = ccs3_title
             )
-
+    SavePNG(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+            paste0(file_name_prefix, " - CCS3 (99) - filtered gRNAs"),
+            main_title = ccs3_title
+            )
 
 
 
@@ -108,11 +121,12 @@ for (smrtlink_version in c(7, 9)) {
         width  = use_width
         )
     DrawAlterationBarplot(sl7_ccs5_df_list[["original_summary_df"]],
-                        main_title = ccs5_title, reorder_wells = reorder_wells
-                        )
+                          main_title = ccs5_title, reorder_wells = reorder_wells
+                          )
     DrawAlterationBarplot(sl7_ccs3_df_list[["original_summary_df"]],
-                        main_title = ccs3_title, reorder_wells = reorder_wells
-                        )
+                          main_title = ccs3_title, reorder_wells = reorder_wells
+                          )
+
     dev.off()
 
 
@@ -128,6 +142,18 @@ for (smrtlink_version in c(7, 9)) {
                           )
     dev.off()
 
+
+    pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - filtered gRNAs.pdf")),
+        height = use_height,
+        width  = use_width
+        )
+    DrawAlterationBarplot(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+                          main_title = ccs5_title, reorder_wells = reorder_wells
+                          )
+    DrawAlterationBarplot(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+                          main_title = ccs3_title, reorder_wells = reorder_wells
+                          )
+    dev.off()
 
 
 

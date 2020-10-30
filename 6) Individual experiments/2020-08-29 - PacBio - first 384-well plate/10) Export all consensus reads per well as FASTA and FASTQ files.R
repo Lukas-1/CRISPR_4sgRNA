@@ -46,35 +46,62 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 sl7_reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
 sl9_reads_df <- sl9_ccs3_df_list[["individual_reads_df"]]
 
-sl7_passing_zmws <- sl7_reads_df[["ZMW"]][sl7_reads_df[["Passes_barcode_filters"]] == 1]
-sl9_passing_zmws <- sl9_reads_df[["ZMW"]][sl9_reads_df[["Passes_barcode_filters"]] == 1]
+sl7_pass_bc <- sl7_reads_df[["Passes_barcode_filters"]] == 1
+sl9_pass_bc <- sl9_reads_df[["Passes_barcode_filters"]] == 1
+
+sl7_pass_read <- sl7_reads_df[["Passes_read_quality"]] == 1
+sl9_pass_read <- sl9_reads_df[["Passes_read_quality"]] == 1
+
+sl7_pass_sg <- sl7_reads_df[["Passes_sg_quality"]] == 1
+sl9_pass_sg <- sl9_reads_df[["Passes_sg_quality"]] == 1
+
+sl7_passing_bc_zmws <- sl7_reads_df[["ZMW"]][sl7_pass_bc]
+sl9_passing_bc_zmws <- sl9_reads_df[["ZMW"]][sl9_pass_bc]
+
+sl7_passing_read_zmws <- sl7_reads_df[["ZMW"]][sl7_pass_bc & sl7_pass_read]
+sl9_passing_read_zmws <- sl9_reads_df[["ZMW"]][sl9_pass_bc & sl9_pass_read]
+
+sl7_passing_sg_zmws <- sl7_reads_df[["ZMW"]][sl7_pass_bc & sl7_pass_read & sl7_pass_sg]
+sl9_passing_sg_zmws <- sl9_reads_df[["ZMW"]][sl9_pass_bc & sl9_pass_read & sl9_pass_sg]
 
 
 
 
 # Export sequences --------------------------------------------------------
 
-for (filter_reads in c(FALSE, TRUE)) {
+for (filter_reads in c("Unfiltered", "Filtered barcodes", "Filtered reads", "Filtered gRNAs")) {
   for (split_reads in c(FALSE, TRUE)) {
 
-    if (filter_reads) {
-      first_half <- "Filtered"
-      use_sl7_ccs3_zmws <- sl7_passing_zmws
-      use_sl7_ccs5_zmws <- intersect(sl7_ccs5_lima_zmws, sl7_passing_zmws)
-      use_sl9_ccs3_zmws <- sl9_passing_zmws
-      use_sl9_ccs5_zmws <- intersect(sl9_ccs5_lima_zmws, sl9_passing_zmws)
-    } else {
-      first_half <- "Unfiltered"
+    if (filter_reads == "Unfiltered") {
+      first_half <- "a) Unfiltered"
       use_sl7_ccs3_zmws <- NULL
       use_sl7_ccs5_zmws <- sl7_ccs5_lima_zmws
       use_sl9_ccs3_zmws <- NULL
       use_sl9_ccs5_zmws <- sl9_ccs5_lima_zmws
+    } else if (filter_reads == "Filtered barcodes") {
+      first_half <- "b) Filtered barcodes"
+      use_sl7_ccs3_zmws <- sl7_passing_bc_zmws
+      use_sl7_ccs5_zmws <- intersect(sl7_ccs5_lima_zmws, sl7_passing_bc_zmws)
+      use_sl9_ccs3_zmws <- sl9_passing_bc_zmws
+      use_sl9_ccs5_zmws <- intersect(sl9_ccs5_lima_zmws, sl9_passing_bc_zmws)
+    } else if (filter_reads == "Filtered reads") {
+      first_half <- "c) Filtered reads"
+      use_sl7_ccs3_zmws <- sl7_passing_read_zmws
+      use_sl7_ccs5_zmws <- intersect(sl7_ccs5_lima_zmws, sl7_passing_read_zmws)
+      use_sl9_ccs3_zmws <- sl9_passing_read_zmws
+      use_sl9_ccs5_zmws <- intersect(sl9_ccs5_lima_zmws, sl9_passing_read_zmws)
+    } else if (filter_reads == "Filtered gRNAs") {
+      first_half <- "d) Filtered gRNAs"
+      use_sl7_ccs3_zmws <- sl7_passing_sg_zmws
+      use_sl7_ccs5_zmws <- intersect(sl7_ccs5_lima_zmws, sl7_passing_sg_zmws)
+      use_sl9_ccs3_zmws <- sl9_passing_sg_zmws
+      use_sl9_ccs5_zmws <- intersect(sl9_ccs5_lima_zmws, sl9_passing_sg_zmws)
     }
 
     if (split_reads) {
-      sub_folder <- paste0(first_half, "_split_into_chunks")
+      sub_folder <- paste0(first_half, " - split into chunks")
     } else {
-      sub_folder <- paste0(first_half, "_all_reads")
+      sub_folder <- paste0(first_half, " - all reads")
     }
 
     message(paste0("Exporting reads into the '", sub_folder, "' folders..."))
