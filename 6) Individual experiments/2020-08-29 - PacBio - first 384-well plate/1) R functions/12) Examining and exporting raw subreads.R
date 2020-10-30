@@ -77,12 +77,26 @@ ExportReadsForZMW <- function(zmw,
   file_name <- paste0(well_prefix, "_", zmw)
 
   reads_object <- ReadsForZMW(zmw, use_sl7 = use_sl7, use_fastq = use_fastq)
+  are_too_long <- lengths(reads_object) > 25000
+  stopifnot(!(all(are_too_long)))
+  if (any(are_too_long)) {
+    if (any(are_too_long)) {
+      long_IDs <- names(reads_object)[are_too_long]
+      write_message <- paste0("The following reads were too long and could not",
+                              " be exported: ", paste0(long_IDs, collapse = ", ")
+                              )
+      write.table(write_message,
+                  file = file.path(output_dir, paste0(file_name, " - log.txt")),
+                  quote = FALSE, row.names = FALSE, col.names = FALSE
+                  )
+    }
+  }
   if (use_fastq) {
-    writeQualityScaledXStringSet(reads_object,
+    writeQualityScaledXStringSet(reads_object[!(are_too_long)],
                                  filepath = file.path(output_dir, paste0(file_name, ".fastq"))
                                  )
   } else {
-    writeXStringSet(reads_object,
+    writeXStringSet(reads_object[!(are_too_long)],
                     filepath = file.path(output_dir, paste0(file_name, ".fasta"))
                     )
   }
@@ -96,13 +110,12 @@ ExportReadsForZMW <- function(zmw,
 
 ExportSubreadsForWells <- function(fasta_output_dir,
                                    fastq_output_dir,
-                                   prefer_ccs          = TRUE,
-                                   use_zmws            = NULL,
-                                   max_num_ZMWs        = 20L,
-                                   wells_vec           = seq_len(384),
-                                   use_sl7             = TRUE
+                                   prefer_ccs   = TRUE,
+                                   use_zmws     = NULL,
+                                   max_num_ZMWs = 20L,
+                                   wells_vec    = seq_len(384),
+                                   use_sl7      = TRUE
                                    ) {
-
 
   wells_formatted <- formatC(seq_len(384), flag = "0", width = 3)
   well_names <- paste0("well", wells_formatted)
@@ -142,7 +155,7 @@ ExportSubreadsForWells <- function(fasta_output_dir,
       this_well_zmws <- this_well_zmws[seq_len(max_num_ZMWs)]
     }
     for (zmw in this_well_zmws) {
-      message(paste0("Exporting reads for ZMW ", zmw))
+      # message(paste0("Exporting reads for ZMW ", zmw))
       ExportReadsForZMW(zmw, output_dir = fasta_folder, use_fastq = FALSE)
       ExportReadsForZMW(zmw, output_dir = fastq_folder, use_fastq = TRUE)
     }
