@@ -55,7 +55,6 @@ sl7_ccs3_report_df <- sl7_ccs5_report_df
 ############################
 ############################
 
-
 ExportReadsForZMW(4588372)
 
 message("Exporting reads for SmrtLink7_CCS3...")
