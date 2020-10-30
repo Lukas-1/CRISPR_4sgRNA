@@ -14,8 +14,6 @@ source(file.path(R_functions_directory, "12) Examining and exporting raw subread
 
 
 
-
-
 # Define folder paths -----------------------------------------------------
 
 plate2_directory          <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
@@ -33,6 +31,7 @@ subreads_zmws_directory   <- file.path(subreads_output_directory, "Individual ZM
 # Load data ---------------------------------------------------------------
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
 # load(file.path(p2_R_objects_directory, "03) Read in PacBio data - ccs5 ZMWs.RData"))
@@ -59,10 +58,10 @@ sl7_ccs3_report_df <- sl7_ccs5_report_df
 
 ExportReadsForZMW(4588372)
 
-
 message("Exporting reads for SmrtLink7_CCS3...")
 ExportSubreadsForWells(fasta_output_dir = file.path(subreads_fasta_directory, "SmrtLink7_CCS5"),
-                       fastq_output_dir = file.path(subreads_fastq_directory, "SmrtLink7_CCS5")
+                       fastq_output_dir = file.path(subreads_fastq_directory, "SmrtLink7_CCS5"),
+                       wells_vec = sg_sequences_df[["Well_number"]]
                        )
 
 
