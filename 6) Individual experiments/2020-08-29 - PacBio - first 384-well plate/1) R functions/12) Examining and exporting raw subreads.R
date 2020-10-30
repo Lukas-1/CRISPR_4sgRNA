@@ -13,7 +13,7 @@ library("Biostrings")
 
 # Define functions --------------------------------------------------------
 
-ReadsForZMW <- function(zmw, use_sl7 = TRUE, use_fastq = use_fastq) {
+ReadsForZMW <- function(zmw, use_sl7 = TRUE, use_fastq = TRUE) {
 
   stopifnot(all(c("subreads_bam", "subreads_stats_df") %in% ls(envir = globalenv())))
 
@@ -77,7 +77,7 @@ ExportReadsForZMW <- function(zmw,
   file_name <- paste0(well_prefix, "_", zmw)
 
   reads_object <- ReadsForZMW(zmw, use_sl7 = use_sl7, use_fastq = use_fastq)
-  are_too_long <- lengths(reads_object) > 25000
+  are_too_long <- lengths(reads_object) > 20000
   stopifnot(!(all(are_too_long)))
   if (any(are_too_long)) {
     if (any(are_too_long)) {
@@ -85,6 +85,9 @@ ExportReadsForZMW <- function(zmw,
       write_message <- paste0("The following reads were too long and could not",
                               " be exported: ", paste0(long_IDs, collapse = ", ")
                               )
+      if (!(use_fastq)) {
+        message(write_message)
+      }
       write.table(write_message,
                   file = file.path(output_dir, paste0(file_name, " - log.txt")),
                   quote = FALSE, row.names = FALSE, col.names = FALSE
