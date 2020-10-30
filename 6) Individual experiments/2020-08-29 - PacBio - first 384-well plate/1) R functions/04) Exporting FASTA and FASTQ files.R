@@ -54,7 +54,7 @@ ExportSequences <- function(lima_reads,
                             prefer_ccs          = TRUE,
                             use_zmws            = NULL,
                             split_into_chunks   = FALSE,
-                            chunk_size          = 20L,
+                            chunk_size          = 50L,
                             wells_vec           = seq_len(384)
                             ) {
 
