@@ -63,19 +63,6 @@ load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 
 
 
-# Define functions --------------------------------------------------------
-
-ExtractZMWs <- function(report_df, lima_list) {
-  ccs_well_numbers <- GetWellNumbers(report_df)
-  report_zmws <- as.integer(substr(report_df[["ZMW"]], 22, nchar(report_df[["ZMW"]])))
-  lima_zmws <- as.integer(substr(lima_list[["qname"]], 22, nchar(lima_list[["qname"]]) - 4))
-
-  result_zmws <- report_zmws[!(is.na(ccs_well_numbers)) & (report_zmws %in% lima_zmws)]
-  return(result_zmws)
-}
-
-
-
 
 # Define import functions -------------------------------------------------
 
@@ -91,13 +78,6 @@ ExtractZMWs <- function(report_df, lima_list) {
 #   )
 #   return(result_list)
 # }
-
-ReadLimaReport <- function(file_path) {
-  read.table(file_path,
-             header = TRUE, sep = "\t",
-             quote = "", stringsAsFactors = FALSE
-             )
-}
 
 
 
