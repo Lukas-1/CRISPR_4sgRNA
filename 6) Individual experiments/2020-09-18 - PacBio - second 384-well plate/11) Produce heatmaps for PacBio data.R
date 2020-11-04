@@ -44,7 +44,7 @@ sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] == 2,
 # Set up loop -------------------------------------------------------------
 
 
-for (smrtlink_version in c(7)) {
+for (smrtlink_version in c(7, 9)) {
 
   for (reorder_wells in c(FALSE, TRUE)) {
 
@@ -66,15 +66,15 @@ for (smrtlink_version in c(7)) {
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
 
-    # DrawAccuracyHeatmap(sl7_ccs3_df_list[["original_summary_df"]],
-    #                     main_title = ccs3_title, reorder_wells = reorder_wells
-    #                     )
-    # DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_summary_df"]],
-    #                     main_title = ccs3_title, reorder_wells = reorder_wells
-    #                     )
-    # DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
-    #                     main_title = ccs5_title, reorder_wells = reorder_wells
-    #                     )
+    DrawAccuracyHeatmap(sl7_ccs3_df_list[["original_summary_df"]],
+                        main_title = ccs3_title, reorder_wells = reorder_wells
+                        )
+    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_summary_df"]],
+                        main_title = ccs3_title, reorder_wells = reorder_wells
+                        )
+    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+                        main_title = ccs5_title, reorder_wells = reorder_wells
+                        )
 
 
     # Produce the accuracy PNGs -----------------------------------------------
@@ -108,18 +108,18 @@ for (smrtlink_version in c(7)) {
             main_title = ccs5_title
             )
 
-    # SavePNG(sl7_ccs3_df_list[["original_summary_df"]],
-    #         paste0(file_name_prefix, " - CCS3 (99) - original"),
-    #         main_title = ccs3_title
-    #         )
-    # SavePNG(sl7_ccs3_df_list[["filtered_summary_df"]],
-    #         paste0(file_name_prefix, " - CCS3 (99) - filtered"),
-    #         main_title = ccs3_title
-    #         )
-    # SavePNG(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
-    #         paste0(file_name_prefix, " - CCS3 (99) - filtered gRNAs"),
-    #         main_title = ccs3_title
-    #         )
+    SavePNG(sl7_ccs3_df_list[["original_summary_df"]],
+            paste0(file_name_prefix, " - CCS3 (99) - original"),
+            main_title = ccs3_title
+            )
+    SavePNG(sl7_ccs3_df_list[["filtered_summary_df"]],
+            paste0(file_name_prefix, " - CCS3 (99) - filtered"),
+            main_title = ccs3_title
+            )
+    SavePNG(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+            paste0(file_name_prefix, " - CCS3 (99) - filtered gRNAs"),
+            main_title = ccs3_title
+            )
 
 
 
@@ -132,9 +132,9 @@ for (smrtlink_version in c(7)) {
     DrawAccuracyHeatmap(sl7_ccs5_df_list[["original_summary_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    # DrawAccuracyHeatmap(sl7_ccs3_df_list[["original_summary_df"]],
-    #                     main_title = ccs3_title, reorder_wells = reorder_wells
-    #                     )
+    DrawAccuracyHeatmap(sl7_ccs3_df_list[["original_summary_df"]],
+                        main_title = ccs3_title, reorder_wells = reorder_wells
+                        )
     dev.off()
 
 
@@ -145,10 +145,9 @@ for (smrtlink_version in c(7)) {
     DrawAccuracyHeatmap(sl7_ccs5_df_list[["filtered_summary_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    # DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_summary_df"]],
-    #                     main_title = ccs3_title, reorder_wells = reorder_wells
-    #                     )
-
+    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_summary_df"]],
+                        main_title = ccs3_title, reorder_wells = reorder_wells
+                        )
     dev.off()
 
 
@@ -159,10 +158,9 @@ for (smrtlink_version in c(7)) {
     DrawAccuracyHeatmap(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    # DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
-    #                     main_title = ccs3_title, reorder_wells = reorder_wells
-    #                     )
-
+    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+                        main_title = ccs3_title, reorder_wells = reorder_wells
+                        )
     dev.off()
 
 

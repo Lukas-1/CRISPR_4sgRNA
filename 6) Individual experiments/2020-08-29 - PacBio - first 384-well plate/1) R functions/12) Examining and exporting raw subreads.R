@@ -55,7 +55,8 @@ ReadsForZMW <- function(zmw, use_sl7 = TRUE, use_fastq = TRUE) {
 ExportReadsForZMW <- function(zmw,
                               use_sl7 = TRUE,
                               output_dir = subreads_zmws_directory,
-                              use_fastq = TRUE
+                              use_fastq = TRUE,
+                              subread_max_length = 20000L
                               ) {
   if (use_sl7) {
     report_df <- sl7_ccs3_report_df
@@ -77,12 +78,13 @@ ExportReadsForZMW <- function(zmw,
   file_name <- paste0(well_prefix, "_", zmw)
 
   reads_object <- ReadsForZMW(zmw, use_sl7 = use_sl7, use_fastq = use_fastq)
-  are_too_long <- lengths(reads_object) > 20000
+  are_too_long <- lengths(reads_object) > subread_max_length
   stopifnot(!(all(are_too_long)))
   if (any(are_too_long)) {
     if (any(are_too_long)) {
       long_IDs <- names(reads_object)[are_too_long]
-      write_message <- paste0("The following reads were too long and could not",
+      write_message <- paste0("The following reads were too long (>",
+                              subread_max_length, " bp) and could not",
                               " be exported: ", paste0(long_IDs, collapse = ", ")
                               )
       if (!(use_fastq)) {

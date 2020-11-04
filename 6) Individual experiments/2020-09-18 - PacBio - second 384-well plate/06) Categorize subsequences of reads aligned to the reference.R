@@ -28,8 +28,8 @@ p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
-# load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))
-# load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
+load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "04) Perform pairwise alignments with the reference sequence.RData"))
@@ -81,16 +81,8 @@ features_templates_list[wells_vec] <- lapply(seq_along(wells_vec), function(x) {
 
 # Extract sequences -------------------------------------------------------
 
-############################
-### DELETE THIS LATER!!! ###
-############################
-sl7_ccs3_ccs <- sl7_ccs5_ccs
-sl7_ccs3_report_df <- sl7_ccs5_report_df
-############################
-############################
-############################
 sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE, wells_vec = sg_sequences_df[["Well_number"]])
-# sl9_extracted_df <- ExtractAlignedSequences(use_sl7 = FALSE)
+sl9_extracted_df <- ExtractAlignedSequences(use_sl7 = FALSE, wells_vec = sg_sequences_df[["Well_number"]])
 
 
 
@@ -98,10 +90,7 @@ sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE, wells_vec = sg_seque
 
 # Save data ---------------------------------------------------------------
 
-# save(list = paste0("sl", c(7, 9), "_extracted_df"),
-#      file = file.path(p2_R_objects_directory, "06) Categorize subsequences of reads aligned to the reference.RData")
-#      )
-save(list = paste0("sl", c(7), "_extracted_df"),
+save(list = paste0("sl", c(7, 9), "_extracted_df"),
      file = file.path(p2_R_objects_directory, "06) Categorize subsequences of reads aligned to the reference.RData")
      )
 

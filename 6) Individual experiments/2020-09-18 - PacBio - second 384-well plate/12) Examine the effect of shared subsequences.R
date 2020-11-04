@@ -49,7 +49,7 @@ for (var in use_vars) {
 # Start loop --------------------------------------------------------------
 
 for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
-  for (smrtlink_version in c(7)) {
+  for (smrtlink_version in c(7, 9)) {
 
     file_prefix <- paste0("Shared subsequences - SmrtLink ", smrtlink_version, " - ")
 
@@ -66,7 +66,7 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
     file_postfix <- paste0(file_postfix, ".pdf")
 
     if (smrtlink_version == 7) {
-      # ccs3_df_list <- sl7_ccs3_df_list
+      ccs3_df_list <- sl7_ccs3_df_list
       ccs5_df_list <- sl7_ccs5_df_list
     } else if (smrtlink_version == 9) {
       ccs3_df_list <- sl9_ccs3_df_list
@@ -75,19 +75,19 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
 
     # Export plots ------------------------------------------------------------
 
-    # pdf(file = file.path(plots_output_directory,
-    #                      paste0("SmrtLink ", smrtlink_version),
-    #                      "Shared subsequences",
-    #                      paste0(file_prefix, "CCS3", file_postfix)
-    #                      ),
-    #     width = pdf_width,
-    #     height = pdf_height
-    #     )
-    # par("mar" = use_mar)
-    # for (var in use_vars) {
-    #   PlotBySharedSubsequence(ccs3_df_list[[df_name]], var)
-    # }
-    # dev.off()
+    pdf(file = file.path(plots_output_directory,
+                         paste0("SmrtLink ", smrtlink_version),
+                         "Shared subsequences",
+                         paste0(file_prefix, "CCS3", file_postfix)
+                         ),
+        width = pdf_width,
+        height = pdf_height
+        )
+    par("mar" = use_mar)
+    for (var in use_vars) {
+      PlotBySharedSubsequence(ccs3_df_list[[df_name]], var)
+    }
+    dev.off()
 
 
     pdf(file = file.path(plots_output_directory,
