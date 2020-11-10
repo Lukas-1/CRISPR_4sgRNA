@@ -47,9 +47,6 @@ sl9_alignments_df <- ExtractAlignedSequences(use_sl7 = FALSE, wells_vec = sg_seq
 save(list = paste0("sl", c(7, 9), "_alignments_df"),
      file = file.path(p2_R_objects_directory, "04) Perform pairwise alignments with the reference sequence.RData")
      )
-save(list = paste0("sl", c(7, 9), "_alignments_df"),
-     file = file.path(p2_R_objects_directory, "04) Perform pairwise alignments with the reference sequence.RData")
-     )
 
 
 
