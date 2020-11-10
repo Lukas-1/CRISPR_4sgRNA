@@ -35,7 +35,6 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
 
     are_this_well <- ccs_well_numbers %in% well_number
     ccs_seq <- ccs_list[["seq"]][are_this_well]
-    ccs_qual <- ccs_list[["qual"]][are_this_well]
 
     plasmid <- DNAStringSet(barcoded_plasmids[[x]])
     row_template <- row_bc_vec[[well_number]]
