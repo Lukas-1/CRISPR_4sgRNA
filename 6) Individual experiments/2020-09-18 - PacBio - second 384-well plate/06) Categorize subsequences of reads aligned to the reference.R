@@ -30,8 +30,6 @@ load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.R
 load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs5.RData"))
 load(file.path(p2_R_objects_directory, "04) Perform pairwise alignments with the reference sequence.RData"))
 
 
