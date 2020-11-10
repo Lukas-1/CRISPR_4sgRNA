@@ -11,6 +11,7 @@ plate1_directory       <- file.path(CRISPR_root_directory, "6) Individual experi
 R_functions_directory  <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "02) Analyzing reads.R"))
+source(file.path(R_functions_directory, "13) Importing PacBio reads.R"))
 
 
 
@@ -33,13 +34,13 @@ sl7_CCS5_ccs_bam_file     <- file.path(raw_data_directory, "SmrtLink7_CCS5", ccs
 sl9_CCS3_ccs_bam_file     <- file.path(raw_data_directory, "SmrtLink9_CCS3/ccs", ccs_bam_name)
 sl9_CCS5_ccs_bam_file     <- file.path(raw_data_directory, "SmrtLink9_CCS5/ccs", ccs_bam_name)
 
-sl7_CCS3_lima_bam_file    <- file.path(raw_data_directory, "SmrtLink7_CCS3/lima", "lukas_lima_CCS3_SL7_output.bam")
-sl7_CCS5_lima_bam_file    <- file.path(raw_data_directory, "SmrtLink7_CCS5/lima", "lukas_lima_CCS5_SL7_output.bam")
+sl7_CCS3_lima_bam_file    <- file.path(raw_data_directory, "SmrtLink7_CCS3/lima", "lukas_lima_CCS3_SL7.bam")
+sl7_CCS5_lima_bam_file    <- file.path(raw_data_directory, "SmrtLink7_CCS5/lima", "lukas_lima_CCS5_SL7.bam")
 sl9_CCS3_lima_bam_file    <- file.path(raw_data_directory, "SmrtLink9_CCS3/lima", "lukas_lima_CCS3_SL9.bam")
 sl9_CCS5_lima_bam_file    <- file.path(raw_data_directory, "SmrtLink9_CCS5/lima", "lukas_lima_CCS5_SL9.bam")
 
-sl7_CCS3_lima_report_file <- file.path(raw_data_directory, "SmrtLink7_CCS3/lima", "lukas_lima_CCS3_SL7_output.lima.report")
-sl7_CCS5_lima_report_file <- file.path(raw_data_directory, "SmrtLink7_CCS5/lima", "lukas_lima_CCS5_SL7_output.lima.report")
+sl7_CCS3_lima_report_file <- file.path(raw_data_directory, "SmrtLink7_CCS3/lima", "lukas_lima_CCS3_SL7.lima.report")
+sl7_CCS5_lima_report_file <- file.path(raw_data_directory, "SmrtLink7_CCS5/lima", "lukas_lima_CCS5_SL7.lima.report")
 sl9_CCS3_lima_report_file <- file.path(raw_data_directory, "SmrtLink9_CCS3/lima", "lukas_lima_CCS3_SL9.lima.report")
 sl9_CCS5_lima_report_file <- file.path(raw_data_directory, "SmrtLink9_CCS5/lima", "lukas_lima_CCS5_SL9.lima.report")
 

@@ -27,6 +27,8 @@ GetWellNumbers <- function(lima_report_df) {
 
 
 
+
+
 # Functions for reading in PacBio output ----------------------------------
 
 ExtractZMWs <- function(report_df, lima_list, wells_vec = seq_len(384)) {
@@ -41,11 +43,5 @@ ExtractZMWs <- function(report_df, lima_list, wells_vec = seq_len(384)) {
 }
 
 
-ReadLimaReport <- function(file_path) {
-  read.table(file_path,
-             header = TRUE, sep = "\t",
-             quote = "", stringsAsFactors = FALSE
-             )
-}
 
 
