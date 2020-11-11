@@ -72,8 +72,6 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
       ccs5_df_list <- sl9_ccs5_df_list
     }
 
-
-
     # Export plots ------------------------------------------------------------
 
     pdf(file = file.path(plots_output_directory,
