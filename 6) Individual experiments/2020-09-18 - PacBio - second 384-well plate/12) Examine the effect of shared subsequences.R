@@ -40,7 +40,7 @@ old_mar <- par(mar = use_mar)
 
 for (var in use_vars) {
   PlotBySharedSubsequence(sl7_ccs5_df_list[["original_summary_df"]], var)
-  # PlotBySharedSubsequence(sl7_ccs3_df_list[["original_summary_df"]], var)
+  PlotBySharedSubsequence(sl7_ccs3_df_list[["original_summary_df"]], var)
 }
 
 
