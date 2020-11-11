@@ -53,26 +53,33 @@ for (smrtlink_version in c(7, 9)) {
     order_folder <- paste0("Heatmaps - ", order_folder)
     plots_dir <- file.path(plots_output_directory, version_folder, order_folder)
 
+    if (smrtlink_version == 7) {
+      ccs3_df_list <- sl7_ccs3_df_list
+      ccs5_df_list <- sl7_ccs5_df_list
+    } else {
+      ccs3_df_list <- sl9_ccs3_df_list
+      ccs5_df_list <- sl9_ccs5_df_list
+    }
 
     # Draw the accuracy plots in the console ----------------------------------
 
-    DrawAccuracyHeatmap(sl7_ccs5_df_list[["original_summary_df"]],
+    DrawAccuracyHeatmap(ccs5_df_list[["original_summary_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs5_df_list[["filtered_summary_df"]],
+    DrawAccuracyHeatmap(ccs5_df_list[["filtered_summary_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+    DrawAccuracyHeatmap(ccs5_df_list[["filtered_gRNAs_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
 
-    DrawAccuracyHeatmap(sl7_ccs3_df_list[["original_summary_df"]],
+    DrawAccuracyHeatmap(ccs3_df_list[["original_summary_df"]],
                         main_title = ccs3_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_summary_df"]],
+    DrawAccuracyHeatmap(ccs3_df_list[["filtered_summary_df"]],
                         main_title = ccs3_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+    DrawAccuracyHeatmap(ccs3_df_list[["filtered_gRNAs_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
 
@@ -95,28 +102,28 @@ for (smrtlink_version in c(7, 9)) {
 
     file_name_prefix <- paste0("Accuracy heatmap - SmrtLink ", smrtlink_version)
 
-    SavePNG(sl7_ccs5_df_list[["original_summary_df"]],
+    SavePNG(ccs5_df_list[["original_summary_df"]],
             paste0(file_name_prefix, " - CCS5 (99.9) - original"),
             main_title = ccs5_title
             )
-    SavePNG(sl7_ccs5_df_list[["filtered_summary_df"]],
+    SavePNG(ccs5_df_list[["filtered_summary_df"]],
             paste0(file_name_prefix, " - CCS5 (99.9) - filtered"),
             main_title = ccs5_title
             )
-    SavePNG(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+    SavePNG(ccs5_df_list[["filtered_gRNAs_df"]],
             paste0(file_name_prefix, " - CCS5 (99.9) - filtered gRNAs"),
             main_title = ccs5_title
             )
 
-    SavePNG(sl7_ccs3_df_list[["original_summary_df"]],
+    SavePNG(ccs3_df_list[["original_summary_df"]],
             paste0(file_name_prefix, " - CCS3 (99) - original"),
             main_title = ccs3_title
             )
-    SavePNG(sl7_ccs3_df_list[["filtered_summary_df"]],
+    SavePNG(ccs3_df_list[["filtered_summary_df"]],
             paste0(file_name_prefix, " - CCS3 (99) - filtered"),
             main_title = ccs3_title
             )
-    SavePNG(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+    SavePNG(ccs3_df_list[["filtered_gRNAs_df"]],
             paste0(file_name_prefix, " - CCS3 (99) - filtered gRNAs"),
             main_title = ccs3_title
             )
@@ -129,10 +136,10 @@ for (smrtlink_version in c(7, 9)) {
         height = use_height,
         width  = use_width
         )
-    DrawAccuracyHeatmap(sl7_ccs5_df_list[["original_summary_df"]],
+    DrawAccuracyHeatmap(ccs5_df_list[["original_summary_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs3_df_list[["original_summary_df"]],
+    DrawAccuracyHeatmap(ccs3_df_list[["original_summary_df"]],
                         main_title = ccs3_title, reorder_wells = reorder_wells
                         )
     dev.off()
@@ -142,10 +149,10 @@ for (smrtlink_version in c(7, 9)) {
         height = use_height,
         width  = use_width
         )
-    DrawAccuracyHeatmap(sl7_ccs5_df_list[["filtered_summary_df"]],
+    DrawAccuracyHeatmap(ccs5_df_list[["filtered_summary_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_summary_df"]],
+    DrawAccuracyHeatmap(ccs3_df_list[["filtered_summary_df"]],
                         main_title = ccs3_title, reorder_wells = reorder_wells
                         )
     dev.off()
@@ -155,10 +162,10 @@ for (smrtlink_version in c(7, 9)) {
         height = use_height,
         width  = use_width
         )
-    DrawAccuracyHeatmap(sl7_ccs5_df_list[["filtered_gRNAs_df"]],
+    DrawAccuracyHeatmap(ccs5_df_list[["filtered_gRNAs_df"]],
                         main_title = ccs5_title, reorder_wells = reorder_wells
                         )
-    DrawAccuracyHeatmap(sl7_ccs3_df_list[["filtered_gRNAs_df"]],
+    DrawAccuracyHeatmap(ccs3_df_list[["filtered_gRNAs_df"]],
                         main_title = ccs3_title, reorder_wells = reorder_wells
                         )
     dev.off()
