@@ -32,9 +32,7 @@ fastq_output_directory <- file.path(file_output_directory, "Fastq")
 
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
@@ -42,6 +40,9 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 
 
 # Prepare for exporting sequences -----------------------------------------
+
+sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df)
+sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df)
 
 sl7_reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
 sl9_reads_df <- sl9_ccs3_df_list[["individual_reads_df"]]
@@ -108,45 +109,37 @@ for (filter_reads in c("Unfiltered", "Filtered barcodes", "Filtered reads", "Fil
 
 
     message("Exporting reads for SmrtLink7_CCS3...")
-    ExportSequences(sl7_ccs3_lima,
-                    sl7_ccs3_report_df,
+    ExportSequences(sl7_ccs_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink7_CCS3"),
                     fastq_output_dir = file.path(fastq_output_directory, sub_folder, "SmrtLink7_CCS3"),
                     append_to_file_name = "_ccs3",
-                    ccs_reads = sl7_ccs3_ccs,
                     use_zmws = use_sl7_ccs3_zmws,
                     split_into_chunks = split_reads
                     )
 
     message("Exporting reads for SmrtLink7_CCS5...")
-    ExportSequences(sl7_ccs3_lima,
-                    sl7_ccs3_report_df,
+    ExportSequences(sl7_ccs_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink7_CCS5"),
                     fastq_output_dir = file.path(fastq_output_directory, sub_folder, "SmrtLink7_CCS5"),
                     append_to_file_name = "_ccs5",
-                    ccs_reads = sl7_ccs3_ccs,
                     use_zmws = use_sl7_ccs5_zmws,
                     split_into_chunks = split_reads
                     )
 
     message("Exporting reads for SmrtLink9_CCS3...")
-    ExportSequences(sl9_ccs3_lima,
-                    sl9_ccs3_report_df,
+    ExportSequences(sl9_ccs_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS3"),
                     fastq_output_dir = file.path(fastq_output_directory, sub_folder, "SmrtLink9_CCS3"),
                     append_to_file_name = "_ccs3",
-                    ccs_reads = sl9_ccs3_ccs,
                     use_zmws = use_sl9_ccs3_zmws,
                     split_into_chunks = split_reads
                     )
 
     message("Exporting reads for SmrtLink9_CCS5...")
-    ExportSequences(sl9_ccs3_lima,
-                    sl9_ccs3_report_df,
+    ExportSequences(sl9_ccs_df,
                     fasta_output_dir = file.path(fasta_output_directory, sub_folder, "SmrtLink9_CCS5"),
                     fastq_output_dir = file.path(fastq_output_directory, sub_folder, "SmrtLink9_CCS5"),
                     append_to_file_name = "_ccs5",
-                    ccs_reads = sl9_ccs3_ccs,
                     use_zmws = use_sl9_ccs5_zmws,
                     split_into_chunks = split_reads
                     )

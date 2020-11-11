@@ -30,9 +30,7 @@ tables_output_directory <- file.path(file_output_directory, "Tables")
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - ccs5 ZMWs.RData"))
+load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 load(file.path(p2_R_objects_directory, "05) Extract barcode sequences and quality scores.RData"))
 load(file.path(p2_R_objects_directory, "06) Categorize subsequences of reads aligned to the reference.RData"))
 
@@ -52,11 +50,11 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Process the data on the level of individual reads -----------------------
 
-sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs3_lima, sl7_ccs3_report_df,
+sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs_df,
                                        sl7_barcodes_df, sl7_extracted_df,
                                        wells_vec = sg_sequences_df[["Well_number"]]
                                        )
-sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df,
+sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
                                        sl9_barcodes_df, sl9_extracted_df,
                                        wells_vec = sg_sequences_df[["Well_number"]]
                                        )
@@ -69,6 +67,9 @@ sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df,
 
 sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
 sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list, wells_vec = sg_sequences_df[["Well_number"]])
+
+sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
 
 sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws,
                                    wells_vec = sg_sequences_df[["Well_number"]]
@@ -155,7 +156,6 @@ ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
@@ -163,8 +163,6 @@ save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
               ),
      file = file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData")
      )
-
-
 
 
 

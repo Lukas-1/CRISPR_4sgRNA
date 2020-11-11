@@ -45,11 +45,9 @@ BuildChunksDf <- function(total_number, number_per_file = 20L) {
 
 
 
-ExportSequences <- function(lima_reads,
-                            report_df,
+ExportSequences <- function(ccs_df,
                             fasta_output_dir,
                             fastq_output_dir,
-                            ccs_reads           = NULL,
                             append_to_file_name = "",
                             prefer_ccs          = TRUE,
                             use_zmws            = NULL,
@@ -62,34 +60,35 @@ ExportSequences <- function(lima_reads,
   well_names <- paste0("well", wells_formatted)
   file_names <- paste0(well_names, append_to_file_name)
 
-  lima_zmws <- as.integer(substr(lima_reads[["qname"]], 22, nchar(lima_reads[["qname"]]) - 4))
+  lima_zmws <- ccs_df[["ZMW"]][ccs_df[["Passed_filters"]]]
   if (!(is.null(use_zmws))) {
     stopifnot(all(use_zmws %in% lima_zmws))
     lima_zmws <- use_zmws
   }
 
-  ccs_zmws <- as.integer(substr(report_df[["ZMW"]], 22, nchar(report_df[["ZMW"]])))
-  ccs_well_numbers <- GetWellNumbers(report_df)
-  lima_well_numbers <- ccs_well_numbers[match(lima_zmws, ccs_zmws)]
-  use_ccs <- prefer_ccs && (!(is.null(ccs_reads)))
-  if (!(is.null(ccs_reads))) {
-    stopifnot(identical(ccs_zmws, as.integer(substr(ccs_reads[["qname"]], 22, nchar(ccs_reads[["qname"]]) - 4))))
-  }
+  lima_well_numbers <- ccs_df[["Well_number"]][match(lima_zmws, ccs_df[["ZMW"]])]
 
   for (i in wells_vec) {
     are_this_well <- lima_well_numbers %in% i
     this_well_zmws <- lima_zmws[are_this_well]
-    if (prefer_ccs && !(is.null(ccs_reads))) {
-      ccs_matches <- match(this_well_zmws, ccs_zmws)
-      stopifnot(!(anyNA(ccs_matches)))
-      export_seq <- ccs_reads[["seq"]][ccs_matches]
-      export_qual <- ccs_reads[["qual"]][ccs_matches]
+    ccs_matches <- match(this_well_zmws, ccs_df[["ZMW"]])
+    stopifnot(!(anyNA(ccs_matches)))
+    if (prefer_ccs) {
+      export_seq <- ccs_df[["Sequence"]][ccs_matches]
+      export_qual <- ccs_df[["Quality"]][ccs_matches]
     } else {
-      export_seq <- lima_reads[["seq"]][are_this_well]
-      export_qual <- lima_reads[["qual"]][are_this_well]
+      export_seq <- substr(ccs_df[["Sequence"]][ccs_matches],
+                           ccs_df[["Clip_start"]][ccs_matches],
+                           ccs_df[["Clip_end"]][ccs_matches]
+                           )
+      export_qual <- substr(ccs_df[["Quality"]][ccs_matches],
+                            ccs_df[["Clip_start"]][ccs_matches],
+                            ccs_df[["Clip_end"]][ccs_matches]
+                            )
     }
     names(export_seq) <- as.character(this_well_zmws)
-    export_fastq <- QualityScaledBStringSet(export_seq, export_qual)
+    export_seq <- DNAStringSet(export_seq)
+    export_fastq <- QualityScaledBStringSet(export_seq, PhredQuality(export_qual))
 
     if (split_into_chunks) {
       message(paste0("Exporting reads for well ", wells_formatted[[i]]), "...")

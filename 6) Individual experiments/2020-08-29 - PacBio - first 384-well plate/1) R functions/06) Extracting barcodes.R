@@ -12,137 +12,76 @@ library("Biostrings")
 
 # Define functions --------------------------------------------------------
 
-GetBarcodes <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
+GetBarcodes <- function(ccs_df, alignments_df, wells_vec = seq_len(384)) {
 
-  barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+  stopifnot(all(c("row_bc_vec", "column_bc_vec", "row_constant_region", "column_constant_region") %in% ls(envir = globalenv())))
 
-  row_constant_fwd    <- as.character(reverseComplement(DNAString(row_constant_region)))
-  column_constant_fwd <- column_constant_region
-  row_constant_rev    <- row_constant_region
-  column_constant_rev <- as.character(reverseComplement(DNAString(column_constant_region)))
+  matches_vec <- match(alignments_df[["ZMW"]], ccs_df[["ZMW"]])
 
-  if (use_sl7) {
-    ccs_list <- sl7_ccs3_ccs
-    lima_list <- sl7_ccs3_lima
-    report_df <- sl7_ccs3_report_df
-    alignments_df <- sl7_alignments_df
-  } else {
-    ccs_list <- sl9_ccs3_ccs
-    lima_list <- sl9_ccs3_lima
-    report_df <- sl9_ccs3_report_df
-    alignments_df <- sl9_alignments_df
-  }
+  stopifnot(!(anyNA(matches_vec)))
 
-  lima_zmws <- as.integer(substr(lima_list[["qname"]], 22, nchar(lima_list[["qname"]]) - 4))
-  ccs_zmws  <- as.integer(substr(ccs_list[["qname"]],  22, nchar(ccs_list[["qname"]])  - 4))
+  are_forward <- alignments_df[["Orientation_fwd"]]
+  ccs_seq <- ccs_df[["Sequence"]][matches_vec]
 
-  ccs_well_numbers <- GetWellNumbers(report_df)
-  lima_well_numbers <- ccs_well_numbers[match(lima_zmws, ccs_zmws)]
+  bc_seq_1 <- ccs_df[["Barcode_1_sequence"]][matches_vec]
+  bc_seq_2 <- ccs_df[["Barcode_2_sequence"]][matches_vec]
 
-  lima_seq_vec <- as.character(lima_list[["seq"]])
-  lima_qual_vec <- as.character(lima_list[["qual"]])
+  bc_qual_1 <- ccs_df[["Barcode_1_quality"]][matches_vec]
+  bc_qual_2 <- ccs_df[["Barcode_2_quality"]][matches_vec]
 
-  ccs_seq_vec <- as.character(ccs_list[["seq"]])
-  ccs_qual_vec <- as.character(ccs_list[["qual"]])
+  column_seq <- ifelse(are_forward, bc_seq_1, NA_character_)
+  column_seq[!(are_forward)] <- as.character(reverseComplement(DNAStringSet(bc_seq_2[!(are_forward)])))
+  row_seq <- ifelse(are_forward, bc_seq_2, NA_character_)
+  row_seq[!(are_forward)] <- as.character(reverseComplement(DNAStringSet(bc_seq_1[!(are_forward)])))
 
-  stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
+  column_qual <- ifelse(are_forward, bc_qual_1, NA_character_)
+  column_qual[!(are_forward)] <- reverse(bc_qual_2[!(are_forward)])
+  row_qual <- ifelse(are_forward, bc_qual_2, NA_character_)
+  row_qual[!(are_forward)] <- reverse(bc_qual_1[!(are_forward)])
 
-  alignment_matches <- match(ccs_zmws, alignments_df[["ZMW"]])
-  are_fwd_reordered <- alignments_df[["Orientation_fwd"]][alignment_matches]
+  flanking_1 <- substr(ccs_seq,
+                       ccs_df[["Barcode_1_length"]][matches_vec] + 1,
+                       ccs_df[["Barcode_1_length"]][matches_vec] + 20
+                       )
+  flanking_2 <- substr(ccs_seq,
+                       nchar(ccs_seq) - ccs_df[["Barcode_2_length"]][matches_vec] - 19,
+                       nchar(ccs_seq) - ccs_df[["Barcode_2_length"]][matches_vec]
+                       )
 
-  well_barcodes_df_list <- lapply(wells_vec, function(well_number) {
+  column_is_flanked <- (flanking_1 == column_constant_region) |
+                       (flanking_2 == as.character(reverseComplement(DNAString(column_constant_region))))
 
-    message(paste0("Processing well #", well_number, "..."))
+  row_is_flanked <- (flanking_1 == row_constant_region) |
+                    (flanking_2 == as.character(reverseComplement(DNAString(row_constant_region))))
 
-    are_this_well <- lima_well_numbers %in% well_number
-    this_well_zmws <- lima_zmws[are_this_well]
+  row_templates_vec <- row_bc_vec[ccs_df[["Well_number"]][matches_vec]]
+  column_templates_vec <- column_bc_vec[ccs_df[["Well_number"]][matches_vec]]
 
-    lima_seq <- lima_seq_vec[are_this_well]
-    lima_qual <- lima_qual_vec[are_this_well]
-
-    ccs_matches <- match(this_well_zmws, ccs_zmws)
-    stopifnot(!(anyNA(ccs_matches)))
-    ccs_seq <- ccs_seq_vec[ccs_matches]
-    ccs_qual <- ccs_qual_vec[ccs_matches]
-
-    are_forward_vec <- are_fwd_reordered[ccs_matches]
-    stopifnot(!(anyNA(are_forward_vec)))
-
-    row_template <- row_bc_vec[[well_number]]
-    column_template <- column_bc_vec[[well_number]]
-
-    barcode_df_list <- lapply(seq_along(this_well_zmws), function(x) {
-
-      match_pos <- as.integer(regexpr(lima_seq[[x]], ccs_seq[[x]], fixed = TRUE))
-      lima_length <- nchar(lima_seq[[x]])
-      ccs_length <- nchar(ccs_seq[[x]])
-      stopifnot(match_pos != -1)
-
-      first_bc_seq <- substr(ccs_seq[[x]], 1, match_pos - 1)
-      second_bc_seq <- substr(ccs_seq[[x]], match_pos + lima_length, ccs_length)
-
-      first_bc_qual <- substr(ccs_qual[[x]], 1, match_pos - 1)
-      second_bc_qual <- substr(ccs_qual[[x]], match_pos + lima_length, ccs_length)
-
-      stopifnot(identical(as.character(lima_qual[[x]]),
-                          substr(ccs_qual[[x]], match_pos, match_pos + lima_length - 1)
-                          )
-                ) ## DELETE THIS LATER
-
-      if (are_forward_vec[[x]]) {
-        column_barcode <- first_bc_seq
-        column_quality <- first_bc_qual
-        row_barcode <- second_bc_seq
-        row_quality <- second_bc_qual
-      } else {
-        column_barcode <- as.character(reverseComplement(DNAString(second_bc_seq)))
-        column_quality <- reverse(second_bc_qual)
-        row_barcode <- as.character(reverseComplement(DNAString(first_bc_seq)))
-        row_quality <- reverse(first_bc_qual)
-      }
-
-      column_search_regex_fwd <- paste0("^", first_bc_seq, column_constant_fwd)
-      row_search_regex_fwd <- paste0(row_constant_fwd, second_bc_seq, "$")
-      match_flank_column_fwd <- grepl(column_search_regex_fwd, ccs_seq[[x]])
-      match_flank_row_fwd <- grepl(row_search_regex_fwd, ccs_seq[[x]])
-
-      column_search_regex_rev <- paste0(column_constant_rev, second_bc_seq, "$")
-      row_search_regex_rev <- paste0("^", first_bc_seq, row_constant_rev)
-      match_flank_column_rev <- grepl(column_search_regex_rev, ccs_seq[[x]])
-      match_flank_row_rev <- grepl(row_search_regex_rev, ccs_seq[[x]])
-
-      ## Use an unbiased approach to identify flanking sequences, that does not rely on the sequence alignment
-      match_flanking_row <- match_flank_row_fwd || match_flank_row_rev
-      match_flanking_column <- match_flank_column_fwd || match_flank_column_rev
-
-      result_list <- list(
-        "ZMW"                   = this_well_zmws[[x]],
-        "Match_template_row"    = row_barcode == row_template,
-        "Match_template_column" = column_barcode == column_template,
-        "Match_flanking_row"    = match_flanking_row,
-        "Match_flanking_column" = match_flanking_column,
-        "Is_forward"            = are_forward_vec[[x]],
-        "Row_barcode"           = row_barcode,
-        "Row_quality"           = row_quality,
-        "Column_barcode"        = column_barcode,
-        "Column_quality"        = column_quality
-      )
-      return(result_list)
-    })
-    barcode_well_df <- do.call(rbind.data.frame, c(barcode_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
-    barcode_well_df <- data.frame("Well" = well_number, barcode_well_df, stringsAsFactors = FALSE)
-    return(barcode_well_df)
-  })
-
-  message("Collating the final data frame...")
-  results_df <- do.call(rbind.data.frame, c(well_barcodes_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  results_df <- data.frame(
+    alignments_df[, c("ZMW", "Well_number")],
+    "Match_template_row"    = row_seq == row_templates_vec,
+    "Match_template_column" = column_seq == column_templates_vec,
+    "Match_flanking_row"    = row_is_flanked,
+    "Match_flanking_column" = column_is_flanked,
+    "Is_forward"            = are_forward,
+    "Row_barcode"           = row_seq,
+    "Row_quality"           = row_qual,
+    "Column_barcode"        = column_seq,
+    "Column_quality"        = column_qual,
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
   results_df <- ProcessBarcodesDf(results_df)
   return(results_df)
 }
 
 
 
+
+
 ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
+
+  stopifnot(all(c("row_bc_vec", "column_bc_vec") %in% ls(envir = globalenv())))
 
   contains_mat <- matrix(nrow = nrow(barcodes_df), ncol = 6)
   colnames(contains_mat) <- c("Contains_row_barcode",
@@ -154,7 +93,7 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
                               )
   for (i in wells_vec) {
 
-    are_this_well <- barcodes_df[["Well"]] %in% i
+    are_this_well <- barcodes_df[["Well_number"]] %in% i
     row_bc <- row_bc_vec[[i]]
     column_bc <- column_bc_vec[[i]]
 
@@ -188,7 +127,7 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
   mode(contains_mat) <- "integer"
 
   results_df <- data.frame(
-    barcodes_df[, c("Well", "ZMW")],
+    barcodes_df[, c("Well_number", "ZMW")],
     "Correct_barcodes"     = as.integer(barcodes_df[["Match_template_row"]] & barcodes_df[["Match_template_column"]]),
     "Correct_row"          = as.integer(barcodes_df[["Match_template_row"]]),
     "Correct_column"       = as.integer(barcodes_df[["Match_template_column"]]),
@@ -201,7 +140,8 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
     "Column_mean_quality"  = GetMeanQuality(barcodes_df[["Column_quality"]]),
     barcodes_df[, c("Row_barcode", "Column_barcode", "Row_quality", "Column_quality")],
     "Orientation_fwd"      = as.integer(barcodes_df[["Is_forward"]]),
-    contains_mat
+    contains_mat,
+    stringsAsFactors = FALSE
   )
   return(results_df)
 }

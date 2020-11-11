@@ -24,7 +24,6 @@ file_output_directory   <- file.path(file_directory, "5) Output")
 tables_output_directory <- file.path(file_output_directory, "Tables")
 
 raw_data_directory      <- file.path(file_input_directory, "Raw data")
-reanalysis_directory    <- file.path(raw_data_directory, "LukasAnalysis")
 
 
 
@@ -34,11 +33,9 @@ reanalysis_directory    <- file.path(raw_data_directory, "LukasAnalysis")
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "07) Extract barcode sequences and quality scores.RData"))
 load(file.path(R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
-
 
 
 
@@ -51,20 +48,9 @@ ReadTable <- function(file_path, header = TRUE, sep = "\t") {
              )
 }
 
-sl7_CCS3_lima_counts_file <- file.path(reanalysis_directory, "SmrtLink7_CCS3/lima", "lukaslimaCCS3SL7output.lima.counts")
-sl7_CCS5_lima_counts_file <- file.path(reanalysis_directory, "SmrtLink7_CCS5/lima", "lukaslimaCCS5SL7output.lima.counts")
-
-sl7_ccs3_counts_df <- ReadTable(sl7_CCS3_lima_counts_file)
-sl7_ccs5_counts_df <- ReadTable(sl7_CCS5_lima_counts_file)
-
-sl7_ccs3_counts_384_file <- file.path(raw_data_directory, "FGCZ/ccs_3_99/lima_26/lima.lima.384.counts.txt")
-sl7_ccs5_counts_384_file <- file.path(raw_data_directory, "FGCZ/ccs_5_999/lima_26/lima.lima.384.counts.txt")
-
-sl7_ccs3_384_counts_df <- ReadTable(sl7_ccs3_counts_384_file)
-sl7_ccs5_384_counts_df <- ReadTable(sl7_ccs5_counts_384_file)
-
 ccs3_fgcz_accuracies_df <- ReadTable(file.path(raw_data_directory, "FGCZ/ccs_3_99/lima_26/blastn/identical.perc.txt"))
 ccs5_fgcz_accuracies_df <- ReadTable(file.path(raw_data_directory, "FGCZ/ccs_5_999/lima_26/blastn/identical.perc.txt"))
+
 
 
 
@@ -81,16 +67,14 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Process the data on the level of individual reads -----------------------
 
-sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs3_lima,
-                                       sl7_ccs3_report_df,
+sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs_df,
                                        sl7_barcodes_df,
-                                       sl7_extracted_df,
-                                       sl7_ccs3_counts_df,
-                                       sl7_ccs3_384_counts_df
+                                       sl7_extracted_df
                                        )
 
-sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df,
-                                       sl9_barcodes_df, sl9_extracted_df
+sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
+                                       sl9_barcodes_df,
+                                       sl9_extracted_df
                                        )
 
 
@@ -102,9 +86,11 @@ sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs3_lima, sl9_ccs3_report_df,
 sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list)
 sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list)
 
+sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df)
+sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df)
+
 sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws)
 sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws)
-
 
 
 
@@ -217,15 +203,6 @@ save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
               ),
      file = file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData")
      )
-
-
-
-
-
-
-
-
-
 
 
 

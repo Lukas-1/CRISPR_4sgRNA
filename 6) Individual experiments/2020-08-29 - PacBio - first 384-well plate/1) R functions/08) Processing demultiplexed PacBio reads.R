@@ -48,17 +48,6 @@ MakeDistanceList <- function(manhattan_distance = FALSE, matrix_format = FALSE) 
 
 
 
-AddBarCodeCombos <- function(lima_report_df) {
-  combo_IDs_vec <- paste0(lima_report_df[["IdxLowestNamed"]], "--",
-                          lima_report_df[["IdxHighestNamed"]]
-                          )
-  lima_report_df[["Barcode_combo"]] <- combo_IDs_vec
-  lima_report_df[["Well_number"]] <- barcodes_to_wells_map[combo_IDs_vec]
-  return(lima_report_df)
-}
-
-
-
 ContainSequences <- function(query_seq, target_seq) {
 
   num_queries <- length(query_seq)
@@ -167,13 +156,18 @@ ContainSequences <- function(query_seq, target_seq) {
 
 
 
-StatsForWell <- function(well_number, reads_list, bam_wells_vec, wells_vec = seq_len(384)) {
+StatsForWell <- function(well_number, ccs_df, wells_vec = seq_len(384)) {
 
   well_index <- which(wells_vec == well_number)
 
-  are_this_well <- bam_wells_vec %in% well_number
+  are_this_well <- (ccs_df[["Well_number"]] %in% well_number) & ccs_df[["Passed_filters"]]
   num_reads <- sum(are_this_well)
-  well_sequences <- reads_list[["seq"]][are_this_well, ]
+
+
+  well_sequences <- DNAStringSet(substr(ccs_df[["Sequence"]][are_this_well],
+                                        ccs_df[["Clip_start"]][are_this_well],
+                                        ccs_df[["Clip_end"]][are_this_well]
+                                        ))
 
   sg_sequences <- vapply(1:4, function(x) guides_ref_list[[x]][[well_index]], "")
   sg_with_promoter_seq <- vapply(1:4, function(x) guides_with_promoters_list[[x]][[well_index]], "")
@@ -198,78 +192,6 @@ StatsForWell <- function(well_number, reads_list, bam_wells_vec, wells_vec = seq
 
 
 
-
-
-GetZMWs <- function(char_vec) {
-   as.integer(sapply(strsplit(char_vec, "/", fixed = TRUE), "[[", 2))
-}
-
-
-
-
-MakeDfForReads <- function(reads_list,
-                           report_df,
-                           counts_df = NULL,
-                           counts_384_df = NULL
-                           ) {
-
-  ## Create barcode IDs for the CCS report files
-
-  report_df <- AddBarCodeCombos(report_df)
-
-
-  ## Check for equivalence
-
-  if (!(is.null(counts_df))) {
-    counts_IDs_vec <- paste0(counts_df[["IdxFirstNamed"]], "--",
-                             counts_df[["IdxCombinedNamed"]]
-                             )
-
-    pass_filters <- report_df[["PassedFilters"]] == 1
-
-    IDs_to_counts <- table(factor(report_df[["Barcode_combo"]][pass_filters],
-                                  levels = counts_IDs_vec
-                                  )
-                           )
-
-    stopifnot(identical(as.integer(IDs_to_counts), counts_df[["Counts"]]))
-  }
-
-
-
-
-  ## Assign the sequences to wells
-
-  profile_ZMWs <- GetZMWs(report_df[["ZMW"]])
-  bam_ZMWs <- GetZMWs(reads_list[["qname"]])
-
-  matches_vec <- match(bam_ZMWs, profile_ZMWs)
-
-  results_df <- data.frame(
-    "ZMW"               = bam_ZMWs,
-    "Well_number"       = report_df[["Well_number"]][matches_vec],
-    "Length"            = width(reads_list[["seq"]]),
-    "BC_combined_score" = report_df[["ScoreCombined"]][matches_vec],
-    "BC_score_lead"     = report_df[["ScoreLead"]][matches_vec],
-    stringsAsFactors    = FALSE
-  )
-
-
-  ## Check for equivalence
-
-  if (!(is.null(counts_384_df))) {
-    stopifnot(identical(as.integer(table(results_df[["Well_number"]])),
-                        counts_384_df[["Counts"]]
-                        )
-              )
-  }
-  return(results_df)
-}
-
-
-
-
-
 GetMode <- function(vec) {
    uniqv <- unique(vec)
    uniqv[which.max(tabulate(match(vec, uniqv)))]
@@ -278,7 +200,7 @@ GetMode <- function(vec) {
 
 
 
-GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec = seq_len(384)) {
+GetContaminationMat <- function(query_seq, ccs_df, wells_vec = seq_len(384)) {
 
   stopifnot("guides_ref_list" %in% ls(envir = globalenv()))
 
@@ -286,9 +208,13 @@ GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec 
 
   PDict_object <- PDict(query_seq[are_usual_length], max.mismatch = 0)
 
-  have_well <- !(is.na(bam_wells_vec))
+  have_well <- !(is.na(ccs_df[["Well_number"]])) & ccs_df[["Passed_filters"]]
 
-  counts_mat <- vcountPDict(PDict_object, reads_list[["seq"]][have_well, ])
+  sequences_object <- DNAStringSet(substr(ccs_df[["Sequence"]][have_well],
+                                          ccs_df[["Clip_start"]][have_well],
+                                          ccs_df[["Clip_end"]][have_well]
+                                          ))
+  counts_mat <- vcountPDict(PDict_object, sequences_object)
 
   row_list <- vector(mode = "list", length = length(wells_vec))
   row_list[are_usual_length] <- lapply(seq_len(nrow(counts_mat)),
@@ -299,7 +225,7 @@ GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec 
 
   unusual_list <- lapply(seq_len(sum(!(are_usual_length))),
                          function(x) vcountPattern(unusual_seq[[x]],
-                                                   reads_list[["seq"]][have_well, ]
+                                                   sequences_object
                                                    )
                          )
 
@@ -315,7 +241,7 @@ GetContaminationMat <- function(query_seq, reads_list, bam_wells_vec, wells_vec 
                           function(x) which(query_seq %in% vapply(guides_ref_list, function(y) y[[x]], ""))
                           )
   are_this_well_list <- lapply(same_seq_list,
-                               function(x) bam_wells_vec[have_well] %in% x
+                               function(x) ccs_df[["Well_number"]][have_well] %in% x
                                )
 
   contamination_mat <- all_counts_mat
@@ -436,7 +362,7 @@ CreateSummaryDf <- function(reads_df,
                       numeric(1)
                       )
 
-  num_under_2kb <- tapply(reads_df[["Length"]],
+  num_under_2kb <- tapply(reads_df[["Clipped_read_length"]],
                           wells_fac,
                           function(x) sum(x < 2000)
                           )
@@ -616,12 +542,9 @@ AlterationCategoriesToIntegerMat <- function(input_df) {
 
 
 
-AnalyzeWells <- function(reads_list,
-                         report_df,
+AnalyzeWells <- function(ccs_df,
                          barcodes_df,
                          extracted_df,
-                         counts_df         = NULL,
-                         counts_384_df     = NULL,
                          bc_min_comb_score = 60,
                          bc_min_score_lead = 30,
                          bc_length_cutoff  = 8L,
@@ -631,47 +554,52 @@ AnalyzeWells <- function(reads_list,
 
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
 
-  reads_report_df <- MakeDfForReads(reads_list, report_df)
-  reads_report_df[["Mean_quality"]] <- GetMeanQuality(reads_list[["qual"]])
+  ccs_df[["Mean_quality"]] <- GetMeanQuality(substr(ccs_df[["Quality"]],
+                                                    ccs_df[["Clip_start"]],
+                                                    ccs_df[["Clip_end"]]
+                                                    )
+                                             )
+
+  ccs_df[["Pass_CCS5"]] <- as.integer(ccs_df[["Pass_CCS5"]])
 
 
   ## Add data on contaminations / wrong barcodes
 
   contamin_mat_list <- lapply(guides_ref_list,
                               function(x) GetContaminationMat(x,
-                                                              reads_list,
-                                                              reads_report_df[["Well_number"]],
+                                                              ccs_df,
                                                               wells_vec = wells_vec
                                                               )
                               )
 
-
   contamin_mat <- Reduce(`+`, contamin_mat_list)
   have_contamin_mat <- contamin_mat >= 1
+  have_well <- !(is.na(ccs_df[["Well_number"]])) &
+               ccs_df[["Passed_filters"]]
+  have_valid_well <- have_well & ccs_df[["Well_number"]] %in% wells_vec
+  well_numbers_vec <- ifelse(have_well, ccs_df[["Well_number"]], NA_integer_)
   distance_mat <- DistanceForContam(contamin_mat,
-                                    reads_report_df[["Well_number"]],
+                                    well_numbers_vec,
                                     wells_vec = wells_vec
                                     )
 
-  reads_report_df[["Contam_guides"]]   <- NA_integer_
-  reads_report_df[["Contam_genes"]]    <- NA_integer_
-  reads_report_df[["Contam_well"]]     <- NA_integer_
-  reads_report_df[["Min_distance"]]    <- NA_integer_
-  reads_report_df[["Random_distance"]] <- NA_integer_
-  reads_report_df[["Mean_distance"]]   <- NA_real_
-  reads_report_df[["Distances"]]       <- NA_character_
+  ccs_df[["Contam_guides"]]   <- NA_integer_
+  ccs_df[["Contam_genes"]]    <- NA_integer_
+  ccs_df[["Contam_well"]]     <- NA_integer_
+  ccs_df[["Min_distance"]]    <- NA_integer_
+  ccs_df[["Random_distance"]] <- NA_integer_
+  ccs_df[["Mean_distance"]]   <- NA_real_
+  ccs_df[["Distances"]]       <- NA_character_
 
-  have_well <- !(is.na(reads_report_df[["Well_number"]]))
-
-  reads_report_df[["Contam_guides"]][have_well] <- colSums(contamin_mat)
-  reads_report_df[["Contam_genes"]][have_well] <- colSums(have_contamin_mat)
+  ccs_df[["Contam_guides"]][have_well] <- colSums(contamin_mat)
+  ccs_df[["Contam_genes"]][have_well] <- colSums(have_contamin_mat)
 
   min_distances_vec <- colMins(distance_mat, na.rm = TRUE)
   min_distances_vec[is.infinite(min_distances_vec)] <- NA_integer_
-  reads_report_df[["Min_distance"]][have_well] <- min_distances_vec
+  ccs_df[["Min_distance"]][have_well] <- min_distances_vec
 
   mean_distances_vec <- colMeans(distance_mat, na.rm = TRUE)
-  reads_report_df[["Mean_distance"]][have_well] <- mean_distances_vec
+  ccs_df[["Mean_distance"]][have_well] <- mean_distances_vec
 
   have_contam <- !(is.na(min_distances_vec))
 
@@ -687,7 +615,7 @@ AnalyzeWells <- function(reads_list,
                                    }},
                                  integer(1)
                                  )
-  reads_report_df[["Random_distance"]][have_well][have_contam] <- random_distances_vec
+  ccs_df[["Random_distance"]][have_well][have_contam] <- random_distances_vec
 
 
   all_distances_vec <- vapply(which(have_contam),
@@ -696,14 +624,14 @@ AnalyzeWells <- function(reads_list,
                                 dist_vec <- dist_vec[!(is.na(dist_vec))]
                                 return(paste0(dist_vec, collapse = ", "))
                               }, "")
-  reads_report_df[["Distances"]][have_well][have_contam] <- all_distances_vec
+  ccs_df[["Distances"]][have_well][have_contam] <- all_distances_vec
 
 
   contams_vec <- vapply(which(have_contam),
                         function(x) paste0(which(have_contamin_mat[, x]), collapse = ", "),
                         ""
                         )
-  reads_report_df[["Contam_well"]][have_well][have_contam] <- contams_vec
+  ccs_df[["Contam_well"]][have_well][have_contam] <- contams_vec
 
 
 
@@ -711,8 +639,7 @@ AnalyzeWells <- function(reads_list,
 
   well_stats_mat_list <- lapply(wells_vec,
                                 function(x) StatsForWell(x,
-                                                         reads_list,
-                                                         reads_report_df[["Well_number"]],
+                                                         ccs_df,
                                                          wells_vec = wells_vec
                                                          )
                                 )
@@ -724,31 +651,65 @@ AnalyzeWells <- function(reads_list,
   ZMW_mat <- do.call(rbind, well_stats_mat_list)
 
 
-  report_for_wells_df <- do.call(rbind.data.frame,
-                                 c(split(reads_report_df, reads_report_df[["Well_number"]]),
-                                   list(stringsAsFactors = FALSE,
-                                        make.row.names = FALSE
-                                        )
-                                 ))
+  sg_features <- c(paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4))
 
-  are_real_wells <- report_for_wells_df[["Well_number"]] %in% wells_vec
+  all_columns <- c(
+    "ZMW", "Well_number", "Clipped_read_length",
+
+    "Read_quality", "Num_full_passes", "Pass_CCS5",
+
+    "Correct_barcodes", "Correct_row", "Correct_column",
+    "Correct_flanks", "Correct_row_flank", "Correct_column_flank",
+
+    "Starts_with_row_barcode", "Ends_with_column_barcode",
+
+    "Row_bc_length", "Column_bc_length",
+
+    "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
+    "Row_quality", "Column_quality",
+
+    paste0(c("TpR_DHFR", sg_features), "_category"),
+
+    paste0(sg_features, "_quality"),
+
+    "Barcode_combined_score", "Barcode_score_lead", "Mean_quality",
+    "Passes_filters", "Passes_barcode_filters", "Passes_read_quality",
+    "Passes_sg_quality",
+    "Contam_guides", "Contam_genes", "Contam_well",
+    "Min_distance", "Random_distance", "Mean_distance", "Distances",
+    "sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4", "at_least_1", "at_least_2",
+    "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
+    "Orientation_fwd"
+  )
+
+  wells_ccs_df <- do.call(rbind.data.frame,
+                          c(split(ccs_df[, names(ccs_df) %in% all_columns],
+                                  well_numbers_vec
+                                  ),
+                          list(stringsAsFactors = FALSE,
+                               make.row.names = FALSE
+                               )
+                          ))
+
+  are_real_wells <- wells_ccs_df[["Well_number"]] %in% wells_vec
 
   individual_ZMWs_df <- data.frame(
-    report_for_wells_df[are_real_wells, ],
+    wells_ccs_df[are_real_wells, ],
     ZMW_mat,
     stringsAsFactors = FALSE,
     row.names = NULL
   )
 
-  stopifnot(identical(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]]))
+  matches_vec <- match(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]])
+  stopifnot(!(anyNA(matches_vec)))
 
-  barcodes_df <- barcodes_df[, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
+  barcodes_df <- barcodes_df[matches_vec, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
 
   individual_ZMWs_df <- data.frame(individual_ZMWs_df,
                                    barcodes_df,
-                                   stringsAsFactors = FALSE
+                                   stringsAsFactors = FALSE,
+                                   row.names = NULL
                                    )
-
 
 
   have_correct_row <- individual_ZMWs_df[["Starts_with_row_barcode"]] |
@@ -761,8 +722,8 @@ AnalyzeWells <- function(reads_list,
 
 
   pass_bc <- have_correct_row & have_correct_column &
-             (individual_ZMWs_df[["BC_combined_score"]] >= bc_min_comb_score) &
-             (individual_ZMWs_df[["BC_score_lead"]] >= bc_min_score_lead)
+             (individual_ZMWs_df[["Barcode_combined_score"]] >= bc_min_comb_score) &
+             (individual_ZMWs_df[["Barcode_score_lead"]] >= bc_min_score_lead)
 
   pass_rq <- (individual_ZMWs_df[["Mean_quality"]]) >= min_mean_quality
   pass_filters <- pass_bc & pass_rq
@@ -787,37 +748,8 @@ AnalyzeWells <- function(reads_list,
     stringsAsFactors = FALSE
   )
 
-  sg_features <- c(paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4))
-
-  all_columns <- c(
-    "ZMW", "Well_number", "Length",
-
-    "Correct_barcodes", "Correct_row", "Correct_column",
-    "Correct_flanks", "Correct_row_flank", "Correct_column_flank",
-
-    "Starts_with_row_barcode", "Ends_with_column_barcode",
-
-    "Row_bc_length", "Column_bc_length",
-
-    "Row_mean_quality",  "Column_mean_quality", "Row_barcode", "Column_barcode",
-    "Row_quality", "Column_quality",
-
-    paste0(c("TpR_DHFR", sg_features), "_category"),
-
-    paste0(sg_features, "_quality"),
-
-    "BC_combined_score", "BC_score_lead", "Mean_quality",
-    "Passes_filters", "Passes_barcode_filters", "Passes_read_quality",
-    "Passes_sg_quality",
-    "Contam_guides", "Contam_genes", "Contam_well",
-    "Min_distance", "Random_distance", "Mean_distance", "Distances",
-    "sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4", "at_least_1", "at_least_2",
-    "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
-    "Orientation_fwd"
-  )
   assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
   individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
-
 
   contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
 
@@ -887,15 +819,15 @@ SummarizeWells <- function(analysis_list,
 
 
 
-DistanceForContam <- function(contamination_mat, bam_wells_vec, wells_vec = seq_len(384)) {
+DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq_len(384)) {
 
-  have_wells <- !(is.na(bam_wells_vec))
+  have_wells <- !(is.na(long_wells_vec))
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
   distance_mat <- matrix(nrow = nrow(contamination_mat),
                          ncol = ncol(contamination_mat)
                          )
   for (i in wells_vec) {
-    are_this_well <- bam_wells_vec[have_wells] %in% i
+    are_this_well <- long_wells_vec[have_wells] %in% i
     are_contam <- contamination_mat[, are_this_well] >= 1
     sub_mat <- distance_mat[, are_this_well]
     contam_rows <- which(rowSums(are_contam) >= 1)

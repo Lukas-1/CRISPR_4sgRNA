@@ -68,20 +68,9 @@ AdjustForsgRNALength <- function(features_df, sg_vec) {
 
 
 
-ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
+ExtractAlignedSequences <- function(ccs_df, alignments_df, wells_vec = seq_len(384)) {
 
   stopifnot(all(c("features_df", "features_mat_list", "barcoded_plasmids") %in% ls(envir = globalenv())))
-
-  if (use_sl7) {
-    alignments_df <- sl7_alignments_df
-    ccs_list <- sl7_ccs3_ccs
-  } else {
-    alignments_df <- sl9_alignments_df
-    ccs_list <- sl9_ccs3_ccs
-  }
-
-  qualities_vec <- as.character(ccs_list[["qual"]])
-  ccs_zmws  <- as.integer(substr(ccs_list[["qname"]], 22, nchar(ccs_list[["qname"]]) - 4))
 
   num_features <- nrow(features_df)
   features_vec <- features_df[["Feature"]]
@@ -99,8 +88,8 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
     aligned_read_char_list <- strsplit(aligned_read_vec, "")
 
     this_well_zmws <- alignments_df[["ZMW"]][are_this_well]
-    zmw_matches <- match(this_well_zmws, ccs_zmws)
-    unaligned_qual_vec <- qualities_vec[zmw_matches]
+    zmw_matches <- match(this_well_zmws, ccs_df[["ZMW"]])
+    unaligned_qual_vec <- ccs_df[["Quality"]][zmw_matches]
     unaligned_qual_char_list <- strsplit(unaligned_qual_vec, "")
 
     num_reads <- length(this_well_zmws)
@@ -117,12 +106,10 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
       original_read_length <- length(unaligned_qual_char_list[[x]])
       stopifnot(max(read_char_numbers) == original_read_length)
       stopifnot(sum(!(are_gaps)) == original_read_length)
-      # stopifnot(original_numbers[[length(original_numbers)]] == 2245)
 
       feature_indices <- lapply(features_indices_list[[well_number]],
                                 function(x) which(plasmid_char_numbers %in% x)
                                 )
-
       aligned_templates <- vapply(feature_indices,
                                   function(y) paste0(aligned_plasmid_char_list[[x]][y], collapse = ""),
                                   ""
@@ -254,7 +241,6 @@ ProcessExtractedDf <- function(extracted_df) {
   }
 
   category_vec[have_flanking_insertion] <- "Flanking insertion"
-
 
   results_df[["Category"]] <- category_vec
   return(results_df)

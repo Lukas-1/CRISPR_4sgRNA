@@ -10,22 +10,9 @@ library("Biostrings")
 
 # Define functions --------------------------------------------------------
 
-ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
+ExtractAlignedSequences <- function(ccs_df, wells_vec = seq_len(384)) {
 
   barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
-
-  if (use_sl7) {
-    ccs_list <- sl7_ccs3_ccs
-    report_df <- sl7_ccs3_report_df
-  } else {
-    ccs_list <- sl9_ccs3_ccs
-    report_df <- sl9_ccs3_report_df
-  }
-
-  ccs_zmws <- as.integer(substr(ccs_list[["qname"]],  22, nchar(ccs_list[["qname"]])  - 4))
-  ccs_well_numbers <- GetWellNumbers(report_df)
-
-  stopifnot(identical(ccs_zmws, as.integer(substr(report_df[[1]], 22, nchar(report_df[[1]])))))
 
   alignments_df_list <- lapply(seq_along(wells_vec), function(x) {
 
@@ -33,8 +20,8 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
 
     message(paste0("Processing well #", well_number, "..."))
 
-    are_this_well <- ccs_well_numbers %in% well_number
-    ccs_seq <- ccs_list[["seq"]][are_this_well]
+    are_this_well <- ccs_df[["Well_number"]] %in% well_number
+    ccs_seq <- DNAStringSet(ccs_df[["Sequence"]][are_this_well])
 
     plasmid <- DNAStringSet(barcoded_plasmids[[x]])
     row_template <- row_bc_vec[[well_number]]
@@ -54,7 +41,7 @@ ExtractAlignedSequences <- function(use_sl7 = TRUE, wells_vec = seq_len(384)) {
                           )[new_order]
 
     alignments_df <- data.frame("Well_number"     = well_number,
-                                "ZMW"             = ccs_zmws[are_this_well],
+                                "ZMW"             = ccs_df[["ZMW"]][are_this_well],
                                 "Orientation_fwd" = are_forward_vec,
                                 "Score_fwd"       = score(fwd_alignments),
                                 "Score_rev"       = score(rev_alignments),

@@ -8,7 +8,6 @@ CRISPR_root_directory  <- "~/CRISPR"
 file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory  <- file.path(file_directory, "1) R functions")
 
-source(file.path(R_functions_directory, "02) Analyzing reads.R"))
 source(file.path(R_functions_directory, "07) Categorizing subsequences of reads aligned to the reference.R"))
 
 
@@ -26,7 +25,7 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 
 
@@ -68,9 +67,8 @@ features_templates_list <- lapply(seq_len(384), function(x) {
 
 # Extract sequences -------------------------------------------------------
 
-sl7_extracted_df <- ExtractAlignedSequences(use_sl7 = TRUE)
-sl9_extracted_df <- ExtractAlignedSequences(use_sl7 = FALSE)
-
+sl7_extracted_df <- ExtractAlignedSequences(sl7_ccs_df, sl7_alignments_df)
+sl9_extracted_df <- ExtractAlignedSequences(sl9_ccs_df, sl9_alignments_df)
 
 
 
