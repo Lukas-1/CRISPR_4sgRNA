@@ -54,9 +54,9 @@ for (gene_symbol in export_genes) {
   ExportVectorsForGene(gene_symbol, sg4_df)
 }
 
-ExportVectorsForGene("Control_1", vac_4sg_df)
-ExportVectorsForGene("Control_2", vac_4sg_df)
-ExportVectorsForGene("Control_3", vac_4sg_df)
+ExportVectorsForGene("Control_1", vac_4sg_reordered_df)
+ExportVectorsForGene("Control_2", vac_4sg_reordered_df)
+ExportVectorsForGene("Control_3", vac_4sg_reordered_df)
 
 
 
