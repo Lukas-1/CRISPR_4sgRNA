@@ -27,9 +27,7 @@ raw_data_directory        <- file.path(file_input_directory, "Raw data", "Analys
 
 ccs_sam_name <- "m54073_200523_132654.ccs.sam"
 sl7_CCS3_ccs_sam_file <- file.path(raw_data_directory, "SmrtLink7_CCS3/SAM", ccs_sam_name)
-sl7_CCS5_ccs_sam_file <- file.path(raw_data_directory, "SmrtLink7_CCS5/SAM", ccs_sam_name)
 sl9_CCS3_ccs_sam_file <- file.path(raw_data_directory, "SmrtLink9_CCS3/SAM", ccs_sam_name)
-sl9_CCS5_ccs_sam_file <- file.path(raw_data_directory, "SmrtLink9_CCS5/SAM", ccs_sam_name)
 
 sl7_CCS3_lima_report_file <- file.path(raw_data_directory, "SmrtLink7_CCS3/lima", "lukas_lima_CCS3_SL7.lima.report")
 sl7_CCS5_lima_report_file <- file.path(raw_data_directory, "SmrtLink7_CCS5/lima", "lukas_lima_CCS5_SL7.lima.report")
@@ -63,11 +61,8 @@ sl9_ccs5_report_df <- ReadLimaReport(sl9_CCS5_lima_report_file)
 
 # Process data ------------------------------------------------------------
 
-sl7_ccs3_ccs_sam_df <- ProcessSAM(sl7_CCS3_ccs_sam_file)
-sl9_ccs3_ccs_sam_df <- ProcessSAM(sl9_CCS3_ccs_sam_file)
-
-sl7_ccs_df <- IntegrateReportDf(sl7_ccs3_ccs_sam_df, sl7_ccs3_report_df, sl7_ccs5_report_df)
-sl9_ccs_df <- IntegrateReportDf(sl9_ccs3_ccs_sam_df, sl9_ccs3_report_df, sl9_ccs5_report_df)
+sl7_ccs_df <- IntegrateReportDf(sl7_ccs3_sam_df, sl7_ccs3_report_df, sl7_ccs5_report_df)
+sl9_ccs_df <- IntegrateReportDf(sl9_ccs3_sam_df, sl9_ccs3_report_df, sl9_ccs5_report_df)
 
 
 
