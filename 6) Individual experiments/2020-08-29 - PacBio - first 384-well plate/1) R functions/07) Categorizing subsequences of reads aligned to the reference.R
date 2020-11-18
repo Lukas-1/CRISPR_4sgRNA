@@ -89,7 +89,11 @@ ExtractAlignedSequences <- function(ccs_df, alignments_df, wells_vec = seq_len(3
 
     this_well_zmws <- alignments_df[["ZMW"]][are_this_well]
     zmw_matches <- match(this_well_zmws, ccs_df[["ZMW"]])
+
     unaligned_qual_vec <- ccs_df[["Quality"]][zmw_matches]
+    this_well_fwd <- alignments_df[["Orientation_fwd"]][are_this_well]
+    unaligned_qual_vec[!(this_well_fwd)] <- reverse(unaligned_qual_vec[!(this_well_fwd)])
+
     unaligned_qual_char_list <- strsplit(unaligned_qual_vec, "")
 
     num_reads <- length(this_well_zmws)
@@ -122,7 +126,6 @@ ExtractAlignedSequences <- function(ccs_df, alignments_df, wells_vec = seq_len(3
                                     function(x) paste0(aligned_qual_char_vec[x], collapse = ""),
                                     ""
                                     )
-
       extracted_mat <- cbind(
         "Aligned_template" = aligned_templates,
         "Aligned_read"     = extracted_sequences,
