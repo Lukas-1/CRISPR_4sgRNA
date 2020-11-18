@@ -68,9 +68,11 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
     if (smrtlink_version == 7) {
       ccs3_df_list <- sl7_ccs3_df_list
       ccs5_df_list <- sl7_ccs5_df_list
+      ccs7_df_list <- sl7_ccs7_df_list
     } else if (smrtlink_version == 9) {
       ccs3_df_list <- sl9_ccs3_df_list
       ccs5_df_list <- sl9_ccs5_df_list
+      ccs7_df_list <- sl9_ccs7_df_list
     }
 
     # Export plots ------------------------------------------------------------
@@ -101,6 +103,21 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
     par("mar" = use_mar)
     for (var in use_vars) {
       PlotBySharedSubsequence(ccs5_df_list[[df_name]], var)
+    }
+    dev.off()
+
+
+    pdf(file = file.path(plots_output_directory,
+                         paste0("SmrtLink ", smrtlink_version),
+                         "Shared subsequences",
+                         paste0(file_prefix, "CCS7", file_postfix)
+                         ),
+        width = pdf_width,
+        height = pdf_height
+        )
+    par("mar" = use_mar)
+    for (var in use_vars) {
+      PlotBySharedSubsequence(ccs7_df_list[[df_name]], var)
     }
     dev.off()
 

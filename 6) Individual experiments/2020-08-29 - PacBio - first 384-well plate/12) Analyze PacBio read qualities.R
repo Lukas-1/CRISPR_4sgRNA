@@ -516,11 +516,12 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
         if (smrtlink_version == 7) {
           ccs3_df_list <- sl7_ccs3_df_list
           ccs5_df_list <- sl7_ccs5_df_list
+          ccs7_df_list <- sl7_ccs7_df_list
         } else if (smrtlink_version == 9) {
           ccs3_df_list <- sl9_ccs3_df_list
           ccs5_df_list <- sl9_ccs5_df_list
+          ccs5_df_list <- sl9_ccs7_df_list
         }
-
 
         # Export plots ------------------------------------------------------------
 
@@ -562,6 +563,23 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
         dev.off()
 
 
+
+        pdf(file = file.path(plots_output_directory,
+                             paste0("SmrtLink ", smrtlink_version),
+                             "Quality control",
+                             paste0(file_prefix, "CCS7", file_postfix)
+                             ),
+            width  = 2 * expansion_factor,
+            height = 1 * expansion_factor
+            )
+        for (i in seq_along(titles_list)) {
+          BarPlotPanel(ccs5_df_list[[df_name]],
+                       names(titles_list)[[i]],
+                       indicate_homologies = highlight_homologies,
+                       number_wells = show_well_numbers
+                       )
+        }
+        dev.off()
 
 
         # End loop ----------------------------------------------------------------

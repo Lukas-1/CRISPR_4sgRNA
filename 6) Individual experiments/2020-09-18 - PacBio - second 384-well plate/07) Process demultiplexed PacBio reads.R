@@ -70,13 +70,23 @@ sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list, wells_vec = sg_sequen
 
 sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
 sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+sl7_ccs7_lima_zmws <- GetCCS7ZMWs(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+sl9_ccs7_lima_zmws <- GetCCS7ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+
 
 sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws,
+                                   wells_vec = sg_sequences_df[["Well_number"]]
+                                   )
+sl7_ccs7_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs7_lima_zmws,
                                    wells_vec = sg_sequences_df[["Well_number"]]
                                    )
 sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws,
                                    wells_vec = sg_sequences_df[["Well_number"]]
                                    )
+sl9_ccs7_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs7_lima_zmws,
+                                   wells_vec = sg_sequences_df[["Well_number"]]
+                                   )
+
 
 
 
@@ -117,6 +127,25 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
             )
 
 
+ExportSummaryTable(sl7_ccs7_df_list[["original_summary_df"]],
+                   "SmrtLink7/SmrtLink7_CCS7_9999_summary_per_well_original"
+                   )
+ExportSummaryTable(sl7_ccs7_df_list[["filtered_summary_df"]],
+                   "SmrtLink7/SmrtLink7_CCS7_9999_summary_per_well_filtered"
+                   )
+ExportSummaryTable(sl7_ccs7_df_list[["filtered_gRNAs_df"]],
+                   "SmrtLink7/SmrtLink7_CCS7_9999_summary_per_well_filtered_gRNAs"
+                   )
+ExportIndivTable(sl7_ccs7_df_list[["individual_reads_df"]],
+                 "SmrtLink7/SmrtLink7_CCS7_9999_individual_reads"
+                 )
+ExportTable(sl7_ccs7_df_list[["contaminations_mat"]],
+            "SmrtLink7/SmrtLink7_CCS7_9999_contaminations"
+            )
+
+
+
+
 
 ExportSummaryTable(sl9_ccs3_df_list[["original_summary_df"]],
                    "SmrtLink9/SmrtLink9_CCS3_99_summary_per_well_original"
@@ -153,13 +182,29 @@ ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
             )
 
 
+ExportSummaryTable(sl7_ccs7_df_list[["original_summary_df"]],
+                   "SmrtLink9/SmrtLink9_CCS7_9999_summary_per_well_original"
+                   )
+ExportSummaryTable(sl7_ccs7_df_list[["filtered_summary_df"]],
+                   "SmrtLink9/SmrtLink9_CCS7_9999_summary_per_well_filtered"
+                   )
+ExportSummaryTable(sl7_ccs7_df_list[["filtered_gRNAs_df"]],
+                   "SmrtLink9/SmrtLink9_CCS7_9999_summary_per_well_filtered_gRNAs"
+                   )
+ExportIndivTable(sl7_ccs7_df_list[["individual_reads_df"]],
+                 "SmrtLink9/SmrtLink9_CCS7_9999_individual_reads"
+                 )
+ExportTable(sl7_ccs7_df_list[["contaminations_mat"]],
+            "SmrtLink9/SmrtLink9_CCS7_9999_contaminations"
+            )
+
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list",
-              "sl9_ccs3_df_list", "sl9_ccs5_df_list"
+save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list", "sl7_ccs7_df_list",
+              "sl9_ccs3_df_list", "sl9_ccs5_df_list", "sl9_ccs7_df_list"
               ),
      file = file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData")
      )
