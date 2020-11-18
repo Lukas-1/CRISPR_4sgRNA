@@ -269,7 +269,7 @@ CreateSummaryDf <- function(reads_df,
     reads_df <- reads_df[reads_df[["Passes_sg_quality"]] == 1, ]
   }
 
-  wells_fac <- factor(reads_df[["Well_number"]])
+  wells_fac <- factor(reads_df[["Well_number"]], levels = wells_vec)
 
 
   ## Process 100% correct read counts and percentages
@@ -281,12 +281,15 @@ CreateSummaryDf <- function(reads_df,
 
   well_stats_mat <- as.matrix(reads_df[, binary_columns])
 
-  summary_counts_mat <- do.call(rbind,
-                                tapply(seq_len(nrow(reads_df)),
-                                       wells_fac,
-                                       function(x) colSums(well_stats_mat[x, , drop = FALSE])
-                                       )
-                                )
+  stats_vec_list <- tapply(seq_len(nrow(reads_df)),
+                           wells_fac,
+                           function(x) colSums(well_stats_mat[x, , drop = FALSE])
+                           )
+  are_empty <- vapply(stats_vec_list, is.null, logical(1))
+  if (any(are_empty)) {
+    stats_vec_list[are_empty] <- list(integer(ncol(well_stats_mat)))
+  }
+  summary_counts_mat <- do.call(rbind, stats_vec_list)
   mode(summary_counts_mat) <- "integer"
 
   total_vec <- as.integer(table(wells_fac))
@@ -302,12 +305,15 @@ CreateSummaryDf <- function(reads_df,
   ## Process alteration categories ##
 
   alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
-  alteration_counts_mat <- do.call(rbind,
-                                   tapply(seq_len(nrow(reads_df)),
-                                          wells_fac,
-                                          function(x) colSums(alterations_mat[x, , drop = FALSE])
-                                          )
-                                   )
+  alterations_vec_list <- tapply(seq_len(nrow(reads_df)),
+                                 wells_fac,
+                                 function(x) colSums(alterations_mat[x, , drop = FALSE])
+                                 )
+  are_empty <- vapply(alterations_vec_list, is.null, logical(1))
+  if (any(are_empty)) {
+    alterations_vec_list[are_empty] <- list(integer(ncol(alterations_mat)))
+  }
+  alteration_counts_mat <- do.call(rbind, alterations_vec_list)
 
   ## Process contaminations / wrong barcodes
 
@@ -870,7 +876,15 @@ ExportTable <- function(export_df,
 
 
 ExportIndivTable <- function(indiv_reads_df, ...) {
-  indiv_reads_df[["Mean_quality"]] <- round(indiv_reads_df[["Mean_quality"]], digits = 1)
+  round_columns <- grep( "_quality$", names(indiv_reads_df), value = TRUE)
+  round_columns <- setdiff(round_columns,
+                           c("Read_quality", "Passes_read_quality",
+                             "Row_quality", "Column_quality"
+                             )
+                           )
+  for (quality_column in round_columns) {
+    indiv_reads_df[[quality_column]] <- round(indiv_reads_df[[quality_column]], digits = 1)
+  }
   exclude_columns <- c("Min_distance", "Random_distance", "Mean_distance",
                        "Passes_barcode_filters", "Passes_read_quality"
                        )
