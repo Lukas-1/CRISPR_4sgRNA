@@ -33,7 +33,7 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 
 # Define the "individual reads" data frame to be used ---------------------
 
-use_df <- sl7_ccs5_df_list[["individual_reads_df"]]
+use_df <- sl7_ccs3_df_list[["individual_reads_df"]]
 use_df <- use_df[order(use_df[["Well_number"]]), ]
 row.names(use_df) <- NULL
 
@@ -43,8 +43,8 @@ row.names(use_df) <- NULL
 
 # Check various cutoffs ---------------------------------------------------
 
-table(use_df[["BC_combined_score"]])
-table(use_df[["BC_score_lead"]])
+table(use_df[["Barcode_combined_score"]])
+table(use_df[["Barcode_score_lead"]])
 
 
 combined_score_cutoff <- 80
@@ -55,17 +55,17 @@ close_well_range <- 3L
 combined_score_low_cutoff <- 60
 score_lead_low_cutoff <- 30
 
-table(use_df[["BC_combined_score"]] < 100, useNA = "ifany")
+table(use_df[["Barcode_combined_score"]] < 100, useNA = "ifany")
 
-table(use_df[["BC_combined_score"]] < 80, useNA = "ifany")
-table(use_df[["BC_score_lead"]] < 40, useNA = "ifany")
+table(use_df[["Barcode_combined_score"]] < 80, useNA = "ifany")
+table(use_df[["Barcode_score_lead"]] < 40, useNA = "ifany")
 table(use_df[["Mean_quality"]] < 85, useNA = "ifany")
 
-are_poor_barcodes <- (use_df[["BC_combined_score"]] < combined_score_cutoff) |
-                     (use_df[["BC_score_lead"]] < score_lead_cutoff)
+are_poor_barcodes <- (use_df[["Barcode_combined_score"]] < combined_score_cutoff) |
+                     (use_df[["Barcode_score_lead"]] < score_lead_cutoff)
 
-are_very_poor_barcodes <- (use_df[["BC_combined_score"]] < combined_score_low_cutoff) |
-                          (use_df[["BC_score_lead"]] < score_lead_low_cutoff)
+are_very_poor_barcodes <- (use_df[["Barcode_combined_score"]] < combined_score_low_cutoff) |
+                          (use_df[["Barcode_score_lead"]] < score_lead_low_cutoff)
 
 are_poor_quality <- use_df[["Mean_quality"]] < mean_quality_cutoff
 
@@ -76,7 +76,7 @@ are_poor_quality <- use_df[["Mean_quality"]] < mean_quality_cutoff
 
 are_close_contams <- use_df[["Random_distance"]] <= close_well_range
 
-are_standard_lengths <- use_df[["Length"]] %in% 2223:2229
+are_standard_lengths <- use_df[["Clipped_read_length"]] %in% 2223:2229
 
 are_contaminated <- use_df[["Contam_guides"]] >= 1
 
@@ -174,11 +174,24 @@ are_short_bc <- (use_df[["Row_bc_length"]] <= short_barcode_cutoff) |
                 (use_df[["Column_bc_length"]] <= short_barcode_cutoff)
 
 
-table(use_df[["BC_combined_score"]][are_short_bc])
+table(use_df[["Barcode_combined_score"]][are_short_bc])
 
 
 use_df[are_short_bc & !(are_poor_barcodes), ]
 
+
+
+
+# Try different cutoffs ---------------------------------------------------
+
+are_ccs5 <- use_df[["Pass_CCS5"]] == 1
+are_ccs5_new <- (use_df[["Read_quality"]] > 0.999) & (use_df[["Num_full_passes"]] >= 5)
+are_ccs7 <- (use_df[["Read_quality"]] > 0.9999) & (use_df[["Num_full_passes"]] >= 7)
+
+
+table(are_ccs5)
+table(are_ccs5_new)
+table(are_ccs7)
 
 
 
@@ -191,6 +204,19 @@ summary_df <- summary_df[!(sg_sequences_df[["Empty_well"]]), ]
 
 table(summary_df["Perc_at_least_1"] > 95)
 table(summary_df["Perc_all_4"] > 75)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
