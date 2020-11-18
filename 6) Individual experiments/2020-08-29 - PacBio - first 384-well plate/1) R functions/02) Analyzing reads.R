@@ -19,12 +19,19 @@ GetMeanQuality <- function(qualities, rescale = TRUE) {
 
 GetCCS5ZMWs <- function(ccs_df, wells_vec = seq_len(384)) {
   are_CCS5 <- ccs_df[["Passed_filters"]] &
-              ccs_df[["Pass_CCS5"]] &
-              (ccs_df[["Well_number"]] %in% wells_vec)
+              (ccs_df[["Well_number"]] %in% wells_vec) &
+              ccs_df[["Pass_CCS5"]]
   return(ccs_df[["ZMW"]][are_CCS5])
 }
 
 
+GetCCS7ZMWs <- function(ccs_df, wells_vec = seq_len(384)) {
+  are_CCS7 <- ccs_df[["Passed_filters"]] &
+              (ccs_df[["Well_number"]] %in% wells_vec) &
+              (ccs_df[["Read_quality"]] >= 0.9999) &
+              (ccs_df[["Num_full_passes"]] >= 7)
+  return(ccs_df[["ZMW"]][are_CCS7])
+}
 
 
 
