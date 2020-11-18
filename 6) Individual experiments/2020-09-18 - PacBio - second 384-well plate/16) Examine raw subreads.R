@@ -32,11 +32,7 @@ subreads_zmws_directory   <- file.path(subreads_output_directory, "Individual ZM
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
-# load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs3.RData"))
-# load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs3.RData"))
-# load(file.path(p2_R_objects_directory, "03) Read in PacBio data - ccs5 ZMWs.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - consensus reads - ccs5.RData"))
-load(file.path(p2_R_objects_directory, "03) Read in PacBio data - demultiplexed - ccs5.RData"))
+load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 load(file.path(p2_R_objects_directory, "15) Import raw subreads.RData"))
 
 
@@ -45,20 +41,13 @@ load(file.path(p2_R_objects_directory, "15) Import raw subreads.RData"))
 
 # Export subreads (before consensus calling) ------------------------------
 
-############################
-### DELETE THIS LATER!!! ###
-############################
-sl7_ccs3_ccs <- sl7_ccs5_ccs
-sl7_ccs3_lima <- sl7_ccs5_lima
-sl7_ccs3_report_df <- sl7_ccs5_report_df
-############################
-############################
-############################
-
-ExportReadsForZMW(4588372)
+ExportReadsForZMW(4588372, sl7_ccs_df)
+ExportReadsForZMW(6489079, sl7_ccs_df)
+ExportReadsForZMW(8323170, sl7_ccs_df)
 
 message("Exporting reads for SmrtLink7_CCS3...")
-ExportSubreadsForWells(fasta_output_dir = file.path(subreads_fasta_directory, "SmrtLink7_CCS5"),
+ExportSubreadsForWells(sl7_ccs_df,
+                       fasta_output_dir = file.path(subreads_fasta_directory, "SmrtLink7_CCS5"),
                        fastq_output_dir = file.path(subreads_fastq_directory, "SmrtLink7_CCS5"),
                        wells_vec = sg_sequences_df[["Well_number"]]
                        )

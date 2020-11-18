@@ -31,9 +31,7 @@ subreads_zmws_directory   <- file.path(subreads_output_directory, "Individual ZM
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - ccs5 ZMWs.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "17) Import raw subreads.RData"))
 
 
@@ -42,10 +40,11 @@ load(file.path(R_objects_directory, "17) Import raw subreads.RData"))
 
 # Export subreads (before consensus calling) ------------------------------
 
-ExportReadsForZMW(4522423)
+ExportReadsForZMW(4522423, sl7_ccs_df)
 
 message("Exporting reads for SmrtLink7_CCS3...")
-ExportSubreadsForWells(fasta_output_dir = file.path(subreads_fasta_directory, "SmrtLink7_CCS3"),
+ExportSubreadsForWells(sl7_ccs_df,
+                       fasta_output_dir = file.path(subreads_fasta_directory, "SmrtLink7_CCS3"),
                        fastq_output_dir = file.path(subreads_fastq_directory, "SmrtLink7_CCS3")
                        )
 
