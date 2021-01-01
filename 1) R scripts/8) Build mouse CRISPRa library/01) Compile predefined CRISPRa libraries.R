@@ -116,9 +116,6 @@ GPP_CRISPRa_df <- FilterGPPOutputDf(GPP_CRISPRa_df,
 
 # Collect all unique HUGO gene symbols ------------------------------------
 
-are_Caprano_controls   <- ((Caprano_df[["Annotated Gene Symbol"]] == "CONTROL") & (Caprano_df[["Annotated Gene ID"]] == "CONTROL")) |
-                            ((Caprano_df[["Annotated Gene Symbol"]] == "NO-TARGET") & (Caprano_df[["Annotated Gene ID"]] == "UNKNOWN_NO-TARGET"))
-
 are_mCRISPRa_v2_controls <- mCRISPRa_v2_df[["gene"]] == "negative_control"
 
 mCRISPRa_v2_symbols_vec <- unique(mCRISPRa_v2_df[["gene"]][!(are_mCRISPRa_v2_controls)])
@@ -169,7 +166,7 @@ new_Caprano_df <- data.frame(
   "Combined_ID"               = NA_character_,
   "Source"                    = "Caprano",
   "mCRISPRa_v2_transcript"    = NA_character_,
-  "Is_control"                = ifelse(are_Caprano_controls, "Yes", "No"),
+  "Is_control"                = "No",
   mapped_Caprano_df[, 1:4],
   "Entrez_source_Caprano"     = mapped_Caprano_df[["Entrez_source"]],
   "Entrez_source_mCRISPRa_v2" = NA_integer_,
