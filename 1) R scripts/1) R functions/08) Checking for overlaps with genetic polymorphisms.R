@@ -48,7 +48,12 @@ NoNAmax <- function(numeric_vec) {
 
 
 
-FrequenciesFromMafDb <- function(ranges_df, SNP_package_name = "MafDb.1Kgenomes.phase1.GRCh38", frequency_cutoff = 0.001, round_frequencies = TRUE, columns_postfix = NULL) {
+FrequenciesFromMafDb <- function(ranges_df,
+                                 SNP_package_name  = "MafDb.1Kgenomes.phase1.GRCh38",
+                                 frequency_cutoff  = 0.001,
+                                 round_frequencies = TRUE,
+                                 columns_postfix   = NULL
+                                 ) {
 
   ### Construct a GRanges object from the positions_df data frame
   GRanges_object_sgRNAs <- RangesDfToGRangesObject(ranges_df, strip_Chr = TRUE)
