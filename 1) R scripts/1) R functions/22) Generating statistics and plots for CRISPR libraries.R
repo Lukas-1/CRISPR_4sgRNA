@@ -57,6 +57,11 @@ numeric_column_labels <- c(
 )
 
 
+aggregate_sum_column_labels <- c(
+  "all22_SNP_AF_max_Kaviar" = "Expected to overlap with a genetic polymorphism"
+)
+
+
 
 
 specificity_score_cutoffs <- c(
@@ -73,6 +78,7 @@ categorical_columns <- c(
   "Poly_T",
   "Non_canonical_PAM",
   "CRISPOR_Graf_status",
+  "Expected_all22_SNP_AF_max_Kaviar",
   names(core_numeric_column_labels)
 )
 
@@ -235,7 +241,7 @@ Palify <- function(myhex, fraction_pale = 0.5) {
 # Helper functions specific to CRISPRa or CRISPRi -------------------------
 
 IsCRISPRa <- function(CRISPR_df) {
-  "hCRISPRa_v2_rank" %in% colnames(CRISPR_df)
+  "hCRISPRa_v2_rank" %in% names(CRISPR_df)
 }
 
 GetTSSWindow <- function(is_CRISPRa) {
@@ -455,10 +461,12 @@ ExpandedSubgroupsDf <- function(CRISPR_df, collapse_GPP = FALSE, show_rest_v_4sg
   sources_vec <- unlist(sources_splits, use.names = FALSE)
   sources_fac <- factor(sources_vec, levels = intersect(libraries_order, sources_vec))
 
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df_expanded)
+
   if (show_rest_v_4sg) {
     subgroups_fac <- factor(ifelse(CRISPR_df_expanded[["Rank"]] %in% 1:4, "4sg", "Rest"), levels = c("Rest", "4sg"))
   } else {
-    is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df_expanded)
+
     if (is_CRISPRko) {
       sources_sublibraries <- ifelse(sources_vec == "GPP",
                                      paste0("GPP_", ifelse(CRISPR_df_expanded[["GPP_rank"]] %in% 1:10, "1to10", "11to50")),
@@ -466,8 +474,8 @@ ExpandedSubgroupsDf <- function(CRISPR_df, collapse_GPP = FALSE, show_rest_v_4sg
                                      )
 
     } else {
-      hCRISPR_rank_column <- grep("v2_rank", colnames(CRISPR_df_expanded), fixed = TRUE, value = TRUE)
-      Doench_rank_column <- grep("(Dolcetto|Calabrese)_rank", colnames(CRISPR_df_expanded), value = TRUE)
+      hCRISPR_rank_column <- grep("v2_rank", names(CRISPR_df_expanded), fixed = TRUE, value = TRUE)
+      Doench_rank_column <- grep("(Dolcetto|Calabrese)_rank", names(CRISPR_df_expanded), value = TRUE)
       are_hCRISPR <- sources_vec %in% c("hCRISPRa-v2", "hCRISPRi-v2.1")
       are_Doench <- sources_vec %in% c("Calabrese", "Dolcetto")
       sources_sublibraries <- ifelse(are_hCRISPR,
@@ -498,13 +506,15 @@ ExpandedSubgroupsDf <- function(CRISPR_df, collapse_GPP = FALSE, show_rest_v_4sg
   plot_df <- plot_df[order(plot_df[["Group"]], plot_df[["Subgroup"]]), ]
   rownames(plot_df) <- NULL
 
-  are_top4 <- CRISPR_df[["Rank"]] %in% 1:4
+  are_valid_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
+
   top4_df <- data.frame(
-    CRISPR_df[are_top4, ],
+    CRISPR_df[are_valid_4sg, ],
     "Group"    = "4sg",
     "Subgroup" = "None",
     stringsAsFactors = FALSE
   )
+  assign("delete_m_top4_df", top4_df, envir = globalenv())
   results_df <- rbind.data.frame(plot_df, top4_df, make.row.names = FALSE, stringsAsFactors = FALSE)
 
   return(results_df)
@@ -537,8 +547,8 @@ FilterTop4 <- function(expanded_CRISPR_df,
   }
 
   ## Distinguish between CRISPRa and CRISPRko
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(expanded_CRISPR_df)
-  if (is_CRISPRko && !("Entrez_source_Brunello" %in% colnames(expanded_CRISPR_df))) {
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(expanded_CRISPR_df)
+  if (is_CRISPRko && !("Entrez_source_Brunello" %in% names(expanded_CRISPR_df))) {
     stop("No identifying column names were found in expanded_CRISPR_df!")
   }
 
@@ -550,8 +560,8 @@ FilterTop4 <- function(expanded_CRISPR_df,
   if (!(is_CRISPRko) && show_sublibraries) {
     are_eligible <- are_eligible & !(grepl("_6to10", expanded_CRISPR_df[["Subgroup"]], fixed = TRUE)) # Otherwise, a tiny group of "supp 5" genes is displayed in the plot
   }
-  eligible_entrezs_vec <- expanded_CRISPR_df[["Entrez_ID"]][are_eligible]
 
+  eligible_entrezs_vec <- expanded_CRISPR_df[["Entrez_ID"]][are_eligible]
 
   ## Filter for Entrez IDs with at least 4 guides in each of the libraries
   if (filter_complete_genes) {
@@ -605,7 +615,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
 
     CheckThatFactorIsInOrder(Doench_entrezs_fac)
 
-    rank_column <- grep("^(Calabrese|Dolcetto)_rank", colnames(Doench_df))
+    rank_column <- grep("^(Calabrese|Dolcetto)_rank", names(Doench_df))
     Doench_rank_list <- split(Doench_df[[rank_column]], Doench_entrezs_fac)
 
     set.seed(1)
@@ -631,7 +641,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
 
     hCRISPR_v2_df <- hCRISPR_v2_df[order(match(hCRISPR_v2_df[["Combined_ID"]], hCRISPR_v2_df[["Combined_ID"]])), ]
     hCRISPR_v2_combined_IDs <- factor(hCRISPR_v2_df[["Combined_ID"]], levels = unique(hCRISPR_v2_df[["Combined_ID"]]))
-    rank_column <- grep("_v2_rank", colnames(hCRISPR_v2_df), fixed = TRUE)
+    rank_column <- grep("_v2_rank", names(hCRISPR_v2_df), fixed = TRUE)
     hCRISPR_v2_rank_list <- split(as.integer(hCRISPR_v2_df[[rank_column]]), hCRISPR_v2_combined_IDs)
     are_top4 <- unlist(lapply(hCRISPR_v2_rank_list, function(x) {
       top_4_ranks <- sort(unique(x))[1:4]
@@ -706,7 +716,7 @@ FilterTop4 <- function(expanded_CRISPR_df,
 
 ChooseOriginalTop4 <- function(CRISPR_df) {
 
-  if ("Original_order" %in% colnames(CRISPR_df)) {
+  if ("Original_order" %in% names(CRISPR_df)) {
     new_order <- order(match(CRISPR_df[["Entrez_ID"]], CRISPR_df[["Entrez_ID"]]),
                        CRISPR_df[["Original_order"]]
                        )
@@ -736,8 +746,6 @@ ChooseOriginalTop4 <- function(CRISPR_df) {
 
 
 
-
-
 MutuallyExclusiveSubgroupsDf <- function(CRISPR_df, use_column) {
 
   ## Rename and re-order the groups
@@ -758,6 +766,8 @@ MutuallyExclusiveSubgroupsDf <- function(CRISPR_df, use_column) {
   rownames(plot_df) <- NULL
   return(plot_df)
 }
+
+
 
 
 
@@ -915,6 +925,8 @@ UniqueSequencesSubgroupLabels <- function(plot_df, x_positions, colors_df, extra
 
 FixNumericColumns <- function(CRISPR_df, y_column) {
   if (grepl("SNP", y_column, fixed = TRUE)) {
+    assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
+    assign("delete_y_column", y_column, envir = globalenv())
     CRISPR_df[[y_column]] <- ifelse(is.na(CRISPR_df[[y_column]]) & !(is.na(CRISPR_df[["Start"]])),
                                     0,
                                     CRISPR_df[[y_column]]
@@ -1062,8 +1074,8 @@ PlotViolin <- function(plot_df,
   assign("delete_colors_df",     colors_df,     envir = globalenv())
   assign("delete_y_column_name", y_column_name, envir = globalenv())
 
-  stopifnot(all(c("Numeric_data", "Groups_factor", "Point_colors") %in% colnames(plot_df)))
-  stopifnot(all(c("Pale", "Medium", "Dark") %in% colnames(colors_df)))
+  stopifnot(all(c("Numeric_data", "Groups_factor", "Point_colors") %in% names(plot_df)))
+  stopifnot(all(c("Pale", "Medium", "Dark") %in% names(colors_df)))
 
   y_limits <- GetAxisLimits(plot_df[["Numeric_data"]], y_column_name, provide_other_limits = TRUE)
   plot(1,
@@ -1163,7 +1175,6 @@ PlotViolin <- function(plot_df,
          xpd    = NA
          )
   }
-
   return(invisible(title_text))
 }
 
@@ -1295,7 +1306,7 @@ ViolinBox_UniqueLibraries <- function(CRISPR_df,
 
 UniquePointsBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
 
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
   }
@@ -1425,7 +1436,7 @@ ViolinBox_Sources <- function(CRISPR_df,
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), y_column)
 
   if (filter_top4) {
-    is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+    is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
     if (!(is_CRISPRko)) {
       are_main_transcript <- (GetMainTSS(CRISPR_df) == CRISPR_df[["AltTSS_ID"]]) %in% TRUE
       CRISPR_df <- CRISPR_df[are_main_transcript, ]
@@ -1664,15 +1675,22 @@ SourcesBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
 
 TidyRawData <- function(plot_df) {
   if (identical(plot_df[["Combined_ID"]], plot_df[["Entrez_ID"]])) {
-    plot_df <- plot_df[, colnames(plot_df) != "Combined_ID"]
+    plot_df <- plot_df[, names(plot_df) != "Combined_ID"]
   }
   results_df <- plot_df[, !(duplicated(as.list(plot_df)))]
   if (length(unique(results_df[["Subgroup"]])) == 1) {
     results_df[["Subgroup"]] <- NULL
   }
-  results_df <- results_df[, !(colnames(results_df) %in% "Point_colors")]
+  results_df <- results_df[, !(names(results_df) %in% "Point_colors")]
   return(results_df)
 }
+
+
+
+
+
+
+# Functions for plotting dot charts ---------------------------------------
 
 
 
@@ -1712,7 +1730,7 @@ MakeCategoricalList <- function(CRISPR_df, use_column, use_cutoff) {
   } else if (use_column == "Non_canonical_PAM") {
     logical_vec <- substr(CRISPR_df[["PAM"]], 2, 3) != "GG"
     use_title <- "Non-canonical PAM (i.e. not NGG)"
-  } else if (use_column %in% grep("_SNP_AF_(max|sum)_", colnames(CRISPR_df), value = TRUE)) {
+  } else if (use_column %in% grep("_SNP_AF_(max|sum)_", names(CRISPR_df), value = TRUE)) {
     if (is.null(use_cutoff)) {
       use_cutoff <- SNP_frequency_cutoff * 100
     }
@@ -1742,7 +1760,8 @@ MakeCategoricalList <- function(CRISPR_df, use_column, use_cutoff) {
       via_string <- "CRISPOR"
     }
     use_title <- paste0("Suboptimal efficacy (<", use_cutoff,
-                        ") according to the Rule Set 2 score (via ", via_string, ")"
+                        ") according to the Rule Set 2 score (via ",
+                        via_string, ")"
                         )
     title_cex <- 0.9
     use_column <- "Is_inefficient"
@@ -1785,6 +1804,24 @@ DrawBarplotGridAndAxis <- function() {
 }
 
 
+RoundSmallPercentages <- function(numeric_vec) {
+  if (all(numeric_vec < 1)) {
+    results_vec <- ifelse(numeric_vec < 0.1,
+                          signif(numeric_vec, digits = 1),
+                          signif(numeric_vec, digits = 2)
+                          )
+  } else if (all(numeric_vec < 10)) {
+    results_vec <- ifelse(numeric_vec < 0.1,
+                          signif(numeric_vec, digits = 1),
+                          round(numeric_vec, digits = 2)
+                          )
+  } else {
+    results_vec <- round(numeric_vec, digits = 1)
+  }
+  return(results_vec)
+}
+
+
 
 AnnotateBars <- function(bar_positions_vec, counts_mat, proportions_mat, text_cex, smaller_plot_factor = FALSE) {
 
@@ -1798,16 +1835,24 @@ AnnotateBars <- function(bar_positions_vec, counts_mat, proportions_mat, text_ce
     fractions_plot_factor <- 0.075
   }
 
-  ## Annotate the bars with percentages
-  percent_vec <- proportions_mat[2, ] * 100
   old_scipen <- options(scipen = 1)
-  proportions_vec <- ifelse(percent_vec < 1,
-                            signif(percent_vec, digits = 1),
-                            ifelse(percent_vec > 99.5,
-                                   signif(percent_vec, digits = 3),
-                                   signif(percent_vec, digits = 2)
-                                   )
-                            )
+
+  ## Annotate the bars with percentages
+  if (nrow(proportions_mat) == 1) {
+    percent_vec <- proportions_mat[1, ] * 100
+    proportions_vec <- format(RoundSmallPercentages(percent_vec))
+  } else {
+    percent_vec <- proportions_mat[2, ] * 100
+    proportions_vec <- ifelse(percent_vec < 1,
+                              signif(percent_vec, digits = 1),
+                              ifelse(percent_vec > 99.5,
+                                     signif(percent_vec, digits = 3),
+                                     signif(percent_vec, digits = 2)
+                                     )
+                              )
+  }
+
+
 
   text(x      = bar_positions_vec,
        y      = par("usr")[[4]] + (plot_height * percentage_plot_factor),
@@ -1820,16 +1865,24 @@ AnnotateBars <- function(bar_positions_vec, counts_mat, proportions_mat, text_ce
        )
   options(old_scipen)
 
+  if (nrow(proportions_mat) == 1) {
+    dividends <- RoundSmallPercentages(counts_mat[1, ])
+    divisors <- counts_mat[2, ]
+  } else {
+    dividends <- counts_mat[2, ]
+    divisors <-  colSums(counts_mat)
+  }
+
   ## Annotate the bars with fractions (counts)
   text(x      = bar_positions_vec,
        y      = par("usr")[[4]] + (plot_height * fractions_plot_factor),
-       labels = colSums(counts_mat),
+       labels = divisors,
        adj    = c(0.5, 0.5),
        cex    = text_cex,
        col    = "black",
        xpd    = NA
        )
-  line_widths <- strwidth(colSums(counts_mat), cex = text_cex)
+  line_widths <- strwidth(divisors, cex = text_cex)
   segments(x0  = bar_positions_vec - (line_widths / 2),
            x1  = bar_positions_vec + (line_widths / 2),
            y0  = par("usr")[[4]] + (plot_height * (fractions_plot_factor + 0.0125)),
@@ -1839,7 +1892,7 @@ AnnotateBars <- function(bar_positions_vec, counts_mat, proportions_mat, text_ce
            )
   text(x      = bar_positions_vec,
        y      = par("usr")[[4]] + (plot_height * (fractions_plot_factor + 2 * 0.0125)),
-       labels = counts_mat[2, ],
+       labels = dividends,
        adj    = c(0.5, 0.5),
        cex    = text_cex,
        col    = "black",
@@ -1851,43 +1904,87 @@ AnnotateBars <- function(bar_positions_vec, counts_mat, proportions_mat, text_ce
 
 
 
-PlotBars <- function(proportions_mat, spaces_vec, x_limits, colors_df) {
+PlotBars <- function(bars_mat,
+                     spaces_vec,
+                     x_limits,
+                     colors_df,
+                     create_plot = TRUE,
+                     use_y_limits = NULL
+                     ) {
 
-  plot(1,
-       xlim = x_limits,
-       ylim = c(0, 1),
-       xaxs = "i",
-       yaxs = "i",
-       axes = FALSE,
-       ann  = FALSE,
-       type = "n"
-       )
-  DrawBarplotGridAndAxis()
+  if (nrow(bars_mat) == 1) {
+    if (is.null(use_y_limits)) {
+      use_y_limits <- c(0, max(bars_mat[1, ] * 1.04))
+    }
+    y_axis_pos <- pretty(use_y_limits)
+    y_limits <- c(y_axis_pos[[1]], y_axis_pos[[length(y_axis_pos)]])
+    first_colors <- colors_df[["Dark"]]
+  } else {
+    y_limits <- c(0, 1)
+    first_colors <- colors_df[["Pale"]]
+  }
+
+  if (create_plot) {
+    plot(1,
+         xlim = x_limits,
+         ylim = y_limits,
+         xaxs = "i",
+         yaxs = "i",
+         axes = FALSE,
+         ann  = FALSE,
+         type = "n"
+         )
+
+    if (nrow(bars_mat) == 1) {
+      segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = y_axis_pos,
+               col = "gray95", lwd = 0.5
+               )
+      if (all(bars_mat[1, ] < 1)) {
+        tick_labels <- paste0(y_axis_pos * 100, "%")
+      }
+      axis(side      = 2,
+           at        = y_axis_pos,
+           labels    = tick_labels,
+           lwd       = 0.75,
+           las       = 1,
+           mgp       = c(3, 0.45, 0),
+           tcl       = -0.3,
+           cex.axis  = 0.8
+           )
+    } else {
+      DrawBarplotGridAndAxis()
+    }
+  }
 
   ## Draw the bar plots()
-  bar_positions <- barplot(height    = proportions_mat[1, ],
-                           col       = colors_df[["Pale"]],
-                           ylim      = c(0, 1),
-                           las       = 1,
+  bar_positions <- barplot(height    = bars_mat[1, ],
+                           col       = first_colors,
                            tcl       = -0.4,
                            border    = NA,
                            space     = spaces_vec,
                            names.arg = rep.int("", nrow(colors_df)),
                            axes      = FALSE,
-                           add       = TRUE
+                           add       = TRUE,
+                           plot      = create_plot
                            )[, 1]
 
-  barplot(height    = proportions_mat[2, ],
-          offset    = proportions_mat[1, ],
-          col       = colors_df[["Dark"]],
-          border    = NA,
-          space     = spaces_vec,
-          names.arg = rep.int("", nrow(colors_df)),
-          axes      = FALSE,
-          add       = TRUE
-          )
-  # box(bty = "l", xpd = NA, lwd = 0.75)
-  return(invisible(bar_positions))
+  if (create_plot && (nrow(bars_mat) > 1)) {
+    barplot(height    = bars_mat[2, ],
+            offset    = bars_mat[1, ],
+            col       = colors_df[["Dark"]],
+            border    = NA,
+            space     = spaces_vec,
+            names.arg = rep.int("", nrow(colors_df)),
+            axes      = FALSE,
+            add       = TRUE
+            )
+  }
+
+  results_list <- list(
+    "bar_positions" = bar_positions,
+    "y_limits"      = y_limits
+  )
+  return(invisible(results_list))
 }
 
 
@@ -1896,22 +1993,34 @@ PlotBars <- function(proportions_mat, spaces_vec, x_limits, colors_df) {
 
 BarPlot_UniqueTwoGroups <- function(CRISPR_df,
                                     use_column,
-                                    use_cutoff     = NULL,
-                                    show_title     = TRUE,
-                                    only_chosen    = FALSE
+                                    only_chosen  = FALSE,
+                                    use_cutoff   = NULL,
+                                    create_plot  = TRUE,
+                                    show_title   = create_plot,
+                                    use_y_limits = NULL
                                     ) {
+
+
+  sum_up_SNPs <- grepl("^Expected_.+_SNP_AF_(sum|max)_", use_column)
+  if (sum_up_SNPs) {
+    use_column <- sub("^Expected_", "", use_column)
+  }
 
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), use_column)
 
   ## Prepare the data
-  categorical_list <- MakeCategoricalList(CRISPR_df, use_column, use_cutoff)
+  if (!(sum_up_SNPs)) {
+    categorical_list <- MakeCategoricalList(CRISPR_df, use_column, use_cutoff)
+  }
   colors_df <- SubgroupColorsDf()
   colors_df <- colors_df[(colors_df[["Color_name"]] == "Grey") & !(colors_df[["Lightened"]]), ]
 
   if (only_chosen) {
-    are_top_4 <- CRISPR_df[["Rank"]] %in% 1:4
-    CRISPR_df <- CRISPR_df[are_top_4, ]
-    categorical_list[["logical_vec"]] <- categorical_list[["logical_vec"]][are_top_4]
+    are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list)
+    CRISPR_df <- CRISPR_df[are_4sg, ]
+    if (!(sum_up_SNPs)) {
+      categorical_list[["logical_vec"]] <- categorical_list[["logical_vec"]][are_4sg]
+    }
     num_subgroups <- 1L
     x_spaces <- NULL
   } else {
@@ -1920,13 +2029,18 @@ BarPlot_UniqueTwoGroups <- function(CRISPR_df,
   }
 
   plot_df <- data.frame(
-    "Data"   = categorical_list[["logical_vec"]],
-    "Chosen" = CRISPR_df[["Rank"]] %in% 1:4,
+    "Chosen" = Are4sg(CRISPR_df, sublibraries_all_entrezs_list),
     stringsAsFactors = FALSE
   )
-  counts_mat <- as.matrix(table(factor(plot_df[["Data"]], levels = c(FALSE, TRUE)), plot_df[["Chosen"]]))
-  proportions_mat <- prop.table(counts_mat, margin = 2)
-
+  if (sum_up_SNPs) {
+    plot_df[[use_column]] <- CRISPR_df[[use_column]]
+    counts_mat <- SumUpSNPs(plot_df, use_column, "Chosen")
+    proportions_mat <- t(counts_mat[1, ] / counts_mat[2, ])
+  } else {
+    plot_df[["Data"]] <- categorical_list[["logical_vec"]]
+    counts_mat <- as.matrix(table(factor(plot_df[["Data"]], levels = c(FALSE, TRUE)), plot_df[["Chosen"]]))
+    proportions_mat <- prop.table(counts_mat, margin = 2)
+  }
 
   ## Prepare the plot region
   if (only_chosen) {
@@ -1936,39 +2050,66 @@ BarPlot_UniqueTwoGroups <- function(CRISPR_df,
   }
   old_mar <- par(mar = c(4, 4, 5, 0.2) + 0.1)
 
-  if (show_title) {
-    title(categorical_list[["title_text"]], cex.main = categorical_list[["title_cex"]], line = 3.15)
-  }
-
-  bar_positions <- PlotBars(proportions_mat, x_spaces, x_limits, colors_df)
-
-  ## Draw the group labels
-  plot_height <- par("usr")[[4]] - par("usr")[[3]]
-  old_lheight <- par("lheight" = 1.1)
-  if (only_chosen) {
-    group_labels <- "All chosen guides"
+  if (sum_up_SNPs) {
+    title_text <- aggregate_sum_column_labels[[use_column]]
+    title_cex <- 0.9
   } else {
-    group_labels <- c("Rest", "4sg")
+    title_text <- categorical_list[["title_text"]]
+    title_cex <- categorical_list[["title_cex"]]
   }
-  text(x      = bar_positions,
-       y      = par("usr")[[3]] - (plot_height * 0.055),
-       labels = group_labels,
-       adj    = c(0.5, 1),
-       cex    = 0.9,
-       col    =  "black",
-       font   = 2,
-       xpd    = NA
-       )
-  par(old_lheight)
-  AnnotateBars(bar_positions, counts_mat, proportions_mat, text_cex = 0.5)
 
-  ## Final steps
-  par(old_mar)
-  results_list <- list("plot_df" = plot_df, categorical_list[c("title_text", "title_cex")])
+  if (show_title) {
+    title(title_text, cex.main = title_cex, line = 3.625)
+  }
+
+  bar_results <- PlotBars(proportions_mat, x_spaces, x_limits, colors_df,
+                          create_plot = create_plot, use_y_limits = use_y_limits
+                          )
+
+  if (create_plot) {
+    ## Draw the group labels
+    plot_height <- par("usr")[[4]] - par("usr")[[3]]
+    old_lheight <- par("lheight" = 1.1)
+    if (only_chosen) {
+      group_labels <- "All chosen guides"
+    } else {
+      group_labels <- c("Rest", "4sg")
+    }
+    text(x      = bar_results[["bar_positions"]],
+         y      = par("usr")[[3]] - (plot_height * 0.055),
+         labels = group_labels,
+         adj    = c(0.5, 1),
+         cex    = 0.9,
+         col    =  "black",
+         font   = 2,
+         xpd    = NA
+         )
+    par(old_lheight)
+    AnnotateBars(bar_results[["bar_positions"]], counts_mat, proportions_mat, text_cex = 0.5)
+
+    ## Final steps
+    par(old_mar)
+  }
+
+  results_list <- list("plot_df"    = plot_df,
+                       "title_text" = title_text,
+                       "title_cex"  = title_cex,
+                       "y_limits"   = bar_results[["y_limits"]]
+                       )
   return(invisible(results_list))
 }
 
 
+
+SumUpSNPs <- function(plot_df, SNP_column, group_column) {
+  sums_vec <- tapply(plot_df[[SNP_column]], plot_df[[group_column]], sum, na.rm = TRUE) / 100
+  num_per_group_vec <- tapply(plot_df[[SNP_column]],
+                              plot_df[[group_column]],
+                              function(x) sum(!(is.na(x)))
+                              )
+  results_mat <- rbind(sums_vec, num_per_group_vec)
+  return(results_mat)
+}
 
 
 
@@ -1983,7 +2124,7 @@ BarPlot_Sources <- function(CRISPR_df,
                             collapse_GPP           = filter_top4
                             ) {
 
-  assign("delete_CRISPR_df",              CRISPR_df,             envir = globalenv())
+  assign("delete_CRISPR_df",              CRISPR_df,              envir = globalenv())
   assign("delete_use_column",             use_column,             envir = globalenv())
   assign("delete_use_cutoff",             use_cutoff,             envir = globalenv())
   assign("delete_show_rest_v_4sg",        show_rest_v_4sg,        envir = globalenv())
@@ -1996,6 +2137,10 @@ BarPlot_Sources <- function(CRISPR_df,
   if (show_sublibraries && show_rest_v_4sg) {
     stop("The 'show_sublibraries' and 'show_rest_v_4sg' arguments may not both be TRUE!")
   }
+  sum_up_SNPs <- grepl("^Expected_.+_SNP_AF_(sum|max)_", use_column)
+  if (sum_up_SNPs) {
+    use_column <- sub("^Expected_", "", use_column)
+  }
   if (!(filter_top4) && (use_column == "Are_overlapping")) {
     warning("It makes little sense to graph the fraction of overlapping guides across libraries unless the top 4 guides are selected!")
   }
@@ -2006,7 +2151,7 @@ BarPlot_Sources <- function(CRISPR_df,
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), use_column)
 
   if (filter_top4) {
-    is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+    is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
     if (!(is_CRISPRko)) {
       are_main_transcript <- (GetMainTSS(CRISPR_df) == CRISPR_df[["AltTSS_ID"]]) %in% TRUE
       CRISPR_df <- CRISPR_df[are_main_transcript, ]
@@ -2018,7 +2163,6 @@ BarPlot_Sources <- function(CRISPR_df,
                                  show_rest_v_4sg = show_rest_v_4sg
                                  )
 
-
   if (use_column == "Have_homologies") {
     categorical_list <- list(
       "logical_vec" = NULL,
@@ -2026,13 +2170,16 @@ BarPlot_Sources <- function(CRISPR_df,
       "title_text"  = "Top 4 guides share identical sub-sequences (8 base pairs or longer)",
       "title_cex"   = 0.9
     )
-  } else {
+  } else if (!(sum_up_SNPs)) {
     categorical_list <- MakeCategoricalList(plot_df, use_column, use_cutoff)
   }
 
-  new_column <- categorical_list[["use_column"]]
-
-  plot_df[[new_column]] <- categorical_list[["logical_vec"]]
+  if (!(sum_up_SNPs)) {
+    new_column <- categorical_list[["use_column"]]
+    plot_df[[new_column]] <- categorical_list[["logical_vec"]]
+  } else {
+    new_column <- use_column
+  }
 
   if (filter_top4) {
     plot_df <- FilterTop4(plot_df,
@@ -2051,7 +2198,10 @@ BarPlot_Sources <- function(CRISPR_df,
     plot_df[["Groups_factor"]] <- plot_df[["Group"]]
   }
 
-  if (new_column %in% categorical_4sg_columns) {
+  if (sum_up_SNPs) {
+    counts_mat <- SumUpSNPs(plot_df, use_column, "Groups_factor")
+    bars_mat <- t(counts_mat[1, ] / counts_mat[2, ])
+  } else if (new_column %in% categorical_4sg_columns) {
     if (use_column == "Are_overlapping") {
       new_order <- order(plot_df[["Group"]],
                          GetMinEntrez(plot_df[["Entrez_ID"]]),
@@ -2095,8 +2245,10 @@ BarPlot_Sources <- function(CRISPR_df,
     }
   }
 
-  counts_mat <- as.matrix(table(factor(plot_df[[new_column]], levels = c(FALSE, TRUE)), plot_df[["Groups_factor"]]))
-  proportions_mat <- prop.table(counts_mat, margin = 2)
+  if (!(sum_up_SNPs)) {
+    counts_mat <- as.matrix(table(factor(plot_df[[new_column]], levels = c(FALSE, TRUE)), plot_df[["Groups_factor"]]))
+    bars_mat <- prop.table(counts_mat, margin = 2)
+  }
 
   spaces_vec <- ifelse(colors_df[["Are_new_color"]], 1.3, 0.3)
 
@@ -2104,20 +2256,28 @@ BarPlot_Sources <- function(CRISPR_df,
 
   old_mar <- par(mar = c(4, 4, 6, 3) + 0.1)
 
-  assign("delete_counts_mat", counts_mat, envir = globalenv())
   assign("delete_plot_df", plot_df, envir = globalenv())
-  assign("delete_proportions_mat", proportions_mat, envir = globalenv())
   assign("delete_spaces_vec", spaces_vec, envir = globalenv())
   assign("delete_x_limits", x_limits, envir = globalenv())
   assign("delete_colors_df", colors_df, envir = globalenv())
 
-  bar_positions <- PlotBars(proportions_mat, spaces_vec, x_limits, colors_df)
+  bar_positions <- PlotBars(bars_mat, spaces_vec, x_limits, colors_df)[["bar_positions"]]
 
-  title(categorical_list[["title_text"]], cex.main = categorical_list[["title_cex"]] * 0.9, line = 3.625)
+  if (sum_up_SNPs) {
+    title_text <- aggregate_sum_column_labels[[use_column]]
+    title_cex <- 0.9
+  } else {
+    title_text <- categorical_list[["title_text"]]
+    title_cex <- categorical_list[["title_cex"]]
+  }
+  title(title_text, cex.main = title_cex, line = 3.625)
 
-  SourcesSubgroupLabels(plot_df, bar_positions, colors_df, show_sublibraries = show_sublibraries, show_rest_v_4sg = show_rest_v_4sg)
+  SourcesSubgroupLabels(plot_df, bar_positions, colors_df,
+                        show_sublibraries = show_sublibraries,
+                        show_rest_v_4sg = show_rest_v_4sg
+                        )
 
-  AnnotateBars(bar_positions, counts_mat, proportions_mat, text_cex = 0.4, smaller_plot_factor  = TRUE)
+  AnnotateBars(bar_positions, counts_mat, bars_mat, text_cex = 0.4, smaller_plot_factor  = TRUE)
 
   ## Final steps
   par(old_mar)
@@ -2129,20 +2289,33 @@ BarPlot_Sources <- function(CRISPR_df,
 
 BarPlot_UniqueLibraries <- function(CRISPR_df,
                                     use_column,
-                                    use_cutoff     = NULL,
-                                    show_title     = TRUE,
-                                    only_chosen    = FALSE
+                                    use_cutoff   = NULL,
+                                    show_title   = TRUE,
+                                    only_chosen  = FALSE,
+                                    create_plot  = TRUE,
+                                    use_y_limits = NULL
                                     ) {
+
+
+  sum_up_SNPs <- grepl("^Expected_.+_SNP_AF_(sum|max)_", use_column)
+  if (sum_up_SNPs) {
+    use_column <- sub("^Expected_", "", use_column)
+  }
 
   CRISPR_df <- FixNumericColumns(FilterCRISPRDf(CRISPR_df), use_column)
 
   ## Prepare the data
-  categorical_list <- MakeCategoricalList(CRISPR_df, use_column, use_cutoff)
-  CRISPR_df[[categorical_list[["use_column"]]]] <- categorical_list[["logical_vec"]]
-  if (only_chosen) {
-    CRISPR_df <- CRISPR_df[CRISPR_df[["Rank"]] %in% 1:4, ]
+  if (!(sum_up_SNPs)) {
+    categorical_list <- MakeCategoricalList(CRISPR_df, use_column, use_cutoff)
+    CRISPR_df[[categorical_list[["use_column"]]]] <- categorical_list[["logical_vec"]]
+    use_column <- categorical_list[["use_column"]]
   }
-  plot_df <- MutuallyExclusiveSubgroupsDf(CRISPR_df, categorical_list[["use_column"]])
+
+  if (only_chosen) {
+    are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list)
+    CRISPR_df <- CRISPR_df[are_4sg, ]
+  }
+  plot_df <- MutuallyExclusiveSubgroupsDf(CRISPR_df, use_column)
   colors_df <- SubgroupColorsDf()
   if (only_chosen) {
     colors_df <- colors_df[!(colors_df[["Lightened"]]), -2]
@@ -2150,8 +2323,13 @@ BarPlot_UniqueLibraries <- function(CRISPR_df,
   } else {
     group_column <- "Subgroup"
   }
-  counts_mat <- as.matrix(table(factor(plot_df[["Data"]], levels = c(FALSE, TRUE)), plot_df[[group_column]]))
-  proportions_mat <- prop.table(counts_mat, margin = 2)
+  if (sum_up_SNPs) {
+    counts_mat <- SumUpSNPs(plot_df, "Data", group_column)
+    proportions_mat <- t(counts_mat[1, ] / counts_mat[2, ])
+  } else {
+    counts_mat <- as.matrix(table(factor(plot_df[["Data"]], levels = c(FALSE, TRUE)), plot_df[[group_column]]))
+    proportions_mat <- prop.table(counts_mat, margin = 2)
+  }
   num_subgroups <- nlevels(plot_df[[group_column]])
   if (only_chosen) {
     spaces_vec <- 0.8
@@ -2167,18 +2345,34 @@ BarPlot_UniqueLibraries <- function(CRISPR_df,
 
   old_mar <- par(mar = c(4, 4, 5, 3) + 0.1)
 
-  bar_positions <- PlotBars(proportions_mat, spaces_vec, x_limits, colors_df)
+  bar_results <- PlotBars(proportions_mat, spaces_vec, x_limits, colors_df,
+                          create_plot = create_plot, use_y_limits = use_y_limits
+                          )
+  bar_positions <- bar_results[["bar_positions"]]
 
+  if (sum_up_SNPs) {
+    title_text <- aggregate_sum_column_labels[[use_column]]
+    title_cex <- 0.9
+  } else {
+    title_text <- categorical_list[["title_text"]]
+    title_cex <- categorical_list[["title_cex"]]
+  }
   if (show_title) {
-    title(categorical_list[["title_text"]], cex.main = categorical_list[["title_cex"]], line = 3.15)
+    title(title_text, cex.main = title_cex, line = 3.625)
   }
 
-  UniqueSequencesSubgroupLabels(plot_df, bar_positions, colors_df, only_chosen = only_chosen)
-  AnnotateBars(bar_positions, counts_mat, proportions_mat, text_cex = 0.4)
+  if (create_plot) {
+    UniqueSequencesSubgroupLabels(plot_df, bar_positions, colors_df, only_chosen = only_chosen)
+    AnnotateBars(bar_positions, counts_mat, proportions_mat, text_cex = 0.4)
+  }
 
   ## Final steps
   par(old_mar)
-  results_list <- c(list("plot_df" = plot_df), categorical_list[c("title_text", "title_cex")])
+  results_list <- list("plot_df"    = plot_df,
+                       "title_text" = title_text,
+                       "title_cex"  = title_cex,
+                       "y_limits"   = bar_results[["y_limits"]]
+                       )
   return(invisible(results_list))
 }
 
@@ -2189,7 +2383,7 @@ BarPlot_UniqueLibraries <- function(CRISPR_df,
 
 UniqueSequencesBarPlots <- function(CRISPR_df) {
 
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     categorical_columns <- setdiff(categorical_columns, "Deviation_from_TSS_window")
   }
@@ -2221,6 +2415,21 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
         file_numbers <- FormatFixedWidthInteger(categorical_seq)
         for (i in categorical_seq) {
           use_column <- use_columns[[i]]
+          if (grepl("^Expected_", use_column)) {
+            assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
+            assign("delete_use_column", use_column, envir = globalenv())
+            assign("delete_only_chosen", only_chosen, envir = globalenv())
+            TwoGroups_results <- BarPlot_UniqueTwoGroups(CRISPR_df, use_column, show_title = FALSE, only_chosen = only_chosen,
+                                                         create_plot = FALSE
+                                                         )
+            Libraries_results <- BarPlot_UniqueLibraries(CRISPR_df, use_column, show_title = FALSE, only_chosen = only_chosen,
+                                                         create_plot = FALSE
+                                                         )
+            y_upper_limit <- max(c(TwoGroups_results[["y_limits"]], Libraries_results[["y_limits"]]))
+            combined_y_limits <- c(0, y_upper_limit)
+          } else {
+            combined_y_limits <- NULL
+          }
           if (make_PNG) {
             folder_path <- file.path(output_plots_directory, folder_name)
             if (!(dir.exists(folder_path))) {
@@ -2228,14 +2437,21 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
             }
             PNG_file_name <- paste0(folder_name, " - ",
                                     file_numbers[[i]], ") ", use_column, ".png"
-            )
+                                    )
             png(file = file.path(folder_path, PNG_file_name),
                 width = use_width, height = use_height, units = "in", res = 600
-            )
+                )
           }
           layout(use_layout_mat, widths = layout_widths, heights = layout_heights)
-          BarPlot_UniqueTwoGroups(CRISPR_df, use_column, show_title = FALSE, only_chosen = only_chosen)
-          StackedBarPlot_results <- BarPlot_UniqueLibraries(CRISPR_df, use_column, show_title = FALSE, only_chosen = only_chosen)
+          BarPlot_UniqueTwoGroups(CRISPR_df, use_column, show_title = FALSE,
+                                  only_chosen = only_chosen, use_y_limits = combined_y_limits
+                                  )
+          StackedBarPlot_results <- BarPlot_UniqueLibraries(CRISPR_df,
+                                                            use_column,
+                                                            show_title = FALSE,
+                                                            only_chosen = only_chosen,
+                                                            use_y_limits = combined_y_limits
+                                                            )
           OuterTitleForLayout(StackedBarPlot_results[["title_text"]], extra_space = FALSE)
           layout(1)
           if (make_PNG) {
@@ -2255,7 +2471,7 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
 
 SourcesBarPlots <- function(CRISPR_df) {
 
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     categorical_columns <- setdiff(categorical_columns, "Deviation_from_TSS_window")
   }
@@ -2304,12 +2520,17 @@ SourcesBarPlots <- function(CRISPR_df) {
             }
             PNG_file_name <- paste0("Bar charts - ", file_name, " - ",
                                     file_numbers[[i]], ") ", use_column, ".png"
-            )
+                                    )
             png(file = file.path(folder_path, PNG_file_name),
                 width = use_width, height = use_height, units = "in", res = 600
                 )
           }
-          do.call(BarPlot_Sources, c(list(CRISPR_df = CRISPR_df, use_column = use_column), args_list[[file_name]]))
+          do.call(BarPlot_Sources, c(list(CRISPR_df   = CRISPR_df,
+                                          use_column  = use_column
+                                          ),
+                                     args_list[[file_name]]
+                                     )
+                  )
           if (make_PNG) {
             dev.off()
           }
@@ -2327,47 +2548,138 @@ SourcesBarPlots <- function(CRISPR_df) {
 
 
 
-
-
-
-
-
-
 # Functions for generating histograms -------------------------------------
 
 DrawHistogram <- function(overview_df, column_name) {
-  hist_results <- hist(overview_df[[column_name]], breaks = 100, plot = FALSE)
-  y_max <- max(hist_results[["density"]])
-  hist(overview_df[[column_name]],
+  are_4sg <- overview_df[["In_4sg_library"]] %in% "Yes"
+  numeric_vec <- overview_df[[column_name]][are_4sg]
+  hist_results <- hist(numeric_vec, breaks = 100, plot = FALSE)
+  y_limits <- GetFlexibleAxisLimits(hist_results[["density"]], subtract_fraction = 0.01)
+  hist(numeric_vec,
        las      = 1,
        mgp      = c(2.2, 0.45, 0),
        tcl      = -0.3,
        col      = brewer.pal(9, "Blues")[[8]],
        border   = NA,
        breaks   = 100,
-       xlim     = c(-0.02, 1),
-       ylim     = c(0 - (y_max * 0.02), y_max + (y_max * 0.02)),
-       main     = paste0("Aggregate ", numeric_column_labels[[column_name]]),
-       cex.main = 1,
+       xlim     = c(-0.01, 1),
+       ylim     = y_limits,
        xlab     = "",
        xaxs     = "i",
        yaxs     = "i",
-       freq     = FALSE
+       freq     = FALSE,
+       main     = ""
        )
   box(bty = "l")
+  title(paste0("Aggregate ", numeric_column_labels[[column_name]]),
+        cex.main = 1, line = 2.2
+        )
   return(invisible(NULL))
 }
 
 
-SharedSubsequencesBarplot <- function(overview_df) {
-  longest_subsequence_table <- table(factor(sgRNAs_overview_df[["Longest_subsequence"]], levels = 1:20))
+
+
+
+GetFlexibleAxisLimits <- function(numeric_vec, start_at_zero = TRUE, subtract_fraction = 0, add_fraction = 0) {
+  use_range <- range(numeric_vec, na.rm = TRUE)
+  if (start_at_zero && (use_range[[1]] >= 0)) {
+    use_range[[1]] <- 0
+  }
+  axis_positions <- pretty(use_range)
+  use_limits <- c(axis_positions[[1]], axis_positions[[length(axis_positions)]])
+  use_span <- use_limits[[2]] - use_limits[[1]]
+  use_limits[[1]] <- use_limits[[1]] - (subtract_fraction * use_span)
+  use_limits[[2]] <- use_limits[[2]] + (add_fraction * use_span)
+  return(use_limits)
+}
+
+
+
+
+DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
+
+  are_4sg <- overview_df[["In_4sg_library"]] %in% "Yes"
+  numeric_vec <- overview_df[[column_name]][are_4sg]
+  hist_results <- hist(log10(numeric_vec), breaks = 100, plot = FALSE)
+  x_limits <- GetFlexibleAxisLimits(hist_results[["breaks"]],
+                                    start_at_zero = FALSE
+                                    )
+  y_limits <- GetFlexibleAxisLimits(hist_results[["density"]],
+                                    subtract_fraction = 0.01
+                                    )
+
+  hist(log10(numeric_vec),
+       col      = brewer.pal(9, "Blues")[[8]],
+       border   = NA,
+       breaks   = 100,
+       xlim     = x_limits,
+       ylim     = y_limits,
+       xlab     = "",
+       xaxs     = "i",
+       yaxs     = "i",
+       freq     = FALSE,
+       axes     = FALSE,
+       main     = ""
+       )
+
+  axis(2,
+       las = 1,
+       mgp = c(2.2, 0.45, 0),
+       tcl = -0.3
+       )
+
+  axis_ticks <- axTicks(1)
+  old_scipen <- options(scipen = -1)
+  axis_labels <- as.character(10^axis_ticks)
+  axis_labels <- sub("e+0", "0^", axis_labels, fixed = TRUE)
+  options(old_scipen)
+
+  axis(1,
+       at     = axis_ticks,
+       labels = parse(text = axis_labels)
+       )
+
+  old_scipen <- options(scipen = -1)
+  as.character(10^axis_ticks)
+  options(old_scipen)
+
+  box(bty = "l")
+
+  title("Size of the expected deletion (between the first and fourth cut sites)",
+        cex.main = 1,
+        line = 2.2
+        )
+
+  return(invisible(NULL))
+}
+
+
+GetLongestSubsequence <- function(CRISPR_df) {
+  are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list)
+  if ("AltTSS_ID" %in% names(CRISPR_df)) {
+    ID_column <- "AltTSS_ID"
+  } else {
+    ID_column <- "Combined_ID"
+  }
+  longest_subsequence_vec <- tapply(CRISPR_df[["sgRNA_sequence"]][are_4sg],
+                                    CRISPR_df[[ID_column]][are_4sg],
+                                    LongestSharedSubsequence
+                                    )
+  return(longest_subsequence_vec)
+}
+
+
+
+
+SharedSubsequencesBarplot <- function(CRISPR_df) {
+  longest_subsequence_vec <- GetLongestSubsequence(CRISPR_df)
+  longest_subsequence_table <- table(factor(longest_subsequence_vec, levels = 1:20))
   bar_positions <- barplot(longest_subsequence_table,
                            las       = 1,
                            mgp       = c(3, 0.45, 0),
                            tcl       = -0.3,
                            col       = brewer.pal(9, "Blues")[[8]],
-                           main      = "Length of the longest shared subsequence",
-                           cex.main  = 1,
                            names.arg = "",
                            border    = NA,
                            space     = 0.4,
@@ -2398,19 +2710,27 @@ SharedSubsequencesBarplot <- function(overview_df) {
        labels = "Number of base pairs",
        xpd    = NA
        )
+
+  title("Length of the longest shared subsequence",
+        cex.main = 1, line = 2.2
+        )
   return(invisible(NULL))
 }
 
 
-Plot4sgData <- function(overview_df) {
+
+Plot4sgData <- function(overview_df, CRISPR_df) {
   for (make_PDF in c(TRUE, FALSE)) {
     if (make_PDF) {
       pdf(file = file.path(output_plots_directory, "Histograms - 4sg combination.pdf"),
           width = pdf_width, height = pdf_height * 1.3
           )
     }
-    par("oma" = c(0, 1, 0, 1))
-    SharedSubsequencesBarplot(overview_df)
+    par("oma" = c(0, 1, 0.5, 1))
+    SharedSubsequencesBarplot(CRISPR_df)
+    if ("Deletion_size" %in% names(overview_df)) {
+      DrawDeletionHistogram(overview_df)
+    }
     for (column_name in CFD_specificity_scores) {
       DrawHistogram(overview_df, column_name)
     }
@@ -2436,7 +2756,7 @@ PlotVennDiagrams <- function(CRISPR_df) {
           )
     }
     CRISPR_df <- FilterCRISPRDf(CRISPR_df)
-    are_chosen <- CRISPR_df[["Rank"]] %in% 1:4
+    are_chosen <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
     all_sources_fac <- ReformatSourceToFactor(CRISPR_df[["Source"]])
 
     euler_not_chosen <- PlotVennDiagram(all_sources_fac[!(are_chosen)])
@@ -2519,7 +2839,7 @@ ScatterPlot <- function(CRISPR_df,
   CRISPR_df <- FilterCRISPRDf(CRISPR_df)
 
   if (only_top4) {
-    CRISPR_df <- CRISPR_df[CRISPR_df[["Rank"]] %in% 1:4, ]
+    CRISPR_df <- CRISPR_df[Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE), ]
   }
 
   if (convert_CRISPOR_to_GuideScan) {
