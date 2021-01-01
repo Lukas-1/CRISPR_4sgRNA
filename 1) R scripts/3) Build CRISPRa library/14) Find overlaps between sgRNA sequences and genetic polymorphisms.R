@@ -22,11 +22,11 @@ CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
 
 
 
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "05) Compile data on genetic polymorphisms.RData"))
 load(file.path(CRISPRa_RData_directory, "13) Integrate the output from GuideScan for individual sgRNA locations.RData"))
+
 
 
 
@@ -56,7 +56,7 @@ location_columns <- c("Chromosome", "Strand", "Start", "End")
 nearest_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Distance")
 
 nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[are_mapped, location_columns])[, nearest_columns]
-colnames(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
+names(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
 
 
 

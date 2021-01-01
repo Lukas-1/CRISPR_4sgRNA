@@ -56,7 +56,7 @@ location_columns <- c("Chromosome", "Strand", "Start", "End")
 nearest_columns <- c("Nearest_Entrez_IDs", "Nearest_symbols", "Distance")
 
 nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRi_df[are_mapped, location_columns])[, nearest_columns]
-colnames(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
+names(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
 
 
 
