@@ -209,7 +209,7 @@ FormatForExcel <- function(my_df,
                            ) {
   # Requires the object 'source_abbreviations_vec' in the global environment
 
-  is_CRISPRko <- "Entrez_source_Brunello" %in% names(my_df)
+  is_CRISPRko <- "Exon_number_GPP" %in% names(my_df)
 
   if (is_CRISPRko) {
     source_abbreviations_vec <- c(
@@ -289,7 +289,9 @@ FormatForExcel <- function(my_df,
     if (!(add_primers)) {
       my_df[["Rank"]][are_controls] <- NA_integer_
     }
-    my_df[["GuideScan_offtarget_category"]][are_controls] <- NA_character_
+    if ("GuideScan_offtarget_category" %in% names(my_df)) {
+      my_df[["GuideScan_offtarget_category"]][are_controls] <- NA_character_
+    }
   }
 
   my_df[["Num_overlaps"]] <- ifelse(is.na(my_df[["Num_overlaps"]]),
