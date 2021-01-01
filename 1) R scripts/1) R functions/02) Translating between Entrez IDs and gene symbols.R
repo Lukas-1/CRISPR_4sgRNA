@@ -50,12 +50,16 @@ GetMinEntrez <- function(entrez_IDs_vec) {
 MapToEntrezs <- function(entrez_IDs_vec = NULL,
                          symbols_vec = NULL,
                          entrez_IDs_separator = ", ",
-                         is_mouse = FALSE
+                         is_mouse = FALSE,
+                         is_rat = FALSE
                          ) {
 
   if (is_mouse) {
     eg_db_column <- "Symbol_Org_Mm_eg_db"
     ncbi_column <- "Symbol_NCBI_Mm_info"
+  } else if (is_rat) {
+    eg_db_column <- "Symbol_Org_Rn_eg_db"
+    ncbi_column <- "Symbol_NCBI_Rn_info"
   } else {
     eg_db_column <- "Symbol_Org_Hs_eg_db"
     ncbi_column <- "Symbol_NCBI_Hs_info"

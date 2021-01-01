@@ -59,11 +59,14 @@ GetNGGPAM <- function(ranges_df, use_genome = BSgenome.Hsapiens.UCSC.hg38) {
 
 # Functions for mapping from genomic locations to genes -------------------
 
-ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges, is_mouse = FALSE) {
+ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges, is_mouse = FALSE, is_rat = FALSE) {
 
   if (is_mouse) {
     eg_db_column <- "Symbol_Org_Mm_eg_db"
     ncbi_column <- "Symbol_NCBI_Mm_info"
+  } else if (is_rat) {
+    eg_db_column <- "Symbol_Org_Rn_eg_db"
+    ncbi_column <- "Symbol_NCBI_Rn_info"
   } else {
     eg_db_column <- "Symbol_Org_Hs_eg_db"
     ncbi_column <- "Symbol_NCBI_Hs_info"
@@ -100,14 +103,14 @@ ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges, is_
 
 
 
-FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE, is_mouse = FALSE) {
+FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, ignore_strand = TRUE, is_mouse = FALSE, is_rat = FALSE) {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
   message("Finding genes that overlap with the specified genomic ranges...")
   GRanges_object <- RangesDfToGRangesObject(ranges_df)
 
   hits_object <- findOverlaps(GRanges_object, gene_models_GRanges, ignore.strand = ignore_strand, select = "all")
-  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges, is_mouse = is_mouse)
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges, is_mouse = is_mouse, is_rat = is_rat)
 
   results_df <- data.frame(
     ranges_df,
@@ -122,7 +125,7 @@ FindOverlappingGenes <- function(ranges_df, gene_models_GRanges = human_genes_GR
 
 
 
-FindNearestGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, is_mouse = FALSE) {
+FindNearestGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRanges, is_mouse = FALSE, is_rat = FALSE) {
   ### This function requires the 'human_genes_GRanges' object in the global environment ###
 
   message("Finding the closest genes to the specified genomic ranges...")
@@ -130,7 +133,7 @@ FindNearestGenes <- function(ranges_df, gene_models_GRanges = human_genes_GRange
 
   hits_object <- distanceToNearest(GRanges_object, gene_models_GRanges, ignore.strand = TRUE, select = "all")
 
-  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges, is_mouse = is_mouse)
+  hits_df <- ProcessHitsObject(hits_object, nrow(ranges_df), gene_models_GRanges, is_mouse = is_mouse, is_rat = is_rat)
 
   results_df <- data.frame(
     ranges_df,
@@ -198,6 +201,7 @@ PasteIndices <- function(found_seq_df, indices_list, column_name, use_separator)
     }
   }, "")
 }
+
 
 
 SummarizeFoundSequencesDf <- function(found_seq_df, all_sequences = NULL, use_separator = "; ", truncate_long_entries = TRUE) {
