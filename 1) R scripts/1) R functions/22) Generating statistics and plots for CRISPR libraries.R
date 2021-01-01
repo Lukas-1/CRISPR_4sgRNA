@@ -2637,7 +2637,9 @@ DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
 
   axis(1,
        at     = axis_ticks,
-       labels = parse(text = axis_labels)
+       labels = parse(text = axis_labels),
+       mgp    = c(2.2, 0.45, 0),
+       tcl    = -0.3
        )
 
   old_scipen <- options(scipen = -1)
@@ -2650,6 +2652,15 @@ DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
         cex.main = 1,
         line = 2.2
         )
+
+  plot_height <- par("usr")[[4]] - par("usr")[[3]]
+
+  # text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) / 2),
+  #      y      = par("usr")[[3]] - (plot_height * 0.15),
+  #      labels = "Number of base pairs",
+  #      xpd    = NA
+  #      )
+  mtext("Number of base pairs", line = 2.2, side = 1)
 
   return(invisible(NULL))
 }
