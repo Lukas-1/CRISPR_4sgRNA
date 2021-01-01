@@ -40,7 +40,14 @@ load(file.path(R_objects_directory, "17) Import raw subreads.RData"))
 
 # Export subreads (before consensus calling) ------------------------------
 
+ExportReadsForZMW(57672593, sl7_ccs_df)
 ExportReadsForZMW(4522423, sl7_ccs_df)
+
+ExportReadsForZMW(32965024, sl7_ccs_df)
+
+
+
+
 
 message("Exporting reads for SmrtLink7_CCS3...")
 ExportSubreadsForWells(sl7_ccs_df,
