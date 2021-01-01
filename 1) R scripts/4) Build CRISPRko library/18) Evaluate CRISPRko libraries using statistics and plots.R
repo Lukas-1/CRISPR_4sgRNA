@@ -153,7 +153,6 @@ Plot4sgData(sgRNAs_overview_df, merged_CRISPRko_df)
 
 
 
-
 # Plot categorical data ---------------------------------------------------
 
 UniqueSequencesBarPlots(merged_CRISPRko_df)
