@@ -17,7 +17,6 @@ source(file.path(general_functions_directory, "16) Producing per-gene summaries 
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR"
-CRISPR_input_directory  <- file.path(CRISPR_root_directory, "2) Input data")
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRi_RData_directory <- file.path(RData_directory, "4) CRISPRi")
@@ -31,6 +30,7 @@ gene_lists_directory    <- file.path(CRISPR_root_directory, "2) Input data", "Ge
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
+load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
 
@@ -53,7 +53,9 @@ vacuolation_entrezs <- as.character(c(vacuolation_genes, LSM_genes))
 
 # Create an overview data frame -------------------------------------------
 
-sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRi_df)
+sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRi_df,
+                                              sublibraries_all_entrezs_list
+                                              )
 
 
 
@@ -113,7 +115,10 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 
 # Write an overview of the vacuolation candidate genes to disk ------------
 
-vacuolation_summary_df <- SummarizeCRISPRDf(merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Combined_ID"]] %in% vacuolation_entrezs, ])
+are_vacuolation <- merged_replaced_CRISPRi_df[["Combined_ID"]] %in% vacuolation_entrezs
+vacuolation_summary_df <- SummarizeCRISPRDf(merged_replaced_CRISPRi_df[are_vacuolation, ],
+                                            sublibraries_all_entrezs_list
+                                            )
 
 vacuolation_overview_df <- ReorganizeSummaryDf(vacuolation_summary_df, vacuolation_entrezs)
 vacuolation_overview_df[["Entrez_ID"]] <- vacuolation_overview_df[["Combined_ID"]]

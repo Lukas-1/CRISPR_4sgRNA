@@ -17,7 +17,6 @@ source(file.path(general_functions_directory, "16) Producing per-gene summaries 
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR"
-CRISPR_input_directory  <- file.path(CRISPR_root_directory, "2) Input data")
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory <- file.path(RData_directory, "2) CRISPRa")
@@ -30,8 +29,8 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
+load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
-
 
 
 
@@ -39,9 +38,9 @@ load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guide
 
 # Create an overview data frame -------------------------------------------
 
-sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRa_df)
-
-
+sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_replaced_CRISPRa_df,
+                                              sublibraries_all_entrezs_list
+                                              )
 
 
 
@@ -127,11 +126,6 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 save(list = "sgRNAs_overview_df",
      file = file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
      )
-
-
-
-
-
 
 
 
