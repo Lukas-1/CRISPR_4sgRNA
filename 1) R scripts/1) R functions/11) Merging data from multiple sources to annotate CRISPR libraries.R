@@ -310,7 +310,7 @@ FindSingleLocationFromGene <- function(location_df, chromosome, gene_GRanges_obj
 
 
 
-Choose0MMLocation <- function(CRISPR_df, use_TSS) {
+Choose0MMLocation <- function(CRISPR_df, use_TSS, gene_models_GRanges = human_genes_GRanges) {
 
   have_multiple_0MM <- CRISPR_df[["Num_0MM"]] > 1
 
@@ -350,10 +350,10 @@ Choose0MMLocation <- function(CRISPR_df, use_TSS) {
     if (is.na(entrez_ID)) {
       gene_GRanges_object <- NULL
     } else {
-      are_this_entrez <- (mcols(human_genes_GRanges)[, "gene_id"] == entrez_ID) &
-                         (as.character(seqnames(human_genes_GRanges)) == entrez_chromosome)
+      are_this_entrez <- (mcols(gene_models_GRanges)[, "gene_id"] == entrez_ID) &
+                         (as.character(seqnames(gene_models_GRanges)) == entrez_chromosome)
       if (any(are_this_entrez)) {
-        gene_GRanges_object <- human_genes_GRanges[are_this_entrez]
+        gene_GRanges_object <- gene_models_GRanges[are_this_entrez]
       } else {
         gene_GRanges_object <- NULL
       }
@@ -649,7 +649,7 @@ CheckForInconsistentChromosomes <- function(CRISPR_df) {
 
 
 
-FindBest0MMLocations <- function(CRISPR_df, parallel_mode = TRUE, num_cores = NULL) {
+FindBest0MMLocations <- function(CRISPR_df, gene_models_GRanges = human_genes_GRanges, parallel_mode = TRUE, num_cores = NULL) {
 
   assign("original_CRISPR_df", CRISPR_df, envir = globalenv())
 
@@ -677,16 +677,18 @@ FindBest0MMLocations <- function(CRISPR_df, parallel_mode = TRUE, num_cores = NU
 
   if (parallel_mode) {
     use_varlist <- c("split_df_list", "have_any_0MM", "use_TSS", "location_columns",
-                     "Choose0MMLocation", "LocationStringToDf", "NoMatchForChromosome"
+                     "Choose0MMLocation", "LocationStringToDf", "NoMatchForChromosome",
+                     "gene_models_GRanges"
                      )
     if (use_TSS) {
       use_varlist <- c(use_varlist,
                        "GetBestTSSPositions", "FindSingleLocationFromTSS", "GetCutLocations"
                        )
+      gene_models_GRanges <- NULL
     } else {
       use_varlist <- c(use_varlist,
                        "FindSingleLocationFromGene", "RangesDfToGRangesObject",
-                       "human_genes_GRanges", "mcols", "seqnames",
+                       "mcols", "seqnames",
                        "distanceToNearest", "GRanges", "IRanges"
                        )
     }
@@ -698,14 +700,14 @@ FindBest0MMLocations <- function(CRISPR_df, parallel_mode = TRUE, num_cores = NU
     parallel::clusterExport(cl, varlist = use_varlist, envir = environment())
     lax_df_list <- parallel::parLapply(cl,
                                        split_df_list[have_any_0MM],
-                                       function(x) Choose0MMLocation(x, use_TSS)
+                                       function(x) Choose0MMLocation(x, use_TSS, gene_models_GRanges)
                                        )
     parallel::stopCluster(cl)
   } else {
-    lax_df_list <- lapply(split_df_list[have_any_0MM], function(x) Choose0MMLocation(x, use_TSS))
+    lax_df_list <- lapply(split_df_list[have_any_0MM], function(x) Choose0MMLocation(x, use_TSS, gene_models_GRanges))
   }
 
-  lax_df_list <- lapply(split_df_list[have_any_0MM], function(x) Choose0MMLocation(x, use_TSS))
+  lax_df_list <- lapply(split_df_list[have_any_0MM], function(x) Choose0MMLocation(x, use_TSS, gene_models_GRanges))
   split_df_list[have_any_0MM] <- lax_df_list
 
   assign("delete_split_df_list",    split_df_list,    envir = globalenv())
