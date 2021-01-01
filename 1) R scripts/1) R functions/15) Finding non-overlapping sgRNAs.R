@@ -27,10 +27,6 @@ CreateCombinations <- function(sub_df_reordered,
                                meet_strict_criteria           = NULL
                                ) {
 
-  assign("delete_sub_df_reordered", sub_df_reordered, envir = globalenv())
-  assign("delete_were_included", were_included, envir = globalenv())
-  assign("delete_meet_strict_criteria", meet_strict_criteria, envir = globalenv())
-
   if (is.null(meet_strict_criteria)) {
     meet_strict_criteria <- rep.int(TRUE, nrow(sub_df_reordered))
   }
@@ -185,9 +181,9 @@ SortCombinations <- function(CRISPR_sub_df,
   are_polyT          <- grepl("TTTT", sub_df_reordered[["sgRNA_sequence"]], ignore.case = TRUE)
   have_canonical_PAM <- (substr(sub_df_reordered[["PAM"]], 2, 3) == "GG") %in% TRUE
   are_curated        <- sub_df_reordered[["Source"]] == "Curated"
-  are_specific       <- ((sub_df_reordered[["GuideScan_specificity"]] < 0.2) %in% FALSE) |
-                        (is.na(sub_df_reordered[["GuideScan_specificity"]]) &
-                         ((sub_df_reordered[["CRISPOR_3MM_specificity"]] < 0.2) %in% FALSE)
+  are_specific       <- ((sub_df_reordered[, "GuideScan_specificity"] < 0.2) %in% FALSE) |
+                        (is.na(sub_df_reordered[, "GuideScan_specificity"]) &
+                         ((sub_df_reordered[, "CRISPOR_3MM_specificity"] < 0.2) %in% FALSE)
                          )
 
   if ("Exon_number_GPP" %in% names(sub_df_reordered)) { # ==> CRISPRko
@@ -200,7 +196,7 @@ SortCombinations <- function(CRISPR_sub_df,
                    are_specific &
                    !(are_polyT) &
                    have_canonical_PAM &
-                   !((sub_df_reordered[[preferred_AF_max_column]] > SNP_frequency_cutoff) %in% TRUE) &
+                   !((sub_df_reordered[, preferred_AF_max_column] > SNP_frequency_cutoff) %in% TRUE) &
                    !(violate_Graf_criteria) &
                    !(are_curated)
                    #((sub_df_reordered[["Source"]] != "GPP") | (sub_df_reordered[["GPP_rank"]] %in% 1:24))
