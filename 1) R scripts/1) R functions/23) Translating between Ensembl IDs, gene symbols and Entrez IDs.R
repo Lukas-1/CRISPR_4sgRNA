@@ -15,7 +15,7 @@ source(file.path(general_functions_directory, "02) Translating between Entrez ID
 
 # Define functions --------------------------------------------------------
 
-MapEnsemblIDs <- function(input_df, warn = TRUE) {
+MapEnsemblIDs <- function(input_df, warn = TRUE, use_dataset = "hsapiens_gene_ensembl") {
 
   stopifnot(all(c("Gene_symbol", "Ensembl_gene_ID") %in% colnames(input_df)))
 
@@ -26,7 +26,7 @@ MapEnsemblIDs <- function(input_df, warn = TRUE) {
 
   ## Create an Ensembl-Entrez mapping using BioMart
   message("Attempting to look up Ensembl-Entrez mappings in Ensembl's BioMart (requires an internet connection...)")
-  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl")) # host = "useast.ensembl.org"
+  mart <- useDataset(use_dataset, useMart("ensembl")) # host = "useast.ensembl.org"
   ensembl_to_entrez_df <- getBM(
     filters = "ensembl_gene_id",
     attributes = c("ensembl_gene_id", "entrezgene_id"),
