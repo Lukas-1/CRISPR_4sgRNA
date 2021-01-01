@@ -14,12 +14,10 @@ source(file.path(general_functions_directory, "11) Merging data from multiple so
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory       <- "~/CRISPR"
-RData_directory             <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory     <- file.path(RData_directory, "1) General")
-CRISPRko_RData_directory    <- file.path(RData_directory, "3) CRISPRko")
-file_output_directory       <- file.path(CRISPR_root_directory, "5) Output")
-CRISPRko_output_directory   <- file.path(file_output_directory, "3) CRISPRko")
+CRISPR_root_directory    <- "~/CRISPR"
+RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
+general_RData_directory  <- file.path(RData_directory, "1) General")
+CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
 
 
 
