@@ -10,6 +10,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "09) Constants and settings.R"))
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R")) # For RoundNumericColumns
+source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R")) # For CRISPRkoAreTop4Mat
 
 
 
@@ -51,6 +52,7 @@ MeetCriteria <- function(CRISPR_df, allow_curated = FALSE) {
 
 
 AggregateSpecificityScores <- function(scores_vec) {
+  stopifnot(length(scores_vec) > 0)
   1 / (1 + sum((1 / scores_vec) - 1))
 }
 
@@ -129,7 +131,7 @@ CollapseOriginal <- function(char_vec) {
 }
 
 
-SummarizeCRISPRDf <- function(CRISPR_df) {
+SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
 
   are_curated <- CRISPR_df[["Source"]] == "Curated"
   if (any(are_curated)) {
@@ -155,6 +157,9 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
   if (include_transcripts && include_top4nonoverlapping) {
     are_incomplete <- (CRISPR_df[["Spacing"]] %in% 0) & (CRISPR_df[["Rank"]] %in% 1:4)
   }
+
+  are_valid_4sg <- Are4sg(CRISPR_df, sublibraries_entrezs_list)
+
   results_list_list <- lapply(split_indices, function(x) {
     results_list <- list(
       "Combined_ID"                 = unique(CRISPR_df[["Combined_ID"]][x]),
@@ -163,12 +168,14 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       "Original_entrez"             = CollapseOriginal(CRISPR_df[["Original_entrez"]][x]),
       "Original_symbol"             = CollapseOriginal(CRISPR_df[["Original_symbol"]][x]),
       "Sources"                     = SummarizeSources(CRISPR_df[["Source"]][x]),
+      "In_4sg_library"              = if (sum(are_valid_4sg[x]) >= 4) "Yes" else "No",
       "Num_hCRISPR_v2_transcripts"  = NA_integer_,
       "Num_transcripts"             = NA_integer_,
       "Num_overlapping_transcripts" = NA_integer_,
       "Num_unspaced_transcripts"    = NA_integer_,
       "Num_incomplete_transcripts"  = NA_integer_,
       "Spacing"                     = NA_character_,
+      "Deletion_size"               = NA_integer_,
       "GuideScan_specificity"       = NA_real_,
       "CRISPOR_3MM_specificity"     = NA_real_,
       "CRISPOR_4MM_specificity"     = NA_real_,
@@ -182,7 +189,7 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       "Num_overlapping_with_SNP"    = sum(CRISPR_df[["Overlap_with_SNP"]][x]),
       "Num_no_perfect_match"        = sum(CRISPR_df[["Num_0MM"]][x] == 0),
       "Num_top4_no_perfect_match"   = NA_integer_,
-      "Specific_guides_available"   = ifelse(all(is.na(CRISPR_df[["Start"]][x]) & (CRISPR_df[["Num_0MM"]][x] != 1)), "No", "Yes"),
+      "Specific_guides_available"   = if (all(is.na(CRISPR_df[["Start"]][x]) & (CRISPR_df[["Num_0MM"]][x] != 1))) "No" else "Yes",
       "Submitted_to_GuideScan"      = NA_character_,
       "TSS_regions"                 = NA_character_
       )
@@ -214,60 +221,76 @@ SummarizeCRISPRDf <- function(CRISPR_df) {
       transcripts_top4_indices <- lapply(transcripts_indices, function(y) y[CRISPR_df[["Rank"]][x][y] %in% 1:4])
     }
     if (include_top4nonoverlapping) {
-      found_overlap <- FALSE
-      for (space in c(50, 45, 40)) {
-        are_this_spacing <- CRISPR_df[["Spacing"]][x] %in% space
-        if (any(are_this_spacing)) {
-          num_zero_overlaps <- sum(CRISPR_df[["Num_overlaps"]][x][are_this_spacing] %in% 0)
-          overlap_string <- paste0(sum(num_zero_overlaps), "*", space)
-          found_overlap <- TRUE
-          break
+      is_control <- all(CRISPR_df[["Is_control"]][x] == "Yes")
+      if (!(is_control)) {
+        found_overlap <- FALSE
+        for (space in c(50, 45, 40)) {
+          are_this_spacing <- CRISPR_df[["Spacing"]][x] %in% space
+          if (any(are_this_spacing)) {
+            num_zero_overlaps <- sum(CRISPR_df[["Num_overlaps"]][x][are_this_spacing] %in% 0)
+            overlap_string <- paste0(sum(num_zero_overlaps), "*", space)
+            found_overlap <- TRUE
+            break
+          }
         }
-      }
-      if (!(found_overlap)) {
-        if (any(CRISPR_df[["Spacing"]][x] %in% 12)) {
-          overlap_string <- ">12bp"
-        } else {
-          overlap_string <- "None"
+        if (!(found_overlap)) {
+          if (any(CRISPR_df[["Spacing"]][x] %in% 12)) {
+            overlap_string <- ">12bp"
+          } else {
+            overlap_string <- "None"
+          }
         }
-      }
-      results_list[["Spacing"]] <- overlap_string
-      are_top_4 <- CRISPR_df[["Rank"]][x] %in% 1:4
-      results_list[["Num_overlaps"]] <- sum(CRISPR_df[["Num_overlaps"]][x[are_top_4]])
-      results_list[["Num_top4_outside_criteria"]] <- sum(are_top_4) - sum(CRISPR_df[["Meet_criteria"]][x[are_top_4]])
-      results_list[["Num_top4_no_perfect_match"]] <- sum(CRISPR_df[["Num_0MM"]][x][are_top_4] == 0)
-      if (include_transcripts) {
-        guidescan_spec_vec <- vapply(transcripts_top4_indices,
-                                     function(y) AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x][y]),
-                                     numeric(1)
-                                     )
-        CRISPOR_3MM_spec_vec <- vapply(transcripts_top4_indices,
-                                       function(y) AggregateSpecificityScores(CRISPR_df[["CRISPOR_3MM_specificity"]][x][y]),
+        results_list[["Spacing"]] <- overlap_string
+        are_top_4 <- CRISPR_df[["Rank"]][x] %in% 1:4
+        results_list[["Num_overlaps"]] <- sum(CRISPR_df[["Num_overlaps"]][x[are_top_4]])
+        results_list[["Num_top4_outside_criteria"]] <- sum(are_top_4) - sum(CRISPR_df[["Meet_criteria"]][x[are_top_4]])
+        results_list[["Num_top4_no_perfect_match"]] <- sum(CRISPR_df[["Num_0MM"]][x][are_top_4] == 0)
+        if (include_transcripts) {
+          results_list[["Deletion_size"]] <- NULL
+          guidescan_spec_vec <- vapply(transcripts_top4_indices,
+                                       function(y) AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x][y]),
                                        numeric(1)
                                        )
-        CRISPOR_4MM_spec_vec <- vapply(transcripts_top4_indices,
-                                       function(y) AggregateSpecificityScores(CRISPR_df[["CRISPOR_4MM_specificity"]][x][y]),
-                                       numeric(1)
-                                       )
-        results_list[["GuideScan_specificity"]]   <- if (all(is.na(guidescan_spec_vec)))   NA_real_ else min(guidescan_spec_vec,   na.rm = TRUE)
-        results_list[["CRISPOR_3MM_specificity"]] <- if (all(is.na(CRISPOR_3MM_spec_vec))) NA_real_ else min(CRISPOR_3MM_spec_vec, na.rm = TRUE)
-        results_list[["CRISPOR_4MM_specificity"]] <- if (all(is.na(CRISPOR_4MM_spec_vec))) NA_real_ else min(CRISPOR_4MM_spec_vec, na.rm = TRUE)
-        subsequence_lengths <- vapply(transcripts_top4_indices,
-                                      function(y) LongestSharedSubsequence(CRISPR_df[["sgRNA_sequence"]][x][y]),
-                                      integer(1)
-                                      )
-        if (all(is.na(subsequence_lengths))) {
-          results_list[["Longest_subsequence"]] <- NA_integer_
+          CRISPOR_3MM_spec_vec <- vapply(transcripts_top4_indices,
+                                         function(y) AggregateSpecificityScores(CRISPR_df[["CRISPOR_3MM_specificity"]][x][y]),
+                                         numeric(1)
+                                         )
+          CRISPOR_4MM_spec_vec <- vapply(transcripts_top4_indices,
+                                         function(y) AggregateSpecificityScores(CRISPR_df[["CRISPOR_4MM_specificity"]][x][y]),
+                                         numeric(1)
+                                         )
+          results_list[["GuideScan_specificity"]]   <- if (all(is.na(guidescan_spec_vec)))   NA_real_ else min(guidescan_spec_vec,   na.rm = TRUE)
+          results_list[["CRISPOR_3MM_specificity"]] <- if (all(is.na(CRISPOR_3MM_spec_vec))) NA_real_ else min(CRISPOR_3MM_spec_vec, na.rm = TRUE)
+          results_list[["CRISPOR_4MM_specificity"]] <- if (all(is.na(CRISPOR_4MM_spec_vec))) NA_real_ else min(CRISPOR_4MM_spec_vec, na.rm = TRUE)
+          subsequence_lengths <- vapply(transcripts_top4_indices,
+                                        function(y) LongestSharedSubsequence(CRISPR_df[["sgRNA_sequence"]][x][y]),
+                                        integer(1)
+                                        )
+          if (all(is.na(subsequence_lengths))) {
+            results_list[["Longest_subsequence"]] <- NA_integer_
+          } else {
+            results_list[["Longest_subsequence"]] <- max(subsequence_lengths, na.rm = TRUE)
+          }
         } else {
-          results_list[["Longest_subsequence"]] <- max(subsequence_lengths, na.rm = TRUE)
+          cut_locations_vec <- CRISPR_df[["Cut_location"]][x[are_top_4]]
+          chromosomes_vec <- CRISPR_df[["Chromosome"]][x[are_top_4]]
+          assign("delete_cut_locations_vec", cut_locations_vec, envir = globalenv())
+          assign("delete_are_top_4", are_top_4, envir = globalenv())
+          assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
+          assign("delete_x", x, envir = globalenv())
+          if (anyNA(chromosomes_vec) || (length(unique(chromosomes_vec)) > 1)) {
+            results_list[["Deletion_size"]] <- NA
+          } else {
+            results_list[["Deletion_size"]] <- max(cut_locations_vec) - min(cut_locations_vec)
+          }
+          results_list[["GuideScan_specificity"]]   <- AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x[are_top_4]])
+          results_list[["CRISPOR_3MM_specificity"]] <- AggregateSpecificityScores(CRISPR_df[["CRISPOR_3MM_specificity"]][x[are_top_4]])
+          results_list[["CRISPOR_4MM_specificity"]] <- AggregateSpecificityScores(CRISPR_df[["CRISPOR_4MM_specificity"]][x[are_top_4]])
+          results_list[["Longest_subsequence"]]     <- LongestSharedSubsequence(CRISPR_df[["sgRNA_sequence"]][x[are_top_4]])
         }
-      } else {
-        results_list[["GuideScan_specificity"]]   <- AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x[are_top_4]])
-        results_list[["CRISPOR_3MM_specificity"]] <- AggregateSpecificityScores(CRISPR_df[["CRISPOR_3MM_specificity"]][x[are_top_4]])
-        results_list[["CRISPOR_4MM_specificity"]] <- AggregateSpecificityScores(CRISPR_df[["CRISPOR_4MM_specificity"]][x[are_top_4]])
-        results_list[["Longest_subsequence"]]     <- LongestSharedSubsequence(CRISPR_df[["sgRNA_sequence"]][x[are_top_4]])
       }
     } else {
+      results_list[["Deletion_size"]]             <- NULL
       results_list[["Spacing"]]                   <- NULL
       results_list[["Num_overlaps"]]              <- NULL
       results_list[["Num_top4_outside_criteria"]] <- NULL
@@ -379,7 +402,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
 
 
 
-ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_lax_df = FALSE, is_mouse = FALSE) {
+ProduceGenomeOverviewDf <- function(strict_CRISPR_df, sublibraries_entrezs_list, lax_CRISPR_df = NULL, use_lax_df = FALSE, is_mouse = FALSE) {
   ## requires 'collected_entrez_IDs' in the global environment
 
   ## Collect all Entrez IDs from various sources
@@ -390,9 +413,9 @@ ProduceGenomeOverviewDf <- function(strict_CRISPR_df, lax_CRISPR_df = NULL, use_
 
   ## Create an sgRNA overview data frame, with one row per gene
   if (use_lax_df) {
-    sgRNAs_summary_df <- SummarizeCRISPRDf(lax_CRISPR_df)
+    sgRNAs_summary_df <- SummarizeCRISPRDf(lax_CRISPR_df, sublibraries_entrezs_list)
   } else {
-    sgRNAs_summary_df <- SummarizeCRISPRDf(strict_CRISPR_df)
+    sgRNAs_summary_df <- SummarizeCRISPRDf(strict_CRISPR_df, sublibraries_entrezs_list)
   }
   sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
   sgRNAs_all_genes_df[["Entrez_ID"]] <- sgRNAs_all_genes_df[["Combined_ID"]]
