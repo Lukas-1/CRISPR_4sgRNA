@@ -27,6 +27,7 @@ output_plots_directory  <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
+load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
 
@@ -66,6 +67,7 @@ BarPlot_Sources(merged_replaced_CRISPRa_df, "Deviation_from_TSS_window")
 
 
 
+
 ViolinBox_Sources(merged_replaced_CRISPRa_df,
                   "Deviation_from_TSS_window",
                   "show_sublibraries"      = FALSE,
@@ -79,6 +81,11 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
                   "show_sublibraries"      = FALSE,
                   "filter_complete_scores" = TRUE
                   )
+
+
+BarPlot_UniqueLibraries(merged_replaced_CRISPRa_df,
+                        "Expected_all22_SNP_AF_max_Kaviar"
+                        )
 
 
 # load(file.path(CRISPRa_RData_directory, "17) Integrate the output from CRISPOR.RData"))
@@ -219,7 +226,7 @@ PlotVennDiagrams(merged_replaced_CRISPRa_df)
 
 # Plot histograms describing the 4sg combination as a whole ---------------
 
-Plot4sgData(sgRNAs_overview_df)
+Plot4sgData(sgRNAs_overview_df, merged_replaced_CRISPRa_df)
 
 # head(sgRNAs_overview_df[order(sgRNAs_overview_df[["Longest_subsequence"]], decreasing = TRUE), ])
 

@@ -28,6 +28,7 @@ output_plots_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
+load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
 
@@ -35,15 +36,13 @@ load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the
 
 
 
-
 # Try stuff ---------------------------------------------------------------
-
 
 ViolinBox_Sources(merged_CRISPRko_df, "CRISPOR_4MM_specificity",
                   aggregate_scores = TRUE
                   )
-
 BarPlot_Sources(merged_CRISPRko_df, "GuideScan_specificity", show_sublibraries = TRUE, filter_top4 = TRUE)
+
 BarPlot_Sources(merged_CRISPRko_df, "Are_overlapping")
 BarPlot_Sources(merged_CRISPRko_df, "Have_homologies")
 
@@ -146,9 +145,10 @@ PlotVennDiagrams(merged_CRISPRko_df)
 
 # Plot histograms describing the 4sg combination as a whole ---------------
 
-Plot4sgData(sgRNAs_overview_df)
+Plot4sgData(sgRNAs_overview_df, merged_CRISPRko_df)
 
-# head(sgRNAs_overview_df[order(sgRNAs_overview_df[["Longest_subsequence"]], decreasing = TRUE), ])
+
+
 
 
 
