@@ -2660,7 +2660,7 @@ DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
   #      labels = "Number of base pairs",
   #      xpd    = NA
   #      )
-  mtext("Number of base pairs", line = 2.2, side = 1)
+  mtext("Number of base pairs (logarithmic scale)", line = 2.2, side = 1)
 
   return(invisible(NULL))
 }
