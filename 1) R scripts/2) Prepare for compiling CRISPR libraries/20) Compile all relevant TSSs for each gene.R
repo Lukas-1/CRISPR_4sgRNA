@@ -267,7 +267,7 @@ long_are_all_discordant <- rep(FALSE, nrow(all_TSS_df))
 long_are_all_discordant[are_problematic_entrezs] <- are_all_discordant
 
 nrow(all_TSS_df)
-all_TSS_df <- all_TSS_df[!(are_problematic_entrezs & !(long_are_all_discordant)), ]
+all_TSS_df <- all_TSS_df[!(are_problematic_entrezs & long_are_all_discordant), ]
 nrow(all_TSS_df)
 row.names(all_TSS_df) <- NULL
 
