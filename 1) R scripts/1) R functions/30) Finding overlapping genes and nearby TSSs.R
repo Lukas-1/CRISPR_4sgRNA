@@ -23,7 +23,7 @@ PrepareTSSDf <- function(TSS_df,
     num_entrezs_vec <- lengths(strsplit(TSS_df[["Entrez_ID"]], ", ", fixed = TRUE))
     are_discrepant <- num_symbols_vec != num_entrezs_vec
     if (any(are_discrepant)) {
-      mapped_df <- MapToEntrezs(entrez_IDs_vec = TSS_df[["Entrez_ID"]])
+      mapped_df <- MapToEntrezs(entrez_IDs_vec = TSS_df[["Entrez_ID"]][are_discrepant])
       stopifnot(identical(mapped_df[["Gene_symbol"]],
                           TSS_df[["Gene_symbol"]][are_discrepant]
                           )
@@ -32,7 +32,7 @@ PrepareTSSDf <- function(TSS_df,
                           num_symbols_vec[are_discrepant]
                           )
                 )
-
+      TSS_df[["Entrez_ID"]][are_discrepant] <- mapped_df[["Entrez_ID"]]
     }
   }
 
