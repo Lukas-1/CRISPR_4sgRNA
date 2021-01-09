@@ -205,6 +205,7 @@ HGNC_vec[num_IDs > 1] <- vapply(HGNC_splits[num_IDs > 1], function(x) {
 FANTOM5_ann_df[["HGNC_entrez"]] <- HGNC_vec
 
 FANTOM5_ann_df[["FANTOM5_entrez"]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[["GeneID"]])
+FANTOM5_ann_df <- FANTOM5_ann_df[, names(FANTOM5_ann_df) != "GeneID"]
 
 have_comma_FANTOM5 <- grepl(",", FANTOM5_ann_df[["FANTOM5_entrez"]], fixed = TRUE)
 have_comma_HGNC <- grepl(",", FANTOM5_ann_df[["HGNC_entrez"]], fixed = TRUE)
@@ -226,14 +227,14 @@ FANTOM5_ann_df[["Consensus_entrez"]] <- ifelse(is.na(FANTOM5_ann_df[["FANTOM5_en
 
 # Tidy some additional FANTOM5 annotation columns -------------------------
 
-FANTOM5_ann_df[["HGNC_ID"]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[["HGNC/MGI_ID"]])
-FANTOM5_ann_df[["HGNC_ID"]] <- sub("HGNC:", "", FANTOM5_ann_df[["HGNC_ID"]])
+# FANTOM5_ann_df[["HGNC_ID"]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[["HGNC/MGI_ID"]])
+FANTOM5_ann_df[["HGNC_ID"]] <- gsub("HGNC:", "", FANTOM5_ann_df[["HGNC/MGI_ID"]], fixed = TRUE)
 
-FANTOM5_ann_df[["UniProt_ID"]] <- StandardizeFANTOM5IDs(FANTOM5_ann_df[["HGNC/MGI_ID"]])
+FANTOM5_ann_df <- FANTOM5_ann_df[, names(FANTOM5_ann_df) != "HGNC/MGI_ID"]
 
 tidy_annotation_columns <- c(
-  "Transcript_name", "HGNC/MGI_ID",
-  "UniProt_ID", "Gene_name", "Gene_synonyms", "Gene_source"
+  "Transcript_name", "HGNC_ID",
+  "UniProt_ID", "Gene_symbol", "Gene_synonyms", "Gene_source"
 )
 
 for (column_name in tidy_annotation_columns) {
@@ -258,9 +259,6 @@ FANTOM5_df <- data.frame(
 )
 
 names(FANTOM5_df)[names(FANTOM5_df) == "Consensus_entrez"] <- "Entrez_ID"
-names(FANTOM5_df)[names(FANTOM5_df) == "HGNC/MGI_ID"] <- "HGNC_ID"
-
-FANTOM5_df[["Gene_symbol"]] <- StandardizeFANTOM5IDs(FANTOM5_df[["Gene_symbol"]])
 
 stopifnot(all(grepl("chr", FANTOM5_df[["Chromosome"]], fixed = TRUE)))
 
