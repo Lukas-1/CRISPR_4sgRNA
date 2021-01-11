@@ -166,8 +166,8 @@ FANTOM5_ann_df <- FANTOM5_ann_df[!(are_all_empty), ]
 are_present <- FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]]
 FANTOM5_bed_df <- FANTOM5_bed_df[are_present, ]
 
-rownames(FANTOM5_ann_df) <- NULL
-rownames(FANTOM5_bed_df) <- NULL
+row.names(FANTOM5_ann_df) <- NULL
+row.names(FANTOM5_bed_df) <- NULL
 
 
 
@@ -314,7 +314,7 @@ FANTOM5_df <- data.frame(
 )
 
 FANTOM5_filtered_df <- FANTOM5_df[have_a_gene_ID, ]
-rownames(FANTOM5_filtered_df) <- NULL
+row.names(FANTOM5_filtered_df) <- NULL
 
 
 
@@ -355,7 +355,7 @@ BioMart_tidied_df <- data.frame(
 are_on_chromosome <- BioMart_df[["Chromosome/scaffold name"]] %in% c(as.character(1:22), "X", "Y", "MT")
 
 BioMart_filtered_df <- BioMart_tidied_df[are_on_chromosome, ]
-rownames(BioMart_filtered_df) <- NULL
+row.names(BioMart_filtered_df) <- NULL
 
 
 
