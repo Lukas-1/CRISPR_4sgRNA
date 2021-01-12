@@ -16,81 +16,73 @@ source(file.path(general_functions_directory, "11) Merging data from multiple so
 
 # Define functions for CRISPRi/CRISPRa ------------------------------------
 
-FindAllTSSTargets <- function(CRISPR_df,
-                              input_TSS_df,
-                              only_protein_coding = FALSE,
-                              only_best_TSS = FALSE
-                              ) {
 
-  stopifnot(!(anyNA(CRISPR_df[["Entrez_ID"]])))
-  stopifnot(!(any(grepl(",", CRISPR_df[["Entrez_ID"]], fixed = TRUE))))
+PrepareTSSDf <- function(TSS_df,
+                         distance_before             = 1001L,
+                         distance_after              = 1001L,
+                         only_consistent_chromosomes = TRUE,
+                         only_protein_coding         = FALSE,
+                         only_best_TSS               = FALSE,
+                         check_entrezs_and_symbols   = TRUE
+                         ) {
 
-  TSS_df <- PrepareTSSDf(input_TSS_df,
-                         only_protein_coding = only_protein_coding,
-                         only_best_TSS = only_best_TSS
-                         )
+  all_chromosomes <- paste0("chr", c(1:23, "X", "Y", "M"))
+  stopifnot(all(TSS_df[["Chromosome"]] %in% all_chromosomes))
 
-  stopifnot(!(anyNA(TSS_df[["Chromosome"]])))
-
-  rename_TSS_columns <- c(
-    "Entrez_IDs"   = "Affected_Entrez_IDs",
-    "Gene_symbols" = "Affected_gene_symbols",
-    "TSS"          = "TSS_position",
-    "Score"        = "FANTOM5_score",
-    "Source"       = "TSS_source"
-  )
-
-  for (column_name in names(rename_TSS_columns)) {
-    names(TSS_df)[names(TSS_df) == column_name] <- rename_TSS_columns[[column_name]]
+  if (check_entrezs_and_symbols) {
+    num_symbols_vec <- lengths(strsplit(TSS_df[["Gene_symbol"]], ", ", fixed = TRUE))
+    num_entrezs_vec <- lengths(strsplit(TSS_df[["Entrez_ID"]], ", ", fixed = TRUE))
+    are_discrepant <- num_symbols_vec != num_entrezs_vec
+    if (any(are_discrepant)) {
+      mapped_df <- MapToEntrezs(entrez_IDs_vec = TSS_df[["Entrez_ID"]][are_discrepant])
+      stopifnot(identical(mapped_df[["Gene_symbol"]],
+                          TSS_df[["Gene_symbol"]][are_discrepant]
+                          )
+                )
+      stopifnot(identical(lengths(strsplit(mapped_df[["Entrez_ID"]], ", ", fixed = TRUE)),
+                          num_symbols_vec[are_discrepant]
+                          )
+                )
+      TSS_df[["Entrez_ID"]][are_discrepant] <- mapped_df[["Entrez_ID"]]
+    }
   }
 
-  split_results <- Process0MMLoci(CRISPR_df)
-  unique_loci_df <- split_results[["unique_df"]]
-  expanded_0MM_df <- split_results[["expanded_df"]]
-  rm(split_results)
+  are_selected <- rep(TRUE, nrow(TSS_df))
 
-  combined_df <- FindOverlappingHits(unique_loci_df, TSS_df)
-  full_combined_df <- AlignHits(expanded_0MM_df, combined_df)
+  if (only_consistent_chromosomes) {
+    are_selected[are_selected] <- TSS_df[["Has_consistent_chromosome"]][are_selected]
+  }
+  if (only_best_TSS) {
+    are_selected[are_selected] <- TSS_df[["Is_chosen_TSS"]][are_selected]
+  }
+  if (only_protein_coding) {
+    are_selected[are_selected] <- grepl("protein-coding", TSS_df[["Gene_type"]][are_selected], fixed = TRUE)
+  }
 
-  names(full_combined_df)[names(full_combined_df) == "Strand"] <- "TSS_strand"
+  names(TSS_df)[names(TSS_df) == "Entrez_ID"]       <- "Entrez_IDs"
+  names(TSS_df)[names(TSS_df) == "Gene_symbol"]     <- "Gene_symbols"
+  names(TSS_df)[names(TSS_df) == "Original_symbol"] <- "Original_symbols"
 
-  combined_columns <- c(
-    "Locus_0MM",
-    "Index", "Is_primary_location", "Intended_Entrez_ID", "Affected_Entrez_IDs",
-    "Number_of_Entrez_IDs",
-    "Intended_gene_symbol", "Affected_gene_symbols", "Num_loci",
-    "Guide_locus", "Gene_locus", "Chromosome",
-    "Is_main_TSS", "TSS_source", "TSS_strand", "TSS_position"
-  )
+  TSS_df[["Number_of_Entrez_IDs"]] <- lengths(strsplit(TSS_df[["Entrez_IDs"]], ", ", fixed = TRUE))
 
-  full_combined_df <- full_combined_df[, combined_columns]
-
-  stopifnot(identical(unique(full_combined_df[["Index"]]),
-                      seq_len(nrow(CRISPR_df))
+  select_columns <- c("Entrez_IDs", "Number_of_Entrez_IDs",
+                      "Gene_symbols", "Original_symbols", "Gene_type",
+                      "Source", "Score", "Is_main_TSS", "TSS",
+                      "Entrez_chromosome", "Chromosome", "Strand"
                       )
-            )
+  if (only_consistent_chromosomes) {
+    select_columns <- setdiff(select_columns, "Entrez_chromosome")
+  }
 
-
-  summary_df <- SummarizeFullDf(full_combined_df)
-
-  stopifnot(nrow(summary_df) == nrow(CRISPR_df))
-
-
-  TSS_strands_result <- SplitAndRejoin(full_combined_df, "TSS_strand")
-
-  summary_df[["Affected_genes_strand"]] <- ifelse(TSS_strands_result[["vector"]] == "+",
-                                                  "+",
-                                                  ifelse(TSS_strands_result[["vector"]] == "-",
-                                                         "-",
-                                                         "Both"
-                                                         )
-                                                  )
-
-  summary_df <- SummarizeSummaryDf(summary_df)
-
-  return(summary_df)
+  results_df <- data.frame(
+    TSS_df[are_selected, select_columns],
+    "Start" = TSS_df[["TSS"]][are_selected] - distance_before,
+    "End"   = TSS_df[["TSS"]][are_selected] + distance_after,
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+  return(results_df)
 }
-
 
 
 FindNearbyTSSs <- function(CRISPR_df,
@@ -110,8 +102,6 @@ FindNearbyTSSs <- function(CRISPR_df,
   stopifnot(!(anyNA(TSS_df[["Chromosome"]])))
 
   rename_TSS_columns <- c(
-    "Entrez_IDs"   = "Affected_Entrez_IDs",
-    "Gene_symbols" = "Affected_gene_symbols",
     "TSS"          = "TSS_position",
     "Score"        = "FANTOM5_score",
     "Source"       = "TSS_source"
