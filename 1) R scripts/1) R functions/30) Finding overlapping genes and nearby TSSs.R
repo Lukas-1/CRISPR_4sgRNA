@@ -16,7 +16,6 @@ source(file.path(general_functions_directory, "11) Merging data from multiple so
 
 # Define functions for CRISPRi/CRISPRa ------------------------------------
 
-
 PrepareTSSDf <- function(TSS_df,
                          distance_before             = 1001L,
                          distance_after              = 1001L,
@@ -85,6 +84,7 @@ PrepareTSSDf <- function(TSS_df,
 }
 
 
+
 FindNearbyTSSs <- function(CRISPR_df,
                            input_TSS_df,
                            only_protein_coding = FALSE,
@@ -127,7 +127,8 @@ FindNearbyTSSs <- function(CRISPR_df,
     "Number_of_Entrez_IDs",
     "Intended_gene_symbol", "Affected_gene_symbols", "Num_loci",
     "Guide_locus", "Gene_locus", "Chromosome",
-    "Is_main_TSS", "TSS_source", "TSS_strand", "TSS_position"
+    "Is_main_TSS", "TSS_source", "TSS_strand", "TSS_position",
+    "Gene_type"
   )
 
   full_combined_df <- full_combined_df[, combined_columns]
@@ -143,25 +144,90 @@ FindNearbyTSSs <- function(CRISPR_df,
   stopifnot(nrow(summary_df) == nrow(CRISPR_df))
 
 
-  TSS_strands_result <- SplitAndRejoin(full_combined_df, "TSS_strand")
-
-  summary_df[["Affected_genes_strand"]] <- ifelse(TSS_strands_result[["vector"]] == "+",
-                                                  "+",
-                                                  ifelse(TSS_strands_result[["vector"]] == "-",
-                                                         "-",
-                                                         "Both"
-                                                         )
-                                                  )
-
   summary_df <- SummarizeSummaryDf(summary_df)
 
-  return(summary_df)
+  results_list <- list(
+    "summary_df" = summary_df,
+    "full_df"    = full_combined_df
+  )
+
+  return(results_list)
 }
 
 
 
 
 # Define functions for CRISPRko -------------------------------------------
+
+PrepareGenesDf <- function(genes_df,
+                           only_protein_coding       = FALSE,
+                           exclude_pseudogenes       = TRUE,
+                           only_known_gene_type      = TRUE,
+                           require_Entrez_ID         = FALSE,
+                           check_entrezs_and_symbols = TRUE
+                           ) {
+
+  all_chromosomes <- paste0("chr", c(1:23, "X", "Y", "M"))
+  are_inside <- genes_df[["Chromosome"]] %in% all_chromosomes
+
+  if (any(!(are_inside))) {
+    message(paste0(sum(!(are_inside)), " entries lay outside the main",
+            " reference chromosomes and were excluded."
+            ))
+  }
+
+  are_selected <- are_inside
+
+  are_NA_entrezs <- is.na(genes_df[["Entrez_IDs"]])
+
+  if (check_entrezs_and_symbols) {
+    have_no_symbol <- is.na(genes_df[["Gene_symbols"]]) & !(are_NA_entrezs)
+    entrezs_without_symbol <- unique(genes_df[["Entrez_IDs"]][have_no_symbol])
+    num_symbols <- sum(have_no_symbol)
+    num_entrezs <- length(entrezs_without_symbol)
+    message(paste0(num_symbols, " entries were associated with ",
+                   num_entrezs, " unique Entrez ID",
+                   if (num_entrezs > 1) "s" else "",
+                   if (num_entrezs < 10) paste0(" (", paste0(entrezs_without_symbol, collapse = ", "), ")") else "",
+                   " that could not be mapped to a gene symbol.",
+                   " These will be excluded."
+                   ))
+    are_selected[are_selected] <- !(have_no_symbol[are_selected])
+  }
+  if (require_Entrez_ID) {
+    are_selected[are_selected] <- !(are_NA_entrezs[are_selected])
+  }
+
+
+  stopifnot(!(any(grepl(",", genes_df[["Gene_types"]], fixed = TRUE))))
+
+  if (only_protein_coding) {
+    are_selected[are_selected] <- genes_df[["Gene_types"]][are_selected] %in% "protein-coding"
+  } else if (exclude_pseudogenes || only_known_gene_type) {
+    if (exclude_pseudogenes) {
+      exclude_types <- "pseudogene"
+    } else {
+      exclude_types <- c()
+    }
+    if (only_known_gene_type) {
+      exclude_types <- c(exclude_types, "other", "unknown")
+    }
+    are_selected[are_selected] <- !(genes_df[["Gene_types"]][are_selected] %in% exclude_types)
+  }
+
+  if (!(all(are_selected))) {
+    genes_df <- genes_df[are_selected, ]
+    row.names(genes_df) <- NULL
+  }
+
+  genes_df[["Number_of_Entrez_IDs"]] <- lengths(strsplit(genes_df[["Entrez_IDs"]], ", ", fixed = TRUE))
+  genes_df[["Number_of_gene_IDs"]] <- lengths(strsplit(genes_df[["Gene_IDs"]], ", ", fixed = TRUE))
+  return(genes_df)
+}
+
+
+
+
 
 FindOverlappingGenes <- function(ranges_df,
                                  genes_df,
@@ -190,6 +256,7 @@ MergeCommonElements <- function(input_list) {
                          )
   return(results_list)
 }
+
 
 
 Process0MMLoci <- function(CRISPR_df) {
@@ -234,6 +301,7 @@ StandardLocationString <- function(ranges_df) {
          ranges_df[, "Strand"]
          )
 }
+
 
 
 FindOverlappingHits <- function(loci_df, genes_df) {
@@ -358,6 +426,11 @@ SummarizeFullDf <- function(full_df) {
     match(full_df[["Locus_0MM"]], full_df[["Locus_0MM"]])
   )
 
+  use_gene_IDs <- "Affected_gene_IDs" %in% names(full_df)
+  if (use_gene_IDs) {
+    full_df[["Affected_gene_IDs"]] <- gsub("ncbi:", "", full_df[["Affected_gene_IDs"]], fixed = TRUE)
+  }
+
   reordered_by_gene_df <- full_df
   reordered_by_gene_df[["Original_order"]] <- seq_len(nrow(reordered_by_gene_df))
   reordered_by_gene_df <- full_df[new_order, ]
@@ -366,8 +439,16 @@ SummarizeFullDf <- function(full_df) {
   affected_symbols_results <- SplitAndRejoin(reordered_by_gene_df, "Affected_gene_symbols")
   affected_entrezs_results <- SplitAndRejoin(reordered_by_gene_df, "Affected_Entrez_IDs")
 
+  use_gene_IDs <- "Affected_gene_IDs" %in% names(full_df)
+  if (use_gene_IDs) {
+    affected_genes_results <- SplitAndRejoin(reordered_by_gene_df, "Affected_gene_IDs")
+    ID_column <- "Affected_gene_IDs"
+  } else {
+    affected_genes_results <- affected_entrezs_results
+    ID_column <- "Affected_Entrez_IDs"
+  }
   stopifnot(identical(lengths(affected_symbols_results[["list"]]),
-                      lengths(affected_entrezs_results[["list"]])
+                      lengths(affected_genes_results[["list"]])
                       ))
 
   first_indices <- match(unique(full_df[["Index"]]),
@@ -381,12 +462,16 @@ SummarizeFullDf <- function(full_df) {
   summary_df <- data.frame(
     "Intended_Entrez_ID"    = intended_entrezs,
     "Affected_Entrez_IDs"   = affected_entrezs_results[["vector"]],
+    "Affected_gene_IDs"     = affected_genes_results[["vector"]],
     "Intended_gene_symbol"  = intended_symbols,
     "Affected_gene_symbols" = affected_symbols_results[["vector"]],
-    "Num_affected_genes"    = lengths(affected_entrezs_results[["list"]]),
+    "Num_affected_genes"    = lengths(affected_genes_results[["list"]]),
     "Total_loci"            = total_loci,
     stringsAsFactors        = FALSE
   )
+  if (!(use_gene_IDs)) {
+    summary_df[["Affected_gene_IDs"]] <- NULL
+  }
 
   index_loci_vec <- paste0(full_df[["Index"]], "__", full_df[["Locus_0MM"]])
 
@@ -394,18 +479,18 @@ SummarizeFullDf <- function(full_df) {
 
   locus_fac <- factor(index_loci_vec, levels = index_loci_vec[!(are_duplicated)])
 
-  are_NA_entrezs <- is.na(full_df[["Affected_Entrez_IDs"]])
+  are_NA_IDs <- is.na(full_df[[ID_column]])
 
-  entrezs_locus_splits <- split(full_df[["Affected_Entrez_IDs"]][!(are_NA_entrezs)],
-                                locus_fac[!(are_NA_entrezs)]
-                                )
+  ID_locus_splits <- split(full_df[[ID_column]][!(are_NA_IDs)],
+                           locus_fac[!(are_NA_IDs)]
+                           )
 
   index_vec <- full_df[["Index"]][!(duplicated(index_loci_vec))]
 
-  second_splits <- split(entrezs_locus_splits, index_vec)
+  second_splits <- split(ID_locus_splits, index_vec)
   second_splits <- lapply(second_splits, function(x) x[lengths(x) > 0])
 
-  have_targets <- tapply(!(are_NA_entrezs), locus_fac, any)
+  have_targets <- tapply(!(are_NA_IDs), locus_fac, any)
   summary_df[["Loci_with_targets"]] <- as.vector(tapply(have_targets, index_vec, sum))
   stopifnot(identical(unname(lengths(second_splits)), summary_df[["Loci_with_targets"]]))
 
@@ -435,6 +520,22 @@ SummarizeFullDf <- function(full_df) {
                                                                 function(x) sum(lengths(x) > 1),
                                                                 integer(1)
                                                                 )
+
+
+  if ("TSS_strand" %in% names(full_df)) {
+    strand_column <- "TSS_strand"
+  } else {
+    strand_column <- "Strand"
+  }
+  strands_result <- SplitAndRejoin(full_df, strand_column)
+
+  summary_df[["Affected_genes_strand"]] <- ifelse(strands_result[["vector"]] == "+",
+                                                  "+",
+                                                  ifelse(strands_result[["vector"]] == "-",
+                                                         "-",
+                                                         "Both"
+                                                         )
+                                                  )
 
   return(summary_df)
 }
