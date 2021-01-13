@@ -43,9 +43,9 @@ example_entrezs <- unlist(sublibraries_all_entrezs_list, use.names = FALSE)
 are_example_genes <- merged_replaced_CRISPRa_df[["Entrez_ID"]] %in% example_entrezs
 
 
-summary_df <- FindNearbyTSSs(merged_replaced_CRISPRa_df[are_example_genes, ],
-                             all_TSS_df
-                             )
+nearby_list <- FindNearbyTSSs(merged_replaced_CRISPRa_df[are_example_genes, ],
+                              all_TSS_df
+                              )
 
 
 
