@@ -29,8 +29,8 @@ PrepareTSSDf <- function(TSS_df,
   stopifnot(all(TSS_df[["Chromosome"]] %in% all_chromosomes))
 
   if (check_entrezs_and_symbols) {
-    num_symbols_vec <- lengths(strsplit(TSS_df[["Gene_symbol"]], ", ", fixed = TRUE))
-    num_entrezs_vec <- lengths(strsplit(TSS_df[["Entrez_ID"]], ", ", fixed = TRUE))
+    num_symbols_vec <- lengths(SplitCommas(TSS_df[["Gene_symbol"]]))
+    num_entrezs_vec <- lengths(SplitCommas(TSS_df[["Entrez_ID"]]))
     are_discrepant <- num_symbols_vec != num_entrezs_vec
     if (any(are_discrepant)) {
       mapped_df <- MapToEntrezs(entrez_IDs_vec = TSS_df[["Entrez_ID"]][are_discrepant])
@@ -38,7 +38,7 @@ PrepareTSSDf <- function(TSS_df,
                           TSS_df[["Gene_symbol"]][are_discrepant]
                           )
                 )
-      stopifnot(identical(lengths(strsplit(mapped_df[["Entrez_ID"]], ", ", fixed = TRUE)),
+      stopifnot(identical(lengths(SplitCommas(mapped_df[["Entrez_ID"]])),
                           num_symbols_vec[are_discrepant]
                           )
                 )
@@ -62,7 +62,7 @@ PrepareTSSDf <- function(TSS_df,
   names(TSS_df)[names(TSS_df) == "Gene_symbol"]     <- "Gene_symbols"
   names(TSS_df)[names(TSS_df) == "Original_symbol"] <- "Original_symbols"
 
-  TSS_df[["Number_of_Entrez_IDs"]] <- lengths(strsplit(TSS_df[["Entrez_IDs"]], ", ", fixed = TRUE))
+  TSS_df[["Number_of_Entrez_IDs"]] <- lengths(SplitCommas(TSS_df[["Entrez_IDs"]]))
 
   select_columns <- c("Entrez_IDs", "Number_of_Entrez_IDs",
                       "Gene_symbols", "Original_symbols", "Gene_type",
@@ -150,7 +150,6 @@ FindNearbyTSSs <- function(CRISPR_df,
     "summary_df" = summary_df,
     "full_df"    = full_combined_df
   )
-
   return(results_list)
 }
 
@@ -190,7 +189,7 @@ PrepareGenesDf <- function(genes_df,
                    if (num_entrezs > 1) "s" else "",
                    if (num_entrezs < 10) paste0(" (", paste0(entrezs_without_symbol, collapse = ", "), ")") else "",
                    " that could not be mapped to a gene symbol.",
-                   " These will be excluded."
+                   " These were excluded."
                    ))
     are_selected[are_selected] <- !(have_no_symbol[are_selected])
   }
@@ -220,27 +219,92 @@ PrepareGenesDf <- function(genes_df,
     row.names(genes_df) <- NULL
   }
 
-  genes_df[["Number_of_Entrez_IDs"]] <- lengths(strsplit(genes_df[["Entrez_IDs"]], ", ", fixed = TRUE))
-  genes_df[["Number_of_gene_IDs"]] <- lengths(strsplit(genes_df[["Gene_IDs"]], ", ", fixed = TRUE))
+  genes_df[["Number_of_Entrez_IDs"]] <- lengths(SplitCommas(genes_df[["Entrez_IDs"]]))
+  genes_df[["Number_of_gene_IDs"]] <- lengths(SplitCommas(genes_df[["Gene_IDs"]]))
   return(genes_df)
 }
 
 
 
 
-
-FindOverlappingGenes <- function(ranges_df,
-                                 genes_df,
-                                 only_protein_coding = FALSE,
-                                 exclude_pseudogenes = FALSE
+FindOverlappingGenes <- function(CRISPR_df,
+                                 input_genes_df,
+                                 only_protein_coding       = FALSE,
+                                 exclude_pseudogenes       = TRUE,
+                                 only_known_gene_type      = TRUE,
+                                 require_Entrez_ID         = FALSE
                                  ) {
 
+
+  stopifnot(!(anyNA(CRISPR_df[["Entrez_ID"]])))
+  stopifnot(!(any(grepl(",", CRISPR_df[["Entrez_ID"]], fixed = TRUE))))
+
+
+  genes_df <- PrepareGenesDf(input_genes_df)
+
+  rename_gene_columns <- c(
+    "Gene_IDs" = "Affected_gene_IDs",
+    "Source"   = "Gene_source"
+  )
+
+  for (column_name in names(rename_gene_columns)) {
+    names(genes_df)[names(genes_df) == column_name] <- rename_gene_columns[[column_name]]
+  }
+
+  split_results <- Process0MMLoci(CRISPR_df)
+  unique_loci_df <- split_results[["unique_df"]]
+  expanded_0MM_df <- split_results[["expanded_df"]]
+  rm(split_results)
+
+  combined_df <- FindOverlappingHits(unique_loci_df, genes_df)
+  full_combined_df <- AlignHits(expanded_0MM_df, combined_df)
+
+
+  stopifnot(identical(lengths(SplitCommas(full_combined_df[["Affected_Entrez_IDs"]])),
+                      lengths(SplitCommas(full_combined_df[["Affected_gene_symbols"]]))
+                      )
+            )
+
+  combined_columns <- c(
+    "Locus_0MM",
+    "Index", "Is_primary_location", "Intended_Entrez_ID", "Affected_Entrez_IDs",
+    "Number_of_gene_IDs", "Number_of_Entrez_IDs",
+    "Intended_gene_symbol", "Affected_gene_symbols", "Num_loci",
+    "Guide_locus", "Gene_locus", "Chromosome",
+    "Affected_gene_IDs", "Ensembl_gene_IDs", "Ensembl_transcript_ID", "Exon_ID",
+    "Strand", "Gene_types", "Gene_source"
+  )
+
+  full_combined_df <- full_combined_df[, combined_columns]
+
+  stopifnot(identical(unique(full_combined_df[["Index"]]),
+                      seq_len(nrow(CRISPR_df))
+                      )
+            )
+
+
+  summary_df <- SummarizeFullDf(full_combined_df)
+
+  stopifnot(nrow(summary_df) == nrow(CRISPR_df))
+
+  summary_df <- SummarizeSummaryDf(summary_df)
+
+  results_list <- list(
+    "summary_df" = summary_df,
+    "full_df"    = full_combined_df
+  )
+  return(results_list)
 }
 
 
 
 
 # Define general functions ------------------------------------------------
+
+
+SplitCommas <- function(char_vec) {
+  strsplit(char_vec, ", ", fixed = TRUE)
+}
 
 MergeCommonElements <- function(input_list) {
   # from https://stackoverflow.com/a/47328161
@@ -380,7 +444,7 @@ AlignHits <- function(expanded_df, comb_df) {
 
 SplitAndRejoin <- function(long_df, use_column) {
 
-  splits_list <- strsplit(long_df[, use_column], ", ", fixed = TRUE)
+  splits_list <- SplitCommas(long_df[, use_column])
 
   joined_list <- tapply(splits_list,
                         factor(long_df[, "Index"]),
@@ -414,6 +478,8 @@ SplitAndRejoin <- function(long_df, use_column) {
 
 
 SummarizeFullDf <- function(full_df) {
+
+  assign("delete_full_df", full_df, envir = globalenv())
 
   unique_entrezs <- unique(full_df[["Affected_Entrez_IDs"]])
   min_unique_entrezs <- GetMinEntrez(unique_entrezs)
@@ -510,7 +576,7 @@ SummarizeFullDf <- function(full_df) {
                                                 )
 
   split_distinct_splits <- lapply(distinct_splits,
-                                  function(x) lapply(x, function(y) unlist(strsplit(y, ", ", fixed = TRUE)))
+                                  function(x) lapply(x, function(y) unlist(SplitCommas(y)))
                                   )
 
 
