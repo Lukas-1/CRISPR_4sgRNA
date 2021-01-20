@@ -30,22 +30,32 @@ load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guide
 
 
 
+# Find all TSSs targeted by each sgRNA ------------------------------------
 
-# Define functions --------------------------------------------------------
+have_single_entrez <- !(is.na(merged_replaced_CRISPRa_df[["Entrez_ID"]])) &
+                      !(grepl(",", merged_replaced_CRISPRa_df[["Entrez_ID"]], fixed = TRUE)) &
+                      (!(merged_replaced_CRISPRa_df[["Entrez_ID"]] %in% "7795")) # The gene symbol for MEMO1 translates to the wrong Entrez ID
 
+indices_vec <- rep(NA, nrow(merged_replaced_CRISPRa_df))
+indices_vec[have_single_entrez] <- seq_len(sum(have_single_entrez))
 
-
-
-# Do stuff ----------------------------------------------------------------
-
-# example_entrezs <- unique(merged_replaced_CRISPRa_df[["Entrez_ID"]])[1:1000]
-example_entrezs <- unlist(sublibraries_all_entrezs_list, use.names = FALSE)
-are_example_genes <- merged_replaced_CRISPRa_df[["Entrez_ID"]] %in% example_entrezs
-
-
-nearby_list <- FindNearbyTSSs(merged_replaced_CRISPRa_df[are_example_genes, ],
+nearby_list <- FindNearbyTSSs(merged_replaced_CRISPRa_df[have_single_entrez, ],
                               all_TSS_df
                               )
+
+TSS_targets_df <- nearby_list[["summary_df"]]
+TSS_targets_df <- TSS_targets_df[indices_vec, ]
+row.names(TSS_targets_df) <- NULL
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "TSS_targets_df",
+     file = file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData")
+     )
+
 
 
 
