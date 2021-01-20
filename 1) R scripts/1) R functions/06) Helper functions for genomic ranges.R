@@ -40,6 +40,16 @@ LocationsDfToGPosObject <- function(locations_df) {
 }
 
 
+CutLocationsToGRangesObject <- function(locations_df) {
+  GRanges_object <- GRanges(
+    seqnames = locations_df[["Chromosome"]],
+    ranges   = IRanges(start = locations_df[["Cut_location"]] - 1L,
+                       end   = locations_df[["Cut_location"]]
+                       ),
+    strand   = locations_df[["Strand"]]
+  )
+  return(GRanges_object)
+}
 
 
 
