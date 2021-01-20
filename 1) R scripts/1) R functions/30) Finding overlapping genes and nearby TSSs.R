@@ -762,6 +762,8 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
         paste0(symbol_df[["Intended_gene_symbol"]][!(are_equal)], collapse = ", ")
       ))
     }
+  } else {
+    compare_columns <- shared_columns
   }
   assign("delete_gene_ID_df", gene_ID_df, envir = globalenv())
   assign("delete_symbol_df", symbol_df, envir = globalenv())
