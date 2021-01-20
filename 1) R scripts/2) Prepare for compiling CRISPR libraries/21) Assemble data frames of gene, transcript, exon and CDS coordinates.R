@@ -40,6 +40,12 @@ load(file.path(general_RData_directory, "19) Compile the information on gene typ
 location_columns <- c("Chromosome", "Strand", "Start", "End")
 all_chromosomes <- paste0("chr", c(1:23, "Y", "Y", "M"))
 
+
+UniqueNonNA <- function(input_vec) {
+  unique(input_vec[!(is.na(input_vec))])
+}
+
+
 ResolveDuplicateFeatures <- function(locations_df) {
 
   # Requires the CollapseNonNA function
@@ -72,6 +78,11 @@ ResolveDuplicateFeatures <- function(locations_df) {
                               paste0(locations_df[["Ensembl_gene_ID"]], "_", location_strings)
                               )
 
+  symbol_location_IDs <- ifelse(is.na(locations_df[["Original_symbol"]]),
+                                NA_character_,
+                                paste0(locations_df[["Original_symbol"]], "_", location_strings)
+                                )
+
   location_fac <- factor(location_strings, levels = unique(location_strings))
   CheckThatFactorIsInOrder(location_fac)
 
@@ -85,16 +96,29 @@ ResolveDuplicateFeatures <- function(locations_df) {
                                      next
                                    } else {
                                      this_entrez <- entrez_location_IDs[x[[i]]]
-                                     this_ENSG <- ENSG_location_IDs[x[[i]]]
+                                     this_ENSG   <- ENSG_location_IDs[x[[i]]]
+                                     this_symbol <- symbol_location_IDs[x[[i]]]
+
                                      are_this_entrez <- (entrez_location_IDs[x] == this_entrez) %in% TRUE
-                                     are_this_ENSG <- (ENSG_location_IDs[x] == this_ENSG) %in% TRUE
-                                     all_entrezs <- unique(c(entrez_location_IDs[x][are_this_ENSG], this_entrez))
-                                     all_entrezs <- all_entrezs[!(is.na(all_entrezs))]
-                                     all_ENSGs <- unique(c(ENSG_location_IDs[x][are_this_entrez], this_ENSG))
-                                     all_ENSGs <- all_ENSGs[!(is.na(all_ENSGs))]
+                                     are_this_ENSG   <- (ENSG_location_IDs[x] == this_ENSG) %in% TRUE
+                                     are_this_symbol <- (symbol_location_IDs[x] == this_symbol) %in% TRUE
+
+                                     all_entrezs <- UniqueNonNA(c(entrez_location_IDs[x][are_this_ENSG], this_entrez))
+                                     all_ENSGs   <- UniqueNonNA(c(ENSG_location_IDs[x][are_this_entrez], this_ENSG))
+
                                      are_shared_entrez <- entrez_location_IDs[x] %in% all_entrezs
-                                     are_shared_ENSG <- ENSG_location_IDs[x] %in% all_ENSGs
-                                     are_shared <- are_shared_entrez | are_shared_ENSG
+                                     are_shared_ENSG   <- ENSG_location_IDs[x] %in% all_ENSGs
+
+                                     if ((length(UniqueNonNA(entrez_location_IDs[x[are_this_symbol]])) == 1) &&
+                                         (length(UniqueNonNA(ENSG_location_IDs[x[are_this_symbol]])) == 1)
+                                         ) {
+                                       are_shared_symbol <- are_this_symbol
+                                     } else {
+                                       are_shared_symbol <- rep(FALSE, length(x))
+                                     }
+
+                                     are_shared <- are_shared_entrez | are_shared_ENSG | are_shared_symbol
+
                                      group_IDs_vec[are_shared] <- current_index
                                      current_index <- current_index + 1L
                                    }
@@ -197,6 +221,8 @@ ResolveDuplicateFeatures <- function(locations_df) {
 }
 
 
+
+
 FixTxDb_columns <- function(TxDb_df, example_df) {
   colnames(TxDb_df) <- c("Entrez_ID", location_columns)
   TxDb_df[["Original_symbol"]] <- NA_character_
@@ -235,7 +261,9 @@ AreMissingInVec2 <- function(char_vec_1, char_vec_2) {
 
 ENSGVectoSymbol <- function(ENSG_vec) {
 
-  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+  # use_host <- "www.ensembl.org"
+  use_host <- "http://apr2020.archive.ensembl.org"
+  mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl", host = use_host))
   biomaRt_lookup_df <- getBM(
     filters    = "ensembl_gene_id",
     attributes = c("ensembl_gene_id", "external_gene_name"),
@@ -508,6 +536,13 @@ have_missing_entrezs <- AreMissingInVec2(exon_locations_df[["Entrez_IDs"]],
                                          CDS_locations_df[["Entrez_IDs"]]
                                          )
 
+have_missing_ENSG <- AreMissingInVec2(exon_locations_df[["Ensembl_gene_IDs"]],
+                                      CDS_locations_df[["Ensembl_gene_IDs"]]
+                                      )
+
+are_to_keep <- have_missing_entrezs |
+               (have_missing_ENSG & is.na(exon_locations_df[["Entrez_IDs"]]))
+
 CDS_or_exon_locations_df <- rbind.data.frame(
   data.frame(
     CDS_locations_df,
@@ -515,7 +550,7 @@ CDS_or_exon_locations_df <- rbind.data.frame(
     stringsAsFactors = FALSE
   ),
   data.frame(
-    exon_locations_df[have_missing_entrezs, ],
+    exon_locations_df[are_to_keep, ],
     "Entry" = "exon",
     stringsAsFactors = FALSE
   ),
