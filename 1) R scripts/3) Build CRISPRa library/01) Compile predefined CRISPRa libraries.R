@@ -49,7 +49,7 @@ GPP_semimanual_CRISPRa_path      <- file.path(GPP_CRISPRa_path, "3) Semi-manual"
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
-load(file.path(CRISPRa_RData_directory, "25) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
+load(file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
 
 
 
