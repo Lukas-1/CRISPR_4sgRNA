@@ -59,6 +59,24 @@ RoundNumericColumns <- function(my_df, num_digits = 7) {
 
 
 
+AddOtherTargets <- function(CRISPR_df, targets_sgRNA_df, targets_4sg_df = NULL) {
+  stopifnot(nrow(CRISPR_df) == nrow(targets_sgRNA_df))
+  CRISPR_df[["Other_target_Entrez_IDs"]] <- targets_sgRNA_df[["Unintended_Entrez_IDs_truncated"]]
+  CRISPR_df[["Other_target_symbols"]] <- targets_sgRNA_df[["Unintended_gene_symbols_truncated"]]
+  if (!(is.null(targets_4sg_df))) {
+    are_top_4 <- CRISPR_df[["Rank"]] %in% 1:4
+    indices_vec <- rep(NA, nrow(CRISPR_df))
+    indices_vec[are_top_4] <- match(CRISPR_df[["Entrez_ID"]][are_top4],
+                                    targets_sgRNA_df[["Intended_Entrez_ID"]]
+                                    )
+    CRISPR_df[["Other_Entrez_IDs_4sg"]] <- targets_4sg_df[["Unintended_Entrez_IDs_truncated"]][indices_vec]
+    CRISPR_df[["Other_symbols_4sg"]] <- targets_4sg_df[["Unintended_gene_symbols_truncated"]][indices_vec]
+  }
+  return(CRISPR_df)
+}
+
+
+
 AdditionalTargetsCRISPRko <- function(CRISPRko_df) {
 
   CRISPRko_overlapping_vec <- c(
