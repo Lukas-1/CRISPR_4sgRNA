@@ -78,7 +78,7 @@ CollapsedTypes <- function(gene_ID_vec,
 
 
 GetDfGeneTypes <- function(genes_df) {
-  stopifnot(all(c("Entrez_ID", "Ensembl_gene_ID") %in% colnames(genes_df)))
+  stopifnot(all(c("Entrez_ID", "Ensembl_gene_ID") %in% names(genes_df)))
   GetGeneTypes(genes_df[["Entrez_ID"]],
                genes_df[["Ensembl_gene_ID"]]
                )
