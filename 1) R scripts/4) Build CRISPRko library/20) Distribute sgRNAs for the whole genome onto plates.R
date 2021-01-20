@@ -127,11 +127,11 @@ for (i in 1:4) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("sg4_df", "sg4_reordered_df"),
-     file = file.path(CRISPRko_RData_directory, "19) Distribute sgRNAs for the whole genome onto plates.RData")
+     file = file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData")
      )
 
 save(list = c("PD_4sg_df", "PD_4sg_reordered_df"),
-     file = file.path(CRISPRko_RData_directory, "19) Distribute sgRNAs for the whole genome onto plates - PD genes.RData")
+     file = file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates - PD genes.RData")
      )
 
 

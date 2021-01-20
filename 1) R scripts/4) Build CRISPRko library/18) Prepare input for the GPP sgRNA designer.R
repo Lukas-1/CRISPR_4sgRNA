@@ -94,11 +94,10 @@ for (chunk_ID in names(combined_submit_df_list)) {
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "problematic_entrezs",
-     file = file.path(CRISPRko_RData_directory, "17) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
+     file = file.path(CRISPRko_RData_directory, "18) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
      )
 
 
