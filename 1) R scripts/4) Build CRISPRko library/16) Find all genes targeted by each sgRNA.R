@@ -95,4 +95,36 @@ save(list = c("deletions_CDS_df", "deletions_exon_df",
 
 
 
+# gene_ID_df <- delete_gene_ID_df
+# symbol_df <- delete_symbol_df
+# shared_columns <- delete_shared_columns
+#
+# for (column in shared_columns) {
+#   print(paste0(column, "  ", identical(gene_ID_df[[column]], symbol_df[[column]])))
+# }
+#
+# assign("delete_gene_ID_df", gene_ID_df, envir = globalenv())
+# assign("delete_symbol_df", symbol_df, envir = globalenv())
+# assign("delete_shared_columns", shared_columns, envir = globalenv())
+#
+#
+#
+# are_same <- mapply(identical,
+#                    gene_ID_df[["Num_affected_genes"]],
+#                    symbol_df[["Num_affected_genes"]]
+#                    )
+#
+# gene_ID_df[!(are_same), ]
+# symbol_df[!(are_same), ]
+#
+#
+#
+# head(delete_symbol_df)
+
+
+
+
+
+
+
 
