@@ -508,6 +508,24 @@ FindOverlapsWithDeletions <- function(CRISPR_df,
 
 # Define general functions ------------------------------------------------
 
+AlignSummaryDf <- function(UseFunction, CRISPR_df, genes_df, ...) {
+
+  are_valid <- !(is.na(CRISPR_df[["Entrez_ID"]])) &
+               !(grepl(",", CRISPR_df[["Entrez_ID"]], fixed = TRUE))
+
+  indices_vec <- rep(NA, nrow(CRISPR_df))
+  indices_vec[are_valid] <- seq_len(sum(are_valid))
+
+  results_list <- UseFunction(CRISPR_df[are_valid, ], genes_df, ...)
+
+  results_list[["summary_df"]] <- results_list[["summary_df"]][indices_vec, ]
+  row.names(results_list[["summary_df"]]) <- NULL
+  return(results_list)
+}
+
+
+
+
 
 SplitCommas <- function(char_vec) {
   strsplit(char_vec, ", ", fixed = TRUE)
@@ -1026,7 +1044,6 @@ AnalyzeGeneIDs <- function(full_df, use_column) {
                                       )
   unintended_IDs <- paste0(intended_strings, unintended_IDs)
   trunc_unintended_IDs <- paste0(intended_strings_truncated, trunc_unintended_IDs)
-
 
   results_df <- data.frame(
     "Intended_gene"                       = intended_IDs,
