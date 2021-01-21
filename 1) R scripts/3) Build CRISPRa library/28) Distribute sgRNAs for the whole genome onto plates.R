@@ -34,8 +34,17 @@ load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sou
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(general_RData_directory, "17) Read in additional gene lists.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
+load(file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData"))
 load(file.path(previous_versions_directory, "01) CRISPRa transcription factor sub-library (1st version) - TF_v1_CRISPRa_df.RData"))
 
+
+
+
+
+
+# Add data on other (unintended) targeted TSSs ----------------------------
+
+merged_replaced_CRISPRa_df <- AddOtherTargets(merged_replaced_CRISPRa_df, TSS_targets_df)
 
 
 
