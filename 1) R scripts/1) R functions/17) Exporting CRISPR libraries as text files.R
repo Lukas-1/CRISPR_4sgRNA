@@ -251,7 +251,10 @@ FormatForExcel <- function(my_df,
     fill_indices <- union(fill_indices, which(names(my_df) %in% fill_columns))
   }
   for (i in fill_indices) {
-    my_df[[i]] <- ifelse(is.na(my_df[[i]]), " ", as.character(my_df[[i]]))
+    my_df[[i]] <- ifelse(is.na(my_df[[i]]) | (my_df[[i]] %in% ""),
+                         " ",
+                         as.character(my_df[[i]])
+                         )
   }
 
   assign("delete_my_df", my_df, envir = globalenv())
