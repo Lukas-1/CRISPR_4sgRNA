@@ -45,6 +45,13 @@ deletions_exon_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
                                                  exon_locations_df
                                                  )
 
+deletions_CDS_protein_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
+                                                        CDS_or_exon_locations_df
+                                                        )
+deletions_exon_protein_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
+                                                         exon_locations_df
+                                                         )
+
 
 
 
@@ -66,35 +73,50 @@ indices_vec[have_single_entrez] <- seq_len(sum(have_single_entrez))
 
 # Find overlapping genes for sgRNAs ---------------------------------------
 
-guides_CDS_list <- FindOverlappingGenes(merged_CRISPRko_df[have_single_entrez, ],
-                                        CDS_or_exon_locations_df
-                                        )
-guides_exon_list <- FindOverlappingGenes(merged_CRISPRko_df[have_single_entrez, ],
-                                         exon_locations_df
-                                         )
+guides_CDS_list <- AlignSummaryDf(FindOverlappingGenes,
+                                  merged_CRISPRko_df[have_single_entrez, ],
+                                  CDS_or_exon_locations_df
+                                  )
+guides_exon_list <- AlignSummaryDf(FindOverlappingGenes,
+                                   merged_CRISPRko_df,
+                                   exon_locations_df
+                                   )
+
+guides_CDS_protein_list <- AlignSummaryDf(FindOverlappingGenes,
+                                          merged_CRISPRko_df,
+                                          CDS_or_exon_locations_df,
+                                          only_protein_coding = TRUE
+                                          )
+guides_exon_protein_list <- AlignSummaryDf(FindOverlappingGenes,
+                                           merged_CRISPRko_df,
+                                           exon_locations_df,
+                                           only_protein_coding = TRUE
+                                           )
 
 
 
 # Prepare for saving summary data frames ----------------------------------
 
-deletions_CDS_df <- deletions_CDS_list[["summary_df"]]
-deletions_exon_df <- deletions_exon_list[["summary_df"]]
+deletions_CDS_df          <- deletions_CDS_list[["summary_df"]]
+deletions_exon_df         <- deletions_exon_list[["summary_df"]]
+deletions_CDS_protein_df  <- deletions_CDS_list[["summary_df"]]
+deletions_exon_protein_df <- deletions_exon_list[["summary_df"]]
 
-guides_CDS_df <- guides_CDS_list[["summary_df"]][have_single_entrez, ]
-row.names(guides_CDS_df) <- NULL
-
-guides_exon_df <- guides_CDS_list[["summary_df"]][have_single_entrez, ]
-row.names(guides_exon_df) <- NULL
-
+guides_CDS_df             <- guides_CDS_list[["summary_df"]]
+guides_exon_df            <- guides_CDS_list[["summary_df"]]
+guides_CDS_protein_df     <- guides_CDS_list[["summary_df"]]
+guides_exon_protein_df    <- guides_CDS_list[["summary_df"]]
 
 
 
 # Save data ---------------------------------------------------------------
 
 save(list = c("deletions_CDS_df", "deletions_exon_df",
-              "guides_CDS_df", "guides_exon_df"
+              "deletions_CDS_protein_df", "deletions_exon_protein_df",
+              "guides_CDS_df", "guides_exon_df",
+              "guides_CDS_protein_df", "guides_exon_protein_df"
               ),
-     file = file.path(CRISPRko_RData_directory, "24) Find all genes targeted by each sgRNA.RData")
+     file = file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA.RData")
      )
 
 

@@ -45,14 +45,22 @@ nearby_list <- AlignSummaryDf(FindNearbyTSSs,
                               merged_replaced_CRISPRa_df,
                               all_TSS_df
                               )
+
+nearby_protein_list <- AlignSummaryDf(FindNearbyTSSs,
+                                      merged_replaced_CRISPRa_df,
+                                      all_TSS_df,
+                                      only_protein_coding = TRUE
+                                      )
+
 TSS_targets_df <- nearby_list[["summary_df"]]
+TSS_protein_targets_df <- nearby_protein_list[["summary_df"]]
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = "TSS_targets_df",
+save(list = c("TSS_targets_df", "TSS_protein_targets_df"),
      file = file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData")
      )
 
