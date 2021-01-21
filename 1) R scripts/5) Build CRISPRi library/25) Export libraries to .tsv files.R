@@ -47,8 +47,9 @@ merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_ta
 
 # Re-arrange the columns --------------------------------------------------
 
-selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entrez",
-                      "Original_symbol",
+selected_columns <- c("Combined_ID",
+                      "Entrez_ID", "Other_target_Entrez_IDs", "Original_entrez",
+                      "Gene_symbol", "Other_target_symbols", "Original_symbol",
 
                       "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
 
@@ -97,8 +98,6 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
                       )
 
 merged_replaced_CRISPRi_df <- merged_replaced_CRISPRi_df[, selected_columns]
-
-TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", selected_columns)]
 
 
 
