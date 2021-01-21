@@ -55,18 +55,12 @@ deletions_exon_protein_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_
 
 
 
-# Determine which sgRNAs can be analyzed ----------------------------------
+# Make corrections to prevent downstream errors ---------------------------
 
 are_to_replace <- (merged_CRISPRko_df[["Entrez_ID"]] %in% "7795") &
                   (merged_CRISPRko_df[["Gene_symbol"]] %in% "MEMO1")
 merged_CRISPRko_df[["Entrez_ID"]][are_to_replace] <- "51072"
 
-
-have_single_entrez <- !(is.na(merged_CRISPRko_df[["Entrez_ID"]])) &
-                      !(grepl(",", merged_CRISPRko_df[["Entrez_ID"]], fixed = TRUE))
-
-indices_vec <- rep(NA, nrow(merged_CRISPRko_df))
-indices_vec[have_single_entrez] <- seq_len(sum(have_single_entrez))
 
 
 
@@ -74,7 +68,7 @@ indices_vec[have_single_entrez] <- seq_len(sum(have_single_entrez))
 # Find overlapping genes for sgRNAs ---------------------------------------
 
 guides_CDS_list <- AlignSummaryDf(FindOverlappingGenes,
-                                  merged_CRISPRko_df[have_single_entrez, ],
+                                  merged_CRISPRko_df,
                                   CDS_or_exon_locations_df
                                   )
 guides_exon_list <- AlignSummaryDf(FindOverlappingGenes,
