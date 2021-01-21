@@ -25,8 +25,8 @@ sublibraries_short_names <- c(
 
 export_columns <- c(
   "Sublibrary_4sg", "Plate_string", "Well_number",
-  "Entrez_ID", "Entrez_overlapping_0MM",
-  "Gene_symbol", "Symbol_overlapping_0MM", "Original_symbol",
+  "Entrez_ID", "Other_target_Entrez_IDs",
+  "Gene_symbol", "Other_target_symbols", "Original_symbol",
   "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP",
   "Transcript_ID", "Genomic_sequence_ID",
   "TSS_ID", "Rank", "Num_overlaps", "Source",
@@ -896,7 +896,7 @@ ExportPlates <- function(export_df,
                          sub_folder = "Final plate layout",
                          add_padding_between_plates = FALSE
                          ) {
-  use_columns <- intersect(export_columns, colnames(export_df))
+  use_columns <- intersect(export_columns, names(export_df))
   remove_columns <- setdiff(names(export_df), use_columns)
   is_CRISPRko <- "Exon_number_GPP" %in% names(export_df)
   if (!(is_CRISPRko)) {
