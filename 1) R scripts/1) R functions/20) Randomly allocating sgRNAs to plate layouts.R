@@ -25,8 +25,8 @@ sublibraries_short_names <- c(
 
 export_columns <- c(
   "Sublibrary_4sg", "Plate_string", "Well_number",
-  "Entrez_ID", "Other_target_Entrez_IDs",
-  "Gene_symbol", "Other_target_symbols", "Original_symbol",
+  "Entrez_ID", "Other_target_Entrez_IDs", "Other_Entrez_IDs_4sg",
+  "Gene_symbol", "Other_target_symbols", "Other_symbols_4sg", "Original_symbol",
   "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP",
   "Transcript_ID", "Genomic_sequence_ID",
   "TSS_ID", "Rank", "Num_overlaps", "Source",
@@ -905,7 +905,6 @@ ExportPlates <- function(export_df,
   if (length(unique(export_df[["Rank"]])) == 1) {
     remove_columns <- c(remove_columns, "Rank")
   }
-  print(union(use_columns, names(export_df)))
   DfToTSV(export_df[, union(use_columns, names(export_df))],
           file_name = file.path(sub_folder, file_name),
           add_primers = TRUE, remove_columns = remove_columns,
