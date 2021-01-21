@@ -77,13 +77,14 @@ AddOtherTargets <- function(CRISPR_df, targets_sgRNA_df, targets_4sg_df = NULL) 
   CRISPR_df[["Other_target_Entrez_IDs"]] <- targets_sgRNA_df[[gene_ID_column]]
   CRISPR_df[["Other_target_symbols"]] <- targets_sgRNA_df[["Unintended_gene_symbols_truncated"]]
   if (!(is.null(targets_4sg_df))) {
+    CRISPR_df[["Other_Entrez_IDs_4sg"]] <- NA
+    CRISPR_df[["Other_symbols_4sg"]] <- NA
     are_top4 <- CRISPR_df[["Rank"]] %in% 1:4
-    indices_vec <- rep(NA, nrow(CRISPR_df))
-    indices_vec[are_top4] <- match(CRISPR_df[["Entrez_ID"]][are_top4],
-                                    targets_sgRNA_df[["Intended_Entrez_ID"]]
-                                    )
-    CRISPR_df[["Other_Entrez_IDs_4sg"]] <- targets_4sg_df[["Unintended_gene_IDs_truncated"]][indices_vec]
-    CRISPR_df[["Other_symbols_4sg"]] <- targets_4sg_df[["Unintended_gene_symbols_truncated"]][indices_vec]
+    matches_vec <- match(CRISPR_df[["Entrez_ID"]][are_top4],
+                         targets_4sg_df[["Intended_Entrez_ID"]]
+                         )
+    CRISPR_df[["Other_Entrez_IDs_4sg"]][are_top4] <- targets_4sg_df[["Unintended_gene_IDs_truncated"]][matches_vec]
+    CRISPR_df[["Other_symbols_4sg"]][are_top4] <- targets_4sg_df[["Unintended_gene_symbols_truncated"]][matches_vec]
   }
   return(CRISPR_df)
 }
