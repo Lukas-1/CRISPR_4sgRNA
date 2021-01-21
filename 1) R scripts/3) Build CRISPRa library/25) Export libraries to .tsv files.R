@@ -53,7 +53,6 @@ TF_sgRNA_plates_df <- AddOtherTargets(TF_sgRNA_plates_df, TSS_targets_df[matches
 
 selected_columns <- c("Combined_ID",
                       "Entrez_ID", "Other_target_Entrez_IDs", "Original_entrez",
-
                       "Gene_symbol", "Other_target_symbols", "Original_symbol",
 
                       "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
