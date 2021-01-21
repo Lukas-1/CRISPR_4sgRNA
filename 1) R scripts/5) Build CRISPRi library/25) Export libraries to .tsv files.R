@@ -45,7 +45,6 @@ merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_ta
 
 
 
-
 # Re-arrange the columns --------------------------------------------------
 
 selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entrez",
@@ -302,8 +301,6 @@ full_omit_columns <- c(omit_columns, omit_SNP_columns)
 
 
 
-
-
 # Write CRISPRi sgRNA libraries to disk -----------------------------------
 
 DfToTSV(replaced_TF_CRISPRi_df, "CRISPRi_transcription_factors")
@@ -311,8 +308,6 @@ DfToTSV(secretome_CRISPRi_df, "CRISPRi_secretome")
 DfToTSV(vacuolation_CRISPRi_df, "CRISPRi_vacuolation")
 
 DfToTSV(merged_replaced_CRISPRi_df, "CRISPRi_all_genes")
-
-
 
 
 
