@@ -46,10 +46,12 @@ deletions_exon_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
                                                  )
 
 deletions_CDS_protein_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
-                                                        CDS_or_exon_locations_df
+                                                        CDS_or_exon_locations_df,
+                                                        only_protein_coding = TRUE
                                                         )
 deletions_exon_protein_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
-                                                         exon_locations_df
+                                                         exon_locations_df,
+                                                         only_protein_coding = TRUE
                                                          )
 
 
@@ -94,13 +96,13 @@ guides_exon_protein_list <- AlignSummaryDf(FindOverlappingGenes,
 
 deletions_CDS_df          <- deletions_CDS_list[["summary_df"]]
 deletions_exon_df         <- deletions_exon_list[["summary_df"]]
-deletions_CDS_protein_df  <- deletions_CDS_list[["summary_df"]]
-deletions_exon_protein_df <- deletions_exon_list[["summary_df"]]
+deletions_CDS_protein_df  <- deletions_CDS_protein_list[["summary_df"]]
+deletions_exon_protein_df <- deletions_exon_protein_list[["summary_df"]]
 
 guides_CDS_df             <- guides_CDS_list[["summary_df"]]
 guides_exon_df            <- guides_CDS_list[["summary_df"]]
-guides_CDS_protein_df     <- guides_CDS_list[["summary_df"]]
-guides_exon_protein_df    <- guides_CDS_list[["summary_df"]]
+guides_CDS_protein_df     <- guides_CDS_protein_list[["summary_df"]]
+guides_exon_protein_df    <- guides_CDS_protein_list[["summary_df"]]
 
 
 
