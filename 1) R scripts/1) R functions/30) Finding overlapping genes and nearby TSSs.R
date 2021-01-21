@@ -279,7 +279,8 @@ FindOverlappingGenes <- function(CRISPR_df,
     "Number_of_gene_IDs", "Number_of_Entrez_IDs",
     "Intended_gene_symbol", "Affected_gene_symbols", "Num_loci",
     "Guide_locus", "Gene_locus", "Chromosome",
-    "Affected_gene_IDs", "Ensembl_gene_IDs", "Ensembl_transcript_ID", "Exon_ID",
+    "Affected_gene_IDs", "Ensembl_gene_IDs",
+    "Ensembl_transcript_ID", "Exon_ID",
     "Strand", "Gene_types", "Gene_source"
   )
 
@@ -315,8 +316,6 @@ Get4sgProjectedDeletions <- function(CRISPR_df,
                                      split_large_deletions = TRUE,
                                      deletion_size_limit   = 10^6
                                      ) {
-
-  assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
 
   stopifnot(!(anyNA(CRISPR_df[["Entrez_ID"]])))
   stopifnot(all(table(CRISPR_df[["Entrez_ID"]]) == 4))
@@ -734,8 +733,6 @@ CollapseList <- function(input_list, use_sep = ", ") {
 
 
 SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
-
-  assign("delete_full_df", full_df, envir = globalenv())
 
   ## Remove the "ncbi:" prefix before Entrez IDs
   use_gene_IDs <- "Affected_gene_IDs" %in% names(full_df)
