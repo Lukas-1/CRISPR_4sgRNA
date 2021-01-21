@@ -31,7 +31,15 @@ load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guide
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData"))
 load(file.path(CRISPRi_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRi_RData_directory, "23) Allocate transcription factor sgRNAs to plates.RData"))
+load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData"))
 
+
+
+
+
+# Add data on other (unintended) targeted TSSs ----------------------------
+
+merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_targets_df)
 
 
 

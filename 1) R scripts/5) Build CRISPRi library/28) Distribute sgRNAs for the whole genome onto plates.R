@@ -32,9 +32,16 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
-
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData"))
+load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData"))
 
+
+
+
+
+# Add data on other (unintended) targeted TSSs ----------------------------
+
+merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_targets_df)
 
 
 

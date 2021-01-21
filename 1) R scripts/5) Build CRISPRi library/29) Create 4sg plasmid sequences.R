@@ -26,7 +26,7 @@ plasmid_output_directory <- file.path(file_output_directory, "Plasmids")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(CRISPRi_RData_directory, "27) Distribute sgRNAs for the whole genome onto plates.RData"))
+load(file.path(CRISPRi_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData"))
 
 
 
@@ -57,11 +57,6 @@ for (gene_symbol in export_genes) {
 ExportVectorsForGene("Control_1", vac_4sg_reordered_df)
 ExportVectorsForGene("Control_2", vac_4sg_reordered_df)
 ExportVectorsForGene("Control_3", vac_4sg_reordered_df)
-
-
-
-
-
 
 
 
