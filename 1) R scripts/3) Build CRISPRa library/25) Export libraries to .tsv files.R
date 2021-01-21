@@ -365,7 +365,7 @@ old_TF_sgRNA_plates_df <- TF_v1_CRISPRa_df[TF_v1_CRISPRa_df[["Is_control"]] == "
 old_TF_sgRNA_plates_df[["Sequences_1MM"]] <- TruncateLongEntries(old_TF_sgRNA_plates_df[["Sequences_1MM"]])
 old_TF_sgRNA_plates_df[["Locations_1MM"]] <- TruncateLongEntries(old_TF_sgRNA_plates_df[["Locations_1MM"]])
 
-matches_vec <- match(MakeIDs(TF_sgRNA_plates_df),
+matches_vec <- match(MakeIDs(old_TF_sgRNA_plates_df),
                      MakeIDs(merged_replaced_CRISPRa_df)
                      )
 old_TF_sgRNA_plates_df <- AddOtherTargets(old_TF_sgRNA_plates_df, TSS_targets_df[matches_vec, ])
