@@ -50,6 +50,11 @@ deletions_exon_list <- FindOverlapsWithDeletions(merged_CRISPRko_df[are_4sg, ],
 
 # Determine which sgRNAs can be analyzed ----------------------------------
 
+are_to_replace <- (merged_CRISPRko_df[["Entrez_ID"]] %in% "7795") &
+                  (merged_CRISPRko_df[["Gene_symbol"]] %in% "MEMO1")
+merged_CRISPRko_df[["Entrez_ID"]][are_to_replace] <- "51072"
+
+
 have_single_entrez <- !(is.na(merged_CRISPRko_df[["Entrez_ID"]])) &
                       !(grepl(",", merged_CRISPRko_df[["Entrez_ID"]], fixed = TRUE))
 
@@ -89,9 +94,8 @@ row.names(guides_exon_df) <- NULL
 save(list = c("deletions_CDS_df", "deletions_exon_df",
               "guides_CDS_df", "guides_exon_df"
               ),
-     file = file.path(CRISPRa_RData_directory, "24) Find all genes targeted by each sgRNA.RData")
+     file = file.path(CRISPRko_RData_directory, "24) Find all genes targeted by each sgRNA.RData")
      )
-
 
 
 
