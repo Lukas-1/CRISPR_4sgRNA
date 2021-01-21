@@ -95,6 +95,7 @@ guides_exon_protein_list <- AlignSummaryDf(FindOverlappingGenes,
 
 
 
+
 # Prepare for saving summary data frames ----------------------------------
 
 deletions_CDS_df          <- deletions_CDS_list[["summary_df"]]
@@ -106,6 +107,7 @@ guides_CDS_df             <- guides_CDS_list[["summary_df"]]
 guides_exon_df            <- guides_CDS_list[["summary_df"]]
 guides_CDS_protein_df     <- guides_CDS_list[["summary_df"]]
 guides_exon_protein_df    <- guides_CDS_list[["summary_df"]]
+
 
 
 
