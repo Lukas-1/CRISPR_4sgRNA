@@ -69,158 +69,26 @@ MakeIDs <- function(CRISPR_df) {
 
 AddOtherTargets <- function(CRISPR_df, targets_sgRNA_df, targets_4sg_df = NULL) {
   stopifnot(nrow(CRISPR_df) == nrow(targets_sgRNA_df))
-  CRISPR_df[["Other_target_Entrez_IDs"]] <- targets_sgRNA_df[["Unintended_Entrez_IDs_truncated"]]
+  if ("Unintended_Entrez_IDs_truncated" %in% names(targets_sgRNA_df)) {
+    gene_ID_column <- "Unintended_Entrez_IDs_truncated"
+  } else {
+    gene_ID_column <- "Unintended_gene_IDs_truncated"
+  }
+  CRISPR_df[["Other_target_Entrez_IDs"]] <- targets_sgRNA_df[[gene_ID_column]]
   CRISPR_df[["Other_target_symbols"]] <- targets_sgRNA_df[["Unintended_gene_symbols_truncated"]]
   if (!(is.null(targets_4sg_df))) {
-    are_top_4 <- CRISPR_df[["Rank"]] %in% 1:4
+    are_top4 <- CRISPR_df[["Rank"]] %in% 1:4
     indices_vec <- rep(NA, nrow(CRISPR_df))
-    indices_vec[are_top_4] <- match(CRISPR_df[["Entrez_ID"]][are_top4],
+    indices_vec[are_top4] <- match(CRISPR_df[["Entrez_ID"]][are_top4],
                                     targets_sgRNA_df[["Intended_Entrez_ID"]]
                                     )
-    CRISPR_df[["Other_Entrez_IDs_4sg"]] <- targets_4sg_df[["Unintended_Entrez_IDs_truncated"]][indices_vec]
+    CRISPR_df[["Other_Entrez_IDs_4sg"]] <- targets_4sg_df[["Unintended_gene_IDs_truncated"]][indices_vec]
     CRISPR_df[["Other_symbols_4sg"]] <- targets_4sg_df[["Unintended_gene_symbols_truncated"]][indices_vec]
   }
   return(CRISPR_df)
 }
 
 
-
-AdditionalTargetsCRISPRko <- function(CRISPRko_df) {
-
-  CRISPRko_overlapping_vec <- c(
-    "Entrez_overlapping_0MM" = "Entrez_ID",
-    "Symbol_overlapping_0MM" = "Gene_symbol"
-  )
-
-  for (column_name in names(CRISPRko_overlapping_vec)) {
-    target_vec <- CRISPRko_df[[CRISPRko_overlapping_vec[[column_name]]]]
-    target_list <- strsplit(target_vec, ", ", fixed = TRUE)
-
-    split_list <- strsplit(CRISPRko_df[[column_name]], "; ", fixed = TRUE)
-
-    split_list_list <- lapply(split_list, function(x) strsplit(x, ", ", fixed = TRUE))
-
-
-    contains_target_list <- lapply(seq_along(split_list_list),
-                                   function(x) vapply(split_list_list[[x]],
-                                                      function(y) any(y %in% target_list[[x]]),
-                                                      logical(1)
-                                                      )
-                                   )
-    contains_target <- vapply(contains_target_list, any, logical(1))
-
-
-    contains_off_target_list <- lapply(seq_along(split_list_list),
-                                       function(x) vapply(split_list_list[[x]],
-                                                          function(y) !(all(y == "NA")) && !(any(y %in% target_list[[x]])),
-                                                          logical(1)
-                                                          )
-                                       )
-    contains_off_target <- vapply(contains_off_target_list, any, logical(1))
-
-
-
-    split_list_list <- lapply(seq_along(split_list_list),
-                              function(x) lapply(split_list_list[[x]], function(y) setdiff(y, target_list[[x]]))
-                              )
-    split_list_list <- lapply(split_list_list, function(x) x[lengths(x) >= 1])
-    split_list <- lapply(split_list_list,
-                         function(x) vapply(x, function(y) if (all(is.na(y))) NA_character_ else paste0(y, collapse = ", "), "")
-                         )
-    split_list <- mapply(setdiff, split_list, target_list)
-    split_list <- lapply(split_list, function(x) x[x != "NA"])
-
-    num_overlaps <- vapply(split_list, function(x) sum(!(is.na(x))), integer(1))
-    split_vec <- TruncateLongEntriesSplits(split_list, max_length = 20)
-
-    split_vec <- ifelse(contains_target | is.na(target_vec),
-                        split_vec,
-                        ifelse(num_overlaps == 0,
-                               paste0("No overlaps with ", target_vec, "!"),
-                               ifelse(num_overlaps == 1,
-                                      paste0(split_vec, " (not ", target_vec, "!)"),
-                                      paste0("Does not target ", target_vec, ", but ", split_vec)
-                                      )
-                               )
-                        )
-
-    are_all_NA <- vapply(split_list_list, function(x) all(is.na(x)), logical(1))
-
-    are_unspecific <- contains_off_target & !(are_all_NA)
-
-
-    library("TxDb.Hsapiens.UCSC.hg38.knownGene")
-    human_genes_GRanges <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
-    entrezs_included <- mcols(human_genes_GRanges)[["gene_id"]]
-
-
-    description_vec <- vapply(seq_along(split_list_list),
-                              function(x) {
-                                if (contains_target[[x]]) {
-                                  if (are_unspecific[[x]]) {
-                                    "Intended and unintended (in other loci)"
-                                  } else {
-                                    if (num_overlaps[[x]] == 0) {
-                                      "Only intended"
-                                    } else {
-                                      "Intended and others (in the same loci)"
-                                    }
-                                  }
-                                } else {
-                                  entrez_included <- CRISPRko_df[["Entrez_ID"]][[x]] %in% entrezs_included
-                                  if (!(entrez_included)) {
-                                    "Gene location not in database"
-                                  } else {
-                                    num_hits <- CRISPRko_df[["Num_0MM"]][[x]]
-                                    if (are_unspecific[[x]]) {
-                                      if (num_hits == 1) {
-                                        "Only unintended (single locus)"
-                                      } else {
-                                        "Only unintended (multiple loci)"
-                                      }
-                                    } else {
-                                      if (num_hits == 0) {
-                                        "No location found in the reference genome"
-                                      } else if (num_hits == 1) {
-                                        "No targets (single locus)"
-                                      } else {
-                                        "No targets (multiple loci)"
-                                      }
-                                    }
-                                  }
-                                }
-                              },
-                              ""
-                              )
-
-    description_fac <- factor(description_vec,
-                              levels = c(
-                                "Gene location not in database",
-                                "Only intended",
-                                "Intended and others (in the same loci)",
-                                "Intended and unintended (in other loci)",
-                                "No targets (single locus)",
-                                "No targets (multiple loci)",
-                                "Only unintended (single locus)",
-                                "Only unintended (multiple loci)",
-                                "No location found in the reference genome"
-                                )
-                              )
-
-
-
-
-    CRISPRko_df[[column_name]] <- ifelse(CRISPRko_df[["Is_control"]] == "Yes",
-                                         NA_character_,
-                                         split_vec
-                                         )
-
-
-
-
-  }
-  return(CRISPRko_df)
-}
 
 
 
@@ -262,28 +130,6 @@ FormatForExcel <- function(my_df,
     }
   }
 
-  other_overlapping_columns <- c(
-    "Nearest_Entrez_IDs", "Nearest_symbols",
-    "Entrez_overlapping_1MM", "Symbol_overlapping_1MM"
-  )
-  if (is_CRISPRko) {
-    my_df <- AdditionalTargetsCRISPRko(my_df)
-  }
-  for (column_name in intersect(other_overlapping_columns, colnames(my_df))) {
-    split_list <- strsplit(my_df[[column_name]], "; ", fixed = TRUE)
-    split_list <- lapply(split_list, function(x) unique(x[x != "NA"]))
-
-
-    ### DELETE THIS!!
-    for (item in split_list) {
-      if ((length(item) > 1) && all(is.na(item))) {
-        stop("unexpected situation!!")
-      }
-    }
-
-    split_vec <- TruncateLongEntriesSplits(split_list, max_length = 20)
-    my_df[[column_name]] <- split_vec
-  }
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[["Combined_ID"]])
 
@@ -397,7 +243,14 @@ FormatForExcel <- function(my_df,
   for (i in seq_len((ncol(my_df) - 6))) {
     my_df[[i]] <- ifelse(is.na(my_df[[i]]), "", as.character(my_df[[i]]))
   }
-  for (i in (ncol(my_df) - 5):ncol(my_df)) {
+  fill_indices <- (ncol(my_df) - 5):ncol(my_df)
+  if (is_CRISPRko) {
+    fill_columns <- c("Other_Entrez_IDs_4sg", "Other_target_symbols",
+                      "Other_symbols_4sg", "Original_symbol"
+                      )
+    fill_indices <- union(fill_indices, which(names(my_df) %in% fill_columns))
+  }
+  for (i in fill_indices) {
     my_df[[i]] <- ifelse(is.na(my_df[[i]]), " ", as.character(my_df[[i]]))
   }
 

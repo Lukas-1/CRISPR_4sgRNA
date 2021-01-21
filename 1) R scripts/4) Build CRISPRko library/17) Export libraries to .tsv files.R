@@ -30,8 +30,27 @@ load(file.path(general_RData_directory, "10) Compile genes that constitute the s
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "15) Allocate transcription factor sgRNAs to plates.RData"))
+load(file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA.RData"))
 load(file.path(previous_versions_directory, "02) CRISPRko transcription factor sub-library (1st version) - TF_v1_CRISPRko_df.RData"))
 
+
+
+
+
+# Add data on other (unintended) targeted TSSs ----------------------------
+
+merged_CRISPRko_df <- AddOtherTargets(merged_CRISPRko_df,
+                                      guides_CDS_df,
+                                      deletions_CDS_df
+                                      )
+
+matches_vec <- match(MakeIDs(TF_sgRNA_plates_df),
+                     MakeIDs(merged_CRISPRko_df)
+                     )
+TF_sgRNA_plates_df <- AddOtherTargets(TF_sgRNA_plates_df,
+                                      guides_CDS_df[matches_vec, ],
+                                      deletions_CDS_df
+                                      )
 
 
 
@@ -40,7 +59,9 @@ load(file.path(previous_versions_directory, "02) CRISPRko transcription factor s
 # Re-arrange the columns --------------------------------------------------
 
 rearranged_column_names <- c(
-  "Combined_ID", "Entrez_ID", "Entrez_overlapping_0MM", "Gene_symbol", "Symbol_overlapping_0MM", "Original_entrez", "Original_symbol",
+  "Combined_ID",
+  "Entrez_ID", "Other_target_Entrez_IDs", "Other_Entrez_IDs_4sg", "Original_entrez",
+  "Gene_symbol", "Other_target_symbols", "Other_symbols_4sg", "Original_symbol",
 
   "Entrez_source_Brunello", "Entrez_source_TKOv3", "Is_control",
   "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP", "Transcript_ID", "Genomic_sequence_ID",
@@ -180,6 +201,14 @@ DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 old_TF_sgRNA_plates_df <- TF_v1_CRISPRko_df[TF_v1_CRISPRko_df[["Is_control"]] == "No", ]
+
+matches_vec <- match(MakeIDs(old_TF_sgRNA_plates_df),
+                     MakeIDs(merged_CRISPRko_df)
+                     )
+old_TF_sgRNA_plates_df <- AddOtherTargets(old_TF_sgRNA_plates_df,
+                                          guides_CDS_df[matches_vec, ],
+                                          deletions_CDS_df
+                                          )
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
