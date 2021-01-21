@@ -59,6 +59,14 @@ RoundNumericColumns <- function(my_df, num_digits = 7) {
 
 
 
+MakeIDs <- function(CRISPR_df) {
+  paste0(CRISPR_df[["Entrez_ID"]], "__",
+         toupper(CRISPR_df[["sgRNA_sequence"]])
+         )
+
+}
+
+
 AddOtherTargets <- function(CRISPR_df, targets_sgRNA_df, targets_4sg_df = NULL) {
   stopifnot(nrow(CRISPR_df) == nrow(targets_sgRNA_df))
   CRISPR_df[["Other_target_Entrez_IDs"]] <- targets_sgRNA_df[["Unintended_Entrez_IDs_truncated"]]
