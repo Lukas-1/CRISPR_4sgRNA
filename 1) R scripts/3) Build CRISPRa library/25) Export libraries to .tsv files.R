@@ -37,11 +37,14 @@ load(file.path(previous_versions_directory, "01) CRISPRa transcription factor su
 
 
 
-
-
-# Add data on the targeted TSSs -------------------------------------------
+# Add data on other (unintended) targeted TSSs ----------------------------
 
 merged_replaced_CRISPRa_df <- AddOtherTargets(merged_replaced_CRISPRa_df, TSS_targets_df)
+
+matches_vec <- match(MakeIDs(TF_sgRNA_plates_df),
+                     MakeIDs(merged_replaced_CRISPRa_df)
+                     )
+TF_sgRNA_plates_df <- AddOtherTargets(TF_sgRNA_plates_df, TSS_targets_df[matches_vec, ])
 
 
 
@@ -103,7 +106,7 @@ selected_columns <- c("Combined_ID",
 
 merged_replaced_CRISPRa_df <- merged_replaced_CRISPRa_df[, selected_columns]
 
-TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", intersect(selected_columns, names(TF_sgRNA_plates_df)))]
+TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", selected_columns)]
 
 
 
@@ -361,6 +364,11 @@ old_TF_sgRNA_plates_df <- TF_v1_CRISPRa_df[TF_v1_CRISPRa_df[["Is_control"]] == "
 
 old_TF_sgRNA_plates_df[["Sequences_1MM"]] <- TruncateLongEntries(old_TF_sgRNA_plates_df[["Sequences_1MM"]])
 old_TF_sgRNA_plates_df[["Locations_1MM"]] <- TruncateLongEntries(old_TF_sgRNA_plates_df[["Locations_1MM"]])
+
+matches_vec <- match(MakeIDs(TF_sgRNA_plates_df),
+                     MakeIDs(merged_replaced_CRISPRa_df)
+                     )
+old_TF_sgRNA_plates_df <- AddOtherTargets(old_TF_sgRNA_plates_df, TSS_targets_df[matches_vec, ])
 
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_number", intersect(selected_columns, names(old_TF_sgRNA_plates_df)))]
 
