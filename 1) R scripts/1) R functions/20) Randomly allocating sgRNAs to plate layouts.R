@@ -34,7 +34,7 @@ export_columns <- c(
   "Calabrese_rank", "Dolcetto_rank",
   "Caprano_rank", "Dolomiti_rank",
   "GPP_rank",
-  "mCRISPRa_v2_rank", "mCRISPRi_v2_rank",
+  "hCRISPRa_v2_rank", "hCRISPRi_v2_rank",
   "mCRISPRa_v2_rank", "mCRISPRi_v2_rank",
   "Predicted_score", "Empirical_score",
   "Chromosome", "Strand", "Cut_location", "Distance_from_TSS",
