@@ -91,6 +91,19 @@ AddOtherTargets <- function(CRISPR_df, targets_sgRNA_df, targets_4sg_df = NULL) 
 
 
 
+AddMainTSS <- function(CRISPR_df) {
+  main_TSS_vec <- GetMainTSS(CRISPR_df)
+  are_main_TSS <- (main_TSS_vec == CRISPR_df[["AltTSS_ID"]]) %in% TRUE
+  CRISPR_df[["Is_main_TSS"]] <- ifelse(CRISPR_df[["Num_TSSs"]] == 1,
+                                       "Single",
+                                       ifelse(are_main_TSS,
+                                              "Main",
+                                              ifelse(is.na(CRISPR_df[["TSS_ID"]]), NA, "Other")
+                                              )
+                                       )
+  return(CRISPR_df)
+}
+
 
 
 FormatForExcel <- function(my_df,
