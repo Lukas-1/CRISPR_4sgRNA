@@ -125,48 +125,48 @@ DrawAllPlots <- function(PlotFunction,
 
 
       SavePNG(ccs7_df_list[["original_summary_df"]],
-              paste0(file_name_prefix, " - CCS7 (99.99) - original"),
+              paste0(file_name_prefix, " - CCS7 (99.99) - a) unfiltered"),
               main_title = ccs7_title
               )
       SavePNG(ccs7_df_list[["filtered_summary_df"]],
-              paste0(file_name_prefix, " - CCS7 (99.99) - filtered"),
+              paste0(file_name_prefix, " - CCS7 (99.99) - b) filtered"),
               main_title = ccs7_title
               )
       SavePNG(ccs7_df_list[["filtered_gRNAs_df"]],
-              paste0(file_name_prefix, " - CCS7 (99.99) - filtered gRNAs"),
+              paste0(file_name_prefix, " - CCS7 (99.99) - c) filtered gRNAs"),
               main_title = ccs7_title
               )
 
       SavePNG(ccs5_df_list[["original_summary_df"]],
-              paste0(file_name_prefix, " - CCS5 (99.9) - original"),
+              paste0(file_name_prefix, " - CCS5 (99.9) - a) unfiltered"),
               main_title = ccs5_title
               )
       SavePNG(ccs5_df_list[["filtered_summary_df"]],
-              paste0(file_name_prefix, " - CCS5 (99.9) - filtered"),
+              paste0(file_name_prefix, " - CCS5 (99.9) - b) filtered"),
               main_title = ccs5_title
               )
       SavePNG(ccs5_df_list[["filtered_gRNAs_df"]],
-              paste0(file_name_prefix, " - CCS5 (99.9) - filtered gRNAs"),
+              paste0(file_name_prefix, " - CCS5 (99.9) - c) filtered gRNAs"),
               main_title = ccs5_title
               )
 
       SavePNG(ccs3_df_list[["original_summary_df"]],
-              paste0(file_name_prefix, " - CCS3 (99) - original"),
+              paste0(file_name_prefix, " - CCS3 (99) - a) unfiltered"),
               main_title = ccs3_title
               )
       SavePNG(ccs3_df_list[["filtered_summary_df"]],
-              paste0(file_name_prefix, " - CCS3 (99) - filtered"),
+              paste0(file_name_prefix, " - CCS3 (99) - b) filtered"),
               main_title = ccs3_title
               )
       SavePNG(ccs3_df_list[["filtered_gRNAs_df"]],
-              paste0(file_name_prefix, " - CCS3 (99) - filtered gRNAs"),
+              paste0(file_name_prefix, " - CCS3 (99) - c) filtered gRNAs"),
               main_title = ccs3_title
               )
 
 
       # Produce the accuracy PDF ------------------------------------------------
 
-      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - original.pdf")),
+      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - a) unfiltered.pdf")),
           height = use_height,
           width  = use_width
           )
@@ -182,7 +182,7 @@ DrawAllPlots <- function(PlotFunction,
       dev.off()
 
 
-      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - filtered.pdf")),
+      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - b) filtered.pdf")),
           height = use_height,
           width  = use_width
           )
@@ -198,7 +198,7 @@ DrawAllPlots <- function(PlotFunction,
       dev.off()
 
 
-      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - filtered gRNAs.pdf")),
+      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - c) filtered gRNAs.pdf")),
           height = use_height,
           width  = use_width
           )
