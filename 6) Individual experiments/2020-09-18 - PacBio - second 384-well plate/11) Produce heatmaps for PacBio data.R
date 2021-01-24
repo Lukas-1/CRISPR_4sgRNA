@@ -32,6 +32,7 @@ load(file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.R
 
 
 
+
 # Exclude 4 problematic wells, for the time being -------------------------
 
 sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] == 2,
