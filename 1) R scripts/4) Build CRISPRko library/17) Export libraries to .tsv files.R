@@ -7,6 +7,7 @@
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
+source(file.path(general_functions_directory, "30) Finding overlapping genes and nearby TSSs.R"))
 
 
 
@@ -27,17 +28,18 @@ previous_versions_directory <- file.path(RData_directory, "5) Previous versions 
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
+load(file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "15) Allocate transcription factor sgRNAs to plates.RData"))
-load(file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA.RData"))
+load(file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA - summary data.RData"))
 load(file.path(previous_versions_directory, "02) CRISPRko transcription factor sub-library (1st version) - TF_v1_CRISPRko_df.RData"))
 
 
 
 
 
-# Add data on other (unintended) targeted TSSs ----------------------------
+# Add data on other (unintended) targeted genes ---------------------------
 
 merged_CRISPRko_df <- AddOtherTargets(merged_CRISPRko_df,
                                       guides_CDS_df,
@@ -179,14 +181,14 @@ TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
 
 # Write CRISPRko sgRNA libraries to disk ----------------------------------
 
-TF_folder_name <- "TF library plate layout"
+TF_folder_name <- "TF sub-library (updated algorithm)"
 for (i in 1:4) {
   subset_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Rank"]] %in% i, ]
-  file_name <- paste0(file.path(TF_folder_name, "CRISPRko_TF_randomized_sg"), i)
+  file_name <- paste0(file.path(TF_folder_name, "CRISPRko_TF_sg"), i)
   DfToTSV(subset_df, file_name, add_primers = TRUE)
 }
-DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides"), add_primers = TRUE)
-DfToTSV(TF_sgRNA_original_order_df, file.path(TF_folder_name, "CRISPRko_TF_original_order_all_4_guides"), add_primers = TRUE)
+DfToTSV(TF_sgRNA_original_order_df, file.path(TF_folder_name, "CRISPRko_TF_ordered_by_gene"), add_primers = TRUE)
+DfToTSV(TF_sgRNA_plates_df, file.path(TF_folder_name, "CRISPRko_TF_ordered_by_well"), add_primers = TRUE)
 
 DfToTSV(merged_TF_CRISPRko_df, "CRISPRko_transcription_factors")
 DfToTSV(secretome_CRISPRko_df, "CRISPRko_secretome")
@@ -196,19 +198,28 @@ DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes")
 
 
 
+# Update the original transcription factor data frame ---------------------
+
+TF_deletions_CDS_df <- FindOverlapsWithDeletions(TF_v1_CRISPRko_df[TF_v1_CRISPRko_df[["Is_control"]] == "No", ],
+                                                 CDS_or_exon_locations_df
+                                                 )[["summary_df"]]
+
+TF_guides_CDS_df <- AlignSummaryDf(FindOverlappingGenes,
+                                   TF_v1_CRISPRko_df,
+                                   CDS_or_exon_locations_df
+                                   )[["summary_df"]]
+
+TF_v1_CRISPRko_df <- AddOtherTargets(TF_v1_CRISPRko_df,
+                                     TF_guides_CDS_df,
+                                     TF_deletions_CDS_df
+                                     )
+
+
 
 # Write changed wells to disk ---------------------------------------------
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[TF_sgRNA_plates_df[["Is_control"]] == "No", ]
 old_TF_sgRNA_plates_df <- TF_v1_CRISPRko_df[TF_v1_CRISPRko_df[["Is_control"]] == "No", ]
-
-matches_vec <- match(MakeIDs(old_TF_sgRNA_plates_df),
-                     MakeIDs(merged_CRISPRko_df)
-                     )
-old_TF_sgRNA_plates_df <- AddOtherTargets(old_TF_sgRNA_plates_df,
-                                          guides_CDS_df[matches_vec, ],
-                                          deletions_CDS_df
-                                          )
 
 TF_sgRNA_plates_df <- TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
 old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_number", rearranged_column_names)]
@@ -216,16 +227,22 @@ old_TF_sgRNA_plates_df <- old_TF_sgRNA_plates_df[, c("Plate_number", "Well_numbe
 are_new      <- !(TF_sgRNA_plates_df[["sgRNA_sequence"]] %in% old_TF_sgRNA_plates_df[["sgRNA_sequence"]])
 are_obsolete <- !(old_TF_sgRNA_plates_df[["sgRNA_sequence"]] %in% TF_sgRNA_plates_df[["sgRNA_sequence"]])
 DfToTSV(TF_sgRNA_plates_df[are_new, ],
-        file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__new_guides"),
+        file.path(TF_folder_name, "CRISPRko_TF_ordered_by_well__new_guides"),
         add_primers = TRUE
         )
 DfToTSV(old_TF_sgRNA_plates_df[are_obsolete, ],
-        file.path(TF_folder_name, "CRISPRko_TF_randomized_all_4_guides__obsolete_guides"),
+        file.path(TF_folder_name, "CRISPRko_TF_ordered_by_well__obsolete_guides"),
         add_primers = TRUE
         )
 
 
 
+
+# Save data ---------------------------------------------------------------
+
+save(list = "TF_v1_CRISPRko_df",
+     file = file.path(CRISPRko_RData_directory, "17) Export libraries to .tsv files - TF_v1_CRISPRko_df.RData")
+     )
 
 
 
