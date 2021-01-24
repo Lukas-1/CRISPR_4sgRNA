@@ -479,7 +479,7 @@ FindOverlapsWithDeletions <- function(CRISPR_df,
     "Gene_locus", "Chromosome",
     "Affected_gene_IDs", "Ensembl_gene_IDs", "Ensembl_transcript_ID", "Exon_ID",
     "Strand", "Gene_types", "Gene_source",
-    "Block", "Span", "Num_loci",
+    "Block", "Span", "Num_cuts",
     "Locus", "Guide_locus"
   )
 
@@ -493,6 +493,9 @@ FindOverlapsWithDeletions <- function(CRISPR_df,
   stopifnot(nrow(summary_df) == num_entrezs)
 
   summary_df <- SummarizeSummaryDf(summary_df)
+
+  full_combined_df <- full_combined_df[, names(full_combined_df) != "Guide_locus"]
+  names(full_combined_df)[names(full_combined_df) == "Locus"] <- "Deletion_locus"
 
   results_list <- list(
     "summary_df" = summary_df,
@@ -591,14 +594,20 @@ AddEntrezIDAvailable <- function(full_df, genes_df) {
 
 
 StandardLocationString <- function(ranges_df) {
+  are_NA <- is.na(ranges_df[, "Chromosome"]) |
+            is.na(ranges_df[, "Start"]) |
+            is.na(ranges_df[, "End"])
+
   results_vec <- paste0(ranges_df[, "Chromosome"],
                         ":",
                         ranges_df[, "Start"],
                         "-",
                         ranges_df[, "End"]
                         )
+  results_vec <- ifelse(are_NA, NA_character_, results_vec)
   if ("Strand" %in% names(ranges_df)) {
     results_vec <- paste0(results_vec, ":", ranges_df[, "Strand"])
+    results_vec <- ifelse(is.na(ranges_df[, "Strand"]), NA, results_vec)
   }
   return(results_vec)
 }
@@ -1079,7 +1088,7 @@ SummarizeSummaryDf <- function(summary_df) {
                                                         )
   summary_df[["Affects_genes_at_other_loci"]] <- summary_df[["Distinct_loci"]] >= 2
 
-  summary_df[["Affects_unintended_gene"]]     <- (summary_df[["Num_affected_genes"]] >= 1) |
+  summary_df[["Affects_unintended_gene"]]     <- (summary_df[["Num_affected_genes"]] > 1) |
                                                  ((summary_df[["Num_affected_genes"]] == 1) &
                                                   (summary_df[["Loci_targeting_intended_gene"]] == 0))
 
