@@ -74,35 +74,35 @@ DrawAllPlots <- function(PlotFunction,
 
       # Draw the accuracy plots in the console ----------------------------------
 
-      DrawAccuracyHeatmap(ccs5_df_list[["original_summary_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-                          )
-      DrawAccuracyHeatmap(ccs5_df_list[["filtered_summary_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-                          )
-      DrawAccuracyHeatmap(ccs5_df_list[["filtered_gRNAs_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-                          )
+      PlotFunction(ccs5_df_list[["original_summary_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["filtered_summary_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["filtered_gRNAs_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
 
-      DrawAccuracyHeatmap(ccs3_df_list[["original_summary_df"]],
-                          main_title = ccs3_title, reorder_wells = reorder_wells
-                          )
-      DrawAccuracyHeatmap(ccs3_df_list[["filtered_summary_df"]],
-                          main_title = ccs3_title, reorder_wells = reorder_wells
-                          )
-      DrawAccuracyHeatmap(ccs3_df_list[["filtered_gRNAs_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-                          )
+      PlotFunction(ccs3_df_list[["original_summary_df"]],
+                   main_title = ccs3_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["filtered_summary_df"]],
+                   main_title = ccs3_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["filtered_gRNAs_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
 
-      DrawAccuracyHeatmap(ccs7_df_list[["original_summary_df"]],
-                          main_title = ccs7_title, reorder_wells = reorder_wells
-                          )
-      DrawAccuracyHeatmap(ccs7_df_list[["filtered_summary_df"]],
-                          main_title = ccs7_title, reorder_wells = reorder_wells
-                          )
-      DrawAccuracyHeatmap(ccs7_df_list[["filtered_gRNAs_df"]],
-                          main_title = ccs7_title, reorder_wells = reorder_wells
-                          )
+      PlotFunction(ccs7_df_list[["original_summary_df"]],
+                   main_title = ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs7_df_list[["filtered_summary_df"]],
+                   main_title = ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs7_df_list[["filtered_gRNAs_df"]],
+                   main_title = ccs7_title, reorder_wells = reorder_wells
+                   )
 
 
       # Produce the accuracy PNGs -----------------------------------------------
@@ -115,9 +115,9 @@ DrawAllPlots <- function(PlotFunction,
             width    = use_width,
             units    = "in"
             )
-        DrawAccuracyHeatmap(summary_df, main_title = main_title,
-                            reorder_wells = reorder_wells
-                            )
+        PlotFunction(summary_df, main_title = main_title,
+                     reorder_wells = reorder_wells
+                     )
         dev.off()
       }
 
@@ -169,48 +169,48 @@ DrawAllPlots <- function(PlotFunction,
       pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - original.pdf")),
           height = use_height,
           width  = use_width
-      )
-      DrawAccuracyHeatmap(ccs7_df_list[["original_summary_df"]],
-                          main_title = ccs7_title, reorder_wells = reorder_wells
-      )
-      DrawAccuracyHeatmap(ccs5_df_list[["original_summary_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-      )
-      DrawAccuracyHeatmap(ccs3_df_list[["original_summary_df"]],
-                          main_title = ccs3_title, reorder_wells = reorder_wells
-      )
+          )
+      PlotFunction(ccs7_df_list[["original_summary_df"]],
+                   main_title = ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["original_summary_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["original_summary_df"]],
+                   main_title = ccs3_title, reorder_wells = reorder_wells
+                   )
       dev.off()
 
 
       pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - filtered.pdf")),
           height = use_height,
           width  = use_width
-      )
-      DrawAccuracyHeatmap(ccs7_df_list[["filtered_summary_df"]],
-                          main_title = ccs7_title, reorder_wells = reorder_wells
-      )
-      DrawAccuracyHeatmap(ccs5_df_list[["filtered_summary_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-      )
-      DrawAccuracyHeatmap(ccs3_df_list[["filtered_summary_df"]],
-                          main_title = ccs3_title, reorder_wells = reorder_wells
-      )
+          )
+      PlotFunction(ccs7_df_list[["filtered_summary_df"]],
+                   main_title = ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["filtered_summary_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["filtered_summary_df"]],
+                   main_title = ccs3_title, reorder_wells = reorder_wells
+                   )
       dev.off()
 
 
       pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - filtered gRNAs.pdf")),
           height = use_height,
           width  = use_width
-      )
-      DrawAccuracyHeatmap(ccs7_df_list[["filtered_gRNAs_df"]],
-                          main_title = ccs7_title, reorder_wells = reorder_wells
-      )
-      DrawAccuracyHeatmap(ccs5_df_list[["filtered_gRNAs_df"]],
-                          main_title = ccs5_title, reorder_wells = reorder_wells
-      )
-      DrawAccuracyHeatmap(ccs3_df_list[["filtered_gRNAs_df"]],
-                          main_title = ccs3_title, reorder_wells = reorder_wells
-      )
+          )
+      PlotFunction(ccs7_df_list[["filtered_gRNAs_df"]],
+                   main_title = ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["filtered_gRNAs_df"]],
+                   main_title = ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["filtered_gRNAs_df"]],
+                   main_title = ccs3_title, reorder_wells = reorder_wells
+                   )
       dev.off()
 
 
