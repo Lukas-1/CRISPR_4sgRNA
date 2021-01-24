@@ -12,14 +12,13 @@ library("Rsamtools")
 
 # Define folder paths -----------------------------------------------------
 
-
 CRISPR_root_directory <- "~/CRISPR"
-plate2_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
-file_input_directory  <- file.path(plate2_directory, "1) Input")
-raw_data_directory    <- file.path(file_input_directory, "Raw data", "4sg_control_and_ko_efficiency_1_B01")
-R_objects_directory   <- file.path(plate2_directory, "2) R objects")
+file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+file_input_directory  <- file.path(file_directory, "2) Input")
+raw_data_directory    <- file.path(file_input_directory, "Raw data", "384-well-1_2_B01")
+R_objects_directory   <- file.path(file_directory, "3) R objects")
 
-run_name <- "m54073_200523_132654"
+run_name <- "m54073_190912_185203"
 subreads_bam_file     <- file.path(raw_data_directory, paste0(run_name, ".subreads.bam"))
 subreads_stats_file   <- file.path(raw_data_directory, paste0(run_name, ".subreads.stats.csv"))
 
@@ -68,6 +67,7 @@ stopifnot(identical(subreads_stats_df[["length"]], subreads_stats_df[["end"]] - 
 
 subreads_stats_df <- subreads_stats_df[, !(names(subreads_stats_df) %in% c(exclude_columns, "id"))]
 
+table(subreads_stats_df[["hole"]] %in% as.integer(substr(sl7_ccs3_ccs[["qname"]], 22, nchar(sl7_ccs3_ccs[["qname"]]) - 4)))
 
 
 
@@ -75,9 +75,8 @@ subreads_stats_df <- subreads_stats_df[, !(names(subreads_stats_df) %in% c(exclu
 # Save data ---------------------------------------------------------------
 
 save(list = c("subreads_bam", "subreads_stats_df"),
-     file = file.path(R_objects_directory, "15) Import raw subreads.RData")
+     file = file.path(R_objects_directory, "18) Import raw subreads.RData")
      )
-
 
 
 

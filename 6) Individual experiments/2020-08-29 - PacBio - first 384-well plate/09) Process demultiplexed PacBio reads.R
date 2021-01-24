@@ -81,6 +81,13 @@ sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
 
 
 
+# Process individual reads, but with random sub-sampling ------------------
+
+# AnalyzeWellsWithSubsampling <- function()
+
+
+
+
 # Create the summary data frames ------------------------------------------
 
 sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list)
@@ -96,6 +103,7 @@ sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_l
 sl7_ccs7_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs7_lima_zmws)
 sl9_ccs7_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs7_lima_zmws)
 
+goo
 
 
 

@@ -754,7 +754,6 @@ AnalyzeWells <- function(ccs_df,
     stringsAsFactors = FALSE
   )
 
-  assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
   individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
 
   contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
