@@ -6,10 +6,9 @@
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
-source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
-source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))
+source(file.path(general_functions_directory, "22) Generating statistics and plots for CRISPR libraries.R")) # For GetMainTSS
 
 
 
@@ -33,7 +32,7 @@ load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sou
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData"))
-load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData"))
+load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA - summary data.RData"))
 
 
 
@@ -43,6 +42,12 @@ load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRN
 
 merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_targets_df)
 
+
+
+
+# Add data on the main TSS ------------------------------------------------
+
+merged_replaced_CRISPRi_df <- AddMainTSS(merged_replaced_CRISPRi_df)
 
 
 
@@ -150,13 +155,13 @@ vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Old_order"]
 vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Sublibrary_4sg"]
 vac_4sg_reordered_df <- vac_4sg_reordered_df[, colnames(vac_4sg_reordered_df) != "Sublibrary_4sg"]
 
-ExportPlates(vac_4sg_df, "Vacuolation_4sg_original_order", sub_folder = "Plate layout - vacuolation")
-ExportPlates(vac_4sg_reordered_df, "Vacuolation_4sg_reordered", sub_folder = "Plate layout - vacuolation")
+ExportPlates(vac_4sg_df, "Vacuolation_4sg_ordered_by_gene", sub_folder = "Plate layout - vacuolation")
+ExportPlates(vac_4sg_reordered_df, "Vacuolation_4sg_ordered_by_well", sub_folder = "Plate layout - vacuolation")
 
 for (i in 1:4) {
   use_df <- vac_4sg_reordered_df[vac_4sg_reordered_df[["Rank"]] %in% i, ]
   ExportPlates(use_df,
-               paste0("Vacuolation_4sg_reordered_sg", i),
+               paste0("Vacuolation_4sg_ordered_by_well_sg", i),
                sub_folder = "Plate layout - vacuolation",
                add_padding_between_plates = TRUE
                )
@@ -168,18 +173,17 @@ for (i in 1:4) {
 
 use_sub_folder <- "Plate layout - all genes"
 
-ExportPlates(sg4_df, "All_sublibraries_original_order", sub_folder = use_sub_folder)
-ExportPlates(sg4_reordered_df, "All_sublibraries_reordered", sub_folder = use_sub_folder)
+ExportPlates(sg4_df, "All_sublibraries_ordered_by_gene", sub_folder = use_sub_folder)
+ExportPlates(sg4_reordered_df, "All_sublibraries_ordered_by_well", sub_folder = use_sub_folder)
 
 for (i in 1:4) {
   use_df <- sg4_reordered_df[sg4_reordered_df[["Rank"]] %in% i, ]
   ExportPlates(use_df,
-               paste0("4sg_reordered_sg", i),
+               paste0("4sg_ordered_by_well_sg", i),
                sub_folder = use_sub_folder,
                add_padding_between_plates = TRUE
                )
 }
-
 
 
 

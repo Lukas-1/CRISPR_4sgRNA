@@ -8,6 +8,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
+source(file.path(general_functions_directory, "22) Generating statistics and plots for CRISPR libraries.R")) # For GetMainTSS
 
 
 
@@ -31,7 +32,7 @@ load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guide
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData"))
 load(file.path(CRISPRi_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRi_RData_directory, "23) Allocate transcription factor sgRNAs to plates.RData"))
-load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA.RData"))
+load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA - summary data.RData"))
 
 
 
@@ -43,6 +44,11 @@ merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_ta
 
 
 
+# Add data on the main TSS ------------------------------------------------
+
+merged_replaced_CRISPRi_df <- AddMainTSS(merged_replaced_CRISPRi_df)
+
+
 
 
 # Re-arrange the columns --------------------------------------------------
@@ -51,7 +57,8 @@ selected_columns <- c("Combined_ID",
                       "Entrez_ID", "Other_target_Entrez_IDs", "Original_entrez",
                       "Gene_symbol", "Other_target_symbols", "Original_symbol",
 
-                      "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS", "Num_TSSs",
+                      "AltTSS_ID", "TSS_ID", "TSS_number", "Allocated_TSS",
+                      "Num_TSSs", "Is_main_TSS",
 
                       "Rank",
 

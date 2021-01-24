@@ -8,6 +8,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R")) # for FormatFixedWidthInteger
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))
+source(file.path(general_functions_directory, "22) Generating statistics and plots for CRISPR libraries.R")) # For GetMainTSS
 source(file.path(general_functions_directory, "26) Allocating transcription factor sgRNAs to plates.R"))
 
 
@@ -32,6 +33,12 @@ load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guide
 load(file.path(CRISPRi_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRi_RData_directory, "22) Summarize the human secretome sub-library.RData"))
 
+
+
+
+# Add data on the main TSS ------------------------------------------------
+
+merged_replaced_CRISPRi_df <- AddMainTSS(merged_replaced_CRISPRi_df)
 
 
 
