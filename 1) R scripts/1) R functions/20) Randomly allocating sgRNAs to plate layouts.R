@@ -25,11 +25,13 @@ sublibraries_short_names <- c(
 
 export_columns <- c(
   "Sublibrary_4sg", "Plate_string", "Well_number",
+  "Is_obsolete",
   "Entrez_ID", "Other_target_Entrez_IDs", "Other_Entrez_IDs_4sg",
   "Gene_symbol", "Other_target_symbols", "Other_symbols_4sg", "Original_symbol",
   "Exon_number_Brunello", "Exon_number_TKOv3", "Exon_number_GPP",
   "Transcript_ID", "Genomic_sequence_ID",
-  "TSS_ID", "Rank", "Num_overlaps", "Source",
+  "TSS_ID", "Is_main_TSS",
+  "Rank", "Num_overlaps", "Source",
   "sgRNA_sequence", "PAM", "Sequence_with_primers",
   "Calabrese_rank", "Dolcetto_rank",
   "Caprano_rank", "Dolomiti_rank",
@@ -881,8 +883,10 @@ ReorderPlates <- function(CRISPR_df) {
 
 
 RestoreOriginalOrder <- function(CRISPR_df) {
-  results_df <- CRISPR_df[order(CRISPR_df[["Original_index"]]), ]
-  rownames(results_df) <- NULL
+  are_controls <- CRISPR_df[["Is_control"]] %in% "Yes"
+  new_order <- order(ifelse(are_controls, NA, CRISPR_df[["Original_index"]]))
+  results_df <- CRISPR_df[new_order, ]
+  row.names(results_df) <- NULL
   return(results_df)
 }
 
@@ -893,9 +897,10 @@ RestoreOriginalOrder <- function(CRISPR_df) {
 
 ExportPlates <- function(export_df,
                          file_name,
-                         sub_folder = "Final plate layout",
+                         sub_folder,
                          add_padding_between_plates = FALSE
                          ) {
+  export_df[["Source"]] <- sub("Curated, ", "", export_df[["Source"]], fixed = TRUE)
   use_columns <- intersect(export_columns, names(export_df))
   remove_columns <- setdiff(names(export_df), use_columns)
   is_CRISPRko <- "Exon_number_GPP" %in% names(export_df)
@@ -912,6 +917,87 @@ ExportPlates <- function(export_df,
           )
 }
 
+
+
+
+
+# Functions for merging the TF sub-library with the rest ------------------
+
+MergeTFWithRest <- function(sg4_by_well_df, TF_by_well_df) {
+
+  sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
+
+
+  ## Add plate strings
+  TF_by_well_df <- AssignPlateStrings(TF_by_well_df)
+  TF_by_well_df[["Plate_string"]] <- sub("^ha_", "ha_tf", TF_by_well_df[["Plate_string"]])
+  TF_by_well_df[["Plate_string"]] <- sub("^ho_", "ho_tf", TF_by_well_df[["Plate_string"]])
+
+
+  ## Add data on obsolete wells
+  are_obsolete <- TF_by_well_df[["Entrez_ID"]] %in% sg4_by_well_df[["Entrez_ID"]]
+  TF_by_well_df[["Is_obsolete"]] <- ifelse(is.na(TF_by_well_df[["Entrez_ID"]]),
+                                           NA,
+                                           ifelse(are_obsolete, "Yes", "No")
+                                           )
+  sg4_by_well_df[["Is_obsolete"]] <- NA
+  sg4_by_gene_df[["Is_obsolete"]] <- NA
+
+
+  ## Adjust the names of non-targeting controls
+
+  are_TF_controls <- TF_by_well_df[["Is_control"]] %in% "Yes"
+  TF_by_well_df[["Combined_ID"]][are_TF_controls] <- sub("Control_", "Control_TF", TF_by_well_df[["Combined_ID"]][are_TF_controls], fixed = TRUE)
+
+  TF_by_well_df[["Sublibrary_4sg"]] <- ifelse(are_TF_controls, "Controls", "Transcription factors")
+
+
+  ## Merge the two data frames (ordered by well)
+
+  shared_columns <- intersect(names(sg4_by_well_df), names(TF_by_well_df))
+
+  full_4sg_by_well_df <- rbind.data.frame(
+    TF_by_well_df[, shared_columns],
+    sg4_by_well_df[, shared_columns],
+    stringsAsFactors = FALSE,
+    make.row.names = FALSE
+  )
+
+
+
+  ## Merge the two data frames (ordered by gene)
+
+  full_4sg_by_gene_df <- rbind.data.frame(
+    TF_by_well_df[!(are_TF_controls), shared_columns],
+    sg4_by_gene_df[sg4_by_gene_df[["Is_control"]] %in% "No", shared_columns],
+    TF_by_well_df[are_TF_controls, shared_columns],
+    sg4_by_gene_df[sg4_by_gene_df[["Is_control"]] %in% "Yes", shared_columns],
+    stringsAsFactors = FALSE,
+    make.row.names = FALSE
+  )
+
+  if ("TSS_number" %in% names(full_4sg_by_gene_df)) {
+    TSS_vec <- full_4sg_by_gene_df[["TSS_number"]]
+  } else {
+    TSS_vec <- rep(NA, nrow(full_4sg_by_gene_df))
+  }
+
+  by_gene_order <- order(GetMinEntrez(full_4sg_by_gene_df[["Entrez_ID"]]),
+                         TSS_vec
+                         )
+  full_4sg_by_gene_df <- full_4sg_by_gene_df[by_gene_order, names(full_4sg_by_gene_df) != "Is_obsolete"]
+  row.names(full_4sg_by_gene_df) <- NULL
+
+  full_4sg_by_gene_df[["Sublibrary_4sg"]][full_4sg_by_gene_df[["Sublibrary_4sg"]] == "Misc / controls"]    <- "Controls"
+  full_4sg_by_gene_df[["Sublibrary_4sg"]][full_4sg_by_gene_df[["Sublibrary_4sg"]] == "Misc / changed TFs"] <- "Transcription Factors"
+  full_4sg_by_gene_df[["Sublibrary_4sg"]][full_4sg_by_gene_df[["Sublibrary_4sg"]] == "Misc / unassigned"]  <- "Unassigned"
+
+  results_list <- list(
+    "full_4sg_by_well_df" = full_4sg_by_well_df,
+    "full_4sg_by_gene_df" = full_4sg_by_gene_df
+  )
+  return(results_list)
+}
 
 
 

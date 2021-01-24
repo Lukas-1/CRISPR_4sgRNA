@@ -6,6 +6,7 @@
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+source(file.path(general_functions_directory, "10) Ranking sgRNAs.R")) # For GetMinEntrez
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
@@ -34,15 +35,15 @@ load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sou
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(general_RData_directory, "17) Read in additional gene lists.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA.RData"))
-load(file.path(previous_versions_directory, "02) CRISPRko transcription factor sub-library (1st version) - TF_v1_CRISPRko_df.RData"))
+load(file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA - summary data.RData"))
+load(file.path(CRISPRko_RData_directory, "17) Export libraries to .tsv files - TF_v1_CRISPRko_df.RData"))
 
 
 
 
 
 
-# Add data on other (unintended) targeted TSSs ----------------------------
+# Add data on other (unintended) targeted genes ---------------------------
 
 merged_CRISPRko_df <- AddOtherTargets(merged_CRISPRko_df,
                                       guides_CDS_df,
@@ -56,12 +57,24 @@ merged_CRISPRko_df <- AddOtherTargets(merged_CRISPRko_df,
 
 legacy_PD_4sg_entrezs <- setdiff(PD_4sg_entrezs, c("51142", "11315", "9842")) # This is how the full library was ordered
 
-sg4_reordered_df <- AllocateAllGuides_v2(merged_CRISPRko_df,
+sg4_by_well_df <- AllocateAllGuides_v2(merged_CRISPRko_df,
                                          sublibraries_entrezs_list  = sublibraries_all_entrezs_list,
                                          previous_version_CRISPR_df = TF_v1_CRISPRko_df,
                                          candidate_entrezs          = legacy_PD_4sg_entrezs
                                          )
-sg4_df <- RestoreOriginalOrder(sg4_reordered_df)
+sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
+
+
+
+
+
+#  Combine the TF library with the rest of the 4sg library ----------------
+
+full_sg4_list <- MergeTFWithRest(sg4_by_well_df, TF_v1_CRISPRko_df)
+
+full_4sg_by_well_df <- full_sg4_list[["full_4sg_by_well_df"]]
+full_4sg_by_gene_df <- full_sg4_list[["full_4sg_by_gene_df"]]
+rm(full_sg4_list)
 
 
 
@@ -106,15 +119,27 @@ PD_4sg_reordered_df[["Sublibrary_4sg"]] <- NULL
 
 
 
+# Export the plate layouts for the complete 4sg library -------------------
 
-# Export the whole-genome plate layouts -----------------------------------
+ExportPlates(full_4sg_by_gene_df, "All_sublibraries_ordered_by_gene", "4sg plate layout (complete)")
+ExportPlates(full_4sg_by_well_df, "All_sublibraries_ordered_by_well", "4sg plate layout (complete)")
 
-ExportPlates(sg4_df, "All_sublibraries_original_order")
-ExportPlates(sg4_reordered_df, "All_sublibraries_reordered")
+
+
+
+
+# Export the plate layouts for the 4sg library (excluding TFs) ------------
+
+ExportPlates(sg4_by_gene_df, "4sg_non_TF_ordered_by_gene", "4sg plate layout (non-TF)")
+ExportPlates(sg4_by_well_df, "4sg_non_TF_ordered_by_well", "4sg plate layout (non-TF)")
 
 for (i in 1:4) {
-  use_df <- sg4_reordered_df[sg4_reordered_df[["Rank"]] %in% i, ]
-  ExportPlates(use_df, paste0("4sg_reordered_sg", i), add_padding_between_plates = TRUE)
+  use_df <- sg4_by_well_df[sg4_by_well_df[["Rank"]] %in% i, ]
+  ExportPlates(use_df,
+               paste0("4sg_non_TF_sg", i),
+               "4sg plate layout (non-TF)",
+               add_padding_between_plates = TRUE
+               )
 }
 
 
@@ -123,12 +148,12 @@ for (i in 1:4) {
 
 # Export the PD plate layout ----------------------------------------------
 
-ExportPlates(PD_4sg_df, "PD_original_order", sub_folder = "PD plate layout")
-ExportPlates(PD_4sg_reordered_df, "PD_reordered", sub_folder = "PD plate layout")
+ExportPlates(PD_4sg_df, "PD_ordered_by_gene", sub_folder = "PD plate layout")
+ExportPlates(PD_4sg_reordered_df, "PD_ordered_by_well", sub_folder = "PD plate layout")
 
 for (i in 1:4) {
   use_df <- PD_4sg_reordered_df[PD_4sg_reordered_df[["Rank"]] %in% i, ]
-  ExportPlates(use_df, paste0("4sg_PD_sg", i), sub_folder = "PD plate layout")
+  ExportPlates(use_df, paste0("PD_sg", i), sub_folder = "PD plate layout")
 }
 
 
@@ -137,7 +162,9 @@ for (i in 1:4) {
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sg4_df", "sg4_reordered_df"),
+save(list = c("full_4sg_by_gene_df", "full_4sg_by_well_df",
+              "sg4_by_gene_df", "sg4_by_well_df"
+              ),
      file = file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData")
      )
 
