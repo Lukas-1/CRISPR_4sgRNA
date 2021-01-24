@@ -13,6 +13,28 @@ CheckThatFactorIsInOrder <- function(my_factor) {
 }
 
 
+# IdentifyFirstUnordered <- function(my_factor) {
+#   integer_vec <- as.integer(my_factor)
+#   seen_integers <- integer_vec[[1]]
+#   current_integer <- integer_vec[[1]]
+#   for (this_int in integer_vec) {
+#     if (this_int == current_integer) {
+#       next
+#     } else {
+#       if (this_int %in% seen_integers) {
+#         are_this_int <- integer_vec %in% seen_integers
+#         span_indices <- range(which(are_this_int))
+#         return(my_factor[span_indices])
+#       } else {
+#         seen_integers <- c(seen_integers, this_int)
+#         current_integer <- this_int
+#       }
+#     }
+#   }
+#   return(NA)
+# }
+
+
 
 
 
@@ -76,9 +98,7 @@ VectorizedLongestSubsequenceSingle <- function(char_vec) {
 }
 
 LongestSubsequenceSingle <- function(single_char, char_vec) {
-  assign("delete_single_char", single_char, envir = globalenv())
   stopifnot(length(single_char) == 1)
-  assign("delete_char_vec", char_vec, envir = globalenv())
   longest_vec <- vapply(char_vec, function(x) LongestSharedSubsequence(c(single_char, x)), integer(1))
   return(max(longest_vec))
 }
