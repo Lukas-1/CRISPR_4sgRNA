@@ -92,29 +92,31 @@ guides_exon_protein_list <- AlignSummaryDf(FindOverlappingGenes,
 
 
 
-# Prepare for saving summary data frames ----------------------------------
+# Prepare for saving data frames ------------------------------------------
 
-deletions_CDS_df          <- deletions_CDS_list[["summary_df"]]
-deletions_exon_df         <- deletions_exon_list[["summary_df"]]
-deletions_CDS_protein_df  <- deletions_CDS_protein_list[["summary_df"]]
-deletions_exon_protein_df <- deletions_exon_protein_list[["summary_df"]]
+deletion_names <- grep("^deletions_.+_list$", ls(), value = TRUE)
+sg_names       <- grep("^guides_.+_list$", ls(), value = TRUE)
 
-guides_CDS_df             <- guides_CDS_list[["summary_df"]]
-guides_exon_df            <- guides_CDS_list[["summary_df"]]
-guides_CDS_protein_df     <- guides_CDS_protein_list[["summary_df"]]
-guides_exon_protein_df    <- guides_CDS_protein_list[["summary_df"]]
+all_names        <- c(deletion_names, sg_names)
+summary_df_names <- sub("_list$", "_df", all_names)
+full_df_names    <- sub("_list$", "_full_df", all_names)
+
+for (i in seq_along(all_names)) {
+  assign(summary_df_names[[i]], get(all_names[[i]])[["summary_df"]])
+  assign(full_df_names[[i]], get(all_names[[i]])[["full_df"]])
+}
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("deletions_CDS_df", "deletions_exon_df",
-              "deletions_CDS_protein_df", "deletions_exon_protein_df",
-              "guides_CDS_df", "guides_exon_df",
-              "guides_CDS_protein_df", "guides_exon_protein_df"
-              ),
-     file = file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA.RData")
+save(list = summary_df_names,
+     file = file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA - summary data.RData")
+     )
+
+save(list = full_df_names,
+     file = file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA - full data.RData")
      )
 
 
