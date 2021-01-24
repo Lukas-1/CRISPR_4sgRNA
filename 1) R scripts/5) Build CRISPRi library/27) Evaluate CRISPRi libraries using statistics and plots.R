@@ -30,6 +30,20 @@ load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sou
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRNA - summary data.RData"))
+
+
+
+
+
+# Add data on other (unintended) targeted TSSs ----------------------------
+
+merged_replaced_CRISPRi_df <- AddOtherTargetBooleans(merged_replaced_CRISPRi_df,
+                                                     TSS_targets_df,
+                                                     TSS_protein_targets_df
+                                                     )
+
+
 
 
 

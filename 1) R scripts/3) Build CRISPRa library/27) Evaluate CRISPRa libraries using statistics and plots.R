@@ -30,12 +30,32 @@ load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sou
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA - summary data.RData"))
+
+
+
+
+
+
+# Add data on other (unintended) targeted TSSs ----------------------------
+
+merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
+                                                     TSS_targets_df,
+                                                     TSS_protein_targets_df
+                                                     )
 
 
 
 
 
 # Try stuff ---------------------------------------------------------------
+
+BarPlot_Sources(merged_replaced_CRISPRa_df,
+                "Does_not_affect_intended_gene",
+                "show_sublibraries" = FALSE,
+                "filter_top4"       = TRUE
+                )
+
 
 ViolinBox_Sources(merged_replaced_CRISPRa_df,
                   "Deviation_from_TSS_window",

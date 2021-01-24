@@ -72,7 +72,18 @@ specificity_score_cutoffs <- c(
   "CRISPOR_MIT_specificity" = 50
 )
 
+
+unintended_target_labels <- c(
+  "Does_not_affect_intended_gene"       = "Do not seem to target the intended gene",
+  "Affects_any_unintended_gene"         = "Affect a gene other than the intended gene",
+  "Affects_unintended_protein_gene"     = "Affect an unintended protein-coding gene",
+  "Affects_any_genes_at_other_loci"     = "Affect an unintended gene at another locus",
+  "Affects_protein_genes_at_other_loci" = "Affect an unintended protein-coding gene at another locus"
+)
+
+
 categorical_columns <- c(
+  names(unintended_target_labels),
   "Do_not_meet_criteria",
   "Not_mapped",
   "Poly_T",
@@ -81,6 +92,8 @@ categorical_columns <- c(
   "Expected_all22_SNP_AF_max_Kaviar",
   names(core_numeric_column_labels)
 )
+
+
 
 
 sublibraries_order <- c(
@@ -236,6 +249,25 @@ Palify <- function(myhex, fraction_pale = 0.5) {
 
 
 
+# Helper functions for addint annotation for unintended targets  ----------
+
+AddOtherTargetBooleans <- function(CRISPR_df, all_genes_df, protein_genes_df) {
+  stopifnot(length(unique(nrow(CRISPR_df), nrow(all_genes_df), nrow(protein_genes_df))) == 1)
+
+  CRISPR_df[["Does_not_affect_intended_gene"]]       <- !(all_genes_df[["Affects_intended_gene"]])
+
+  CRISPR_df[["Affects_any_unintended_gene"]]         <- all_genes_df[["Affects_unintended_gene"]]
+  CRISPR_df[["Affects_unintended_protein_gene"]]     <- protein_genes_df[["Affects_unintended_gene"]]
+
+  CRISPR_df[["Affects_any_genes_at_other_loci"]]     <- all_genes_df[["Affects_genes_at_other_loci"]]
+  CRISPR_df[["Affects_protein_genes_at_other_loci"]] <- protein_genes_df[["Affects_genes_at_other_loci"]]
+
+  return(CRISPR_df)
+}
+
+
+
+
 
 
 # Helper functions specific to CRISPRa or CRISPRi -------------------------
@@ -264,6 +296,8 @@ TSSWindowString <- function(is_CRISPRa) {
                           )
   return(result_string)
 }
+
+
 
 
 GetMainTSS <- function(CRISPR_df) {
@@ -1704,7 +1738,10 @@ MakeCategoricalList <- function(CRISPR_df, use_column, use_cutoff) {
   assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
   assign("delete_use_cutoff", use_cutoff, envir = globalenv())
   title_cex <- 1
-  if (use_column == "Are_overlapping") {
+  if (use_column %in% names(unintended_target_labels)) {
+    logical_vec <- CRISPR_df[[use_column]] > 0
+    use_title <- unintended_target_labels[[use_column]]
+  } else if (use_column == "Are_overlapping") {
     logical_vec <- CRISPR_df[["Num_overlaps"]] > 0
     use_title <- "Overlap with other guides (fewer than 50 base pairs apart)"
   } else if (use_column == "Not_mapped") {
