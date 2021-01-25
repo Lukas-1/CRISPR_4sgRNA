@@ -27,15 +27,28 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
-
+load(file.path(R_objects_directory, "10) Process demultiplexed reads - with subsampling.RData"))
 
 
 
 
 # Set up loop -------------------------------------------------------------
 
-DrawAllPlots(DrawAlterationBarplot,
-             "Stacked barplots",
-             "Alteration barplots"
-             )
+DrawAllSmrtLinkPlots(DrawAlterationBarplot,
+                     "Stacked barplots",
+                     "Alteration barplots"
+                     )
+
+DrawAllSubsampledPlots(DrawAlterationBarplot,
+                       "Stacked barplots",
+                       "Alteration barplots"
+                       )
+
+
+
+
+
+
+
+
 

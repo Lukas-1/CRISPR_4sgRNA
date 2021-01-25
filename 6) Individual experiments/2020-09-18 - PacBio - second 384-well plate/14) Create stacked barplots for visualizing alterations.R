@@ -29,6 +29,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 load(file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData"))
+load(file.path(p2_R_objects_directory, "08) Process demultiplexed reads - with subsampling.RData"))
 
 
 
@@ -45,9 +46,14 @@ sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] == 2,
 
 # Set up loop -------------------------------------------------------------
 
-DrawAllPlots(DrawAlterationBarplot,
-             "Stacked barplots",
-             "Alteration barplots"
-             )
+DrawAllSmrtLinkPlots(DrawAlterationBarplot,
+                     "Stacked barplots",
+                     "Alteration barplots"
+                     )
+
+DrawAllSubsampledPlots(DrawAlterationBarplot,
+                       "Stacked barplots",
+                       "Alteration barplots"
+                       )
 
 

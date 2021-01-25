@@ -27,6 +27,7 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
+load(file.path(R_objects_directory, "10) Process demultiplexed reads - with subsampling.RData"))
 
 
 
@@ -34,11 +35,15 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 
 # Set up loop -------------------------------------------------------------
 
-DrawAllPlots(DrawAccuracyHeatmap,
-             "Heatmaps",
-             "Accuracy heatmap"
-             )
+DrawAllSmrtLinkPlots(DrawAccuracyHeatmap,
+                     "Heatmaps",
+                     "Accuracy heatmap"
+                     )
 
+DrawAllSubsampledPlots(DrawAccuracyHeatmap,
+                       "Heatmaps",
+                       "Accuracy heatmaps"
+                       )
 
 
 

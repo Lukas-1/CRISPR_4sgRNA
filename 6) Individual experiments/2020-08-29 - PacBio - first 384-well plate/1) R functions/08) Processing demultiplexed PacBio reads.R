@@ -9,7 +9,69 @@ library("ShortRead") # For processing the quality scores
 
 
 
-# Define functions --------------------------------------------------------
+
+
+
+# Functions for subsampling reads (for simulations) -----------------------
+
+ProcessWithSubsampling <- function(ccs_df,
+                                   barcodes_df,
+                                   extracted_df,
+                                   wells_vec = seq_len(384),
+                                   use_fractions = c(1, 0.5, 0.2, 0.1, 0.025, 0.01),
+                                   num_repetitions = 3L
+                                   ) {
+
+  set.seed(1)
+
+  results_list <- lapply(use_fractions, function(use_fraction) {
+    num_reads <- round(nrow(ccs_df) * use_fraction)
+    if (use_fraction == 1) {
+      reps_vec <- 1
+    } else {
+      reps_vec <- seq_len(num_repetitions)
+    }
+    rep_list <- lapply(reps_vec, function(i) {
+      sample_indices <- sample(seq_len(nrow(ccs_df)), size = num_reads)
+      subsampled_ccs_df <- ccs_df[sample_indices, ]
+      row.names(subsampled_ccs_df) <- NULL
+      analysis_list <- AnalyzeWells(subsampled_ccs_df,
+                                    barcodes_df,
+                                    extracted_df,
+                                    wells_vec = wells_vec,
+                                    set_seed = FALSE
+                                    )
+      ccs5_lima_zmws <- GetCCS5ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
+      ccs7_lima_zmws <- GetCCS7ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
+      ccs3_df_list <- SummarizeWells(analysis_list, wells_vec = wells_vec)
+      ccs5_df_list <- SummarizeWells(analysis_list,
+                                     use_zmws = ccs5_lima_zmws,
+                                     wells_vec = wells_vec
+                                     )
+      ccs7_df_list <- SummarizeWells(analysis_list,
+                                     use_zmws = ccs7_lima_zmws,
+                                     wells_vec = wells_vec
+                                     )
+      df_list_list <- list(
+        "ccs3" = ccs3_df_list,
+        "ccs5" = ccs5_df_list,
+        "ccs7" = ccs7_df_list
+      )
+      return(df_list_list)
+    })
+    names(rep_list) <- paste0("rep", reps_vec)
+    return(rep_list)
+  })
+  names(results_list) <- paste0(use_fractions * 100, "% sampled")
+  return(results_list)
+}
+
+
+
+
+
+
+# Functions for calculating distances on 384-well plates ------------------
 
 MakeDistanceList <- function(manhattan_distance = FALSE, matrix_format = FALSE) {
 
@@ -48,7 +110,15 @@ MakeDistanceList <- function(manhattan_distance = FALSE, matrix_format = FALSE) 
 
 
 
+
+
+
+# Functions for processing reads ------------------------------------------
+
 ContainSequences <- function(query_seq, target_seq) {
+
+  assign("delete_query_seq", query_seq, envir = globalenv())
+  assign("delete_target_seq", target_seq, envir = globalenv())
 
   num_queries <- length(query_seq)
   num_targets <- length(target_seq)
@@ -64,12 +134,12 @@ ContainSequences <- function(query_seq, target_seq) {
 
   rev_search_seq <- reverseComplement(query_seq)
 
-  contain_fwd_mat <- vapply(seq_len(num_queries), function(x) {
+  contain_fwd_mat <- do.call(cbind, lapply(seq_len(num_queries), function(x) {
     vcountPattern(query_seq[[x]], target_seq)
-  }, integer(num_targets))
-  contain_rev_mat <- vapply(seq_len(num_queries), function(x) {
+  }))
+  contain_rev_mat <- do.call(cbind, lapply(seq_len(num_queries), function(x) {
     vcountPattern(rev_search_seq[[x]], target_seq)
-  }, integer(num_targets))
+  }))
 
   are_fwd <- rowSums(contain_fwd_mat) > 0
   are_rev <- rowSums(contain_rev_mat) > 0
@@ -139,10 +209,11 @@ ContainSequences <- function(query_seq, target_seq) {
                     )
 
   num_correct_vec <- rowSums(contain_mat)
-  contain_num_mat <- vapply(seq_len(num_queries),
-                            function(x) num_correct_vec >= x,
-                            integer(num_targets)
-                            )
+  contain_num_mat <- do.call(cbind,
+                             lapply(seq_len(num_queries),
+                                    function(x) num_correct_vec >= x
+                                    )
+                             )
   colnames(contain_num_mat) <- paste0("at_least_", seq_len(num_queries))
 
   results_mat <- cbind(contain_mat,
@@ -157,6 +228,10 @@ ContainSequences <- function(query_seq, target_seq) {
 
 
 StatsForWell <- function(well_number, ccs_df, wells_vec = seq_len(384)) {
+
+  assign("delete_well_number", well_number, envir = globalenv())
+  assign("delete_ccs_df", ccs_df, envir = globalenv())
+  assign("delete_wells_vec", wells_vec, envir = globalenv())
 
   well_index <- which(wells_vec == well_number)
 
@@ -179,11 +254,12 @@ StatsForWell <- function(well_number, ccs_df, wells_vec = seq_len(384)) {
   colnames(contain_sg_cr_mat)[1:4] <- paste0("sg", 1:4, "_cr", 1:4)
   colnames(contain_sg_cr_mat)[colnames(contain_sg_cr_mat) == "at_least_4"] <- "all_4"
   results_mat <- cbind(
-    contain_sg_cr_mat[, 1:8],
+    contain_sg_cr_mat[, 1:8, drop = FALSE],
     "all_4_promoters" = contain_sg_prom_mat[, "at_least_4"],
     "whole_plasmid"   = contain_plasmid_mat[, 1],
     contain_sg_cr_mat[, "orientation_fwd_sg", drop = FALSE]
   )
+  rownames(results_mat) <- NULL
   stopifnot(!(any(results_mat[, "all_4_promoters"] < results_mat[, "whole_plasmid"])))
 
   return(results_mat)
@@ -413,21 +489,29 @@ CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec 
   assign("delete_well_numbers_vec", well_numbers_vec, envir = globalenv())
   assign("delete_wells_vec", wells_vec, envir = globalenv())
 
+  well_numbers_fac <- factor(well_numbers_vec, levels = wells_vec)
+
   all_comb_mat <- t(combn(wells_vec, 2))
   colnames(all_comb_mat) <- paste0("well", 1:2, "_ID")
 
   counts_wells_mat_list <- lapply(1:4, function(sg_number) {
-    do.call(rbind,
-            tapply(seq_along(well_numbers_vec),
-                   well_numbers_vec,
-                   function(x) rowSums(contamin_mat_list[[sg_number]][, x])
-                   )
-            )
+    results_list <- tapply(seq_along(well_numbers_fac),
+                           well_numbers_fac,
+                           function(x) rowSums(contamin_mat_list[[sg_number]][, x, drop = FALSE]),
+                           simplify = FALSE
+                           )
+    are_null <- vapply(results_list, is.null, logical(1))
+    results_list[are_null] <- list(rep(NA_integer_, nlevels(well_numbers_fac)))
+    results_mat <- do.call(rbind, results_list)
+    return(results_mat)
   })
 
   cross_contam_mat <- do.call(cbind, lapply(1:4, function(sg_number) {
     use_mat <- counts_wells_mat_list[[sg_number]]
     sub_mat <- t(mapply(function(x, y) {
+      assign("delete_x", x, envir = globalenv())
+      assign("delete_y", y, envir = globalenv())
+      assign("delete_use_mat", use_mat, envir = globalenv())
       x_index <- wells_vec == x
       y_index <- wells_vec == y
       c(use_mat[x_index, y_index], use_mat[y_index, x_index])
@@ -443,8 +527,8 @@ CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec 
 
   well_1_columns <- paste0("w2_sg", 1:4, "_in_well1")
   well_2_columns <- paste0("w1_sg", 1:4, "_in_well2")
-  cross_contam_mat <- cbind("w2_in_well1" = rowSums(cross_contam_mat[, well_1_columns]),
-                            "w1_in_well2" = rowSums(cross_contam_mat[, well_2_columns]),
+  cross_contam_mat <- cbind("w2_in_well1" = rowSums(cross_contam_mat[, well_1_columns], na.rm = TRUE),
+                            "w1_in_well2" = rowSums(cross_contam_mat[, well_2_columns], na.rm = TRUE),
                             cross_contam_mat
                             )
   mode(cross_contam_mat) <- "integer"
@@ -555,7 +639,8 @@ AnalyzeWells <- function(ccs_df,
                          bc_min_score_lead = 30,
                          bc_length_cutoff  = 8L,
                          min_mean_quality  = 85 / 93 * 100,
-                         wells_vec         = seq_len(384)
+                         wells_vec         = seq_len(384),
+                         set_seed          = TRUE
                          ) {
 
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
@@ -609,7 +694,9 @@ AnalyzeWells <- function(ccs_df,
 
   have_contam <- !(is.na(min_distances_vec))
 
-  set.seed(1)
+  if (set_seed) {
+    set.seed(1)
+  }
   random_distances_vec <- vapply(which(have_contam),
                                  function(x) {
                                    dist_vec <- distance_mat[, x]
@@ -804,6 +891,7 @@ SummarizeWells <- function(analysis_list,
                                            close_well_range = close_well_range,
                                            wells_vec = wells_vec
                                            )
+
   cross_contam_mat <- CreateCrossContamMat(contamin_mat_list,
                                            reads_df[["Well_number"]],
                                            wells_vec = wells_vec
@@ -833,8 +921,8 @@ DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq
                          )
   for (i in wells_vec) {
     are_this_well <- long_wells_vec[have_wells] %in% i
-    are_contam <- contamination_mat[, are_this_well] >= 1
-    sub_mat <- distance_mat[, are_this_well]
+    are_contam <- contamination_mat[, are_this_well, drop = FALSE] >= 1
+    sub_mat <- distance_mat[, are_this_well, drop = FALSE]
     contam_rows <- which(rowSums(are_contam) >= 1)
     for (row_i in contam_rows) {
       sub_mat[row_i, are_contam[row_i, ]] <- manhattan_dist_list[[i]][[row_i]]
@@ -848,7 +936,7 @@ DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq
 
 
 
-# Define functions for exporting data -------------------------------------
+# Functions for exporting data --------------------------------------------
 
 ExportTable <- function(export_df,
                         file_name_only,

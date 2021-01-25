@@ -48,178 +48,340 @@ ccs7_title <- expression(plain({"Long-read sequencing of plasmids" *
 # Define functions --------------------------------------------------------
 
 
-DrawAllPlots <- function(PlotFunction,
-                         folder_prefix,
-                         file_prefix
-                         ) {
+DrawAllSmrtLinkPlots <- function(PlotFunction,
+                                 folder_prefix,
+                                 file_prefix
+                                 ) {
 
   for (smrtlink_version in c(7, 9)) {
 
-    for (reorder_wells in c(FALSE, TRUE)) {
+    version_folder <- paste0("SmrtLink ", smrtlink_version)
+    version_path <- file.path(plots_output_directory, version_folder)
 
-      version_folder <- paste0("SmrtLink ", smrtlink_version)
+    ccs_numbers <- c(3, 5, 7)
+    use_df_list <- lapply(ccs_numbers, function(x) {
+      df_list_name <- paste0("sl", smrtlink_version, "_ccs", x, "_df_list")
+      return(get(df_list_name))
+    })
+    names(use_df_list) <- paste0("ccs", ccs_numbers)
+
+    file_name_prefix <- paste0(file_prefix, " - SmrtLink ", smrtlink_version, " - ")
+
+    DrawAllPlots(PlotFunction,
+                 use_df_list,
+                 version_path,
+                 folder_prefix,
+                 file_name_prefix
+                 )
+
+  }
+}
+
+
+
+DrawAllSubsampledPlots <- function(PlotFunction,
+                                   folder_prefix,
+                                   PDF_prefix = NULL
+                                   ) {
+
+  for (smrtlink_version in c(7, 9)) {
+
+    version_folder <- paste0("SmrtLink ", smrtlink_version, " - subsampled")
+    version_path <- file.path(plots_output_directory, version_folder)
+
+    if (smrtlink_version == 7) {
+      subsampled_list <- sl7_subsampled_list
+    } else {
+      subsampled_list <- sl7_subsampled_list
+    }
+
+    for (i in seq_along(subsampled_list)) {
+      for (rep in seq_along(subsampled_list[[i]])) {
+
+        sampling_level <- names(subsampled_list)[[i]]
+        is_all <- sampling_level == "100% sampled"
+        if (is_all) {
+          retained_string <- "All"
+        } else {
+          retained_string <- paste0("Sampled ",
+                                    sub(" sampled", "", sampling_level, fixed = TRUE),
+                                    " of"
+                                    )
+        }
+        title_prefix <- paste0(retained_string, " reads",
+                               if (is_all) "" else paste0(" \u2013 repetition #", rep)
+                               )
+
+        ccs3_title <- as.expression(bquote(plain({.(title_prefix) *
+            " (" >= "3 consensus reads "} *
+              "and " >= "99% accuracy)"
+            )))
+
+        ccs5_title <- as.expression(bquote(plain({.(title_prefix) *
+            " (" >= "5 consensus reads "} *
+              "and " >= "99.9% accuracy)"
+            )))
+
+        ccs7_title <- as.expression(bquote(plain({.(title_prefix) *
+            " (" >= "7 consensus reads "} *
+              "and " >= "99.99% accuracy)"
+            )))
+
+
+
+        file_name_postfix <- paste0(" - ", letters[[i]], ") ",
+                                    sub("% sampled", " percent", names(subsampled_list)[[i]], fixed = TRUE),
+                                    " of reads"
+                                    )
+        if (!(is_all)) {
+          file_name_postfix <- paste0(file_name_postfix, " - ",
+                                      names(subsampled_list[[i]])[[rep]]
+                                      )
+        }
+
+        DrawAllPlots(PlotFunction,
+                     subsampled_list[[i]][[rep]],
+                     version_path,
+                     folder_prefix,
+                     file_prefix    = "",
+                     file_postfix   = file_name_postfix,
+                     draw_PDFs      = FALSE,
+                     use_ccs3_title = ccs3_title,
+                     use_ccs5_title = ccs5_title,
+                     use_ccs7_title = ccs7_title
+                     )
+
+      }
+    }
+
+    ccs_numbers <- c(3, 5, 7)
+
+    for (reorder_wells in c(TRUE, FALSE)) {
+
       order_folder <- c("original order", "re-ordered")[[as.integer(reorder_wells) + 1]]
       order_folder <- paste0(folder_prefix, " - ", order_folder)
-      plots_dir <- file.path(plots_output_directory, version_folder, order_folder)
+      order_path <- file.path(version_path, order_folder)
 
-      if (smrtlink_version == 7) {
-        ccs3_df_list <- sl7_ccs3_df_list
-        ccs5_df_list <- sl7_ccs5_df_list
-        ccs7_df_list <- sl7_ccs7_df_list
-      } else {
-        ccs3_df_list <- sl9_ccs3_df_list
-        ccs5_df_list <- sl9_ccs5_df_list
-        ccs7_df_list <- sl9_ccs7_df_list
+      for (i in seq_along(ccs_numbers)) {
+        for (filter_stage in 1:3) {
+
+          df_name <- c("original_summary_df", "filtered_summary_df", "filtered_gRNAs_df")[[filter_stage]]
+          ccs_name <- paste0("ccs", ccs_numbers[[i]])
+
+          file_name <- paste0(c("CCS3 (99)", "CCS5 (99.9)", "CCS7 (99.99)")[[i]],
+                              " - ",
+                              c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                              )
+          if (!(is.null(PDF_prefix))) {
+            file_name <- paste0(PDF_prefix, " - ", file_name)
+          }
+          pdf(file = file.path(order_path, paste0(file_name, ".pdf")),
+              height = use_height,
+              width  = use_width
+              )
+
+          for (sample_level_index in seq_along(subsampled_list)) {
+
+            sampling_level <- names(subsampled_list)[[sample_level_index]]
+            is_all <- sampling_level == "100% sampled"
+            if (is_all) {
+              retained_string <- "All"
+            } else {
+              retained_string <- paste0("Sampled ",
+                                        sub(" sampled", "", sampling_level, fixed = TRUE),
+                                        " of"
+                                        )
+            }
+
+            for (rep in seq_along(subsampled_list[[sample_level_index]])) {
+
+              use_title <- paste0(retained_string, " reads",
+                                  if (is_all) "" else paste0(" (repetition #", rep, ")")
+                                  )
+              PlotFunction(subsampled_list[[sample_level_index]][[rep]][[ccs_name]][[df_name]],
+                           main_title = use_title, reorder_wells = reorder_wells
+                           )
+            }
+          }
+
+          dev.off()
+        }
       }
-
-      # Draw the accuracy plots in the console ----------------------------------
-
-      PlotFunction(ccs5_df_list[["original_summary_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs5_df_list[["filtered_summary_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs5_df_list[["filtered_gRNAs_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-
-      PlotFunction(ccs3_df_list[["original_summary_df"]],
-                   main_title = ccs3_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs3_df_list[["filtered_summary_df"]],
-                   main_title = ccs3_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs3_df_list[["filtered_gRNAs_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-
-      PlotFunction(ccs7_df_list[["original_summary_df"]],
-                   main_title = ccs7_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs7_df_list[["filtered_summary_df"]],
-                   main_title = ccs7_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs7_df_list[["filtered_gRNAs_df"]],
-                   main_title = ccs7_title, reorder_wells = reorder_wells
-                   )
-
-
-      # Produce the accuracy PNGs -----------------------------------------------
-
-      SavePNG <- function(summary_df, file_name, main_title) {
-        full_path <- file.path(plots_dir, paste0(file_name, ".png"))
-        png(filename = full_path,
-            res      = 600,
-            height   = use_height,
-            width    = use_width,
-            units    = "in"
-            )
-        PlotFunction(summary_df, main_title = main_title,
-                     reorder_wells = reorder_wells
-                     )
-        dev.off()
-      }
-
-      file_name_prefix <- paste0(file_prefix, " - SmrtLink ", smrtlink_version)
-
-
-      SavePNG(ccs7_df_list[["original_summary_df"]],
-              paste0(file_name_prefix, " - CCS7 (99.99) - a) unfiltered"),
-              main_title = ccs7_title
-              )
-      SavePNG(ccs7_df_list[["filtered_summary_df"]],
-              paste0(file_name_prefix, " - CCS7 (99.99) - b) filtered"),
-              main_title = ccs7_title
-              )
-      SavePNG(ccs7_df_list[["filtered_gRNAs_df"]],
-              paste0(file_name_prefix, " - CCS7 (99.99) - c) filtered gRNAs"),
-              main_title = ccs7_title
-              )
-
-      SavePNG(ccs5_df_list[["original_summary_df"]],
-              paste0(file_name_prefix, " - CCS5 (99.9) - a) unfiltered"),
-              main_title = ccs5_title
-              )
-      SavePNG(ccs5_df_list[["filtered_summary_df"]],
-              paste0(file_name_prefix, " - CCS5 (99.9) - b) filtered"),
-              main_title = ccs5_title
-              )
-      SavePNG(ccs5_df_list[["filtered_gRNAs_df"]],
-              paste0(file_name_prefix, " - CCS5 (99.9) - c) filtered gRNAs"),
-              main_title = ccs5_title
-              )
-
-      SavePNG(ccs3_df_list[["original_summary_df"]],
-              paste0(file_name_prefix, " - CCS3 (99) - a) unfiltered"),
-              main_title = ccs3_title
-              )
-      SavePNG(ccs3_df_list[["filtered_summary_df"]],
-              paste0(file_name_prefix, " - CCS3 (99) - b) filtered"),
-              main_title = ccs3_title
-              )
-      SavePNG(ccs3_df_list[["filtered_gRNAs_df"]],
-              paste0(file_name_prefix, " - CCS3 (99) - c) filtered gRNAs"),
-              main_title = ccs3_title
-              )
-
-
-      # Produce the accuracy PDF ------------------------------------------------
-
-      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - a) unfiltered.pdf")),
-          height = use_height,
-          width  = use_width
-          )
-      PlotFunction(ccs7_df_list[["original_summary_df"]],
-                   main_title = ccs7_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs5_df_list[["original_summary_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs3_df_list[["original_summary_df"]],
-                   main_title = ccs3_title, reorder_wells = reorder_wells
-                   )
-      dev.off()
-
-
-      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - b) filtered.pdf")),
-          height = use_height,
-          width  = use_width
-          )
-      PlotFunction(ccs7_df_list[["filtered_summary_df"]],
-                   main_title = ccs7_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs5_df_list[["filtered_summary_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs3_df_list[["filtered_summary_df"]],
-                   main_title = ccs3_title, reorder_wells = reorder_wells
-                   )
-      dev.off()
-
-
-      pdf(file = file.path(plots_dir, paste0(file_name_prefix, " - c) filtered gRNAs.pdf")),
-          height = use_height,
-          width  = use_width
-          )
-      PlotFunction(ccs7_df_list[["filtered_gRNAs_df"]],
-                   main_title = ccs7_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs5_df_list[["filtered_gRNAs_df"]],
-                   main_title = ccs5_title, reorder_wells = reorder_wells
-                   )
-      PlotFunction(ccs3_df_list[["filtered_gRNAs_df"]],
-                   main_title = ccs3_title, reorder_wells = reorder_wells
-                   )
-      dev.off()
-
-
-      # End loop ----------------------------------------------------------------
     }
   }
+}
 
 
 
+DrawAllPlots <- function(PlotFunction,
+                         df_list_list,
+                         use_dir,
+                         folder_prefix,
+                         file_prefix,
+                         file_postfix = "",
+                         draw_PDFs = TRUE,
+                         use_ccs3_title = ccs3_title,
+                         use_ccs5_title = ccs5_title,
+                         use_ccs7_title = ccs7_title
+                         ) {
+
+  for (reorder_wells in c(FALSE, TRUE)) {
+
+    order_folder <- c("original order", "re-ordered")[[as.integer(reorder_wells) + 1]]
+    order_folder <- paste0(folder_prefix, " - ", order_folder)
+    plots_dir <- file.path(use_dir, order_folder)
+
+    ccs3_df_list <- df_list_list[["ccs3"]]
+    ccs5_df_list <- df_list_list[["ccs5"]]
+    ccs7_df_list <- df_list_list[["ccs7"]]
+
+    # Draw the accuracy plots in the console ----------------------------------
+
+    PlotFunction(ccs3_df_list[["original_summary_df"]],
+                 main_title = use_ccs3_title, reorder_wells = reorder_wells
+                 )
+    PlotFunction(ccs3_df_list[["filtered_summary_df"]],
+                 main_title = use_ccs3_title, reorder_wells = reorder_wells
+                 )
+    PlotFunction(ccs3_df_list[["filtered_gRNAs_df"]],
+                 main_title = use_ccs5_title, reorder_wells = reorder_wells
+                 )
+
+    PlotFunction(ccs5_df_list[["original_summary_df"]],
+                 main_title = use_ccs5_title, reorder_wells = reorder_wells
+                 )
+    PlotFunction(ccs5_df_list[["filtered_summary_df"]],
+                 main_title = use_ccs5_title, reorder_wells = reorder_wells
+                 )
+    PlotFunction(ccs5_df_list[["filtered_gRNAs_df"]],
+                 main_title = use_ccs5_title, reorder_wells = reorder_wells
+                 )
+
+    PlotFunction(ccs7_df_list[["original_summary_df"]],
+                 main_title = use_ccs7_title, reorder_wells = reorder_wells
+                 )
+    PlotFunction(ccs7_df_list[["filtered_summary_df"]],
+                 main_title = use_ccs7_title, reorder_wells = reorder_wells
+                 )
+    PlotFunction(ccs7_df_list[["filtered_gRNAs_df"]],
+                 main_title = use_ccs7_title, reorder_wells = reorder_wells
+                 )
+
+
+    # Produce the accuracy PNGs -----------------------------------------------
+
+    SavePNG <- function(summary_df, file_name, main_title) {
+      full_path <- file.path(plots_dir, paste0(file_name, ".png"))
+      assign("delete_full_path", full_path, envir = globalenv())
+      png(filename = full_path,
+          res      = 600,
+          height   = use_height,
+          width    = use_width,
+          units    = "in"
+          )
+      PlotFunction(summary_df, main_title = main_title,
+                   reorder_wells = reorder_wells
+                   )
+      dev.off()
+    }
+
+
+    SavePNG(ccs7_df_list[["original_summary_df"]],
+            paste0(file_prefix, "CCS7 (99.99) - i) unfiltered", file_postfix),
+            main_title = use_ccs7_title
+            )
+    SavePNG(ccs7_df_list[["filtered_summary_df"]],
+            paste0(file_prefix, "CCS7 (99.99) - ii) filtered", file_postfix),
+            main_title = use_ccs7_title
+            )
+    SavePNG(ccs7_df_list[["filtered_gRNAs_df"]],
+            paste0(file_prefix, "CCS7 (99.99) - iii) filtered gRNAs", file_postfix),
+            main_title = use_ccs7_title
+            )
+
+    SavePNG(ccs5_df_list[["original_summary_df"]],
+            paste0(file_prefix, "CCS5 (99.9) - i) unfiltered", file_postfix),
+            main_title = use_ccs5_title
+            )
+    SavePNG(ccs5_df_list[["filtered_summary_df"]],
+            paste0(file_prefix, "CCS5 (99.9) - ii) filtered", file_postfix),
+            main_title = use_ccs5_title
+            )
+    SavePNG(ccs5_df_list[["filtered_gRNAs_df"]],
+            paste0(file_prefix, "CCS5 (99.9) - iii) filtered gRNAs", file_postfix),
+            main_title = use_ccs5_title
+            )
+
+    SavePNG(ccs3_df_list[["original_summary_df"]],
+            paste0(file_prefix, "CCS3 (99) - i) unfiltered", file_postfix),
+            main_title = use_ccs3_title
+            )
+    SavePNG(ccs3_df_list[["filtered_summary_df"]],
+            paste0(file_prefix, "CCS3 (99) - ii) filtered", file_postfix),
+            main_title = use_ccs3_title
+            )
+    SavePNG(ccs3_df_list[["filtered_gRNAs_df"]],
+            paste0(file_prefix, "CCS3 (99) - iii) filtered gRNAs", file_postfix),
+            main_title = use_ccs3_title
+            )
+
+
+    # Produce the accuracy PDF ------------------------------------------------
+
+    if (draw_PDFs) {
+      pdf(file = file.path(plots_dir, paste0(file_prefix, "i) unfiltered", file_postfix, ".pdf")),
+          height = use_height,
+          width  = use_width
+          )
+      PlotFunction(ccs7_df_list[["original_summary_df"]],
+                   main_title = use_ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["original_summary_df"]],
+                   main_title = use_ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["original_summary_df"]],
+                   main_title = use_ccs3_title, reorder_wells = reorder_wells
+                   )
+      dev.off()
+
+
+      pdf(file = file.path(plots_dir, paste0(file_prefix, "ii) filtered", file_postfix, ".pdf")),
+          height = use_height,
+          width  = use_width
+          )
+      PlotFunction(ccs7_df_list[["filtered_summary_df"]],
+                   main_title = use_ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["filtered_summary_df"]],
+                   main_title = use_ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["filtered_summary_df"]],
+                   main_title = use_ccs3_title, reorder_wells = reorder_wells
+                   )
+      dev.off()
+
+
+      pdf(file = file.path(plots_dir, paste0(file_prefix, "iii) filtered gRNAs", file_postfix, ".pdf")),
+          height = use_height,
+          width  = use_width
+          )
+      PlotFunction(ccs7_df_list[["filtered_gRNAs_df"]],
+                   main_title = use_ccs7_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs5_df_list[["filtered_gRNAs_df"]],
+                   main_title = use_ccs5_title, reorder_wells = reorder_wells
+                   )
+      PlotFunction(ccs3_df_list[["filtered_gRNAs_df"]],
+                   main_title = use_ccs3_title, reorder_wells = reorder_wells
+                   )
+      dev.off()
+
+    }
+
+
+
+    # End loop ----------------------------------------------------------------
+  }
 }
 
 
@@ -458,6 +620,8 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
 
+  assign("delete_summary_df", summary_df, envir = globalenv())
+
 
   percent_columns <- paste0("Perc_sg", 1:4, "_cr", 1:4)
 
@@ -528,7 +692,7 @@ DrawAccuracyHeatmap <- function(summary_df,
   ## Draw a vertical barplot
 
   are_at_least_75 <- summary_df[["Perc_all_4"]] >= 75
-  num_above_75 <- sum(are_at_least_75)
+  num_above_75 <- sum(are_at_least_75, na.rm = TRUE)
   over_75_fraction <- num_above_75 / num_wells
 
 
@@ -569,11 +733,12 @@ DrawAccuracyHeatmap <- function(summary_df,
 
 
   for (i in seq_len(num_wells)) {
+    is_NA <- is.na(summary_df[[barplot_columns[[1]]]][[i]])
     rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
          xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = 1,
-         col     = barplot_colors[[1]],
+         col     = if (is_NA) "white" else barplot_colors[[1]],
          border  = NA
          )
     for (j in seq_along(barplot_columns)) {
@@ -669,11 +834,18 @@ DrawAccuracyHeatmap <- function(summary_df,
          )
   } else {
     for (i in seq_len(num_wells)) {
+      assign("delete_are_at_least_75", are_at_least_75, envir = globalenv())
+      is_75 <- are_at_least_75[[i]]
+      if (is.na(is_75)) {
+        use_color <- "white"
+      } else {
+        use_color <- two_grey_colors[[as.integer(is_75) + 1]]
+      }
       rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
            xright  = (positions_vec[[i]] / max(positions_vec)),
            ybottom = 0,
            ytop    = 1,
-           col     = two_grey_colors[[as.integer(are_at_least_75[[i]]) + 1]],
+           col     = use_color,
            border  = NA
            )
     }
@@ -784,11 +956,16 @@ DrawAccuracyHeatmap <- function(summary_df,
   two_colors <- c("gray88", "gray40")
 
   for (i in seq_len(num_wells)) {
+    if (is.na(perc_truncated[[i]])) {
+      use_color <- "white"
+    } else {
+      use_color <- two_colors[[1]]
+    }
     rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
          xright  = (positions_vec[[i]] / max(positions_vec)),
          ybottom = 0,
          ytop    = 1,
-         col     = two_colors[[1]],
+         col     = use_color,
          border  = NA
          )
     rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
