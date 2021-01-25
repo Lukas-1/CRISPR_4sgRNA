@@ -10,7 +10,6 @@ R_functions_directory  <- file.path(file_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "02) Analyzing reads.R"))
 source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio reads.R"))
-source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R"))
 
 
 
@@ -19,7 +18,6 @@ source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R")
 
 file_input_directory    <- file.path(file_directory, "2) Input")
 R_objects_directory     <- file.path(file_directory, "3) R objects")
-
 file_output_directory   <- file.path(file_directory, "5) Output")
 tables_output_directory <- file.path(file_output_directory, "Tables")
 
@@ -103,7 +101,7 @@ sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_l
 sl7_ccs7_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs7_lima_zmws)
 sl9_ccs7_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs7_lima_zmws)
 
-goo
+
 
 
 
