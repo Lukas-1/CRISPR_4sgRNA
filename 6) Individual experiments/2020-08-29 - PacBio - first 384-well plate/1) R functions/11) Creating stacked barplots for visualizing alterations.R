@@ -108,7 +108,7 @@ DrawAlterationBarplot <- function(summary_df,
 
   use_indices <- new_order[are_to_include[new_order]]
   summary_df <- summary_df[use_indices, ]
-  rownames(summary_df) <- NULL
+  row.names(summary_df) <- NULL
 
   num_wells <- length(use_indices)
 

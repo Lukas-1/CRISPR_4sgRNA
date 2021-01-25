@@ -38,11 +38,9 @@ load(file.path(p2_R_objects_directory, "06) Categorize subsequences of reads ali
 
 
 
-
 # Create the 384-well-plate "distance list" -------------------------------
 
 manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
-
 
 
 
