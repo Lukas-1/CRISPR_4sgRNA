@@ -65,7 +65,7 @@ nearest_genes_df <- FindNearestGenes(merged_replaced_CRISPRa_df[are_eligible, lo
                                      mouse_genes_mm10_GRanges,
                                      is_mouse = TRUE
                                      )[, nearest_columns]
-colnames(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
+names(nearest_genes_df)[[3]] <- "Nearest_gene_distance"
 
 
 
