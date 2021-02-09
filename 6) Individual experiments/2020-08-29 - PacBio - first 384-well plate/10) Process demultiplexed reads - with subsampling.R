@@ -11,7 +11,6 @@ R_functions_directory  <- file.path(file_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "02) Analyzing reads.R"))
 source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio reads.R"))
-source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R"))
 
 
 
