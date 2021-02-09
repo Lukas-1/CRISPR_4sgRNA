@@ -37,8 +37,7 @@ Horlbeck2016_TSSs_path           <- file.path(CRISPR_input_directory, "CRISPR li
                                               )
 CRISPRa_Doench2018_path          <- file.path(CRISPRa_datasets_directory, "Sanson, Doench - Nat Comm 2018")
 
-GPP_CRISPRa_path                 <- file.path(CRISPR_root_directory, "4) Intermediate files/Mouse - CRISPRa/GPP sgRNA designer/2) Output files")
-GPP_membrane_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "Membrane hits")
+GPP_CRISPRa_path                 <- file.path(CRISPR_root_directory, "4) Intermediate files/Mouse - CRISPRa/GPP sgRNA designer/2) Output files/All genes")
 
 
 
@@ -47,7 +46,7 @@ GPP_membrane_CRISPRa_path        <- file.path(GPP_CRISPRa_path, "Membrane hits")
 
 load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Mm.eg.db Bioconductor database.RData"))
 load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
-load(file.path(CRISPRa_RData_directory, "25) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
+load(file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
 
 
 
@@ -71,7 +70,7 @@ CapranoB_df  <- read.table(file.path(CRISPRa_Doench2018_path, "broadgpp-caprano-
                            )
 
 ### Read in the output from the GPP sgRNA designer tool
-GPP_CRISPRa_full_df <- ReadGPPOutputFiles(GPP_membrane_CRISPRa_path)
+GPP_CRISPRa_full_df <- ReadGPPOutputFiles(GPP_CRISPRa_path)
 
 
 
@@ -119,7 +118,7 @@ GPP_CRISPRa_df <- FilterGPPOutputDf(GPP_CRISPRa_df,
 are_mCRISPRa_v2_controls <- mCRISPRa_v2_df[["gene"]] == "negative_control"
 
 mCRISPRa_v2_symbols_vec <- unique(mCRISPRa_v2_df[["gene"]][!(are_mCRISPRa_v2_controls)])
-Caprano_symbols_entrezs_df <- unique(Caprano_df[!(are_Caprano_controls), c("Annotated Gene Symbol", "Annotated Gene ID")], MARGIN = 1)
+Caprano_symbols_entrezs_df <- unique(Caprano_df[, c("Annotated Gene Symbol", "Annotated Gene ID")], MARGIN = 1)
 
 names(Caprano_symbols_entrezs_df) <- c("Gene_symbol", "Entrez_ID")
 
