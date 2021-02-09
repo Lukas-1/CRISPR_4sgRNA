@@ -81,7 +81,6 @@ replaced_all_sequences_df <- rbind.data.frame(new_sequences_df,
 
 
 
-
 # Summarize data on all matches for a given sequence ----------------------
 
 rm(all_sequences_df)

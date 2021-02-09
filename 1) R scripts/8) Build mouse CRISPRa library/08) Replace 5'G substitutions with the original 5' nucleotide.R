@@ -37,7 +37,6 @@ load(file.path(CRISPRa_RData_directory, "07) Assign genomic locations to sgRNA s
 
 
 
-
 # Replace artificial 5' G nucleotides from the mCRISPRa-v2 database -------
 
 replaced_merged_CRISPRa_df <- Exchange5PrimeG(merged_CRISPRa_df)

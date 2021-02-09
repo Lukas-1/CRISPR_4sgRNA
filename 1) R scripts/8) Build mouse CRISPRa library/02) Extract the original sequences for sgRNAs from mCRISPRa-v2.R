@@ -47,7 +47,6 @@ rm(human_genes_GRanges)
 
 
 
-
 # Process the genomic locations of sgRNAs from mCRISPRa-v2 ----------------
 
 have_locations <- !(is.na(CRISPRa_df[["mCRISPRa_v2_ID"]])) & (CRISPRa_df[["Is_control"]] == "No")
@@ -157,8 +156,6 @@ any_confirmed <- sapply(unique(retrieved_df[["Combined_ID"]]),
 retrieved_df[retrieved_df[["Combined_ID"]] %in% names(any_confirmed)[!(any_confirmed)], selected_columns]
 
 unique(CRISPRa_df[is.na(CRISPRa_df[["Entrez_ID"]]) & have_locations, c("Original_symbol", "mCRISPRa_v2_transcript")])
-
-
 
 
 
