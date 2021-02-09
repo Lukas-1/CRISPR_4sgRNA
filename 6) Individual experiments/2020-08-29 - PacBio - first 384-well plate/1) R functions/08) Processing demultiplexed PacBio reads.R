@@ -18,8 +18,8 @@ ProcessWithSubsampling <- function(ccs_df,
                                    barcodes_df,
                                    extracted_df,
                                    wells_vec = seq_len(384),
-                                   use_fractions = c(1, 0.5, 0.2, 0.1, 0.025, 0.01),
-                                   num_repetitions = 3L
+                                   use_fractions = c(1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.025, 0.01),
+                                   num_repetitions = 10L
                                    ) {
 
   set.seed(1)
