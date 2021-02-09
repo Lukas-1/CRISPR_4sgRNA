@@ -13,41 +13,6 @@ use_width <- 7
 
 # Define functions --------------------------------------------------------
 
-PlotBarplotMat <- function(barplot_mat,
-                           colors_vec,
-                           positions_vec = seq_len(ncol(barplot_mat))
-                           ) {
-
-  num_categories <- nrow(barplot_mat)
-  stopifnot(length(colors_vec) == num_categories)
-
-  lower_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
-    if (x == 1) {
-      rep(0, ncol(barplot_mat))
-    } else {
-      colSums(barplot_mat[1:(x - 1), , drop = FALSE])
-    }
-  })
-
-  upper_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
-    colSums(barplot_mat[seq_len(x), , drop = FALSE])
-  })
-
-  for (i in seq_len(ncol(barplot_mat))) {
-    for (j in seq_len(num_categories)) {
-      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
-           xright  = (positions_vec[[i]] / max(positions_vec)),
-           ybottom = lower_borders_vec_list[[j]][[i]],
-           ytop    = upper_borders_vec_list[[j]][[i]],
-           col     = colors_vec[[j]],
-           border  = NA,
-           xpd     = NA
-           )
-    }
-  }
-  return(invisible(NULL))
-}
-
 
 
 SideTextAndAxes <- function(side_text) {
