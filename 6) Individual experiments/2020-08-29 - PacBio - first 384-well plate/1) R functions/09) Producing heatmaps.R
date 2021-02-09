@@ -81,7 +81,8 @@ DrawAllSmrtLinkPlots <- function(PlotFunction,
 
 DrawAllSubsampledPlots <- function(PlotFunction,
                                    folder_prefix,
-                                   PDF_prefix = NULL
+                                   PDF_prefix = NULL,
+                                   use_num_reps = 3
                                    ) {
 
   for (smrtlink_version in c(7, 9)) {
@@ -96,7 +97,7 @@ DrawAllSubsampledPlots <- function(PlotFunction,
     }
 
     for (i in seq_along(subsampled_list)) {
-      for (rep in seq_along(subsampled_list[[i]])) {
+      for (rep in seq_len(min(length(subsampled_list[[i]]), use_num_reps))) {
 
         sampling_level <- names(subsampled_list)[[i]]
         is_all <- sampling_level == "100% sampled"
@@ -193,7 +194,7 @@ DrawAllSubsampledPlots <- function(PlotFunction,
                                         )
             }
 
-            for (rep in seq_along(subsampled_list[[sample_level_index]])) {
+            for (rep in seq_len(min(length(subsampled_list[[sample_level_index]]), use_num_reps))) {
 
               use_title <- paste0(retained_string, " reads",
                                   if (is_all) "" else paste0(" (repetition #", rep, ")")
