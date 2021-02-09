@@ -52,26 +52,46 @@ nearby_protein_list <- AlignSummaryDf(FindNearbyTSSs,
                                       only_protein_coding = TRUE
                                       )
 
+nearby_main_TSS_list <- AlignSummaryDf(FindNearbyTSSs,
+                                       merged_replaced_CRISPRa_df,
+                                       all_TSS_df,
+                                       only_best_TSS = TRUE
+                                       )
+
+nearby_main_protein_list <- AlignSummaryDf(FindNearbyTSSs,
+                                           merged_replaced_CRISPRa_df,
+                                           all_TSS_df,
+                                           only_protein_coding = TRUE,
+                                           only_best_TSS = TRUE
+                                           )
+
+
 
 
 
 # Prepare for saving data frames ------------------------------------------
 
-TSS_targets_df <- nearby_list[["summary_df"]]
-TSS_protein_targets_df <- nearby_protein_list[["summary_df"]]
+TSS_targets_df              <- nearby_list[["summary_df"]]
+TSS_protein_targets_df      <- nearby_protein_list[["summary_df"]]
+main_TSS_targets_df         <- nearby_main_TSS_list[["summary_df"]]
+main_TSS_protein_targets_df <- nearby_main_protein_list[["summary_df"]]
 
-TSS_targets_full_df <- nearby_list[["full_df"]]
-TSS_protein_targets_full_df <- nearby_protein_list[["full_df"]]
+
+TSS_targets_full_df              <- nearby_list[["full_df"]]
+TSS_protein_targets_full_df      <- nearby_protein_list[["full_df"]]
+main_TSS_targets_full_df         <- nearby_main_TSS_list[["full_df"]]
+main_TSS_protein_targets_full_df <- nearby_main_protein_list[["full_df"]]
+
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("TSS_targets_df", "TSS_protein_targets_df"),
+save(list = c("TSS_targets_df", "TSS_protein_targets_df", "main_TSS_targets_df", "main_TSS_protein_targets_df"),
      file = file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA - summary data.RData")
      )
-save(list = c("TSS_targets_full_df", "TSS_protein_targets_full_df"),
+save(list = c("TSS_targets_full_df", "TSS_protein_targets_full_df", "main_TSS_targets_full_df", "main_TSS_protein_targets_full_df"),
      file = file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA - full data.RData")
      )
 

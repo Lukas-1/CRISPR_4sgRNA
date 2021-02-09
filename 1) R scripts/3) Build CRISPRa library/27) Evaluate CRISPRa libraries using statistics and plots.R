@@ -41,7 +41,9 @@ load(file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRN
 
 merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
                                                      TSS_targets_df,
-                                                     TSS_protein_targets_df
+                                                     TSS_protein_targets_df,
+                                                     main_TSS_targets_df,
+                                                     main_TSS_protein_targets_df
                                                      )
 
 

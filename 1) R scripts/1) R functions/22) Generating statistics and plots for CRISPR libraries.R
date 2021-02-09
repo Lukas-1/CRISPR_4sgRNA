@@ -74,11 +74,17 @@ specificity_score_cutoffs <- c(
 
 
 unintended_target_labels <- c(
-  "Does_not_affect_intended_gene"       = "Do not seem to target the intended gene",
-  "Affects_any_unintended_gene"         = "Affect a gene other than the intended gene",
-  "Affects_unintended_protein_gene"     = "Affect an unintended protein-coding gene",
-  "Affects_any_genes_at_other_loci"     = "Affect an unintended gene at another locus",
-  "Affects_protein_genes_at_other_loci" = "Affect an unintended protein-coding gene at another locus"
+  "Does_not_affect_intended_gene"          = "Do not seem to target the intended gene",
+
+  "Affects_any_unintended_gene"            = "Affect a gene other than the intended gene",
+  "Affects_unintended_protein_gene"        = "Affect an unintended protein-coding gene",
+  "Affects_any_genes_at_other_loci"        = "Affect an unintended gene at another locus",
+  "Affects_protein_genes_at_other_loci"    = "Affect an unintended protein-coding gene at another locus",
+
+  "Affects_unintended_main_TSS"            = "Affect a gene other than the intended gene (only main TSS)",
+  "Affects_unintended_protein_main_TSS"    = "Affect an unintended protein-coding gene (only main TSS)",
+  "Affects_main_TSS_at_other_loci"         = "Affect an unintended gene at another locus (only main TSS)",
+  "Affects_protein_main_TSS_at_other_loci" = "Affect an unintended protein-coding gene at another locus (only main TSS)"
 )
 
 
@@ -93,6 +99,14 @@ categorical_columns <- c(
   names(core_numeric_column_labels)
 )
 
+
+TSS_columns <- c(
+  "Deviation_from_TSS_window",
+  "Affects_unintended_main_TSS",
+  "Affects_unintended_protein_main_TSS",
+  "Affects_main_TSS_at_other_loci",
+  "Affects_protein_main_TSS_at_other_loci"
+)
 
 
 
@@ -251,16 +265,29 @@ Palify <- function(myhex, fraction_pale = 0.5) {
 
 # Helper functions for addint annotation for unintended targets  ----------
 
-AddOtherTargetBooleans <- function(CRISPR_df, all_genes_df, protein_genes_df) {
+
+AddOtherTargetBooleans <- function(CRISPR_df,
+                                   all_genes_df,
+                                   protein_genes_df,
+                                   all_genes_main_TSS_df = NULL,
+                                   protein_genes_main_TSS_df = NULL
+                                   ) {
   stopifnot(length(unique(nrow(CRISPR_df), nrow(all_genes_df), nrow(protein_genes_df))) == 1)
 
-  CRISPR_df[["Does_not_affect_intended_gene"]]       <- !(all_genes_df[["Affects_intended_gene"]])
+  CRISPR_df[["Does_not_affect_intended_gene"]]         <- !(all_genes_df[["Affects_intended_gene"]])
 
-  CRISPR_df[["Affects_any_unintended_gene"]]         <- all_genes_df[["Affects_unintended_gene"]]
-  CRISPR_df[["Affects_unintended_protein_gene"]]     <- protein_genes_df[["Affects_unintended_gene"]]
+  CRISPR_df[["Affects_any_unintended_gene"]]           <- all_genes_df[["Affects_unintended_gene"]]
+  CRISPR_df[["Affects_unintended_protein_gene"]]       <- protein_genes_df[["Affects_unintended_gene"]]
 
-  CRISPR_df[["Affects_any_genes_at_other_loci"]]     <- all_genes_df[["Affects_genes_at_other_loci"]]
-  CRISPR_df[["Affects_protein_genes_at_other_loci"]] <- protein_genes_df[["Affects_genes_at_other_loci"]]
+  CRISPR_df[["Affects_any_genes_at_other_loci"]]       <- all_genes_df[["Affects_genes_at_other_loci"]]
+  CRISPR_df[["Affects_protein_genes_at_other_loci"]]   <- protein_genes_df[["Affects_genes_at_other_loci"]]
+
+  if (!(is.null(all_genes_main_TSS_df))) {
+    CRISPR_df[["Affects_unintended_main_TSS"]]            <- all_genes_main_TSS_df[["Affects_unintended_gene"]]
+    CRISPR_df[["Affects_unintended_protein_main_TSS"]]    <- protein_genes_main_TSS_df[["Affects_unintended_gene"]]
+    CRISPR_df[["Affects_main_TSS_at_other_loci"]]         <- all_genes_main_TSS_df[["Affects_genes_at_other_loci"]]
+    CRISPR_df[["Affects_protein_main_TSS_at_other_loci"]] <- protein_genes_main_TSS_df[["Affects_genes_at_other_loci"]]
+  }
 
   return(CRISPR_df)
 }
@@ -1342,7 +1369,7 @@ UniquePointsBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
 
   is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
-    numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
+    numeric_column_labels <- numeric_column_labels[!(names(numeric_column_labels) %in% TSS_columns)]
   }
 
   main_folder_path <- file.path(output_plots_directory, "Box plots - A) unique points")
@@ -1570,7 +1597,7 @@ SourcesBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
   is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     args_list <- c(args_list, CRISPRko_args_list)
-    numeric_column_labels <- numeric_column_labels[names(numeric_column_labels) != "Deviation_from_TSS_window"]
+    numeric_column_labels <- numeric_column_labels[!(names(numeric_column_labels) %in% TSS_columns)]
   } else {
     args_list <- c(args_list, CRISPRa_args_list)
   }
@@ -2422,7 +2449,7 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
 
   is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
-    categorical_columns <- setdiff(categorical_columns, "Deviation_from_TSS_window")
+    categorical_columns <- setdiff(categorical_columns, TSS_columns)
   }
 
   use_width <- pdf_width * 0.85
@@ -2510,7 +2537,7 @@ SourcesBarPlots <- function(CRISPR_df) {
 
   is_CRISPRko <- "Entrez_source_Brunello" %in% names(CRISPR_df)
   if (is_CRISPRko) {
-    categorical_columns <- setdiff(categorical_columns, "Deviation_from_TSS_window")
+    categorical_columns <- setdiff(categorical_columns, TSS_columns)
   }
 
   if (is_CRISPRko) {
