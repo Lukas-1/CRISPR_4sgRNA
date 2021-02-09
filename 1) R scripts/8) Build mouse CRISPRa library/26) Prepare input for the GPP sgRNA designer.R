@@ -27,7 +27,6 @@ GPP_input_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate f
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "04) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData"))
-load(file.path(general_RData_directory, "06) Read in gene lists.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the mouse genome - sgRNAs_overview_df.RData"))
 
@@ -39,9 +38,6 @@ load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the 
 
 problematic_entrezs <- FindProblematicEntrezs(merged_replaced_CRISPRa_df, sgRNAs_overview_df)
 
-### DELETE THIS LATER!!!! ###
-
-problematic_entrezs <- intersect(problematic_entrezs, membrane_het_df[["Entrez_ID"]])
 
 
 
@@ -50,9 +46,6 @@ problematic_entrezs <- intersect(problematic_entrezs, membrane_het_df[["Entrez_I
 # Build data frames for submission to the GPP sgRNA designer --------------
 
 all_genes_df_list <- lapply(entrez_chunks_list, BuildDfForGPP)
-
-membrane_df <- BuildDfForGPP(membrane_het_df[["Entrez_ID"]])
-
 
 
 
@@ -69,12 +62,6 @@ for (chunk_ID in names(all_genes_df_list)) {
                   )
 }
 
-WriteGPPInputDf(membrane_df,
-                "membrane",
-                file.path(GPP_input_files_directory, "Membrane hits"),
-                input_prefix = ""
-                )
-
 
 
 
@@ -82,7 +69,7 @@ WriteGPPInputDf(membrane_df,
 # Save data ---------------------------------------------------------------
 
 save(list = "problematic_entrezs",
-     file = file.path(CRISPRa_RData_directory, "25) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
+     file = file.path(CRISPRa_RData_directory, "26) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData")
      )
 
 
