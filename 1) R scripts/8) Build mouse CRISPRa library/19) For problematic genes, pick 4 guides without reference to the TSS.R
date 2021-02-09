@@ -33,6 +33,14 @@ load(file.path(CRISPRa_RData_directory, "18) Pick 4 guides per TSS.RData"))
 
 
 
+# Create an empty SNP column ----------------------------------------------
+
+merged_replaced_CRISPRa_df[[preferred_AF_max_column]] <- NA_real_
+
+
+
+
+
 # Pick a new set of 4 guides for genes with invalid 4sgs ------------------
 
 merged_replaced_CRISPRa_df <- ReplaceUnspacedGuides(merged_replaced_CRISPRa_df)
