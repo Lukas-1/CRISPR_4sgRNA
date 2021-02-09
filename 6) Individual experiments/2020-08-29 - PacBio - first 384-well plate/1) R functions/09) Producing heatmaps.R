@@ -609,19 +609,56 @@ GappedPositionsVec <- function(groups_vec, gap_weight = 2L) {
 
 
 
+PlotBarplotMat <- function(barplot_mat,
+                           colors_vec,
+                           positions_vec = seq_len(ncol(barplot_mat))
+                           ) {
+
+  num_categories <- nrow(barplot_mat)
+  stopifnot(length(colors_vec) == num_categories)
+
+  lower_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
+    if (x == 1) {
+      rep(0, ncol(barplot_mat))
+    } else {
+      colSums(barplot_mat[seq_len(x - 1), , drop = FALSE])
+    }
+  })
+
+  upper_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
+    colSums(barplot_mat[seq_len(x), , drop = FALSE])
+  })
+
+  for (i in seq_len(ncol(barplot_mat))) {
+    for (j in seq_len(num_categories)) {
+      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+           xright  = (positions_vec[[i]] / max(positions_vec)),
+           ybottom = lower_borders_vec_list[[j]][[i]],
+           ytop    = upper_borders_vec_list[[j]][[i]],
+           col     = colors_vec[[j]],
+           border  = NA,
+           xpd     = NA
+           )
+    }
+  }
+  return(invisible(NULL))
+}
+
+
+
+
+
 DrawAccuracyHeatmap <- function(summary_df,
                                 main_title             = NULL,
                                 ColorFunction          = colorRampPalette(rev(viridis::magma(100))), # colorRampPalette(brewer.pal(9, "YlGnBu")),
                                 reorder_wells          = TRUE,
-                                show_zero_in_legend    = FALSE,
+                                show_zero_in_legend    = TRUE,
+                                invert_barplot         = TRUE,
                                 gap_weight             = 2L,
                                 show_correct_promoters = FALSE
                                 ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
-
-  assign("delete_summary_df", summary_df, envir = globalenv())
-
 
   percent_columns <- paste0("Perc_sg", 1:4, "_cr", 1:4)
 
@@ -645,7 +682,7 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   use_indices <- new_order[are_to_include[new_order]]
   summary_df <- summary_df[use_indices, ]
-  rownames(summary_df) <- NULL
+  row.names(summary_df) <- NULL
 
   num_wells <- length(use_indices)
 
@@ -731,26 +768,26 @@ DrawAccuracyHeatmap <- function(summary_df,
     barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.2, "")
   }
 
+  barplot_mat <- do.call(rbind, lapply(barplot_columns, function(x) summary_df[[x]]))
+  barplot_mat <- barplot_mat / 100
+  barplot_mat <- rbind(
+    "none"      = 1 - barplot_mat[1, ],
+    "exactly_1" = barplot_mat[1, ] - barplot_mat[2, ],
+    "exactly_2" = barplot_mat[2, ] - barplot_mat[3, ],
+    "exactly_3" = barplot_mat[3, ] - barplot_mat[4, ],
+    "all_4"     = barplot_mat[4, ]
+  )
 
-  for (i in seq_len(num_wells)) {
-    is_NA <- is.na(summary_df[[barplot_columns[[1]]]][[i]])
-    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
-         xright  = (positions_vec[[i]] / max(positions_vec)),
-         ybottom = 0,
-         ytop    = 1,
-         col     = if (is_NA) "white" else barplot_colors[[1]],
-         border  = NA
-         )
-    for (j in seq_along(barplot_columns)) {
-      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
-           xright  = (positions_vec[[i]] / max(positions_vec)),
-           ybottom = 0,
-           ytop    = summary_df[[barplot_columns[[j]]]][[i]] / 100,
-           col     = barplot_colors[2:length(barplot_colors)][[j]],
-           border  = NA
-           )
-    }
+  if (invert_barplot) {
+    PlotBarplotMat(barplot_mat, barplot_colors, positions_vec)
+  } else {
+    PlotBarplotMat(barplot_mat[rev(seq_len(nrow(barplot_mat))), ],
+                   rev(barplot_colors),
+                   positions_vec
+                   )
   }
+
+
 
 
   tick_locations <- axTicks(2)
@@ -790,9 +827,8 @@ DrawAccuracyHeatmap <- function(summary_df,
                         )
   }
 
-
   text_colors <- c("#000000",
-                   Darken(barplot_colors[[1]], factor = 1.3),
+                   "#DDE100",
                    BarPlotColorFun(length(barplot_colors) + 1)[2:(length(barplot_colors))]
                    )
 
