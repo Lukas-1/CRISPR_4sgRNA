@@ -106,10 +106,13 @@ GPP_CRISPRa_df <- FilterGPPOutputDf(GPP_CRISPRa_df, problematic_entrezs, n_unpro
 
 
 
+
 # Collect all unique HUGO gene symbols ------------------------------------
 
-are_Calabrese_controls   <- ((Calabrese_df[["Annotated Gene Symbol"]] == "CONTROL") & (Calabrese_df[["Annotated Gene ID"]] == "CONTROL")) |
-                            ((Calabrese_df[["Annotated Gene Symbol"]] == "NO-TARGET") & (Calabrese_df[["Annotated Gene ID"]] == "UNKNOWN_NO-TARGET"))
+are_Calabrese_controls   <- ((Calabrese_df[["Annotated Gene Symbol"]] == "CONTROL") &
+                             (Calabrese_df[["Annotated Gene ID"]] == "CONTROL")) |
+                            ((Calabrese_df[["Annotated Gene Symbol"]] == "NO-TARGET") &
+                             (Calabrese_df[["Annotated Gene ID"]] == "UNKNOWN_NO-TARGET"))
 
 are_hCRISPRa_v2_controls <- hCRISPRa_v2_df[["gene"]] == "negative_control"
 
@@ -124,6 +127,15 @@ unique_symbols_vec <- unique(c(hCRISPRa_v2_symbols_vec,
                              )
 
 
+
+# Count the number of genes in each library -------------------------------
+
+num_genes_in_library <- c(
+  "Calabrese"     = length(unique(Calabrese_df[["Annotated Gene ID"]][!(are_Calabrese_controls)])),
+  "hCRISPRa-v2"   = length(unique(hCRISPRa_v2_df[["gene"]][!(are_hCRISPRa_v2_controls)])),
+  "GPP"           = length(unique(GPP_CRISPRa_df[["Target Gene ID"]])),
+  "GPP_4_or_more" = sum(table(GPP_CRISPRa_df[["Target Gene ID"]]) >= 4)
+)
 
 
 
@@ -331,6 +343,10 @@ candidates_CRISPRa_df <- GetGenes(candidate_genes_vec, CRISPRa_df)
 
 save(list = c("CRISPRa_df", "candidates_CRISPRa_df"),
      file = file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")
+     )
+
+save(list = "num_genes_in_library",
+     file = file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - num_genes_in_library.RData")
      )
 
 

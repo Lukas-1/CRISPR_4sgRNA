@@ -31,7 +31,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-
+load(file.path(CRISPRko_RData_directory, "01) Compile predefined CRISPRko libraries - num_genes_in_library.RData"))
 
 
 
@@ -70,6 +70,16 @@ merged_CRISPRko_df[are_4sg & (merged_CRISPRko_df[["Entrez_ID"]] %in% no_deletion
 
 
 
+# Add the number of genes in the 4sg library ------------------------------
+
+num_genes_in_library <- c(
+  num_genes_in_library,
+  "4sg" = sum(sgRNAs_overview_df[["In_4sg_library"]] %in% "Yes")
+)
+
+
+
+
 # Write the summary data frame to disk ------------------------------------
 
 columns_for_excel <- c(
@@ -91,12 +101,10 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 
 
 
-
-
 # Save data ---------------------------------------------------------------
 
-save("sgRNAs_overview_df",
-     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
+save(list = c("sgRNAs_overview_df", "num_genes_in_library"),
+     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome.RData")
      )
 
 

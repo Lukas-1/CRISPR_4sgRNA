@@ -290,6 +290,18 @@ new_GPP_CRISPRko_df <- data.frame(
 
 
 
+# Count the number of genes in each library -------------------------------
+
+num_genes_in_library <- c(
+  "Brunello"      = length(unique(Brunello_df[["Target Gene ID"]])),
+  "TKOv3"         = length(unique(TKOv3_df[["GENE"]][!(are_TKOv3_controls)])),
+  "GPP"           = length(unique(GPP_CRISPRko_df[["Target Gene ID"]])),
+  "GPP_4_or_more" = sum(table(GPP_CRISPRko_df[["Target Gene ID"]]) >= 4)
+)
+
+
+
+
 # Build a combined data frame ---------------------------------------------
 
 combined_df <- rbind.data.frame(new_Brunello_df,
@@ -336,6 +348,11 @@ any(duplicated(CRISPRko_df[["sgRNA_sequence"]]))
 save(list = "CRISPRko_df",
      file = file.path(CRISPRko_RData_directory, "01) Compile predefined CRISPRko libraries.RData")
      )
+
+save(list = "num_genes_in_library",
+     file = file.path(CRISPRko_RData_directory, "01) Compile predefined CRISPRko libraries - num_genes_in_library.RData")
+     )
+
 
 
 

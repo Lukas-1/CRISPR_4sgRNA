@@ -108,12 +108,26 @@ GPP_CRISPRi_df <- FilterGPPOutputDf(GPP_CRISPRi_df, problematic_entrezs, n_unpro
 
 # Identify control sgRNAs -------------------------------------------------
 
-are_Dolcetto_controls <- ((Dolcetto_df[["Annotated Gene Symbol"]] == "CONTROL") & (Dolcetto_df[["Annotated Gene ID"]] == "CONTROL")) |
-                         ((Dolcetto_df[["Annotated Gene Symbol"]] == "NO-TARGET") & (Dolcetto_df[["Annotated Gene ID"]] == "UNKNOWN_NO-TARGET"))
+are_Dolcetto_controls <- ((Dolcetto_df[["Annotated Gene Symbol"]] == "CONTROL") &
+                          (Dolcetto_df[["Annotated Gene ID"]] == "CONTROL")) |
+                         ((Dolcetto_df[["Annotated Gene Symbol"]] == "NO-TARGET") &
+                          (Dolcetto_df[["Annotated Gene ID"]] == "UNKNOWN_NO-TARGET"))
 
 are_hCRISPRi_v2.0_controls <- hCRISPRi_v2.0_df[["gene"]] == "negative_control"
 
 
+
+
+
+
+# Count the number of genes in each library -------------------------------
+
+num_genes_in_library <- c(
+  "Dolcetto"      = length(unique(Dolcetto_df[["Annotated Gene ID"]][!(are_Dolcetto_controls)])),
+  "hCRISPRi-v2"   = length(unique(hCRISPRi_v2.1_df[["gene"]])),
+  "GPP"           = length(unique(GPP_CRISPRi_df[["Target Gene ID"]])),
+  "GPP_4_or_more" = sum(table(GPP_CRISPRi_df[["Target Gene ID"]]) >= 4)
+)
 
 
 
@@ -292,5 +306,7 @@ save("CRISPRi_df",
      file = file.path(CRISPRi_RData_directory, "01) Compile predefined CRISPRi libraries - CRISPRi_df.RData")
      )
 
-
+save(list = "num_genes_in_library",
+     file = file.path(CRISPRi_RData_directory, "01) Compile predefined CRISPRa libraries - num_genes_in_library.RData")
+     )
 
