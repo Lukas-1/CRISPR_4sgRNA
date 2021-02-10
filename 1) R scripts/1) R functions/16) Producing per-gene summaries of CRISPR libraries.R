@@ -212,6 +212,7 @@ SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
       results_list[["TSS_regions"]] <- NULL
     }
     if (include_transcripts) {
+      results_list[["Deletion_size"]] <- NULL
       transcripts_vec <- CRISPR_df[["TSS_ID"]][x]
       if (all(is.na(transcripts_vec))) {
         transcripts_vec <- CRISPR_df[["AltTSS_ID"]][x]
@@ -246,7 +247,6 @@ SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
         results_list[["Num_top4_outside_criteria"]] <- sum(are_top_4) - sum(CRISPR_df[["Meet_criteria"]][x[are_top_4]])
         results_list[["Num_top4_no_perfect_match"]] <- sum(CRISPR_df[["Num_0MM"]][x][are_top_4] == 0)
         if (include_transcripts) {
-          results_list[["Deletion_size"]] <- NULL
           guidescan_spec_vec <- vapply(transcripts_top4_indices,
                                        function(y) AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x][y]),
                                        numeric(1)
