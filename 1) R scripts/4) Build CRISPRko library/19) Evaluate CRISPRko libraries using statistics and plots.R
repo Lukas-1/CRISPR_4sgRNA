@@ -28,7 +28,7 @@ output_plots_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome.RData"))
 load(file.path(CRISPRko_RData_directory, "16) Find all genes targeted by each sgRNA - summary data.RData"))
 
 

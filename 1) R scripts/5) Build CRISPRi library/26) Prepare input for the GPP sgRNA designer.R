@@ -28,7 +28,7 @@ GPP_input_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate f
 
 load(file.path(general_RData_directory, "09) Divide the entire set of protein-coding genes into chunks - entrez_chunks_list.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
-load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome.RData"))
 load(file.path(CRISPRi_RData_directory, "20) Create a gene-based summary of the human genome - vacuolation_entrezs.RData"))
 
 
