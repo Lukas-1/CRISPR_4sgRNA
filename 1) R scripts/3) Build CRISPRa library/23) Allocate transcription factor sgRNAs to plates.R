@@ -260,5 +260,3 @@ save(list = "TF_sgRNA_plates_df",
 
 
 
-
-

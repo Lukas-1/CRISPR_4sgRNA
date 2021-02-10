@@ -68,7 +68,6 @@ nearby_main_protein_list <- AlignSummaryDf(FindNearbyTSSs,
 
 
 
-
 # Prepare for saving data frames ------------------------------------------
 
 TSS_targets_df              <- nearby_list[["summary_df"]]
