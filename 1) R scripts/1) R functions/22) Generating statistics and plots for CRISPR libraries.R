@@ -4,6 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
+library("rcartocolor")
 library("png")
 library("vioplot")
 library("eulerr")
@@ -2005,6 +2006,8 @@ PlotBars <- function(bars_mat,
                )
       if (all(bars_mat[1, ] < 1)) {
         tick_labels <- paste0(y_axis_pos * 100, "%")
+      } else {
+        tick_labels <- y_axis_pos
       }
       axis(side      = 2,
            at        = y_axis_pos,
@@ -2321,7 +2324,7 @@ BarPlot_Sources <- function(CRISPR_df,
   old_mar <- par(mar = c(4, 4, 6, 3) + 0.1)
 
   assign("delete_plot_df", plot_df, envir = globalenv())
-  assign("delete_spaces_vec", spaces_vec, envir = globalenv())
+  assign("delete_spaces_vec__2", spaces_vec, envir = globalenv())
   assign("delete_x_limits", x_limits, envir = globalenv())
   assign("delete_colors_df", colors_df, envir = globalenv())
 
@@ -2609,6 +2612,80 @@ SourcesBarPlots <- function(CRISPR_df) {
 
 
 
+PlotNumGenesInLibrary <- function() {
+  use_width <- pdf_width * 0.85
+  use_height <- pdf_height * 1.425
+  for (make_PDF in c(FALSE, TRUE)) {
+    if (make_PDF) {
+      PDF_file_name <- "Library coverage.pdf"
+      pdf(file = file.path(output_plots_directory, PDF_file_name),
+          width = use_width, height = use_height
+          )
+    }
+    NumGenesInLibrary()
+    if (make_PDF) {
+      dev.off()
+    }
+  }
+}
+
+
+
+NumGenesInLibrary <- function() {
+
+  stopifnot("num_genes_in_library" %in% ls(envir = globalenv()))
+
+  bars_mat <- t(num_genes_in_library[names(num_genes_in_library) != "GPP"])
+  colnames(bars_mat)[[which(colnames(bars_mat) == "GPP_4_or_more")]] <- "GPP"
+
+  colors_df <- SubgroupColorsDf()
+  are_selected_colors <- !(colors_df[["Lightened"]]) &
+                         (colors_df[["Color_name"]] %in% c("Blue", "Green", "Red", "Purple"))
+  colors_df <- colors_df[are_selected_colors, ]
+
+  spaces_vec <- rep(1.3, 4)
+
+  old_mar <- par(mar = c(4, 4, 6, 3) + 0.1)
+
+  bar_results <- PlotBars(bars_mat,
+                          spaces_vec = spaces_vec,
+                          x_limits = BarPlotXlimits(spaces_vec, side_space = 1.3),
+                          colors_df = colors_df,
+                          use_y_limits = c(0, 20000)
+                          )
+  title("Number of genes in the library", cex.main = 1, line = 3.625)
+
+  plot_height <- par("usr")[[4]] - par("usr")[[3]]
+
+  text(x      = bar_results[["bar_positions"]],
+       y      = par("usr")[[4]] + (plot_height * 0.06),
+       labels = bars_mat[1, ],
+       adj    = c(0.5, 1),
+       cex    = 0.7,
+       col    = "gray40",
+       font   = 2,
+       xpd    = NA
+       )
+
+  text(x      = bar_results[["bar_positions"]],
+       y      = par("usr")[[3]] - (plot_height * 0.06),
+       labels = AdjustTextVec(colnames(bars_mat)),
+       adj    = c(0.5, 0.5),
+       cex    = 0.8,
+       col    = colors_df[["Dark"]],
+       font   = 2,
+       xpd    = NA
+       )
+
+  par(old_mar)
+
+  return(invisible(NULL))
+}
+
+
+
+
+
 
 
 
@@ -2801,7 +2878,7 @@ Plot4sgData <- function(overview_df, CRISPR_df) {
           width = pdf_width, height = pdf_height * 1.3
           )
     }
-    par("oma" = c(0, 1, 0.5, 1))
+    par(oma = c(0, 1, 0.5, 1))
     SharedSubsequencesBarplot(CRISPR_df)
     if ("Deletion_size" %in% names(overview_df)) {
       DrawDeletionHistogram(overview_df)
@@ -3244,6 +3321,454 @@ MakeScatterPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
     }
   }
 }
+
+
+
+
+
+# Functions for producing hybrid bar plots/doughnut plots -----------------
+
+doughnut <- function (x,
+                      labels = names(x),
+                      edges = 200,
+                      outer.radius = 0.8,
+                      inner.radius = 0.6,
+                      clockwise = FALSE,
+                      init.angle = if (clockwise) 90 else 0,
+                      density = NULL,
+                      angle = 45,
+                      col = NULL,
+                      border = FALSE,
+                      lty = NULL,
+                      main = NULL,
+                      radius_factor = 1,
+                      x_origin = 0,
+                      y_origin = 0,
+                      add = TRUE,
+                      ...
+                      ) {
+  # Adapted from https://www.r-graph-gallery.com/130-ring-or-donut-chart.html
+    if (!is.numeric(x) || any(is.na(x) | x < 0))
+        stop("'x' values must be positive.")
+    if (is.null(labels))
+        labels <- as.character(seq_along(x))
+    else labels <- as.graphicsAnnot(labels)
+    x <- c(0, cumsum(x)/sum(x))
+    dx <- diff(x)
+    nx <- length(dx)
+    if (!(add)) {
+      plot.new()
+      pin <- par("pin")
+      xlim <- ylim <- c(-1, 1)
+      if (pin[1L] > pin[2L])
+        xlim <- (pin[1L]/pin[2L]) * xlim
+      else ylim <- (pin[2L]/pin[1L]) * ylim
+      plot.window(xlim, ylim, "", asp = 1)
+    }
+
+    if (is.null(col))
+        col <- if (is.null(density))
+          palette()
+        else par("fg")
+    col <- rep(col, length.out = nx)
+    border <- rep(border, length.out = nx)
+    if (!(is.null(lty))) {
+      lty <- rep(lty, length.out = nx)
+    }
+    angle <- rep(angle, length.out = nx)
+    if (!(is.null(density))) {
+      density <- rep(density, length.out = nx)
+    }
+    twopi <- if (clockwise)
+        -2 * pi
+    else 2 * pi
+    t2xy <- function(t, radius) {
+        t2p <- twopi * t + init.angle * pi/180
+        list(x = radius * cos(t2p),
+             y = radius * sin(t2p))
+    }
+    for (i in seq_len(nx)) {
+        n <- max(2, floor(edges * dx[i]))
+        P <- t2xy(seq.int(x[i], x[i + 1], length.out = n),
+                  outer.radius * radius_factor)
+        polygon(c(P$x, 0) + x_origin, c(P$y, 0) + y_origin, density = density[i],
+                angle = angle[i], border = border[i],
+                col = col[i], lty = lty[i])
+        Pout <- t2xy(mean(x[i + 0:1]), outer.radius * radius_factor)
+        lab <- as.character(labels[i])
+        if (!is.na(lab) && nzchar(lab)) {
+            lines(c(1, 1.05) * Pout$x + x_origin, c(1, 1.05) * Pout$y + y_origin)
+            text(1.1 * Pout$x + x_origin, 1.1 * Pout$y + y_origin, labels[i],
+                 xpd = TRUE, adj = ifelse(Pout$x < 0, 1, 0),
+                 ...)
+        }
+        ## Add white disc
+        Pin <- t2xy(seq.int(0, 1, length.out = n*nx),
+                  inner.radius * radius_factor)
+        polygon(Pin$x + x_origin, Pin$y + y_origin, density = density[i],
+                angle = angle[i], border = border[i],
+                col = "white", lty = lty[i])
+    }
+
+    title(main = main, ...)
+    invisible(NULL)
+}
+
+
+
+
+
+DonutBars <- function(use_factor      = NULL,
+                      use_colors,
+                      space           = 0.5,
+                      use_title       = NULL,
+                      donut_radius    = 0.15,
+                      donut_label     = "",
+                      donut_text_size = 0.5,
+                      donut_x_mid     = 0.8,
+                      donut_y_mid     = 0.2,
+                      counts_vec      = NULL,
+                      use_labels      = NULL
+                      ) {
+
+  if (is.null(counts_vec)) {
+    stopifnot(length(use_colors) == nlevels(use_factor))
+    counts_vec <- tabulate(use_factor)
+    if (is.null(use_labels)) {
+      use_labels <- levels(use_factor)
+    }
+  } else {
+    if (is.null(use_labels)) {
+      use_labels <- names(counts_vec)
+    }
+  }
+
+  num_bars <- length(counts_vec)
+
+  num_units <- num_bars + ((num_bars + 1) * space)
+
+  unit_width <- 1 / num_units
+  start_y <- (unit_width * space)
+
+  bar_mid_positions <- cumsum(rep(unit_width, num_bars)) +
+    cumsum(rep(unit_width * space, num_bars)) -
+    (unit_width / 2)
+  bar_mid_positions <- rev(bar_mid_positions)
+
+  bar_lengths <- counts_vec / max(counts_vec)
+
+  old_par <- par(mai = c(0, 1.9, 0.1, 0.2),
+                 omi = c(0, 0, 0.45, 0)
+                 )
+
+  MakeEmptyPlot()
+
+  par("lheight" = 1.15)
+
+  if (!(is.null(use_title))) {
+    title(use_title, outer = TRUE, cex.main = par("cex") * 0.8, line = 0)
+  }
+
+  for (i in seq_len(num_bars)) {
+    rect(xleft     = 0,
+         xright    = bar_lengths[[i]],
+         ybottom   = bar_mid_positions[[i]] - (unit_width / 2),
+         ytop      = bar_mid_positions[[i]] + (unit_width / 2),
+         border    = use_colors[[i]],
+         col       = use_colors[[i]],
+         lwd       = 0.5
+         )
+  }
+
+
+  are_too_small <- bar_lengths < (par("usr")[[2]] / 10)
+  x_range <- par("usr")[[2]] - par("usr")[[1]]
+
+  text(y      = bar_mid_positions[are_too_small],
+       x      = bar_lengths[are_too_small] + (x_range * 0.02),
+       xpd    = NA,
+       labels = counts_vec[are_too_small],
+       adj    = c(0, 0.5),
+       cex    = 0.7,
+       font   = 2,
+       col    = "gray52"
+       )
+
+  assign("delete_use_colors", use_colors, envir = globalenv())
+  text(y      = bar_mid_positions[!(are_too_small)],
+       x      = bar_lengths[!(are_too_small)] / 2,
+       xpd    = NA,
+       labels = counts_vec[!(are_too_small)],
+       adj    = 0.5,
+       cex    = 0.7,
+       font   = 2,
+       col    = ifelse((colMeans(col2rgb(use_colors[!(are_too_small)])) / 255) < 0.5,
+                       "gray92",
+                       "gray48"
+                       )
+       )
+
+  text(y      = bar_mid_positions,
+       x      = par("usr")[[1]] - ((par("usr")[[2]] - par("usr")[[1]]) * 0.01),
+       xpd    = NA,
+       labels = use_labels,
+       adj    = c(1, 0.5),
+       cex    = 0.9
+       )
+
+  doughnut(rev(counts_vec), labels = NA, col = rev(use_colors), add = TRUE,
+           x_origin = donut_x_mid, y_origin = donut_y_mid,
+           radius_factor  = donut_radius, inner.radius = 0.4
+           )
+
+  text(x      = donut_x_mid,
+       y      = donut_y_mid,
+       labels = donut_label,
+       font   = 2,
+       cex    = donut_text_size
+       )
+
+  par(old_par)
+  return(invisible(NULL))
+}
+
+
+
+
+ReverseList <- function(my_list) {
+  my_entries <- unlist(my_list)
+  my_names <- rep(names(my_list), times = lengths(my_list, use.names = FALSE))
+  names(my_names) <- my_entries
+  return(my_names)
+}
+
+
+DeletionsDonutBar <- function(deletions_summary_df, use_title = NULL) {
+  CategoriesDonutBar(as.character(deletions_summary_df[, "Gene_targets_summary"]), use_title)
+}
+
+SummaryDonutBar <- function(CRISPR_df, targets_df, use_title = NULL) {
+  categories_vec <- Summarize4sgTargets(CRISPR_df, targets_df)
+  CategoriesDonutBar(categories_vec, use_title = use_title)
+}
+
+
+TSSDonutBar <- function(CRISPR_df) {
+
+  num_TSS_labels <- c("Only 1 TSS targeted",
+                    paste0(seq_len(20 - 1) + 1,
+                           " TSSs targeted"
+                           )
+                    )
+
+  are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list)
+  num_TSS_vec <- tapply(CRISPR_df[["AltTSS_ID"]][are_4sg],
+                        CRISPR_df[["Combined_ID"]][are_4sg],
+                        function(x) length(unique(x))
+                        )
+  num_TSS_fac <- factor(num_TSS_vec)
+  levels(num_TSS_fac) <- num_TSS_labels[seq_len(nlevels(num_TSS_fac))]
+
+  stopifnot(nlevels(num_TSS_fac) <= 6)
+  num_TSS_colors <- carto_pal(6, "Emrld")
+
+  DonutBars(num_TSS_fac, num_TSS_colors,
+            donut_label = "4sg", donut_text_size = 0.8,
+            donut_radius = 0.26, donut_x_mid = 0.72, donut_y_mid = 0.28,
+            use_title = "Number of TSSs targeted for each gene in the 4sg library"
+            )
+}
+
+
+
+
+CategoriesDonutBar <- function(character_vec, use_title = NULL) {
+
+  categories_map_list <- list(
+    "Affect only the\nintended gene"             = "Only intended",
+    "Affect unintended genes\nin the same locus" = c("Intended and unintended (in the same locus)",
+                                                     "Intended and unintended (in the same loci)"
+                                                     ),
+    "Affect unintended genes\nat other loci"     = "Intended and unintended (in other loci)",
+    "Unknown (no location\ndata for this gene)"  = "No location data for the intended gene",
+    "Do not seem to affect\nthe intended gene"   = c("Only unintended (in the same locus)",
+                                                     "Only unintended (in the same loci)",
+                                                     "Only unintended (multiple loci)",
+                                                     "No targets (single locus)",
+                                                     "No targets (multiple loci)",
+                                                     "No hits in the reference genome"
+                                                     )
+  )
+  new_categories_map <- ReverseList(categories_map_list)
+
+  stopifnot(all(character_vec %in% names(new_categories_map)))
+  category_fac <- factor(new_categories_map[character_vec],
+                         levels = names(categories_map_list)
+                         )
+  category_colors <- carto_pal(12, "Safe")[c(4, 5, 2, 11, 10)]
+
+  DonutBars(category_fac,
+            category_colors,
+            use_title = use_title,
+            donut_label = "4sg",
+            donut_radius = 0.26, donut_x_mid = 0.72, donut_y_mid = 0.28,
+            donut_text_size = 0.8
+            )
+}
+
+
+
+
+Summarize4sgTargets <- function(CRISPR_df, targets_df) {
+
+  stopifnot(nrow(CRISPR_df) == nrow(targets_df))
+
+  are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list)
+
+  if ("AltTSS_ID" %in% names(CRISPR_df)) {
+    ID_column <- "AltTSS_ID"
+  } else {
+    ID_column <- "Entrez_ID"
+  }
+
+  summary_splits <- split(as.character(targets_df[["Gene_targets_summary"]][are_4sg]),
+                          CRISPR_df[[ID_column]][are_4sg]
+                          )
+
+  only_unintended_categories <- c("Only unintended (in the same locus)",
+                                  "Only unintended (in the same loci)",
+                                  "Only unintended (multiple loci)"
+                                  )
+  intended_categories <- c("Only intended",
+                           "Intended and unintended (in other loci)",
+                           "Intended and unintended (in the same loci)",
+                           "Intended and unintended (in the same locus)"
+                           )
+  are_divergent <- vapply(summary_splits,
+                          function(x) {
+                            (any(only_unintended_categories %in% x) &&
+                               any(intended_categories %in% x)
+                            )
+                          },
+                          logical(1)
+                          )
+
+  target_other_loci <- vapply(summary_splits,
+                              function(x) {
+                                any(c("Only unintended (multiple loci)", "Intended and unintended (in other loci)") %in% x)
+                              },
+                              logical(1)
+                              )
+
+  summary_splits[are_divergent & !(target_other_loci)] <- list("Intended and unintended (in the same loci)")
+  summary_splits[are_divergent & target_other_loci] <- list("Intended and unintended (in other loci)")
+
+  category_order <- c(
+    "Intended and unintended (in other loci)",
+    "Intended and unintended (in the same locus)",
+    "Intended and unintended (in the same loci)",
+    "Only unintended (in the same locus)",
+    "Only unintended (in the same loci)",
+    "Only unintended (multiple loci)",
+    "Only intended",
+    "No targets (multiple loci)",
+    "No targets (single locus)",
+    "No location data for the intended gene",
+    "No hits in the reference genome"
+  )
+  stopifnot(identical(sort(category_order), sort(levels(targets_df[["Gene_targets_summary"]]))))
+
+  summary_vec <- vapply(summary_splits,
+                        function(x) {
+                          x[[which.min(match(x, category_order))]]
+                        },
+                        ""
+                        )
+  return(summary_vec)
+}
+
+
+
+
+CompareTSSDonutBars <- function(CRISPR_df) {
+
+  stopifnot("num_TSSs_hCRISPR" %in% ls(envir = globalenv()))
+
+  TSSDonutBar(CRISPR_df)
+
+  num_TSS_labels <- c("Only 1 TSS targeted",
+                    paste0(seq_len(20 - 1) + 1,
+                           " TSSs targeted"
+                           )
+                    )
+
+  library_name <- names(dimnames(num_TSSs_hCRISPR))
+
+  DonutBars(counts_vec    = num_TSSs_hCRISPR,
+            use_labels      = num_TSS_labels[seq_along(num_TSSs_hCRISPR)],
+            use_colors      = carto_pal(6, "Emrld")[seq_along(num_TSSs_hCRISPR)],
+            donut_label     = library_name,
+            donut_text_size = 0.5,
+            donut_radius    = 0.26,
+            donut_x_mid     = 0.72,
+            donut_y_mid     = 0.28,
+            use_title       = paste0("Number of TSSs targeted for each gene in the ",
+                                     library_name, " library"
+                                     )
+            )
+}
+
+
+
+DrawAllDonutBars <- function(CRISPR_df = NULL) {
+
+  for (use_PDF in c(FALSE, TRUE)) {
+
+    if (use_PDF) {
+      PDF_file_name <- "Doughnut charts.pdf"
+      pdf(file = file.path(output_plots_directory, PDF_file_name),
+          width = 6, height = 4.45
+          )
+    }
+
+    if ("num_TSSs_hCRISPR" %in% ls(envir = globalenv())) {
+
+      SummaryDonutBar(CRISPR_df,
+                      TSS_targets_df,
+                      use_title = "Genes (including non-coding RNAs) affected by each 4-guide combination"
+                      )
+      SummaryDonutBar(CRISPR_df,
+                      TSS_protein_targets_df,
+                      use_title = "Protein-coding genes affected by each 4-guide combination"
+                      )
+      SummaryDonutBar(CRISPR_df,
+                      main_TSS_targets_df,
+                      use_title = "Genes (main TSS only) affected by each 4-guide combination"
+                      )
+      SummaryDonutBar(CRISPR_df,
+                      main_TSS_protein_targets_df,
+                      use_title = "Protein-coding genes (main TSS only) affected by each 4-guide combination"
+                      )
+
+      CompareTSSDonutBars(CRISPR_df)
+
+    } else {
+
+      DeletionsDonutBar(deletions_CDS_df,
+                        use_title = "Genes (including non-coding RNAs) affected by each 4-guide combination"
+                        )
+      DeletionsDonutBar(deletions_CDS_protein_df,
+                        use_title = "Protein-coding genes affected by each 4-guide combination"
+                        )
+
+    }
+
+    if (use_PDF) {
+      dev.off()
+    }
+  }
+}
+
 
 
 
