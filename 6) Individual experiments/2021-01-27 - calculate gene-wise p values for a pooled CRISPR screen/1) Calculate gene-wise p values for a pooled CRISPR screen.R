@@ -520,7 +520,7 @@ PlotPValueHistograms <- function(use_list,
 
 # Perform calculations ----------------------------------------------------
 
-num_simulations <- 20L
+num_simulations <- 100L
 
 by_transcript_list <- lapply(df_list,
                              function(x) CompleteAnalysis(x,
