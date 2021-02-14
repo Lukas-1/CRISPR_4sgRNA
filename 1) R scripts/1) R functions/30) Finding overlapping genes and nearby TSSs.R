@@ -1121,8 +1121,15 @@ SummarizeSummaryDf <- function(summary_df) {
                                                     (summary_df[["Total_loci"]] == 1) &
                                                     (summary_df[["Num_affected_genes"]] == 0),
 
-    "Only unintended (single locus)"              = summary_df[["Entrez_ID_available"]] &
+    "Only unintended (in the same locus)"         = summary_df[["Entrez_ID_available"]] &
                                                     (summary_df[["Total_loci"]] == 1) &
+                                                    (summary_df[["Distinct_loci"]] == 1) &
+                                                    (summary_df[["Num_affected_genes"]] >= 1) &
+                                                    (summary_df[["Loci_targeting_intended_gene"]] == 0),
+
+    "Only unintended (in the same loci)"          = summary_df[["Entrez_ID_available"]] &
+                                                    (summary_df[["Total_loci"]] >= 2) &
+                                                    (summary_df[["Distinct_loci"]] == 1) &
                                                     (summary_df[["Num_affected_genes"]] >= 1) &
                                                     (summary_df[["Loci_targeting_intended_gene"]] == 0),
 
@@ -1131,8 +1138,7 @@ SummarizeSummaryDf <- function(summary_df) {
                                                     (summary_df[["Num_affected_genes"]] == 0),
 
     "Only unintended (multiple loci)"             = summary_df[["Entrez_ID_available"]] &
-                                                    (summary_df[["Total_loci"]] >= 2) &
-                                                    (summary_df[["Num_affected_genes"]] >= 1) &
+                                                    (summary_df[["Distinct_loci"]] >= 2) &
                                                     (summary_df[["Loci_targeting_intended_gene"]] == 0)
   )
 
