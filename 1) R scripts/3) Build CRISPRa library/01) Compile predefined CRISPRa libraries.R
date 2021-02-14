@@ -138,6 +138,13 @@ num_genes_in_library <- c(
 )
 
 
+hCRISPR_num_TSS_vec <- tapply(paste0(hCRISPRa_v2_df[["gene"]], "__", hCRISPRa_v2_df[["transcript"]])[!(are_hCRISPRa_v2_controls)],
+                              hCRISPRa_v2_df[["gene"]][!(are_hCRISPRa_v2_controls)],
+                              function(x) length(unique(x))
+                              )
+num_TSSs_hCRISPR <- table(hCRISPR_num_TSS_vec, dnn = "hCRISPRa-v2")
+
+
 
 # Check for discrepancies in the Entrez IDs -------------------------------
 
@@ -345,7 +352,7 @@ save(list = c("CRISPRa_df", "candidates_CRISPRa_df"),
      file = file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - CRISPRa_df.RData")
      )
 
-save(list = "num_genes_in_library",
+save(list = c("num_genes_in_library", "num_TSSs_hCRISPR"),
      file = file.path(CRISPRa_RData_directory, "01) Compile predefined CRISPRa libraries - num_genes_in_library.RData")
      )
 

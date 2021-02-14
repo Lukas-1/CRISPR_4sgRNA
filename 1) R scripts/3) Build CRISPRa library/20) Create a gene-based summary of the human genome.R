@@ -135,7 +135,7 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sgRNAs_overview_df", "num_genes_in_library"),
+save(list = c("sgRNAs_overview_df", "num_genes_in_library", "num_TSSs_hCRISPR"),
      file = file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome.RData")
      )
 

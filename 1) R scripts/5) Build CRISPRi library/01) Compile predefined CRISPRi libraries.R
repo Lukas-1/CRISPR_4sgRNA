@@ -129,6 +129,13 @@ num_genes_in_library <- c(
   "GPP_4_or_more" = sum(table(GPP_CRISPRi_df[["Target Gene ID"]]) >= 4)
 )
 
+hCRISPR_num_TSS_vec <- tapply(paste0(hCRISPRi_v2.1_df[["gene"]], "__", hCRISPRi_v2.1_df[["transcript"]]),
+                              hCRISPRi_v2.1_df[["gene"]],
+                              function(x) length(unique(x))
+                              )
+num_TSSs_hCRISPR <- table(hCRISPR_num_TSS_vec, dnn = "hCRISPRi-v2.1")
+
+
 
 
 
@@ -276,6 +283,7 @@ CRISPRi_df <- ResolveDuplicates(combined_df, concatenate_columns = c("Sublibrary
 
 
 
+
 # Search for duplicated sgRNAs within the same gene -----------------------
 
 sgID_vec <- paste0(CRISPRi_df[["Combined_ID"]], "__", toupper(CRISPRi_df[["sgRNA_sequence"]]))
@@ -283,6 +291,7 @@ num_occurrences <- table(sgID_vec)[sgID_vec]
 have_duplications_sgRNA_list <- split(CRISPRi_df[num_occurrences > 1, ],
                                       factor(sgID_vec[num_occurrences > 1], levels = unique(sgID_vec[num_occurrences > 1]))
                                       )
+
 
 
 
@@ -306,7 +315,7 @@ save("CRISPRi_df",
      file = file.path(CRISPRi_RData_directory, "01) Compile predefined CRISPRi libraries - CRISPRi_df.RData")
      )
 
-save(list = "num_genes_in_library",
+save(list = c("num_genes_in_library", "num_TSSs_hCRISPR"),
      file = file.path(CRISPRi_RData_directory, "01) Compile predefined CRISPRa libraries - num_genes_in_library.RData")
      )
 
