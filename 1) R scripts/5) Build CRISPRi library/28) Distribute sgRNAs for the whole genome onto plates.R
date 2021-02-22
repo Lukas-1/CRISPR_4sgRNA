@@ -54,34 +54,34 @@ merged_replaced_CRISPRi_df <- AddMainTSS(merged_replaced_CRISPRi_df)
 
 # Assign all guides to plates ---------------------------------------------
 
-sg4_df <- AllocateAllGuidesToPlates(merged_replaced_CRISPRi_df,
-                                    sublibraries_entrezs_list = sublibraries_all_entrezs_list,
-                                    num_control_wells = 96,
-                                    reorder_df = FALSE
-                                    )
-sg4_df[["Old_order"]] <- seq_len(nrow(sg4_df))
+sg4_by_gene_df <- AllocateAllGuidesToPlates(merged_replaced_CRISPRi_df,
+                                            sublibraries_entrezs_list = sublibraries_all_entrezs_list,
+                                            num_control_wells = 96,
+                                            reorder_df = FALSE
+                                            )
+sg4_by_gene_df[["Old_order"]] <- seq_len(nrow(sg4_by_gene_df))
 
-sg4_reordered_df <- ReorderPlates(sg4_df)
-sg4_reordered_df <- RenumberPlatesContinuously(sg4_reordered_df)
-sg4_reordered_df <- AssignPlateStrings(sg4_reordered_df)
+sg4_by_well_df <- ReorderPlates(sg4_by_gene_df)
+sg4_by_well_df <- RenumberPlatesContinuously(sg4_by_well_df)
+sg4_by_well_df <- AssignPlateStrings(sg4_by_well_df)
 
-sg4_df <- sg4_reordered_df[order(sg4_reordered_df[["Old_order"]]), ]
+sg4_by_gene_df <- sg4_by_well_df[order(sg4_by_well_df[["Old_order"]]), ]
 
-sg4_df <- sg4_df[, colnames(sg4_df) != "Old_order"]
-sg4_reordered_df <- sg4_reordered_df[, colnames(sg4_reordered_df) != "Old_order"]
+sg4_by_gene_df <- sg4_by_gene_df[, names(sg4_by_gene_df) != "Old_order"]
+sg4_by_well_df <- sg4_by_well_df[, names(sg4_by_well_df) != "Old_order"]
 
 
 
 
 # Examine the sub-library allocation --------------------------------------
 
-are_selected <- (sg4_df[["Is_control"]] == "No") &
-                 !(duplicated(sg4_df[["Combined_ID"]]))
+are_selected <- (sg4_by_gene_df[["Is_control"]] == "No") &
+                 !(duplicated(sg4_by_gene_df[["Combined_ID"]]))
 
-table(sg4_df[["Sublibrary_4sg"]][are_selected])
+table(sg4_by_gene_df[["Sublibrary_4sg"]][are_selected])
 
-are_selected_TSSs <- (sg4_df[["Is_control"]] == "No") &
-                     !(duplicated(sg4_df[["AltTSS_ID"]]))
+are_selected_TSSs <- (sg4_by_gene_df[["Is_control"]] == "No") &
+                     !(duplicated(sg4_by_gene_df[["AltTSS_ID"]]))
 
 sum(are_selected_TSSs) # Number of TSSs targeted by the library
 
@@ -101,14 +101,14 @@ vacuolation_CRISPRi_df <- merged_replaced_CRISPRi_df[are_vacuolation, ]
 
 # Add the control guides to vacuolation plate 2 ---------------------------
 
-vac_4sg_df <- AllocateAllGuidesToPlates(vacuolation_CRISPRi_df,
-                                        list("Vacuolation" = vacuolation_entrezs),
-                                        num_control_wells = 10,
-                                        reorder_df = FALSE
-                                        )
+vac_by_gene_df <- AllocateAllGuidesToPlates(vacuolation_CRISPRi_df,
+                                            list("Vacuolation" = vacuolation_entrezs),
+                                            num_control_wells = 10,
+                                            reorder_df = FALSE
+                                            )
 
 
-vac_4sg_df[(vac_4sg_df[["Rank"]] %in% 1) & (vac_4sg_df[["Is_control"]] %in% "Yes"), ]
+vac_by_gene_df[(vac_by_gene_df[["Rank"]] %in% 1) & (vac_by_gene_df[["Is_control"]] %in% "Yes"), ]
 
 
 
@@ -116,8 +116,8 @@ vac_4sg_df[(vac_4sg_df[["Rank"]] %in% 1) & (vac_4sg_df[["Is_control"]] %in% "Yes
 
 # Re-order the data frame according to the plate layout -------------------
 
-vac_4sg_df[["Old_order"]] <- seq_len(nrow(vac_4sg_df))
-vac_4sg_reordered_df <- ReorderPlates(vac_4sg_df)
+vac_by_gene_df[["Old_order"]] <- seq_len(nrow(vac_by_gene_df))
+vac_by_well_df <- ReorderPlates(vac_by_gene_df)
 
 
 
@@ -125,41 +125,62 @@ vac_4sg_reordered_df <- ReorderPlates(vac_4sg_df)
 
 # Move the control guides to vacuolation plate 2 --------------------------
 
-are_controls <- vac_4sg_reordered_df[["Is_control"]] == "Yes"
-max_well_plate_2 <- max(vac_4sg_reordered_df[["Well_number"]][(vac_4sg_reordered_df[["Plate_number"]] == 2) & !(are_controls)])
+are_controls <- vac_by_well_df[["Is_control"]] == "Yes"
+max_well_plate_2 <- max(vac_by_well_df[["Well_number"]][(vac_by_well_df[["Plate_number"]] == 2) & !(are_controls)])
 control_wells_seq <- rep(seq(from = max_well_plate_2 + 1L,
                              to = max_well_plate_2 + sum(are_controls) / 4,
                              ),
                          each = 4
                          )
-vac_4sg_reordered_df[["Well_number"]][are_controls] <- control_wells_seq
-vac_4sg_reordered_df[["Plate_number"]][are_controls] <- 2L
-vac_4sg_reordered_df <- AssignPlateStrings(vac_4sg_reordered_df, use_prefix = "vac")
+vac_by_well_df[["Well_number"]][are_controls] <- control_wells_seq
+vac_by_well_df[["Plate_number"]][are_controls] <- 2L
+vac_by_well_df <- AssignPlateStrings(vac_by_well_df, use_prefix = "vac")
 
 
 
 
 # Restore the original plate order ----------------------------------------
 
-vac_4sg_df <- vac_4sg_reordered_df[order(vac_4sg_reordered_df[["Old_order"]]), ]
-row.names(vac_4sg_df) <- NULL
-vac_4sg_reordered_df <- vac_4sg_reordered_df[, colnames(vac_4sg_reordered_df) != "Old_order"]
-vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Old_order"]
+vac_by_gene_df <- vac_by_well_df[order(vac_by_well_df[["Old_order"]]), ]
+row.names(vac_by_gene_df) <- NULL
+vac_by_well_df <- vac_by_well_df[, names(vac_by_well_df) != "Old_order"]
+vac_by_gene_df <- vac_by_gene_df[, names(vac_by_gene_df) != "Old_order"]
 
+
+
+
+
+# Export all shared / duplicated sgRNAs -----------------------------------
+
+shared_sgRNAs_df <- SharedsgRNAsDf(sg4_by_gene_df)
+
+use_sub_folder <- "Plate layout - all genes"
+
+ExportSharedDf(shared_sgRNAs_df,
+               file.path(use_sub_folder,
+                         "Duplicated CRISPRi sgRNAs (shared between genes)"
+                         )
+               )
 
 
 
 
 # Export the vacuolation plate layouts ------------------------------------
 
-vac_4sg_df <- vac_4sg_df[, colnames(vac_4sg_df) != "Sublibrary_4sg"]
-vac_4sg_reordered_df <- vac_4sg_reordered_df[, colnames(vac_4sg_reordered_df) != "Sublibrary_4sg"]
+vac_by_gene_df <- vac_by_gene_df[, names(vac_by_gene_df) != "Sublibrary_4sg"]
+vac_by_well_df <- vac_by_well_df[, names(vac_by_well_df) != "Sublibrary_4sg"]
 
-ExportPlates(vac_4sg_df, "Vacuolation_4sg_ordered_by_gene", sub_folder = "Plate layout - vacuolation")
-ExportPlates(vac_4sg_reordered_df, "Vacuolation_4sg_ordered_by_well", sub_folder = "Plate layout - vacuolation")
+ExportPlates(vac_by_gene_df,
+             "Vacuolation_4sg_ordered_by_gene",
+             sub_folder = "Plate layout - vacuolation"
+             )
+ExportPlates(vac_by_well_df,
+             "Vacuolation_4sg_ordered_by_well",
+             sub_folder = "Plate layout - vacuolation"
+             )
 
 for (i in 1:4) {
-  use_df <- vac_4sg_reordered_df[vac_4sg_reordered_df[["Rank"]] %in% i, ]
+  use_df <- vac_by_well_df[vac_by_well_df[["Rank"]] %in% i, ]
   ExportPlates(use_df,
                paste0("Vacuolation_4sg_ordered_by_well_sg", i),
                sub_folder = "Plate layout - vacuolation",
@@ -171,13 +192,20 @@ for (i in 1:4) {
 
 # Export the whole-genome plate layouts -----------------------------------
 
-use_sub_folder <- "Plate layout - all genes"
+ExportPlates(sg4_by_gene_df,
+             "All_sublibraries_ordered_by_gene",
+             use_sub_folder,
+             add_primers = FALSE
+             )
+ExportPlates(sg4_by_well_df,
+             "All_sublibraries_ordered_by_well",
+             use_sub_folder,
+             add_primers = FALSE
+             )
 
-ExportPlates(sg4_df, "All_sublibraries_ordered_by_gene", sub_folder = use_sub_folder)
-ExportPlates(sg4_reordered_df, "All_sublibraries_ordered_by_well", sub_folder = use_sub_folder)
 
 for (i in 1:4) {
-  use_df <- sg4_reordered_df[sg4_reordered_df[["Rank"]] %in% i, ]
+  use_df <- sg4_by_well_df[sg4_by_well_df[["Rank"]] %in% i, ]
   ExportPlates(use_df,
                paste0("4sg_ordered_by_well_sg", i),
                sub_folder = use_sub_folder,
@@ -190,8 +218,9 @@ for (i in 1:4) {
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sg4_reordered_df", "sg4_df",
-              "vac_4sg_df", "vac_4sg_reordered_df"
+save(list = c("sg4_by_well_df", "sg4_by_gene_df",
+              "vac_by_well_df", "vac_by_gene_df",
+              "shared_sgRNAs_df"
               ),
      file = file.path(CRISPRi_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData")
      )

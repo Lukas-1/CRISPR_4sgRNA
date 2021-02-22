@@ -93,6 +93,9 @@ are_selected <- (sg4_allTFs_df[["Is_control"]] == "No") &
 table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected])
 
 
+table(full_4sg_by_well_df[["Is_control"]]) / 4 # Number of controls
+
+
 
 
 
@@ -119,11 +122,31 @@ PD_4sg_reordered_df[["Sublibrary_4sg"]] <- NULL
 
 
 
+# Export all shared / duplicated sgRNAs -----------------------------------
+
+shared_sgRNAs_df <- SharedsgRNAsDf(full_4sg_by_gene_df)
+
+ExportSharedDf(shared_sgRNAs_df,
+               file.path("4sg plate layout (complete)",
+                         "Duplicated CRISPRko sgRNAs (shared between genes)"
+                         )
+               )
+
+
+
+
 # Export the plate layouts for the complete 4sg library -------------------
 
-ExportPlates(full_4sg_by_gene_df, "All_sublibraries_ordered_by_gene", "4sg plate layout (complete)")
-ExportPlates(full_4sg_by_well_df, "All_sublibraries_ordered_by_well", "4sg plate layout (complete)")
-
+ExportPlates(full_4sg_by_gene_df,
+             "All_sublibraries_ordered_by_gene",
+             "4sg plate layout (complete)",
+             add_primers = FALSE
+             )
+ExportPlates(full_4sg_by_well_df,
+             "All_sublibraries_ordered_by_well",
+             "4sg plate layout (complete)",
+             add_primers = FALSE
+             )
 
 
 
@@ -163,7 +186,8 @@ for (i in 1:4) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("full_4sg_by_gene_df", "full_4sg_by_well_df",
-              "sg4_by_gene_df", "sg4_by_well_df"
+              "sg4_by_gene_df", "sg4_by_well_df",
+              "shared_sgRNAs_df"
               ),
      file = file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData")
      )

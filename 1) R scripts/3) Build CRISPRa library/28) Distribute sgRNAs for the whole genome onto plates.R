@@ -89,17 +89,19 @@ sg4_allTFs_df <- AllocateAllGuidesToPlates(merged_replaced_CRISPRa_df,
                                            num_control_wells = 96
                                            )
 
+are_unique_gene <- !(duplicated(sg4_allTFs_df[["Combined_ID"]]))
+table(sg4_allTFs_df[["Sublibrary_4sg"]][are_unique_gene], useNA = "ifany")
+
 are_controls <- sg4_allTFs_df[["Is_control"]] == "Yes"
-
-are_selected <- are_controls & !(duplicated(sg4_allTFs_df[["Combined_ID"]]))
-
-table(sg4_allTFs_df[["Sublibrary_4sg"]][are_selected], useNA = "ifany")
-
 are_selected_TSSs <- !(are_controls) & !(duplicated(sg4_allTFs_df[["AltTSS_ID"]]))
 
 sum(are_selected_TSSs) # Number of TSSs targeted by the library
 
-table(sg4_allTFs_df[["Num_TSSs"]][are_selected] > 1) # Number of genes with multiple TSSs
+table(sg4_allTFs_df[["Num_TSSs"]][!(are_controls) & are_unique_gene] >= 2) # Number of genes with multiple TSSs
+
+table(full_4sg_by_well_df[["Is_control"]]) / 4 # Number of controls
+
+
 
 
 
@@ -126,10 +128,31 @@ PD_4sg_reordered_df[["Sublibrary_4sg"]] <- NULL
 
 
 
+# Export all shared / duplicated sgRNAs -----------------------------------
+
+shared_sgRNAs_df <- SharedsgRNAsDf(full_4sg_by_gene_df)
+
+ExportSharedDf(shared_sgRNAs_df,
+               file.path("4sg plate layout (complete)",
+                         "Duplicated CRISPRa sgRNAs (shared between genes)"
+                         )
+               )
+
+
+
+
 # Export the plate layouts for the complete 4sg library -------------------
 
-ExportPlates(full_4sg_by_gene_df, "All_sublibraries_ordered_by_gene", "4sg plate layout (complete)")
-ExportPlates(full_4sg_by_well_df, "All_sublibraries_ordered_by_well", "4sg plate layout (complete)")
+ExportPlates(full_4sg_by_gene_df,
+             "All_sublibraries_ordered_by_gene",
+             "4sg plate layout (complete)",
+             add_primers = FALSE
+             )
+ExportPlates(full_4sg_by_well_df,
+             "All_sublibraries_ordered_by_well",
+             "4sg plate layout (complete)",
+             add_primers = FALSE
+             )
 
 
 
@@ -167,7 +190,8 @@ for (i in 1:4) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("full_4sg_by_gene_df", "full_4sg_by_well_df",
-              "sg4_by_gene_df", "sg4_by_well_df"
+              "sg4_by_gene_df", "sg4_by_well_df",
+              "shared_sgRNAs_df"
               ),
      file = file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData")
      )

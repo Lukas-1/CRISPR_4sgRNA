@@ -381,5 +381,25 @@ AddPaddingToPlates <- function(CRISPR_df) {
 
 
 
+ExportSharedDf <- function(shared_df, file_name) {
+  if ("AltTSS_ID" %in% names(shared_df)) {
+    shared_df[["AltTSS_ID"]] <- ifelse(shared_df[["AltTSS_ID"]] == shared_df[["Entrez_ID"]],
+                                       " ",
+                                       shared_df[["AltTSS_ID"]]
+                                       )
+  }
+  write.table(shared_df,
+              file = file.path(file_output_directory, paste0(file_name, ".tsv")),
+              quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
+              )
+
+  return(invisible(NULL))
+}
+
+
+
+
+
+
 
 
