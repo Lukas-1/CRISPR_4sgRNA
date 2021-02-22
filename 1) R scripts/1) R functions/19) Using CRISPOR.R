@@ -291,7 +291,6 @@ SummarizeOfftargets <- function(offtargets_df, is_FASTA) {
   results_list <- tapply(seq_len(nrow(offtargets_df)),
                          factor(offtargets_df[[ID_column]], levels = unique(offtargets_df[[ID_column]])),
                          function(x) {
-                           assign("delete_x", x, envir = globalenv())
                            mismatch_table <- as.integer(table(offtargets_df[["mismatchCount"]][x]))
                            names(mismatch_table) <- paste0("CRISPOR_Num_", 0:4, "MM")
                            specificity_unrounded <- 1 / (1 + sum(offtargets_df[["cfdOfftargetScore"]][x], na.rm = TRUE))
