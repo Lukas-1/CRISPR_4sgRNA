@@ -266,7 +266,6 @@ Palify <- function(myhex, fraction_pale = 0.5) {
 
 # Helper functions for addint annotation for unintended targets  ----------
 
-
 AddOtherTargetBooleans <- function(CRISPR_df,
                                    all_genes_df,
                                    protein_genes_df,
@@ -3418,17 +3417,18 @@ doughnut <- function (x,
 
 
 
-DonutBars <- function(use_factor      = NULL,
+DonutBars <- function(use_factor       = NULL,
                       use_colors,
-                      space           = 0.5,
-                      use_title       = NULL,
-                      donut_radius    = 0.15,
-                      donut_label     = "",
-                      donut_text_size = 0.5,
-                      donut_x_mid     = 0.8,
-                      donut_y_mid     = 0.2,
-                      counts_vec      = NULL,
-                      use_labels      = NULL
+                      space            = 0.5,
+                      use_title        = NULL,
+                      donut_radius     = 0.15,
+                      donut_label      = "",
+                      donut_text_size  = 0.5,
+                      donut_x_mid      = 0.8,
+                      donut_y_mid      = 0.2,
+                      counts_vec       = NULL,
+                      use_labels       = NULL,
+                      show_percentages = TRUE
                       ) {
 
   if (is.null(counts_vec)) {
@@ -3443,6 +3443,18 @@ DonutBars <- function(use_factor      = NULL,
     }
   }
 
+  if (show_percentages) {
+    percentages_vec <- counts_vec / sum(counts_vec) * 100
+    percentages_strings <- rep(NA, length(percentages_vec))
+    percentages_strings[percentages_vec < 1] <- signif(percentages_vec[percentages_vec < 1], digits = 1)
+    are_single_digit <- (percentages_vec < 10) & (percentages_vec >= 1)
+    percentages_strings[are_single_digit] <- format(percentages_vec[are_single_digit], digits = 2)
+    percentages_strings[percentages_vec > 10] <- round(percentages_vec[percentages_vec > 10])
+    count_labels <- paste0(counts_vec, " (", percentages_strings, "%)")
+  } else {
+    count_labels <- counts_vec
+  }
+
   num_bars <- length(counts_vec)
 
   num_units <- num_bars + ((num_bars + 1) * space)
@@ -3451,8 +3463,8 @@ DonutBars <- function(use_factor      = NULL,
   start_y <- (unit_width * space)
 
   bar_mid_positions <- cumsum(rep(unit_width, num_bars)) +
-    cumsum(rep(unit_width * space, num_bars)) -
-    (unit_width / 2)
+                       cumsum(rep(unit_width * space, num_bars)) -
+                      (unit_width / 2)
   bar_mid_positions <- rev(bar_mid_positions)
 
   bar_lengths <- counts_vec / max(counts_vec)
@@ -3481,13 +3493,13 @@ DonutBars <- function(use_factor      = NULL,
   }
 
 
-  are_too_small <- bar_lengths < (par("usr")[[2]] / 10)
+  are_too_small <- bar_lengths < (par("usr")[[2]] / 5)
   x_range <- par("usr")[[2]] - par("usr")[[1]]
 
   text(y      = bar_mid_positions[are_too_small],
        x      = bar_lengths[are_too_small] + (x_range * 0.02),
        xpd    = NA,
-       labels = counts_vec[are_too_small],
+       labels = count_labels[are_too_small],
        adj    = c(0, 0.5),
        cex    = 0.7,
        font   = 2,
@@ -3498,7 +3510,7 @@ DonutBars <- function(use_factor      = NULL,
   text(y      = bar_mid_positions[!(are_too_small)],
        x      = bar_lengths[!(are_too_small)] / 2,
        xpd    = NA,
-       labels = counts_vec[!(are_too_small)],
+       labels = count_labels[!(are_too_small)],
        adj    = 0.5,
        cex    = 0.7,
        font   = 2,
