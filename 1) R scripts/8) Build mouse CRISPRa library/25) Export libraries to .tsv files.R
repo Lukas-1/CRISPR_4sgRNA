@@ -92,8 +92,6 @@ selected_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Original_entre
 
                       preferred_AF_max_column
 
-                      # "Entrez_nearest_0MM", "Symbol_nearest_0MM",
-                      # "Entrez_nearest_1MM", "Symbol_nearest_1MM"
                       )
 
 merged_replaced_CRISPRa_df <- merged_replaced_CRISPRa_df[, selected_columns]
