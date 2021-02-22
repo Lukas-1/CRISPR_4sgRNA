@@ -898,7 +898,8 @@ RestoreOriginalOrder <- function(CRISPR_df) {
 ExportPlates <- function(export_df,
                          file_name,
                          sub_folder,
-                         add_padding_between_plates = FALSE
+                         add_padding_between_plates = FALSE,
+                         add_primers = TRUE
                          ) {
   export_df[["Source"]] <- sub("Curated, ", "", export_df[["Source"]], fixed = TRUE)
   use_columns <- intersect(export_columns, names(export_df))
@@ -912,7 +913,7 @@ ExportPlates <- function(export_df,
   }
   DfToTSV(export_df[, union(use_columns, names(export_df))],
           file_name = file.path(sub_folder, file_name),
-          add_primers = TRUE, remove_columns = remove_columns,
+          add_primers = add_primers, remove_columns = remove_columns,
           add_padding_between_plates = add_padding_between_plates
           )
 }
@@ -964,7 +965,6 @@ MergeTFWithRest <- function(sg4_by_well_df, TF_by_well_df) {
   )
 
 
-
   ## Merge the two data frames (ordered by gene)
 
   full_4sg_by_gene_df <- rbind.data.frame(
@@ -976,17 +976,22 @@ MergeTFWithRest <- function(sg4_by_well_df, TF_by_well_df) {
     make.row.names = FALSE
   )
 
-  if ("TSS_number" %in% names(full_4sg_by_gene_df)) {
-    TSS_vec <- full_4sg_by_gene_df[["TSS_number"]]
-  } else {
-    TSS_vec <- rep(NA, nrow(full_4sg_by_gene_df))
-  }
 
-  by_gene_order <- order(GetMinEntrez(full_4sg_by_gene_df[["Entrez_ID"]]),
+
+  are_obsolete <- full_4sg_by_gene_df[["Is_obsolete"]] %in% "Yes"
+  if ("TSS_number" %in% names(full_4sg_by_gene_df)) {
+    TSS_vec <- full_4sg_by_gene_df[["TSS_number"]][!(are_obsolete)]
+  } else {
+    TSS_vec <- rep(NA, sum(!(are_obsolete)))
+  }
+  by_gene_order <- order(GetMinEntrez(full_4sg_by_gene_df[["Entrez_ID"]][!(are_obsolete)]),
                          TSS_vec
                          )
-  full_4sg_by_gene_df <- full_4sg_by_gene_df[by_gene_order, names(full_4sg_by_gene_df) != "Is_obsolete"]
+  use_indices <- which(!(are_obsolete))[by_gene_order]
+  full_4sg_by_gene_df <- full_4sg_by_gene_df[use_indices, ]
   row.names(full_4sg_by_gene_df) <- NULL
+
+  full_4sg_by_gene_df <- full_4sg_by_gene_df[, names(full_4sg_by_gene_df) != "Is_obsolete"]
 
   full_4sg_by_gene_df[["Sublibrary_4sg"]][full_4sg_by_gene_df[["Sublibrary_4sg"]] == "Misc / controls"]    <- "Controls"
   full_4sg_by_gene_df[["Sublibrary_4sg"]][full_4sg_by_gene_df[["Sublibrary_4sg"]] == "Misc / changed TFs"] <- "Transcription Factors"
