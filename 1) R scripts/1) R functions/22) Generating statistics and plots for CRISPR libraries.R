@@ -1916,8 +1916,6 @@ AnnotateBars <- function(bar_positions_vec, counts_mat, proportions_mat, text_ce
                               )
   }
 
-
-
   text(x      = bar_positions_vec,
        y      = par("usr")[[4]] + (plot_height * percentage_plot_factor),
        labels = paste0(proportions_vec, "%"),
@@ -2345,9 +2343,11 @@ BarPlot_Sources <- function(CRISPR_df,
 
   AnnotateBars(bar_positions, counts_mat, bars_mat, text_cex = 0.4, smaller_plot_factor  = TRUE)
 
+  colnames(counts_mat) <- colors_df[, "Group_label"]
+
   ## Final steps
   par(old_mar)
-  return(invisible(NULL))
+  return(invisible(counts_mat))
 }
 
 
@@ -2678,7 +2678,7 @@ NumGenesInLibrary <- function() {
 
   par(old_mar)
 
-  return(invisible(NULL))
+  return(invisible(bars_mat))
 }
 
 
@@ -2928,6 +2928,10 @@ PlotVennDiagrams <- function(CRISPR_df) {
 }
 
 
+
+venn_colors <- c("#002999", "#FAEA38", "#C7C7C7")
+venn_colors[[1]] <- Palify(venn_colors[[1]], fraction_pale = 0.5)
+
 PlotVennDiagram <- function(sources_fac, draw_plot = FALSE) {
   sources_table <- table(sources_fac)
   sources_names <- gsub(", ", "&", names(sources_table), fixed = TRUE)
@@ -2935,7 +2939,7 @@ PlotVennDiagram <- function(sources_fac, draw_plot = FALSE) {
   names(sources_table) <- sources_names
   eulerr_options("padding" = grid::unit(0.25, "lines"))
   euler_plot <- plot(eulerr::euler(sources_table, shape = "circle"),
-                     fills = c(brewer.pal(9, "Blues")[[3]], brewer.pal(9, "Greens")[[3]], brewer.pal(9, "Reds")[[3]]),
+                     fills = venn_colors,
                      edges = FALSE,
                      labels = list(cex = 1),
                      quantities = list(font = 2, cex = 0.4)
@@ -3816,5 +3820,472 @@ OuterTitleForLayout <- function(title_text, title_cex = 1, extra_space = FALSE) 
 
 
 
+
+
+
+# Functions for formatting figures for the manuscript ---------------------
+
+horizontal_width <- 3.65
+horizontal_height <- 2.62
+use_mai <- c(0.65, 0.92, 0.25, 0.58)
+
+CRISPRo_colors <- brewer.pal(11, "RdBu")[c(7, 10)]
+dark_blue <- Palify("#1A59B4", fraction_pale = 0.05)
+CRISPRo_colors[[2]] <- colorRampPalette(c(CRISPRo_colors[[2]], dark_blue))(6)[[4]]
+
+CRISPRa_colors <- brewer.pal(11, "PiYG")[c(5, 2)]
+CRISPRa_colors[[2]] <- colorRampPalette(c("#FF007F", CRISPRa_colors[[2]]))(3)[[2]]
+CRISPRa_colors[[2]] <- Palify(CRISPRa_colors[[2]], fraction_pale = 0.15)
+
+
+GetBarPlotStart <- function(num_bars, space, use_factor = 0.04) {
+  space - (((space * (num_bars - 1)) + num_bars) * use_factor)
+}
+GetBarplotEnd <- function(num_bars, space, use_factor = 0.04) {
+  space + (((space * (num_bars - 1)) + num_bars) * (1 + use_factor))
+}
+
+
+HorizontalBars <- function(counts_mat,
+                           bottom_text = "",
+                           same_space_on_edge = FALSE,
+                           numeric_limits = NULL,
+                           lollipop = FALSE
+                           ) {
+
+  ## Prepare colors, percentages and labels
+  group_names <- colnames(counts_mat)
+  if ("Brunello" %in% colnames(counts_mat)) {
+    top_text <- "CRISPRo"
+    use_colors <- CRISPRo_colors
+  } else if ("Calabrese" %in% colnames(counts_mat)) {
+    top_text <- "CRISPRa"
+    use_colors <- CRISPRa_colors
+    group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
+  } else {
+    top_text <- ""
+    use_colors <- NULL
+  }
+  one_row <- nrow(counts_mat) == 1
+  is_proportion <- !(one_row) && is.integer(counts_mat)
+  if (one_row) {
+    bars_mat <- counts_mat
+  } else if (is_proportion) {
+    bars_mat <- prop.table(counts_mat, margin = 2) * 100
+  } else {
+    bars_mat <- t(counts_mat[1, ] / counts_mat[2, ]) * 100
+  }
+
+  ## Prepare the data axis
+  if (!(is.null(numeric_limits))) {
+    x_limits <- numeric_limits
+    x_axis_pos <- pretty(x_limits)
+  } else if (is_proportion) {
+    x_axis_pos <- seq(0, 100, by = 20)
+    x_limits <- c(0, 100)
+  } else {
+    use_x_limits <- c(0, max(bars_mat[1, ] * 1.00))
+    x_axis_pos <- pretty(use_x_limits)
+    x_limits <- c(x_axis_pos[[1]], x_axis_pos[[length(x_axis_pos)]])
+  }
+  if (!(one_row)) {
+    x_axis_labels <- paste0(x_axis_pos, "%")
+  } else {
+    x_axis_labels <- x_axis_pos
+  }
+
+
+  ## Prepare the groups axis
+  use_space <- 0.5
+  if (same_space_on_edge) {
+    y_limits <- c(0, ncol(counts_mat) + (use_space * (ncol(counts_mat) + 1)))
+  } else {
+    use_factor <- 0.06
+    y_limits <- c(GetBarPlotStart(ncol(bars_mat), use_space, use_factor),
+                  GetBarplotEnd(ncol(bars_mat), use_space, use_factor)
+                  )
+  }
+
+
+  ## Draw the bar plot
+  old_mai <- par("mai" = use_mai)
+
+  plot(1,
+       xlim = x_limits,
+       ylim = y_limits,
+       xaxs = "i",
+       yaxs = "i",
+       type = "n",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+  ## Draw the grid
+  axis_ticks <- axTicks(1)
+  grid_positions <- seq(axis_ticks[[1]],
+                        axis_ticks[[length(axis_ticks)]],
+                        (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
+                        )
+  abline(v = grid_positions,
+         col = ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
+         )
+
+
+
+  bar_positions <- barplot(bars_mat[, rev(seq_len(ncol(bars_mat)))],
+                           horiz     = TRUE,
+                           las       = 1,
+                           space     = use_space,
+                           border    = NA,
+                           col       = if (one_row) use_colors[[2]] else use_colors,
+                           add       = TRUE,
+                           axes      = FALSE,
+                           ann       = FALSE,
+                           names.arg = rep("", ncol(bars_mat)),
+                           plot      = !(lollipop)
+                           )
+
+  bar_positions <- rev(bar_positions)
+
+  if (lollipop) {
+    segments(x0   = par("usr")[[1]],
+             x1   = bars_mat[1, ],
+             y0   = bar_positions,
+             y1   = bar_positions,
+             col  = colorRampPalette(use_colors)(10)[[4]],
+             lwd  = 2,
+             xpd  = NA,
+             lend = "butt"
+             )
+    points(x   = bars_mat[1, ],
+           y   = bar_positions,
+           col = use_colors[[2]],
+           cex = 1.5,
+           pch = 16,
+           xpd = NA
+           )
+  }
+
+
+  ## Draw the axes and main annotations
+  axis(1, at = x_axis_pos, labels = x_axis_labels,
+       mgp = c(2.7, 0.38, 0), gap.axis = 0,
+       tcl = -0.35
+       )
+  mtext(group_names, line = 0.35, at = bar_positions, side = 2, las = 2)
+  mtext(top_text, line = 0.05)
+  mtext(bottom_text, line = 1.7, side = 1)
+  box(bty = "l")
+
+  ## Annotate the bars with fractions (counts)
+  if (one_row) {
+    text(y      = bar_positions,
+         x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.045),
+         labels = bars_mat[1, ],
+         adj    = c(0, 0.5),
+         xpd    = NA
+         )
+  } else {
+    if (is_proportion) {
+      dividends <- counts_mat[2, ]
+      divisors <-  colSums(counts_mat)
+    } else {
+      dividends <- format(RoundSmallPercentages(counts_mat[1, ]))
+      divisors <- counts_mat[2, ]
+    }
+
+    x_position <- par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.15)
+    y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.055
+    text(y      = bar_positions - y_fraction,
+         x      = x_position,
+         labels = divisors,
+         adj    = c(0.5, 0.5),
+         xpd    = NA
+         )
+    line_widths <- strwidth(divisors)
+    segments(x0  = x_position - (line_widths / 2),
+             x1  = x_position + (line_widths / 2),
+             y0  = bar_positions,
+             xpd = NA
+             )
+    text(y      = bar_positions + y_fraction,
+         x      = x_position,
+         labels = dividends,
+         adj    = c(0.5, 0.5),
+         xpd    = NA
+         )
+  }
+
+  par(old_mai)
+  return(invisible(NULL))
+}
+
+
+
+
+HorizontalViolinBox <- function(plot_df,
+                                bottom_text    = "",
+                                use_width      = horizontal_width,
+                                use_height     = horizontal_height
+                                ) {
+
+  ## Prepare colors and labels
+  num_groups <- nlevels(plot_df[["Groups_factor"]])
+  group_names <- levels(plot_df[["Group"]])
+  if ("Brunello" %in% plot_df[["Group"]]) {
+    top_text <- "CRISPRo"
+    use_colors <- CRISPRo_colors
+  } else if ("Calabrese" %in% plot_df[["Group"]]) {
+    top_text <- "CRISPRa"
+    use_colors <- CRISPRa_colors
+    group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
+  } else {
+    top_text <- ""
+    use_colors <- NULL
+  }
+
+
+  ## Prepare the data axis
+  numeric_limits <- GetAxisLimits(plot_df[["Numeric_data"]],
+                                  column_name = names(plot_df)[[7]],
+                                  provide_other_limits = TRUE
+                                  )
+  if (names(plot_df)[[7]] %in% c("CRISPOR_Doench_efficacy", "GuideScan_efficiency")) {
+    numeric_limits[[1]] <- 0
+  }
+
+
+  ## Prepare the groups axis
+  spaces_vec <- rep(1.15, num_groups - 1)
+  group_positions <- cumsum(c(1, spaces_vec))
+  group_positions <- rev(group_positions)
+  group_limits <- c((min(group_positions) - 0.5) - (num_groups * 0.04),
+                    max(group_positions) + 0.5 + (num_groups * 0.04)
+                    )
+
+
+  ## Prepare the data points
+  set.seed(1)
+  jittered_vec <- group_positions[as.integer(plot_df[["Groups_factor"]])] +
+                  rnorm(n = nrow(plot_df), mean = 0, sd = 0.03)
+  points_alpha <- 0.1
+  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+
+
+  ## Prepare the raster graphics device
+  new_mai <- use_mai
+  old_mai <- par("mai" = new_mai)
+  main_folder_path <- file.path(output_plots_directory, "_Manuscript")
+
+  PDF_device <- dev.cur()
+  temp_path <- file.path(main_folder_path, "temp.png")
+  temp_width <- use_width - sum(new_mai[c(2, 4)])
+  temp_height <- use_height - sum(new_mai[c(1, 3)])
+
+  png(file   = temp_path,
+      width  = temp_width,
+      height = temp_height,
+      units  = "in",
+      res    = 900
+      )
+
+
+  ## Prepare the plot for the raster device
+  old_mai <- par("mai" = rep(0, 4))
+  plot(1,
+       xlim = numeric_limits,
+       ylim = group_limits,
+       xaxs = "i",
+       yaxs = "i",
+       type = "n",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+
+  ## Draw the grid
+  axis_ticks <- axTicks(1)
+  grid_positions <- seq(axis_ticks[[1]],
+                        axis_ticks[[length(axis_ticks)]],
+                        (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
+                        )
+  abline(v = grid_positions,
+         col = ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
+         )
+
+
+  ## Draw the violin plots
+  vioplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
+          add        = TRUE,
+          at         = group_positions,
+          pchMed     = NA,
+          drawRect   = FALSE,
+          col        = colorRampPalette(use_colors)(9)[[2]],
+          border     = NA,
+          wex        = 1.1,
+          axes       = FALSE,
+          horizontal = TRUE
+          )
+
+
+  ## Draw the jittered points
+  points(y   = jittered_vec,
+         x   = plot_df[["Numeric_data"]],
+         cex = 0.4,
+         col = paste0(colorRampPalette(use_colors)(9)[[8]], alpha_hex),
+         pch = 16
+         )
+
+
+  ## Capture and remove the temporary PNG file
+  dev.off()
+  raster_array <- readPNG(temp_path)
+  file.remove(temp_path)
+  dev.set(PDF_device)
+
+
+  ## Prepare the final plot
+  plot(1,
+       xlim = numeric_limits,
+       ylim = group_limits,
+       xaxs = "i",
+       yaxs = "i",
+       type = "n",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+  rasterImage(raster_array,
+              xleft = par("usr")[[1]], xright = par("usr")[[2]],
+              ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+              )
+
+  ## Draw the superimposed boxplots
+  boxplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
+          add        = TRUE,
+          at         = group_positions,
+          boxwex     = 0.35,
+          outline    = FALSE,
+          names      = rep.int("", length(group_positions)),
+          whisklty   = "blank",
+          staplewex  = 0,
+          whisklwd   = 0,
+          staplelty  = 0,
+          medlwd     = par("lwd") * 3,
+          col        = Palify(use_colors[[1]]),
+          border     = use_colors[[2]],
+          axes       = FALSE,
+          lwd        = 1,
+          horizontal = TRUE
+          )
+
+  ## Draw the axes and main annotations
+  mtext(top_text, line = 0.05)
+  mtext(bottom_text, line = 1.7, side = 1)
+  mtext(group_names, line = 0.35, at = group_positions,
+        side = 2, las = 2
+        )
+  num_per_group <- unique(tabulate(plot_df[["Groups_factor"]]))
+  mtext(paste0("(", num_per_group, ")"),
+        line = 0.05, at = par("usr")[[2]], adj = 1
+        )
+
+  axis(1, mgp = c(2.7, 0.38, 0), gap.axis = 0, tcl = -0.35)
+  box()
+
+  par(old_mai)
+}
+
+
+
+
+
+
+
+DrawAllHorizontalPlots <- function(CRISPR_df) {
+
+  barplot_vars <- c(
+    "Are_overlapping",
+    "all22_SNP_AF_max_Kaviar",
+    "Expected_all22_SNP_AF_max_Kaviar",
+    "Affects_any_unintended_gene",
+    "Affects_any_genes_at_other_loci",
+    "Have_homologies"
+  )
+
+  violin_vars <- c(
+    "GuideScan_specificity",
+    "CRISPOR_Doench_efficacy"
+  )
+
+  mat_list <- sapply(
+    barplot_vars,
+    function(x) {
+      BarPlot_Sources(CRISPR_df,
+                      x,
+                      filter_top4 = TRUE,
+                      show_sublibraries = FALSE
+      )
+    }, simplify = FALSE
+  )
+
+
+  df_list <- sapply(
+    violin_vars,
+    function(x) {
+      ViolinBox_Sources(CRISPR_df,
+                        x,
+                        filter_top4 = TRUE,
+                        show_sublibraries = FALSE
+                        )
+    },
+    simplify = FALSE
+  )
+
+  num_genes_mat <- NumGenesInLibrary()
+  mat_list <- c(list("Num_genes" = num_genes_mat), mat_list)
+
+  labels_list <- list(
+    "Num_genes"                        = "Number of genes in library",
+    "Are_overlapping"                  = expression("Spacing between gRNAs " < "50 bp"),
+    "all22_SNP_AF_max_Kaviar"          = "Target genetic polymorphism (> 0.1%)",
+    "Expected_all22_SNP_AF_max_Kaviar" = "Expected to target alternate allele",
+    "Affects_any_unintended_gene"      = "Affect unintended gene",
+    "Affects_any_genes_at_other_loci"  = "Affect off-site unintended gene",
+    "GuideScan_specificity"            = "GuideScan specificity score",
+    "CRISPOR_Doench_efficacy"          = "Efficacy score (Rule Set 2)",
+    "Have_homologies"                  = expression("Share identical subsequences" >= "8 bp")
+  )
+
+  use_folder <- file.path(output_plots_directory, "_Manuscript")
+
+  for (var_name in names(labels_list)) {
+    file_number <- formatC(match(var_name, names(labels_list)),
+                           width = 2, flag = "0"
+                           )
+    file_name <- paste0(file_number, ") ", var_name)
+    for (make_PDF in c(TRUE)) {
+      if (make_PDF) {
+        pdf(file.path(use_folder, paste0(file_name, ".pdf")),
+            width = horizontal_width, height = horizontal_height
+            )
+      }
+      if (var_name %in% names(mat_list)) {
+        HorizontalBars(mat_list[[var_name]],
+                       bottom_text = labels_list[[var_name]],
+                       numeric_limits = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
+                       lollipop = var_name == "Num_genes"
+                       )
+      } else if (var_name %in% names(df_list)) {
+        HorizontalViolinBox(df_list[[var_name]], bottom_text = labels_list[[var_name]])
+      }
+      if (make_PDF) {
+        dev.off()
+      }
+    }
+  }
+
+
+}
 
 
