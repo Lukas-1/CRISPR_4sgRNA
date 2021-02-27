@@ -2899,6 +2899,14 @@ Plot4sgData <- function(overview_df, CRISPR_df) {
 
 # Functions for generating Venn diagrams ----------------------------------
 
+
+Get4sgFactor <- function(CRISPR_df) {
+  CRISPR_df <- FilterCRISPRDf(CRISPR_df)
+  are_chosen <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
+  all_sources_fac <- ReformatSourceToFactor(CRISPR_df[["Source"]][are_chosen])
+  return(all_sources_fac)
+}
+
 PlotVennDiagrams <- function(CRISPR_df) {
   for (make_PDF in c(FALSE, TRUE)) {
     if (make_PDF) {
@@ -2908,7 +2916,7 @@ PlotVennDiagrams <- function(CRISPR_df) {
     }
     CRISPR_df <- FilterCRISPRDf(CRISPR_df)
     are_chosen <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
-    all_sources_fac <- ReformatSourceToFactor(CRISPR_df[["Source"]])
+    all_sources_fac <- GetSourcesFactor(CRISPR_df[["Source"]])
 
     euler_not_chosen <- PlotVennDiagram(all_sources_fac[!(are_chosen)])
     euler_4sg <- PlotVennDiagram(all_sources_fac[are_chosen])
@@ -2929,20 +2937,26 @@ PlotVennDiagrams <- function(CRISPR_df) {
 
 
 
-venn_colors <- c("#002999", "#FAEA38", "#C7C7C7")
-venn_colors[[1]] <- Palify(venn_colors[[1]], fraction_pale = 0.5)
 
-PlotVennDiagram <- function(sources_fac, draw_plot = FALSE) {
+
+
+PlotVennDiagram <- function(sources_fac,
+                            draw_plot       = FALSE,
+                            quantities_cex  = 0.4,
+                            quantities_font = 2,
+                            use_padding     = 0.25,
+                            use_colors      = c(brewer.pal(9, "Blues")[[3]], brewer.pal(9, "Greens")[[3]], brewer.pal(9, "Reds")[[3]])
+                            ) {
   sources_table <- table(sources_fac)
   sources_names <- gsub(", ", "&", names(sources_table), fixed = TRUE)
   sources_table <- as.integer(sources_table)
   names(sources_table) <- sources_names
-  eulerr_options("padding" = grid::unit(0.25, "lines"))
+  eulerr_options("padding" = grid::unit(use_padding, "lines"))
   euler_plot <- plot(eulerr::euler(sources_table, shape = "circle"),
-                     fills = venn_colors,
+                     fills = use_colors,
                      edges = FALSE,
                      labels = list(cex = 1),
-                     quantities = list(font = 2, cex = 0.4)
+                     quantities = list(font = quantities_font, cex = quantities_cex)
                      )
   if (draw_plot) {
     print(euler_plot)
@@ -3836,6 +3850,9 @@ CRISPRo_colors[[2]] <- colorRampPalette(c(CRISPRo_colors[[2]], dark_blue))(6)[[4
 CRISPRa_colors <- brewer.pal(11, "PiYG")[c(5, 2)]
 CRISPRa_colors[[2]] <- colorRampPalette(c("#FF007F", CRISPRa_colors[[2]]))(3)[[2]]
 CRISPRa_colors[[2]] <- Palify(CRISPRa_colors[[2]], fraction_pale = 0.15)
+# CRISPRa_colors[[2]] <- "#DF4999"
+CRISPRa_colors[[2]] <- "#E44499"
+
 
 
 GetBarPlotStart <- function(num_bars, space, use_factor = 0.04) {
@@ -3846,11 +3863,58 @@ GetBarplotEnd <- function(num_bars, space, use_factor = 0.04) {
 }
 
 
+
+
+
+
+PlotHorizontalBarplotMat <- function(barplot_mat,
+                                     colors_vec,
+                                     positions_vec = seq_len(ncol(barplot_mat)),
+                                     width = 2/3
+                                     ) {
+
+  num_categories <- nrow(barplot_mat)
+  stopifnot(length(colors_vec) == num_categories)
+
+  lower_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
+    if (x == 1) {
+      rep(0, ncol(barplot_mat))
+    } else {
+      colSums(barplot_mat[seq_len(x - 1), , drop = FALSE])
+    }
+  })
+  upper_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
+    colSums(barplot_mat[seq_len(x), , drop = FALSE])
+  })
+
+  final_width <- width * ((max(positions_vec) - min(positions_vec)) / (ncol(barplot_mat) - 1))
+
+  for (i in seq_len(ncol(barplot_mat))) {
+    for (j in seq_len(num_categories)) {
+      rect(xleft   = lower_borders_vec_list[[j]][[i]],
+           xright  = upper_borders_vec_list[[j]][[i]],
+           ybottom = positions_vec[[i]] - (final_width / 2),
+           ytop    = positions_vec[[i]] + (final_width / 2),
+           col     = colors_vec[[j]],
+           border  = NA,
+           xpd     = NA
+           )
+    }
+  }
+  return(invisible(NULL))
+}
+
+
+
+
+
 HorizontalBars <- function(counts_mat,
-                           bottom_text = "",
+                           bottom_text        = "",
                            same_space_on_edge = FALSE,
-                           numeric_limits = NULL,
-                           lollipop = FALSE
+                           space_like_boxplot = TRUE,
+                           numeric_limits     = NULL,
+                           lollipop           = FALSE,
+                           use_space          = 0.6
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -3868,6 +3932,12 @@ HorizontalBars <- function(counts_mat,
   }
   one_row <- nrow(counts_mat) == 1
   is_proportion <- !(one_row) && is.integer(counts_mat)
+  if (is_proportion) {
+    bar_colors <- use_colors
+  } else {
+    bar_colors <- use_colors[[2]]
+  }
+
   if (one_row) {
     bars_mat <- counts_mat
   } else if (is_proportion) {
@@ -3896,23 +3966,33 @@ HorizontalBars <- function(counts_mat,
 
 
   ## Prepare the groups axis
-  use_space <- 0.5
-  if (same_space_on_edge) {
-    y_limits <- c(0, ncol(counts_mat) + (use_space * (ncol(counts_mat) + 1)))
+  num_groups <- ncol(counts_mat)
+  if (space_like_boxplot) {
+    ## Prepare the groups axis
+    spaces_vec <- rep(1.15, num_groups - 1)
+    group_positions <- cumsum(c(1, spaces_vec))
+    group_positions <- rev(group_positions)
+    group_limits <- c((min(group_positions) - 0.5) - (num_groups * 0.04),
+                      max(group_positions) + 0.5 + (num_groups * 0.04)
+                      )
+
   } else {
-    use_factor <- 0.06
-    y_limits <- c(GetBarPlotStart(ncol(bars_mat), use_space, use_factor),
-                  GetBarplotEnd(ncol(bars_mat), use_space, use_factor)
-                  )
+    if (same_space_on_edge) {
+      group_limits <- c(0, num_groups + (use_space * (num_groups + 1)))
+    } else {
+      use_factor <- 0.06
+      group_limits <- c(GetBarPlotStart(num_groups, use_space, use_factor),
+                        GetBarplotEnd(num_groups, use_space, use_factor)
+                        )
+    }
   }
 
 
   ## Draw the bar plot
   old_mai <- par("mai" = use_mai)
-
   plot(1,
        xlim = x_limits,
-       ylim = y_limits,
+       ylim = group_limits,
        xaxs = "i",
        yaxs = "i",
        type = "n",
@@ -3930,35 +4010,42 @@ HorizontalBars <- function(counts_mat,
          col = ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
          )
 
-
-
-  bar_positions <- barplot(bars_mat[, rev(seq_len(ncol(bars_mat)))],
-                           horiz     = TRUE,
-                           las       = 1,
-                           space     = use_space,
-                           border    = NA,
-                           col       = if (one_row) use_colors[[2]] else use_colors,
-                           add       = TRUE,
-                           axes      = FALSE,
-                           ann       = FALSE,
-                           names.arg = rep("", ncol(bars_mat)),
-                           plot      = !(lollipop)
-                           )
-
-  bar_positions <- rev(bar_positions)
+  if (space_like_boxplot) {
+    if (!(lollipop)) {
+      PlotHorizontalBarplotMat(bars_mat,
+                               colors_vec = bar_colors,
+                               positions_vec = group_positions,
+                               width = 1 / (1 + use_space)
+                               )
+    }
+  } else {
+    group_positions <- barplot(bars_mat[, rev(seq_len(ncol(bars_mat)))],
+                               horiz     = TRUE,
+                               las       = 1,
+                               space     = use_space,
+                               border    = NA,
+                               col       = bar_colors,
+                               add       = TRUE,
+                               axes      = FALSE,
+                               ann       = FALSE,
+                               names.arg = rep("", ncol(bars_mat)),
+                               plot      = !(lollipop)
+                               )
+    group_positions <- rev(group_positions)
+  }
 
   if (lollipop) {
     segments(x0   = par("usr")[[1]],
              x1   = bars_mat[1, ],
-             y0   = bar_positions,
-             y1   = bar_positions,
+             y0   = group_positions,
+             y1   = group_positions,
              col  = colorRampPalette(use_colors)(10)[[4]],
              lwd  = 2,
              xpd  = NA,
              lend = "butt"
              )
     points(x   = bars_mat[1, ],
-           y   = bar_positions,
+           y   = group_positions,
            col = use_colors[[2]],
            cex = 1.5,
            pch = 16,
@@ -3972,14 +4059,14 @@ HorizontalBars <- function(counts_mat,
        mgp = c(2.7, 0.38, 0), gap.axis = 0,
        tcl = -0.35
        )
-  mtext(group_names, line = 0.35, at = bar_positions, side = 2, las = 2)
+  mtext(group_names, line = 0.35, at = group_positions, side = 2, las = 2)
   mtext(top_text, line = 0.05)
   mtext(bottom_text, line = 1.7, side = 1)
   box(bty = "l")
 
   ## Annotate the bars with fractions (counts)
   if (one_row) {
-    text(y      = bar_positions,
+    text(y      = group_positions,
          x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.045),
          labels = bars_mat[1, ],
          adj    = c(0, 0.5),
@@ -3996,7 +4083,7 @@ HorizontalBars <- function(counts_mat,
 
     x_position <- par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.15)
     y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.055
-    text(y      = bar_positions - y_fraction,
+    text(y      = group_positions - y_fraction,
          x      = x_position,
          labels = divisors,
          adj    = c(0.5, 0.5),
@@ -4005,10 +4092,10 @@ HorizontalBars <- function(counts_mat,
     line_widths <- strwidth(divisors)
     segments(x0  = x_position - (line_widths / 2),
              x1  = x_position + (line_widths / 2),
-             y0  = bar_positions,
+             y0  = group_positions,
              xpd = NA
              )
-    text(y      = bar_positions + y_fraction,
+    text(y      = group_positions + y_fraction,
          x      = x_position,
          labels = dividends,
          adj    = c(0.5, 0.5),
