@@ -2737,35 +2737,46 @@ GetFlexibleAxisLimits <- function(numeric_vec, start_at_zero = TRUE, subtract_fr
 
 
 
-DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
+DrawDeletionHistogram <- function(overview_df,
+                                  column_name  = "Deletion_size",
+                                  use_title    = "Size of the expected deletion (between the first and fourth cut sites)",
+                                  fill_color   = brewer.pal(9, "Blues")[[8]],
+                                  x_axis_label = "Number of base pairs (logarithmic scale)",
+                                  y_axis_label = "Count",
+                                  x_label_line = 2.2,
+                                  y_label_line = 3,
+                                  use_breaks   = 100
+                                  ) {
 
   are_4sg <- overview_df[["In_4sg_library"]] %in% "Yes"
   numeric_vec <- overview_df[[column_name]][are_4sg]
-  hist_results <- hist(log10(numeric_vec), breaks = 100, plot = FALSE)
+  hist_results <- hist(log10(numeric_vec), breaks = use_breaks, plot = FALSE)
   x_limits <- GetFlexibleAxisLimits(hist_results[["breaks"]],
                                     start_at_zero = FALSE
                                     )
-  y_limits <- GetFlexibleAxisLimits(hist_results[["density"]],
-                                    subtract_fraction = 0.01
+  y_limits <- GetFlexibleAxisLimits(hist_results[["counts"]],
+                                    subtract_fraction = 0.02
                                     )
 
   hist(log10(numeric_vec),
-       col      = brewer.pal(9, "Blues")[[8]],
+       col      = fill_color,
        border   = NA,
-       breaks   = 100,
+       breaks   = use_breaks,
        xlim     = x_limits,
        ylim     = y_limits,
        xlab     = "",
+       ylab     = y_axis_label,
        xaxs     = "i",
        yaxs     = "i",
-       freq     = FALSE,
+       freq     = TRUE,
        axes     = FALSE,
-       main     = ""
+       main     = "",
+       mgp      = c(y_label_line, 1, 0),
        )
 
   axis(2,
        las = 1,
-       mgp = c(2.2, 0.45, 0),
+       mgp = c(3, 0.45, 0),
        tcl = -0.3
        )
 
@@ -2778,7 +2789,7 @@ DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
   axis(1,
        at     = axis_ticks,
        labels = parse(text = axis_labels),
-       mgp    = c(2.2, 0.45, 0),
+       mgp    = c(3, 0.45, 0),
        tcl    = -0.3
        )
 
@@ -2788,22 +2799,18 @@ DrawDeletionHistogram <- function(overview_df, column_name = "Deletion_size") {
 
   box(bty = "l")
 
-  title("Size of the expected deletion (between the first and fourth cut sites)",
+  title(use_title,
         cex.main = 1,
         line = 2.2
         )
 
   plot_height <- par("usr")[[4]] - par("usr")[[3]]
 
-  # text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) / 2),
-  #      y      = par("usr")[[3]] - (plot_height * 0.15),
-  #      labels = "Number of base pairs",
-  #      xpd    = NA
-  #      )
-  mtext("Number of base pairs (logarithmic scale)", line = 2.2, side = 1)
-
+  mtext(x_axis_label, line = 2.2, side = 1, cex = par("cex"))
   return(invisible(NULL))
 }
+
+
 
 
 GetLongestSubsequence <- function(CRISPR_df) {
@@ -3839,9 +3846,28 @@ OuterTitleForLayout <- function(title_text, title_cex = 1, extra_space = FALSE) 
 
 # Functions for formatting figures for the manuscript ---------------------
 
-horizontal_width <- 3.65
-horizontal_height <- 2.62
-use_mai <- c(0.65, 0.92, 0.25, 0.58)
+horizontal_width <- 2.4
+horizontal_height <- 1.7
+
+horizontal_mai <- c(0.43, 0.61, 0.16, 0.38)
+vertical_mai   <- c(0.30, 0.47, 0.30, 0.32)
+
+# use_ratio <- 60.9 / 92.4
+manuscript_cex <- 0.7
+manuscript_lwd <- 0.7
+
+
+
+# horizontal_width <- 3.65
+# horizontal_height <- 2.62
+#
+# horizontal_mai <- c(0.65, 0.92, 0.25, 0.58)
+# vertical_mai   <- c(0.45, 0.72, 0.45, 0.48)
+#
+# manuscript_cex <- 1
+# manuscript_lwd <- 1
+
+
 
 CRISPRo_colors <- brewer.pal(11, "RdBu")[c(7, 10)]
 dark_blue <- Palify("#1A59B4", fraction_pale = 0.05)
@@ -3867,11 +3893,12 @@ GetBarplotEnd <- function(num_bars, space, use_factor = 0.04) {
 
 
 
-PlotHorizontalBarplotMat <- function(barplot_mat,
-                                     colors_vec,
-                                     positions_vec = seq_len(ncol(barplot_mat)),
-                                     width = 2/3
-                                     ) {
+PlotBarplotMat <- function(barplot_mat,
+                           colors_vec,
+                           positions_vec = seq_len(ncol(barplot_mat)),
+                           width = 2/3,
+                           horizontal = FALSE
+                           ) {
 
   num_categories <- nrow(barplot_mat)
   stopifnot(length(colors_vec) == num_categories)
@@ -3891,14 +3918,27 @@ PlotHorizontalBarplotMat <- function(barplot_mat,
 
   for (i in seq_len(ncol(barplot_mat))) {
     for (j in seq_len(num_categories)) {
-      rect(xleft   = lower_borders_vec_list[[j]][[i]],
-           xright  = upper_borders_vec_list[[j]][[i]],
-           ybottom = positions_vec[[i]] - (final_width / 2),
-           ytop    = positions_vec[[i]] + (final_width / 2),
-           col     = colors_vec[[j]],
-           border  = NA,
-           xpd     = NA
-           )
+      if (lower_borders_vec_list[[j]][[i]] != upper_borders_vec_list[[j]][[i]]) { # Prevent zero-width rectangles from showing up as tiny lines on the resulting PDF
+        if (horizontal) {
+          rect(xleft   = lower_borders_vec_list[[j]][[i]],
+               xright  = upper_borders_vec_list[[j]][[i]],
+               ybottom = positions_vec[[i]] - (final_width / 2),
+               ytop    = positions_vec[[i]] + (final_width / 2),
+               col     = colors_vec[[j]],
+               border  = NA,
+               xpd     = NA
+               )
+        } else {
+          rect(ybottom = lower_borders_vec_list[[j]][[i]],
+               ytop    = upper_borders_vec_list[[j]][[i]],
+               xleft   = positions_vec[[i]] - (final_width / 2),
+               xright  = positions_vec[[i]] + (final_width / 2),
+               col     = colors_vec[[j]],
+               border  = NA,
+               xpd     = NA
+               )
+        }
+      }
     }
   }
   return(invisible(NULL))
@@ -3907,27 +3947,140 @@ PlotHorizontalBarplotMat <- function(barplot_mat,
 
 
 
+ManuscriptAnnotate <- function(group_positions,
+                               group_names,
+                               modality_label,
+                               axis_label,
+                               horizontal = TRUE,
+                               use_colors = "#000000",
+                               colored_modality = FALSE,
+                               modality_on_top = FALSE,
+                               modality_on_side = FALSE
+                               ) {
 
-HorizontalBars <- function(counts_mat,
-                           bottom_text        = "",
-                           same_space_on_edge = FALSE,
-                           space_like_boxplot = TRUE,
-                           numeric_limits     = NULL,
-                           lollipop           = FALSE,
-                           use_space          = 0.6
+
+  if (horizontal) {
+    mtext(group_names, line = 0.35, at = group_positions, side = 2, las = 2,
+          cex = par("cex")
+          )
+  } else {
+    text(x      = group_positions,
+         y      = par("usr")[[3]] - ((par("usr")[[4]] - par("usr")[[3]]) * 0.055),
+         labels = group_names,
+         adj    = c(0.5, 1),
+         xpd    = NA
+         )
+  }
+
+  if (colored_modality) {
+    modality_color <- colorRampPalette(use_colors)(3)[[2]]
+  } else {
+    modality_color <- NULL
+  }
+
+  if (horizontal) {
+    mtext(modality_label, line = 0.05, col = modality_color, cex = par("cex"))
+  } else {
+    if (modality_on_top) {
+      text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.5),
+           y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.1),
+           labels = modality_label,
+           col    = modality_color,
+           xpd    = NA
+           )
+    } else if (modality_on_side) {
+      text(x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.04),
+           y      = grconvertY(0.5, from = "npc", to = "user"),
+           labels = modality_label,
+           srt    = 270,
+           adj    = c(0.5, 0),
+           col    = modality_color,
+           xpd    = NA
+           )
+    }
+
+  }
+
+  if (horizontal) {
+    mtext(axis_label, line = 1.7, side = 1, cex = par("cex"))
+  } else {
+    text(x      = par("usr")[[1]] - ((par("usr")[[2]] - par("usr")[[1]]) * 0.22),
+         y      = grconvertY(0.5, from = "npc", to = "user"),
+         labels = VerticalAdjust(axis_label),
+         srt    = 90,
+         xpd    = NA,
+         adj    = c(0.5, 0)
+         )
+  }
+}
+
+
+
+
+ManuscriptGrid <- function(horizontal = TRUE) {
+  axis_ticks <- axTicks(if (horizontal) 1 else 2)
+  grid_positions <- seq(axis_ticks[[1]],
+                        axis_ticks[[length(axis_ticks)]],
+                        (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
+                        )
+  grid_colors <- ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
+  if (horizontal) {
+    segments(y0   = par("usr")[[3]],
+             y1   = par("usr")[[4]],
+             x0   = grid_positions,
+             col  = grid_colors,
+             lend = "butt",
+             xpd  = NA
+             )
+  } else {
+    segments(x0   = par("usr")[[1]],
+             x1   = par("usr")[[2]],
+             y0   = grid_positions,
+             col  = grid_colors,
+             lend = "butt",
+             xpd  = NA
+
+             )
+  }
+  return(axis_ticks)
+}
+
+
+
+
+ManuscriptBars <- function(counts_mat,
+                           axis_label           = "",
+                           same_space_on_edge   = FALSE,
+                           space_like_boxplot   = TRUE,
+                           numeric_limits       = NULL,
+                           lollipop             = FALSE,
+                           horizontal           = FALSE,
+                           use_space            = if (horizontal) 0.6 else 0.8,
+                           abbreviate_thousands = TRUE,
+                           modality_on_side     = FALSE,
+                           abbreviate_libraries = TRUE,
+                           use_cex              = manuscript_cex,
+                           use_lwd              = manuscript_lwd
                            ) {
 
   ## Prepare colors, percentages and labels
   group_names <- colnames(counts_mat)
   if ("Brunello" %in% colnames(counts_mat)) {
-    top_text <- "CRISPRo"
+    modality_label <- "CRISPRo"
     use_colors <- CRISPRo_colors
   } else if ("Calabrese" %in% colnames(counts_mat)) {
-    top_text <- "CRISPRa"
+    modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
-    group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
+    if (horizontal) {
+      group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
+    } else {
+      group_names[group_names == "hCRISPRa-v2"] <- "hCa-v2"
+      if (abbreviate_libraries) {
+        group_names[group_names == "Calabrese"] <- "Calab"
+      }
+    }
   } else {
-    top_text <- ""
+    modality_label <- ""
     use_colors <- NULL
   }
   one_row <- nrow(counts_mat) == 1
@@ -3948,20 +4101,23 @@ HorizontalBars <- function(counts_mat,
 
   ## Prepare the data axis
   if (!(is.null(numeric_limits))) {
-    x_limits <- numeric_limits
-    x_axis_pos <- pretty(x_limits)
+    numeric_limits <- numeric_limits
+    numeric_axis_pos <- pretty(numeric_limits)
   } else if (is_proportion) {
-    x_axis_pos <- seq(0, 100, by = 20)
-    x_limits <- c(0, 100)
+    numeric_axis_pos <- seq(0, 100, by = 20)
+    numeric_limits <- c(0, 100)
   } else {
-    use_x_limits <- c(0, max(bars_mat[1, ] * 1.00))
-    x_axis_pos <- pretty(use_x_limits)
-    x_limits <- c(x_axis_pos[[1]], x_axis_pos[[length(x_axis_pos)]])
+    use_numeric_limits <- c(0, max(bars_mat[1, ] * 1.00))
+    numeric_axis_pos <- pretty(use_numeric_limits)
+    numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
+  }
+  if (horizontal) {
+    numeric_axis_labels <- numeric_axis_pos
+  } else {
+    numeric_axis_labels <- format(numeric_axis_pos)
   }
   if (!(one_row)) {
-    x_axis_labels <- paste0(x_axis_pos, "%")
-  } else {
-    x_axis_labels <- x_axis_pos
+    numeric_axis_labels <- paste0(numeric_axis_labels, "%")
   }
 
 
@@ -3971,7 +4127,9 @@ HorizontalBars <- function(counts_mat,
     ## Prepare the groups axis
     spaces_vec <- rep(1.15, num_groups - 1)
     group_positions <- cumsum(c(1, spaces_vec))
-    group_positions <- rev(group_positions)
+    if (horizontal) {
+      group_positions <- rev(group_positions)
+    }
     group_limits <- c((min(group_positions) - 0.5) - (num_groups * 0.04),
                       max(group_positions) + 0.5 + (num_groups * 0.04)
                       )
@@ -3989,10 +4147,16 @@ HorizontalBars <- function(counts_mat,
 
 
   ## Draw the bar plot
-  old_mai <- par("mai" = use_mai)
+  if (horizontal) {
+    use_mai <- horizontal_mai
+  } else {
+    use_mai <- vertical_mai
+  }
+  old_par <- par(mai = use_mai, cex = use_cex, lwd = use_lwd)
+
   plot(1,
-       xlim = x_limits,
-       ylim = group_limits,
+       xlim = if (horizontal) numeric_limits else group_limits,
+       ylim = if (horizontal) group_limits else numeric_limits,
        xaxs = "i",
        yaxs = "i",
        type = "n",
@@ -4000,28 +4164,20 @@ HorizontalBars <- function(counts_mat,
        ann  = FALSE
        )
 
-  ## Draw the grid
-  axis_ticks <- axTicks(1)
-  grid_positions <- seq(axis_ticks[[1]],
-                        axis_ticks[[length(axis_ticks)]],
-                        (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
-                        )
-  abline(v = grid_positions,
-         col = ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
-         )
+  axis_ticks <- ManuscriptGrid(horizontal)
 
   if (space_like_boxplot) {
     if (!(lollipop)) {
-      PlotHorizontalBarplotMat(bars_mat,
-                               colors_vec = bar_colors,
-                               positions_vec = group_positions,
-                               width = 1 / (1 + use_space)
-                               )
+      PlotBarplotMat(bars_mat,
+                     colors_vec = bar_colors,
+                     positions_vec = group_positions,
+                     width = 1 / (1 + use_space),
+                     horizontal = horizontal
+                     )
     }
   } else {
     group_positions <- barplot(bars_mat[, rev(seq_len(ncol(bars_mat)))],
-                               horiz     = TRUE,
-                               las       = 1,
+                               horiz     = horizontal,
                                space     = use_space,
                                border    = NA,
                                col       = bar_colors,
@@ -4035,17 +4191,17 @@ HorizontalBars <- function(counts_mat,
   }
 
   if (lollipop) {
-    segments(x0   = par("usr")[[1]],
-             x1   = bars_mat[1, ],
-             y0   = group_positions,
-             y1   = group_positions,
+    segments(x0   = if (horizontal) par("usr")[[1]] else group_positions,
+             x1   = if (horizontal) bars_mat[1, ] else group_positions,
+             y0   = if (horizontal) group_positions else par("usr")[[3]],
+             y1   = if (horizontal) group_positions else bars_mat[1, ],
              col  = colorRampPalette(use_colors)(10)[[4]],
-             lwd  = 2,
+             lwd  = 2 * par("lwd"),
              xpd  = NA,
              lend = "butt"
              )
-    points(x   = bars_mat[1, ],
-           y   = group_positions,
+    points(x   = if (horizontal) bars_mat[1, ] else group_positions,
+           y   = if (horizontal) group_positions else bars_mat[1, ],
            col = use_colors[[2]],
            cex = 1.5,
            pch = 16,
@@ -4053,25 +4209,53 @@ HorizontalBars <- function(counts_mat,
            )
   }
 
+  if (!(horizontal) && !(is_proportion) && abbreviate_thousands) {
+    num_smaller_than_1000 <- sum(numeric_axis_pos[numeric_axis_pos != 0] < 1000)
+    abbreviate_thousands <- num_smaller_than_1000 <= 1
+    if (abbreviate_thousands) {
+      numeric_axis_labels <- paste0(format(numeric_axis_pos / 1000), "k")
+      abbreviated_thousands <- TRUE
+    }
+  }
 
-  ## Draw the axes and main annotations
-  axis(1, at = x_axis_pos, labels = x_axis_labels,
-       mgp = c(2.7, 0.38, 0), gap.axis = 0,
-       tcl = -0.35
+  axis(if (horizontal) 1 else 2,
+       at       = numeric_axis_pos,
+       labels   = numeric_axis_labels,
+       mgp      = c(3, if (horizontal) 0.47 else 0.38, 0),
+       gap.axis = 0,
+       tcl      = if (horizontal) -0.35 else -0.3,
+       las      = 1,
+       lwd      = par("lwd")
        )
-  mtext(group_names, line = 0.35, at = group_positions, side = 2, las = 2)
-  mtext(top_text, line = 0.05)
-  mtext(bottom_text, line = 1.7, side = 1)
+
+  ManuscriptAnnotate(group_positions,
+                     group_names,
+                     modality_label,
+                     axis_label,
+                     horizontal,
+                     use_colors,
+                     modality_on_side = modality_on_side
+                     )
+
   box(bty = "l")
 
   ## Annotate the bars with fractions (counts)
   if (one_row) {
-    text(y      = group_positions,
-         x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.045),
-         labels = bars_mat[1, ],
-         adj    = c(0, 0.5),
-         xpd    = NA
-         )
+    if (horizontal) {
+      text(y      = group_positions,
+           x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.045),
+           labels = bars_mat[1, ],
+           adj    = c(0, 0.5),
+           xpd    = NA
+           )
+    } else {
+      text(x      = group_positions,
+           y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.1),
+           labels = bars_mat[1, ],
+           xpd    = NA
+           )
+    }
+
   } else {
     if (is_proportion) {
       dividends <- counts_mat[2, ]
@@ -4081,53 +4265,83 @@ HorizontalBars <- function(counts_mat,
       divisors <- counts_mat[2, ]
     }
 
-    x_position <- par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.15)
-    y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.055
-    text(y      = group_positions - y_fraction,
-         x      = x_position,
-         labels = divisors,
-         adj    = c(0.5, 0.5),
-         xpd    = NA
-         )
     line_widths <- strwidth(divisors)
-    segments(x0  = x_position - (line_widths / 2),
-             x1  = x_position + (line_widths / 2),
-             y0  = group_positions,
-             xpd = NA
-             )
-    text(y      = group_positions + y_fraction,
-         x      = x_position,
-         labels = dividends,
-         adj    = c(0.5, 0.5),
-         xpd    = NA
-         )
+    if (horizontal) {
+      x_position <- par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.15)
+      y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.055
+      text(y      = group_positions - y_fraction,
+           x      = x_position,
+           labels = divisors,
+           adj    = c(0.5, 0.5),
+           xpd    = NA
+           )
+      segments(x0  = x_position - (line_widths / 2),
+               x1  = x_position + (line_widths / 2),
+               y0  = group_positions,
+               xpd = NA
+               )
+      text(y      = group_positions + y_fraction,
+           x      = x_position,
+           labels = dividends,
+           adj    = c(0.5, 0.5),
+           xpd    = NA
+           )
+    } else {
+      y_position <- par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.16)
+      y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.058
+      text(x      = group_positions,
+           y      = y_position - y_fraction,
+           labels = divisors,
+           adj    = c(0.5, 0.5),
+           xpd    = NA
+           )
+      segments(x0  = group_positions - (line_widths / 2),
+               x1  = group_positions + (line_widths / 2),
+               y0  = y_position,
+               xpd = NA
+               )
+      text(x      = group_positions,
+           y      = y_position + y_fraction,
+           labels = dividends,
+           adj    = c(0.5, 0.5),
+           xpd    = NA
+           )
+    }
   }
 
-  par(old_mai)
+  par(old_par)
   return(invisible(NULL))
 }
 
 
 
 
-HorizontalViolinBox <- function(plot_df,
-                                bottom_text    = "",
-                                use_width      = horizontal_width,
-                                use_height     = horizontal_height
+ManuscriptViolinBox <- function(plot_df,
+                                axis_label = "",
+                                use_width  = horizontal_width,
+                                use_height = horizontal_height,
+                                horizontal = TRUE,
+                                use_cex    = manuscript_cex,
+                                use_lwd    = manuscript_lwd
                                 ) {
 
   ## Prepare colors and labels
   num_groups <- nlevels(plot_df[["Groups_factor"]])
   group_names <- levels(plot_df[["Group"]])
   if ("Brunello" %in% plot_df[["Group"]]) {
-    top_text <- "CRISPRo"
+    modality_label <- "CRISPRo"
     use_colors <- CRISPRo_colors
   } else if ("Calabrese" %in% plot_df[["Group"]]) {
-    top_text <- "CRISPRa"
+    modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
-    group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
+    if (horizontal) {
+      group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
+    } else {
+      group_names[group_names == "hCRISPRa-v2"] <- "hCa-v2"
+      group_names[group_names == "Calabrese"] <- "Calab"
+    }
   } else {
-    top_text <- ""
+    modality_label <- ""
     use_colors <- NULL
   }
 
@@ -4145,7 +4359,9 @@ HorizontalViolinBox <- function(plot_df,
   ## Prepare the groups axis
   spaces_vec <- rep(1.15, num_groups - 1)
   group_positions <- cumsum(c(1, spaces_vec))
-  group_positions <- rev(group_positions)
+  if (horizontal) {
+    group_positions <- rev(group_positions)
+  }
   group_limits <- c((min(group_positions) - 0.5) - (num_groups * 0.04),
                     max(group_positions) + 0.5 + (num_groups * 0.04)
                     )
@@ -4160,8 +4376,13 @@ HorizontalViolinBox <- function(plot_df,
 
 
   ## Prepare the raster graphics device
-  new_mai <- use_mai
-  old_mai <- par("mai" = new_mai)
+  if (horizontal) {
+    new_mai <- horizontal_mai
+  } else {
+    new_mai <- vertical_mai
+  }
+
+  old_par <- par(mai = new_mai, cex = use_cex, lwd = use_lwd)
   main_folder_path <- file.path(output_plots_directory, "_Manuscript")
 
   PDF_device <- dev.cur()
@@ -4173,15 +4394,16 @@ HorizontalViolinBox <- function(plot_df,
       width  = temp_width,
       height = temp_height,
       units  = "in",
-      res    = 900
+      res    = 900,
+      bg     = "transparent"
       )
 
 
   ## Prepare the plot for the raster device
-  old_mai <- par("mai" = rep(0, 4))
+  old_par <- par(mai = rep(0, 4), cex = use_cex)
   plot(1,
-       xlim = numeric_limits,
-       ylim = group_limits,
+       xlim = if (horizontal) numeric_limits else group_limits,
+       ylim = if (horizontal) group_limits else numeric_limits,
        xaxs = "i",
        yaxs = "i",
        type = "n",
@@ -4191,15 +4413,7 @@ HorizontalViolinBox <- function(plot_df,
 
 
   ## Draw the grid
-  axis_ticks <- axTicks(1)
-  grid_positions <- seq(axis_ticks[[1]],
-                        axis_ticks[[length(axis_ticks)]],
-                        (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
-                        )
-  abline(v = grid_positions,
-         col = ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
-         )
-
+  axis_ticks <- ManuscriptGrid(horizontal)
 
   ## Draw the violin plots
   vioplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
@@ -4211,13 +4425,13 @@ HorizontalViolinBox <- function(plot_df,
           border     = NA,
           wex        = 1.1,
           axes       = FALSE,
-          horizontal = TRUE
+          horizontal = horizontal
           )
 
 
   ## Draw the jittered points
-  points(y   = jittered_vec,
-         x   = plot_df[["Numeric_data"]],
+  points(x   = if (horizontal) plot_df[["Numeric_data"]] else jittered_vec,
+         y   = if (horizontal) jittered_vec else plot_df[["Numeric_data"]],
          cex = 0.4,
          col = paste0(colorRampPalette(use_colors)(9)[[8]], alpha_hex),
          pch = 16
@@ -4233,8 +4447,8 @@ HorizontalViolinBox <- function(plot_df,
 
   ## Prepare the final plot
   plot(1,
-       xlim = numeric_limits,
-       ylim = group_limits,
+       xlim = if (horizontal) numeric_limits else group_limits,
+       ylim = if (horizontal) group_limits else numeric_limits,
        xaxs = "i",
        yaxs = "i",
        type = "n",
@@ -4263,24 +4477,41 @@ HorizontalViolinBox <- function(plot_df,
           border     = use_colors[[2]],
           axes       = FALSE,
           lwd        = 1,
-          horizontal = TRUE
+          horizontal = horizontal
           )
 
   ## Draw the axes and main annotations
-  mtext(top_text, line = 0.05)
-  mtext(bottom_text, line = 1.7, side = 1)
-  mtext(group_names, line = 0.35, at = group_positions,
-        side = 2, las = 2
-        )
-  num_per_group <- unique(tabulate(plot_df[["Groups_factor"]]))
-  mtext(paste0("(", num_per_group, ")"),
-        line = 0.05, at = par("usr")[[2]], adj = 1
-        )
 
-  axis(1, mgp = c(2.7, 0.38, 0), gap.axis = 0, tcl = -0.35)
+  axis(if (horizontal) 1 else 2,
+       at       = axis_ticks,
+       labels   = if (horizontal) axis_ticks else format(axis_ticks),
+       mgp      = c(3, 0.38, 0),
+       gap.axis = 0,
+       tcl      = if (horizontal) -0.35 else -0.3,
+       las      = 1,
+       lwd      = par("lwd")
+       )
+
+  ManuscriptAnnotate(group_positions,
+                     group_names,
+                     modality_label,
+                     axis_label,
+                     horizontal,
+                     use_colors,
+                     modality_on_top = TRUE
+                     )
+
+  num_per_group <- unique(tabulate(plot_df[["Groups_factor"]]))
+  text(x      = par("usr")[[2]],
+       y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.1),
+       labels = paste0("(", num_per_group, ")"),
+       adj    = c(1, 0.5),
+       xpd    = NA
+       )
+
   box()
 
-  par(old_mai)
+  par(old_par)
 }
 
 
@@ -4289,7 +4520,7 @@ HorizontalViolinBox <- function(plot_df,
 
 
 
-DrawAllHorizontalPlots <- function(CRISPR_df) {
+DrawAllManuscriptPlots <- function(CRISPR_df) {
 
   barplot_vars <- c(
     "Are_overlapping",
@@ -4334,14 +4565,14 @@ DrawAllHorizontalPlots <- function(CRISPR_df) {
 
   labels_list <- list(
     "Num_genes"                        = "Number of genes in library",
-    "Are_overlapping"                  = expression("Spacing between gRNAs " < "50 bp"),
-    "all22_SNP_AF_max_Kaviar"          = "Target genetic polymorphism (> 0.1%)",
-    "Expected_all22_SNP_AF_max_Kaviar" = "Expected to target alternate allele",
+    "Are_overlapping"                  = expression("Spacing" < "50 bp"),
+    "all22_SNP_AF_max_Kaviar"          = "Target polymorphism > 0.1%",
+    "Expected_all22_SNP_AF_max_Kaviar" = "Expected to hit alternate allele",
     "Affects_any_unintended_gene"      = "Affect unintended gene",
-    "Affects_any_genes_at_other_loci"  = "Affect off-site unintended gene",
+    "Affects_any_genes_at_other_loci"  = "Affect off-site gene",
     "GuideScan_specificity"            = "GuideScan specificity score",
     "CRISPOR_Doench_efficacy"          = "Efficacy score (Rule Set 2)",
-    "Have_homologies"                  = expression("Share identical subsequences" >= "8 bp")
+    "Have_homologies"                  = expression("Share subsequences" >= "8 bp")
   )
 
   use_folder <- file.path(output_plots_directory, "_Manuscript")
@@ -4354,25 +4585,29 @@ DrawAllHorizontalPlots <- function(CRISPR_df) {
     for (make_PDF in c(TRUE)) {
       if (make_PDF) {
         pdf(file.path(use_folder, paste0(file_name, ".pdf")),
-            width = horizontal_width, height = horizontal_height
+            width = if (var_name == "Have_homologies") horizontal_width + 0.6 else horizontal_width,
+            height = horizontal_height
             )
       }
       if (var_name %in% names(mat_list)) {
-        HorizontalBars(mat_list[[var_name]],
-                       bottom_text = labels_list[[var_name]],
+        ManuscriptBars(mat_list[[var_name]],
+                       axis_label = labels_list[[var_name]],
                        numeric_limits = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
-                       lollipop = var_name == "Num_genes"
+                       lollipop = var_name == "Num_genes",
+                       horizontal = FALSE,
+                       modality_on_side = var_name == "Have_homologies",
+                       abbreviate_libraries = var_name != "Have_homologies"
                        )
       } else if (var_name %in% names(df_list)) {
-        HorizontalViolinBox(df_list[[var_name]], bottom_text = labels_list[[var_name]])
+        ManuscriptViolinBox(df_list[[var_name]], axis_label = labels_list[[var_name]],
+                            horizontal = FALSE
+                            )
       }
       if (make_PDF) {
         dev.off()
       }
     }
   }
-
-
 }
 
 
