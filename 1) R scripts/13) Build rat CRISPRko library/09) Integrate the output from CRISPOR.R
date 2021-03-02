@@ -17,7 +17,6 @@ source(file.path(general_functions_directory, "06) Helper functions for genomic 
 
 CRISPR_root_directory    <- "~/CRISPR"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
-general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory <- file.path(RData_directory, "12) Rat - CRISPRko")
 CRISPOR_files_directory  <- file.path(CRISPR_root_directory, "4) Intermediate files", "Rat - CRISPRko", "CRISPOR")
 
