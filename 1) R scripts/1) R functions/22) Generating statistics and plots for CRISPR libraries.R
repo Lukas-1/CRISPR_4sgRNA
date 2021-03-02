@@ -402,7 +402,7 @@ ConcatenateExpressions <- function(expression_list, my_sep = "  \u2013  ") {
 }
 
 VerticalAdjust <- function(use_expression) {
-  my_list <- list(expression(phantom("g")), use_expression, expression(phantom("h")))
+  my_list <- list(expression(phantom("gh")), use_expression, expression(phantom("gh")))
   return(ConcatenateExpressions(my_list, my_sep = ""))
 }
 
@@ -2764,11 +2764,10 @@ DrawDeletionHistogram <- function(overview_df,
        breaks   = use_breaks,
        xlim     = x_limits,
        ylim     = y_limits,
-       xlab     = "",
-       ylab     = y_axis_label,
        xaxs     = "i",
        yaxs     = "i",
        freq     = TRUE,
+       ann      = FALSE,
        axes     = FALSE,
        main     = "",
        mgp      = c(y_label_line, 1, 0),
@@ -2776,8 +2775,9 @@ DrawDeletionHistogram <- function(overview_df,
 
   axis(2,
        las = 1,
-       mgp = c(3, 0.45, 0),
-       tcl = -0.3
+       mgp = c(3, 0.38, 0),
+       tcl = -0.3,
+       lwd = par("lwd")
        )
 
   axis_ticks <- axTicks(1)
@@ -2789,8 +2789,9 @@ DrawDeletionHistogram <- function(overview_df,
   axis(1,
        at     = axis_ticks,
        labels = parse(text = axis_labels),
-       mgp    = c(3, 0.45, 0),
-       tcl    = -0.3
+       mgp    = c(3, 0.49, 0),
+       tcl    = -0.3,
+       lwd    = par("lwd")
        )
 
   old_scipen <- options(scipen = -1)
@@ -2806,8 +2807,17 @@ DrawDeletionHistogram <- function(overview_df,
 
   plot_height <- par("usr")[[4]] - par("usr")[[3]]
 
-  mtext(x_axis_label, line = 2.2, side = 1, cex = par("cex"))
-  return(invisible(NULL))
+  text(x      = par("usr")[[1]] - diff(grconvertX(c(0, y_label_line), from = "lines", to = "user")),
+       y      = grconvertY(0.5, from = "npc", to = "user"),
+       labels = VerticalAdjust(y_axis_label),
+       srt    = 90,
+       xpd    = NA,
+       adj    = c(0.5, 0)
+       )
+
+  mtext(x_axis_label, line = x_label_line, side = 1, cex = par("cex"))
+
+  return(invisible(hist_results))
 }
 
 
@@ -2885,10 +2895,10 @@ Plot4sgData <- function(overview_df, CRISPR_df) {
           )
     }
     par(oma = c(0, 1, 0.5, 1))
-    SharedSubsequencesBarplot(CRISPR_df)
     if ("Deletion_size" %in% names(overview_df)) {
       DrawDeletionHistogram(overview_df)
     }
+    SharedSubsequencesBarplot(CRISPR_df)
     for (column_name in CFD_specificity_scores) {
       DrawHistogram(overview_df, column_name)
     }
@@ -2906,14 +2916,6 @@ Plot4sgData <- function(overview_df, CRISPR_df) {
 
 # Functions for generating Venn diagrams ----------------------------------
 
-
-Get4sgFactor <- function(CRISPR_df) {
-  CRISPR_df <- FilterCRISPRDf(CRISPR_df)
-  are_chosen <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
-  all_sources_fac <- ReformatSourceToFactor(CRISPR_df[["Source"]][are_chosen])
-  return(all_sources_fac)
-}
-
 PlotVennDiagrams <- function(CRISPR_df) {
   for (make_PDF in c(FALSE, TRUE)) {
     if (make_PDF) {
@@ -2923,7 +2925,7 @@ PlotVennDiagrams <- function(CRISPR_df) {
     }
     CRISPR_df <- FilterCRISPRDf(CRISPR_df)
     are_chosen <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
-    all_sources_fac <- GetSourcesFactor(CRISPR_df[["Source"]])
+    all_sources_fac <- ReformatSourceToFactor(CRISPR_df[["Source"]])
 
     euler_not_chosen <- PlotVennDiagram(all_sources_fac[!(are_chosen)])
     euler_4sg <- PlotVennDiagram(all_sources_fac[are_chosen])
@@ -3352,25 +3354,25 @@ MakeScatterPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
 
 # Functions for producing hybrid bar plots/doughnut plots -----------------
 
-doughnut <- function (x,
-                      labels = names(x),
-                      edges = 200,
-                      outer.radius = 0.8,
-                      inner.radius = 0.6,
-                      clockwise = FALSE,
-                      init.angle = if (clockwise) 90 else 0,
-                      density = NULL,
-                      angle = 45,
-                      col = NULL,
-                      border = FALSE,
-                      lty = NULL,
-                      main = NULL,
-                      radius_factor = 1,
-                      x_origin = 0,
-                      y_origin = 0,
-                      add = TRUE,
-                      ...
-                      ) {
+doughnut <- function(x,
+                     labels = names(x),
+                     edges = 200,
+                     outer.radius = 0.8,
+                     inner.radius = 0.6,
+                     clockwise = TRUE,
+                     init.angle = if (clockwise) 90 else 0,
+                     density = NULL,
+                     angle = 45,
+                     col = NULL,
+                     border = FALSE,
+                     lty = NULL,
+                     main = NULL,
+                     radius_factor = 1,
+                     x_origin = 0,
+                     y_origin = 0,
+                     add = TRUE,
+                     ...
+                     ) {
   # Adapted from https://www.r-graph-gallery.com/130-ring-or-donut-chart.html
     if (!is.numeric(x) || any(is.na(x) | x < 0))
         stop("'x' values must be positive.")
@@ -3417,21 +3419,24 @@ doughnut <- function (x,
                   outer.radius * radius_factor)
         polygon(c(P$x, 0) + x_origin, c(P$y, 0) + y_origin, density = density[i],
                 angle = angle[i], border = border[i],
-                col = col[i], lty = lty[i])
+                col = col[i], lty = lty[i], xpd = NA
+                )
         Pout <- t2xy(mean(x[i + 0:1]), outer.radius * radius_factor)
         lab <- as.character(labels[i])
         if (!is.na(lab) && nzchar(lab)) {
             lines(c(1, 1.05) * Pout$x + x_origin, c(1, 1.05) * Pout$y + y_origin)
             text(1.1 * Pout$x + x_origin, 1.1 * Pout$y + y_origin, labels[i],
                  xpd = TRUE, adj = ifelse(Pout$x < 0, 1, 0),
-                 ...)
+                 ...
+                 )
         }
         ## Add white disc
         Pin <- t2xy(seq.int(0, 1, length.out = n*nx),
                   inner.radius * radius_factor)
         polygon(Pin$x + x_origin, Pin$y + y_origin, density = density[i],
                 angle = angle[i], border = border[i],
-                col = "white", lty = lty[i])
+                col = "white", lty = lty[i], xpd = NA
+                )
     }
 
     title(main = main, ...)
@@ -3442,18 +3447,35 @@ doughnut <- function (x,
 
 
 
-DonutBars <- function(use_factor       = NULL,
+DonutBars <- function(use_factor         = NULL,
                       use_colors,
-                      space            = 0.5,
-                      use_title        = NULL,
-                      donut_radius     = 0.15,
-                      donut_label      = "",
-                      donut_text_size  = 0.5,
-                      donut_x_mid      = 0.8,
-                      donut_y_mid      = 0.2,
-                      counts_vec       = NULL,
-                      use_labels       = NULL,
-                      show_percentages = TRUE
+                      space              = 0.5,
+                      use_title          = NULL,
+                      title_font         = 2,
+                      bar_labels         = NULL,
+                      donut_radius       = 0.15,
+                      donut_label        = "",
+                      donut_text_size    = 0.5,
+                      donut_x_mid        = 0.8,
+                      donut_y_mid        = 0.2,
+                      counts_vec         = NULL,
+                      use_labels         = NULL,
+                      show_percentages   = TRUE,
+                      show_axis          = FALSE,
+                      side_text_size     = 0.9,
+                      bar_text_size      = 0.7,
+                      bar_text_font      = 2,
+                      text_dark_color    = NULL,
+                      use_mai            = c(0.2, 1.9, 0.1, 0.3),
+                      use_omi            = c(0, 0, 0.45, 0),
+                      x_axis_label       = NULL,
+                      leave_spaces_for   = NULL,
+                      donut_inner_radius = 0.4,
+                      use_line_height    = 1.15,
+                      bar_label_line     = 0.6,
+                      draw_box           = FALSE,
+                      y_axis_label       = NULL,
+                      percent_max        = NULL
                       ) {
 
   if (is.null(counts_vec)) {
@@ -3482,88 +3504,155 @@ DonutBars <- function(use_factor       = NULL,
 
   num_bars <- length(counts_vec)
 
-  num_units <- num_bars + ((num_bars + 1) * space)
+  if (!(is.null(leave_spaces_for))) {
+    num_positions <- leave_spaces_for
+  } else {
+    num_positions <- num_bars
+  }
+  print(num_positions)
+  print(space)
+  print(num_bars)
+  print(leave_spaces_for)
+
+  side_space <- space * (2 / 3)
+
+  num_units <- num_positions + ((num_positions - 1) * space) + (2 * side_space)
 
   unit_width <- 1 / num_units
-  start_y <- (unit_width * space)
 
-  bar_mid_positions <- cumsum(rep(unit_width, num_bars)) +
-                       cumsum(rep(unit_width * space, num_bars)) -
-                      (unit_width / 2)
-  bar_mid_positions <- rev(bar_mid_positions)
+  bar_mid_positions <- cumsum(rep(unit_width, num_positions)) +
+                       cumsum(rep(unit_width * space, num_positions)) -
+                       (unit_width / 2) - (side_space * unit_width)
+  bar_mid_positions <- rev(bar_mid_positions)[seq_len(num_bars)]
 
-  bar_lengths <- counts_vec / max(counts_vec)
+  x_max <- max(counts_vec)
+  if (show_axis) {
+    total_num <- sum(counts_vec)
+    if (is.null(percent_max)) {
+      percent_max <- GetFlexibleAxisLimits(c(0, x_max / total_num * 100))[[2]]
+    }
+    x_max <- (percent_max / 100) * total_num
+    pretty_pos <- pretty(c(0, percent_max))
+  }
+  bar_lengths <- counts_vec / x_max
 
-  old_par <- par(mai = c(0, 1.9, 0.1, 0.2),
-                 omi = c(0, 0, 0.45, 0)
+
+  plot.new()
+  old_par <- par(mai     = use_mai,
+                 omi     = use_omi,
+                 lheight = use_line_height
                  )
+  plot.window(c(0, 1), c(0, 1), "", asp = 1)
 
-  MakeEmptyPlot()
-
-  par("lheight" = 1.15)
 
   if (!(is.null(use_title))) {
-    title(use_title, outer = TRUE, cex.main = par("cex") * 0.8, line = 0)
+    title(use_title, outer = TRUE, cex.main = par("cex") * 0.8, line = 0,
+          font.main = title_font
+          )
   }
 
+  bar_mids <- grconvertY(bar_mid_positions, from = "npc", to = "user")
+  half_bar <- (par("usr")[[4]] - par("usr")[[3]]) * unit_width * 0.5
+
+  if (draw_box) {
+    box(bty = "]", col = "gray70")
+  }
+
+
   for (i in seq_len(num_bars)) {
-    rect(xleft     = 0,
-         xright    = bar_lengths[[i]],
-         ybottom   = bar_mid_positions[[i]] - (unit_width / 2),
-         ytop      = bar_mid_positions[[i]] + (unit_width / 2),
-         border    = use_colors[[i]],
-         col       = use_colors[[i]],
-         lwd       = 0.5
+    rect(xleft   = par("usr")[[1]],
+         xright  = grconvertX(bar_lengths[[i]], from = "npc", to = "user"),
+         ybottom = bar_mids[[i]] - half_bar,
+         ytop    = bar_mids[[i]] + half_bar,
+         border  = use_colors[[i]],
+         col     = use_colors[[i]],
+         lwd     = 0.5,
+         xpd     = NA
          )
   }
 
-
-  are_too_small <- bar_lengths < (par("usr")[[2]] / 5)
+  are_too_small <- bar_lengths < (par("usr")[[2]] * 0.2)
   x_range <- par("usr")[[2]] - par("usr")[[1]]
 
-  text(y      = bar_mid_positions[are_too_small],
-       x      = bar_lengths[are_too_small] + (x_range * 0.02),
+  text(y      = bar_mids[are_too_small],
+       x      = grconvertX(bar_lengths[are_too_small] + (x_range * 0.02),
+                           from = "npc", to = "user"
+                           ),
        xpd    = NA,
        labels = count_labels[are_too_small],
        adj    = c(0, 0.5),
-       cex    = 0.7,
-       font   = 2,
-       col    = "gray52"
+       cex    = bar_text_size,
+       font   = bar_text_font,
+       col    = if (is.null(text_dark_color)) "gray52" else text_dark_color
        )
 
   assign("delete_use_colors", use_colors, envir = globalenv())
-  text(y      = bar_mid_positions[!(are_too_small)],
-       x      = bar_lengths[!(are_too_small)] / 2,
+  text(y      = bar_mids[!(are_too_small)],
+       x      = grconvertX(bar_lengths[!(are_too_small)] / 2,
+                           from = "npc", to = "user"
+                           ),
        xpd    = NA,
        labels = count_labels[!(are_too_small)],
        adj    = 0.5,
-       cex    = 0.7,
-       font   = 2,
+       cex    = bar_text_size,
+       font   = bar_text_font,
        col    = ifelse((colMeans(col2rgb(use_colors[!(are_too_small)])) / 255) < 0.5,
                        "gray92",
-                       "gray48"
+                       if (is.null(text_dark_color)) "gray48" else text_dark_color
                        )
        )
 
-  text(y      = bar_mid_positions,
-       x      = par("usr")[[1]] - ((par("usr")[[2]] - par("usr")[[1]]) * 0.01),
+  text(y      = bar_mids,
+       x      = par("usr")[[1]] - (diff(grconvertX(c(0, bar_label_line), from = "lines", to = "user"))),
        xpd    = NA,
        labels = use_labels,
        adj    = c(1, 0.5),
-       cex    = 0.9
+       cex    = side_text_size
        )
+
+
+  donut_x_mid <- grconvertX(donut_x_mid, from = "npc", to = "user")
+  donut_y_mid <- grconvertY(donut_y_mid, from = "npc", to = "user")
 
   doughnut(rev(counts_vec), labels = NA, col = rev(use_colors), add = TRUE,
            x_origin = donut_x_mid, y_origin = donut_y_mid,
-           radius_factor  = donut_radius, inner.radius = 0.4
+           radius_factor  = donut_radius, inner.radius = donut_inner_radius
            )
 
   text(x      = donut_x_mid,
        y      = donut_y_mid,
        labels = donut_label,
-       font   = 2,
+       font   = bar_text_font,
        cex    = donut_text_size
        )
+
+  if (show_axis) {
+    actual_pos <- seq(from = par("usr")[[1]],
+                      to   = par("usr")[[2]],
+                      by   = (par("usr")[[2]] - par("usr")[[1]]) / (length(pretty_pos) - 1)
+                      )
+    axis(3,
+         at     = actual_pos,
+         labels = paste0(pretty_pos, "%"),
+         mgp    = c(3, 0.38, 0),
+         tcl    = -0.3,
+         lwd    = par("lwd")
+         )
+
+    if (!(is.null(x_axis_label))) {
+      mtext(x_axis_label, side = 3, line = 1.7, cex = par("cex"))
+    }
+  }
+
+  if (!(is.null(y_axis_label))) {
+    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2), from = "lines", to = "user")),
+         y      = grconvertY(0.5, from = "npc", to = "user"),
+         labels = VerticalAdjust(y_axis_label),
+         srt    = 90,
+         xpd    = NA,
+         adj    = c(0.5, 0)
+         )
+  }
 
   par(old_par)
   return(invisible(NULL))
@@ -3580,17 +3669,26 @@ ReverseList <- function(my_list) {
 }
 
 
-DeletionsDonutBar <- function(deletions_summary_df, use_title = NULL) {
-  CategoriesDonutBar(as.character(deletions_summary_df[, "Gene_targets_summary"]), use_title)
+DeletionsDonutBar <- function(deletions_summary_df, ...) {
+  CategoriesDonutBar(as.character(deletions_summary_df[, "Gene_targets_summary"]), ...)
 }
 
-SummaryDonutBar <- function(CRISPR_df, targets_df, use_title = NULL) {
+SummaryDonutBar <- function(CRISPR_df, targets_df, ...) {
   categories_vec <- Summarize4sgTargets(CRISPR_df, targets_df)
-  CategoriesDonutBar(categories_vec, use_title = use_title)
+  CategoriesDonutBar(categories_vec, ...)
 }
 
 
-TSSDonutBar <- function(CRISPR_df) {
+TSSDonutBar <- function(CRISPR_df,
+                        use_title       = "Number of TSSs targeted for each gene in the 4sg library",
+                        donut_label     = "4sg",
+                        donut_text_size = 0.8,
+                        donut_radius    = 0.26,
+                        donut_x_mid     = 0.72,
+                        donut_y_mid     = 0.28,
+                        use_colors      = carto_pal(6, "Emrld"),
+                        ...
+                        ) {
 
   num_TSS_labels <- c("Only 1 TSS targeted",
                     paste0(seq_len(20 - 1) + 1,
@@ -3607,19 +3705,48 @@ TSSDonutBar <- function(CRISPR_df) {
   levels(num_TSS_fac) <- num_TSS_labels[seq_len(nlevels(num_TSS_fac))]
 
   stopifnot(nlevels(num_TSS_fac) <= 6)
-  num_TSS_colors <- carto_pal(6, "Emrld")
 
-  DonutBars(num_TSS_fac, num_TSS_colors,
-            donut_label = "4sg", donut_text_size = 0.8,
-            donut_radius = 0.26, donut_x_mid = 0.72, donut_y_mid = 0.28,
-            use_title = "Number of TSSs targeted for each gene in the 4sg library"
+  DonutBars(num_TSS_fac,
+            use_colors      = use_colors,
+            donut_label     = donut_label,
+            donut_text_size = donut_text_size,
+            donut_radius    = donut_radius,
+            donut_x_mid     = donut_x_mid,
+            donut_y_mid     = donut_y_mid,
+            use_title       = use_title,
+            ...
             )
 }
 
 
 
+manuscript_map_list <- list(
+  "Affect only the\nintended gene"         = "Only intended",
+  "Also affect on-site\nunintended genes"  = c("Intended and unintended (in the same locus)",
+                                             "Intended and unintended (in the same loci)"
+                                             ),
+  "Also affect off-site\nunintended genes" = "Intended and unintended (in other loci)",
+  "Unknown (no\ngene location)"            = "No location data for the intended gene",
+  "Do not affect the\nintended gene"       = c("Only unintended (in the same locus)",
+                                               "Only unintended (in the same loci)",
+                                               "Only unintended (multiple loci)",
+                                               "No targets (single locus)",
+                                               "No targets (multiple loci)",
+                                               "No hits in the reference genome"
+                                               )
+)
 
-CategoriesDonutBar <- function(character_vec, use_title = NULL) {
+
+
+CategoriesDonutBar <- function(character_vec,
+                               donut_label     = "4sg",
+                               donut_radius    = 0.26,
+                               donut_x_mid     = 0.72,
+                               donut_y_mid     = 0.28,
+                               donut_text_size = 0.8,
+                               use_map_list    = NULL,
+                               ...
+                               ) {
 
   categories_map_list <- list(
     "Affect only the\nintended gene"             = "Only intended",
@@ -3636,6 +3763,10 @@ CategoriesDonutBar <- function(character_vec, use_title = NULL) {
                                                      "No hits in the reference genome"
                                                      )
   )
+  if (!(is.null(use_map_list))) {
+    categories_map_list <- use_map_list
+  }
+
   new_categories_map <- ReverseList(categories_map_list)
 
   stopifnot(all(character_vec %in% names(new_categories_map)))
@@ -3646,10 +3777,12 @@ CategoriesDonutBar <- function(character_vec, use_title = NULL) {
 
   DonutBars(category_fac,
             category_colors,
-            use_title = use_title,
-            donut_label = "4sg",
-            donut_radius = 0.26, donut_x_mid = 0.72, donut_y_mid = 0.28,
-            donut_text_size = 0.8
+            donut_label     = donut_label,
+            donut_radius    = donut_radius,
+            donut_x_mid     = donut_x_mid,
+            donut_y_mid     = donut_y_mid,
+            donut_text_size = donut_text_size,
+            ...
             )
 }
 
@@ -3741,7 +3874,7 @@ CompareTSSDonutBars <- function(CRISPR_df) {
 
   library_name <- names(dimnames(num_TSSs_hCRISPR))
 
-  DonutBars(counts_vec    = num_TSSs_hCRISPR,
+  DonutBars(counts_vec      = num_TSSs_hCRISPR,
             use_labels      = num_TSS_labels[seq_along(num_TSSs_hCRISPR)],
             use_colors      = carto_pal(6, "Emrld")[seq_along(num_TSSs_hCRISPR)],
             donut_label     = library_name,
@@ -3807,6 +3940,32 @@ DrawAllDonutBars <- function(CRISPR_df = NULL) {
 }
 
 
+manuscript_donut_args <- list(
+  use_title          = NULL,
+  show_axis          = TRUE,
+  bar_text_size      = 1,
+  side_text_size     = 1,
+  show_percentages   = FALSE,
+  bar_text_font      = 1,
+  donut_radius       = 0.28,
+  donut_text_size    = 0.9,
+  donut_label        = "4sg",
+  use_mai            = c(0.01, 1, 0.4, 0.15),
+  use_omi            = rep(0, 4),
+  donut_inner_radius = 0.35,
+  use_line_height    = 0.95,
+  donut_x_mid        = 0.5,
+  donut_y_mid        = 0.27,
+  bar_label_line     = 0.5
+)
+
+
+
+
+
+
+
+
 
 
 
@@ -3815,7 +3974,9 @@ DrawAllDonutBars <- function(CRISPR_df = NULL) {
 # Functions for generating multi-plot layouts -----------------------------
 
 MakeEmptyPlot <- function() {
-  plot(1, xlim = c(0, 1), ylim = c(0, 1), type = "n", ann = FALSE, axes = FALSE)
+  plot(1, xlim = c(0, 1), ylim = c(0, 1), type = "n",
+       xaxs = "i", yaxs = "i", ann = FALSE, axes = FALSE
+       )
 }
 
 
@@ -3854,7 +4015,7 @@ vertical_mai   <- c(0.30, 0.47, 0.30, 0.32)
 
 # use_ratio <- 60.9 / 92.4
 manuscript_cex <- 0.7
-manuscript_lwd <- 0.7
+manuscript_lwd <- 0.8
 
 
 
@@ -3951,13 +4112,12 @@ ManuscriptAnnotate <- function(group_positions,
                                group_names,
                                modality_label,
                                axis_label,
-                               horizontal = TRUE,
-                               use_colors = "#000000",
+                               horizontal       = TRUE,
+                               use_colors       = "#000000",
                                colored_modality = FALSE,
-                               modality_on_top = FALSE,
+                               modality_on_top  = FALSE,
                                modality_on_side = FALSE
                                ) {
-
 
   if (horizontal) {
     mtext(group_names, line = 0.35, at = group_positions, side = 2, las = 2,
@@ -3965,7 +4125,7 @@ ManuscriptAnnotate <- function(group_positions,
           )
   } else {
     text(x      = group_positions,
-         y      = par("usr")[[3]] - ((par("usr")[[4]] - par("usr")[[3]]) * 0.055),
+         y      = par("usr")[[3]] - diff(grconvertY(c(0, 0.44), from = "lines", to = "user")),
          labels = group_names,
          adj    = c(0.5, 1),
          xpd    = NA
@@ -3983,13 +4143,13 @@ ManuscriptAnnotate <- function(group_positions,
   } else {
     if (modality_on_top) {
       text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.5),
-           y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.1),
+           y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.78), from = "lines", to = "user")),
            labels = modality_label,
            col    = modality_color,
            xpd    = NA
            )
     } else if (modality_on_side) {
-      text(x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.04),
+      text(x      = par("usr")[[2]] + diff(grconvertX(c(0, 0.32), from = "lines", to = "user")),
            y      = grconvertY(0.5, from = "npc", to = "user"),
            labels = modality_label,
            srt    = 270,
@@ -3998,13 +4158,12 @@ ManuscriptAnnotate <- function(group_positions,
            xpd    = NA
            )
     }
-
   }
 
   if (horizontal) {
     mtext(axis_label, line = 1.7, side = 1, cex = par("cex"))
   } else {
-    text(x      = par("usr")[[1]] - ((par("usr")[[2]] - par("usr")[[1]]) * 0.22),
+    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2.53), from = "lines", to = "user")),
          y      = grconvertY(0.5, from = "npc", to = "user"),
          labels = VerticalAdjust(axis_label),
          srt    = 90,
@@ -4039,7 +4198,6 @@ ManuscriptGrid <- function(horizontal = TRUE) {
              col  = grid_colors,
              lend = "butt",
              xpd  = NA
-
              )
   }
   return(axis_ticks)
@@ -4502,15 +4660,15 @@ ManuscriptViolinBox <- function(plot_df,
                      )
 
   num_per_group <- unique(tabulate(plot_df[["Groups_factor"]]))
+
   text(x      = par("usr")[[2]],
-       y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.1),
+       y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.78), from = "lines", to = "user")),
        labels = paste0("(", num_per_group, ")"),
        adj    = c(1, 0.5),
        xpd    = NA
        )
 
   box()
-
   par(old_par)
 }
 
@@ -4585,7 +4743,7 @@ DrawAllManuscriptPlots <- function(CRISPR_df) {
     for (make_PDF in c(TRUE)) {
       if (make_PDF) {
         pdf(file.path(use_folder, paste0(file_name, ".pdf")),
-            width = if (var_name == "Have_homologies") horizontal_width + 0.6 else horizontal_width,
+            width = if (var_name == "Have_homologies") horizontal_width + 0.3 else horizontal_width,
             height = horizontal_height
             )
       }
@@ -4595,8 +4753,7 @@ DrawAllManuscriptPlots <- function(CRISPR_df) {
                        numeric_limits = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
                        lollipop = var_name == "Num_genes",
                        horizontal = FALSE,
-                       modality_on_side = var_name == "Have_homologies",
-                       abbreviate_libraries = var_name != "Have_homologies"
+                       modality_on_side = var_name == "Have_homologies"
                        )
       } else if (var_name %in% names(df_list)) {
         ManuscriptViolinBox(df_list[[var_name]], axis_label = labels_list[[var_name]],
