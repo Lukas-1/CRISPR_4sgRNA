@@ -1130,11 +1130,6 @@ PlotViolin <- function(plot_df,
                        point_cex             = 0.5
                        ) {
 
-  assign("delete_plot_df",       plot_df,       envir = globalenv())
-  assign("delete_x_positions",   x_positions,   envir = globalenv())
-  assign("delete_colors_df",     colors_df,     envir = globalenv())
-  assign("delete_y_column_name", y_column_name, envir = globalenv())
-
   stopifnot(all(c("Numeric_data", "Groups_factor", "Point_colors") %in% names(plot_df)))
   stopifnot(all(c("Pale", "Medium", "Dark") %in% names(colors_df)))
 
@@ -1621,7 +1616,10 @@ SourcesBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
       }
       for (file_name in names(args_list)) {
         only_four_groups <- file_name %in% names(args_list)[1:5]
-        main_folder_path <- file.path(output_plots_directory, paste0("Box plots - ", file_name))
+        main_folder_path <- file.path(output_plots_directory,
+                                      "Box plots",
+                                      paste0("Box plots - ", file_name)
+                                      )
         PNG_folder_path <- file.path(main_folder_path, "PNGs")
         all_folder_paths <- c(main_folder_path, PNG_folder_path)
         if (only_four_groups) {
@@ -1745,15 +1743,6 @@ TidyRawData <- function(plot_df) {
   results_df <- results_df[, !(names(results_df) %in% "Point_colors")]
   return(results_df)
 }
-
-
-
-
-
-
-# Functions for plotting dot charts ---------------------------------------
-
-
 
 
 
@@ -2064,7 +2053,6 @@ BarPlot_UniqueTwoGroups <- function(CRISPR_df,
                                     use_y_limits = NULL
                                     ) {
 
-
   sum_up_SNPs <- grepl("^Expected_.+_SNP_AF_(sum|max)_", use_column)
   if (sum_up_SNPs) {
     use_column <- sub("^Expected_", "", use_column)
@@ -2125,7 +2113,6 @@ BarPlot_UniqueTwoGroups <- function(CRISPR_df,
   if (show_title) {
     title(title_text, cex.main = title_cex, line = 3.625)
   }
-
   bar_results <- PlotBars(proportions_mat, x_spaces, x_limits, colors_df,
                           create_plot = create_plot, use_y_limits = use_y_limits
                           )
@@ -2187,16 +2174,6 @@ BarPlot_Sources <- function(CRISPR_df,
                             filter_complete_scores = TRUE,
                             collapse_GPP           = filter_top4
                             ) {
-
-  assign("delete_CRISPR_df",              CRISPR_df,              envir = globalenv())
-  assign("delete_use_column",             use_column,             envir = globalenv())
-  assign("delete_use_cutoff",             use_cutoff,             envir = globalenv())
-  assign("delete_show_rest_v_4sg",        show_rest_v_4sg,        envir = globalenv())
-  assign("delete_show_sublibraries",      show_sublibraries,      envir = globalenv())
-  assign("delete_filter_top4",            filter_top4,            envir = globalenv())
-  assign("delete_filter_complete_genes",  filter_complete_genes,  envir = globalenv())
-  assign("delete_filter_complete_scores", filter_complete_scores, envir = globalenv())
-  assign("delete_collapse_GPP",           collapse_GPP,           envir = globalenv())
 
   if (show_sublibraries && show_rest_v_4sg) {
     stop("The 'show_sublibraries' and 'show_rest_v_4sg' arguments may not both be TRUE!")
@@ -2315,15 +2292,8 @@ BarPlot_Sources <- function(CRISPR_df,
   }
 
   spaces_vec <- ifelse(colors_df[["Are_new_color"]], 1.3, 0.3)
-
   x_limits <- BarPlotXlimits(spaces_vec, side_space = max(spaces_vec))
-
   old_mar <- par(mar = c(4, 4, 6, 3) + 0.1)
-
-  assign("delete_plot_df", plot_df, envir = globalenv())
-  assign("delete_spaces_vec__2", spaces_vec, envir = globalenv())
-  assign("delete_x_limits", x_limits, envir = globalenv())
-  assign("delete_colors_df", colors_df, envir = globalenv())
 
   bar_positions <- PlotBars(bars_mat, spaces_vec, x_limits, colors_df)[["bar_positions"]]
 
@@ -2471,7 +2441,7 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
           next
         }
         if (make_PDF) {
-          pdf(file = file.path(output_plots_directory,
+          pdf(file = file.path(output_plots_directory, "Bar charts",
                                paste0(folder_name, ".pdf")
                                ),
               width = use_width, height = use_height
@@ -2497,7 +2467,7 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
             combined_y_limits <- NULL
           }
           if (make_PNG) {
-            folder_path <- file.path(output_plots_directory, folder_name)
+            folder_path <- file.path(output_plots_directory, "Bar charts", folder_name)
             if (!(dir.exists(folder_path))) {
               dir.create(folder_path)
             }
@@ -2580,7 +2550,9 @@ SourcesBarPlots <- function(CRISPR_df) {
             next
           }
           if (make_PNG) {
-            folder_path <- file.path(output_plots_directory, paste0("Bar charts - ", file_name))
+            folder_path <- file.path(output_plots_directory, "Bar charts",
+                                     paste0("Bar charts - ", file_name)
+                                     )
             if (!(dir.exists(folder_path))) {
               dir.create(folder_path)
             }
@@ -2617,7 +2589,7 @@ PlotNumGenesInLibrary <- function() {
   for (make_PDF in c(FALSE, TRUE)) {
     if (make_PDF) {
       PDF_file_name <- "Library coverage.pdf"
-      pdf(file = file.path(output_plots_directory, PDF_file_name),
+      pdf(file = file.path(output_plots_directory, "Whole library", PDF_file_name),
           width = use_width, height = use_height
           )
     }
@@ -2890,7 +2862,9 @@ SharedSubsequencesBarplot <- function(CRISPR_df) {
 Plot4sgData <- function(overview_df, CRISPR_df) {
   for (make_PDF in c(TRUE, FALSE)) {
     if (make_PDF) {
-      pdf(file = file.path(output_plots_directory, "Histograms - 4sg combination.pdf"),
+      pdf(file = file.path(output_plots_directory, "Whole library",
+                           "Histograms - 4sg combination.pdf"
+                           ),
           width = pdf_width, height = pdf_height * 1.3
           )
     }
@@ -2919,7 +2893,7 @@ Plot4sgData <- function(overview_df, CRISPR_df) {
 PlotVennDiagrams <- function(CRISPR_df) {
   for (make_PDF in c(FALSE, TRUE)) {
     if (make_PDF) {
-      pdf(file = file.path(output_plots_directory, "Venn diagrams.pdf"),
+      pdf(file = file.path(output_plots_directory, "Whole library", "Venn diagrams.pdf"),
           width = pdf_width * 1.1, height = pdf_height * 1.05
           )
     }
@@ -2943,8 +2917,6 @@ PlotVennDiagrams <- function(CRISPR_df) {
   }
   return(invisible(NULL))
 }
-
-
 
 
 
@@ -3008,12 +2980,6 @@ ScatterPlot <- function(CRISPR_df,
                         only_top4                    = FALSE
                         ) {
 
-  assign("delete_CRISPR_df",      CRISPR_df,      envir = globalenv())
-  assign("delete_x_column",       x_column,       envir = globalenv())
-  assign("delete_y_column",       y_column,       envir = globalenv())
-  assign("delete_identical_axes", identical_axes, envir = globalenv())
-  assign("delete_only_top4",      only_top4,      envir = globalenv())
-
   CRISPR_df <- FilterCRISPRDf(CRISPR_df)
 
   if (only_top4) {
@@ -3043,8 +3009,9 @@ ScatterPlot <- function(CRISPR_df,
     file_name <- paste0("Scatter plots - ",
                         number_string, ") ", gsub(":", " - ", show_title), ".png"
                         )
-    file_path <- file.path(output_plots_directory, sub_folder, file_name)
-    assign("delete_file_path", file_path, envir = globalenv())
+    file_path <- file.path(output_plots_directory, "Scatter plots",
+                           sub_folder, file_name
+                           )
     png(file = file_path,
         width = 5.75, height = 5.75, units = "in", res = 600
         )
@@ -3118,7 +3085,6 @@ ScatterPlot <- function(CRISPR_df,
 
   }
 
-  assign("delete_mark_diagonal", mark_diagonal, envir = globalenv())
   if (mark_diagonal) {
     abline(a = 0, b = 1, col = "gray88", lwd = 0.5)
   }
@@ -3161,8 +3127,6 @@ ScatterPlot <- function(CRISPR_df,
   if (!(is.null(show_title))) {
     title(show_title, cex.main = par("cex") * 0.9)
   }
-  assign("delete_x_vec", x_vec, envir = globalenv())
-  assign("delete_y_vec", y_vec, envir = globalenv())
   par(old_par)
 
   if (make_PNG) {
@@ -3204,7 +3168,9 @@ MakeScatterPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
             append_to_filename <- paste0(append_to_filename, " - selected")
           }
           plot_dimensions <- 5.75
-          pdf(file = file.path(output_plots_directory, paste0("Scatter plots", append_to_filename, ".pdf")),
+          pdf(file = file.path(output_plots_directory, "Scatter plots",
+                               paste0("Scatter plots", append_to_filename, ".pdf")
+                               ),
               width = plot_dimensions, height = plot_dimensions
               )
           embed_PNG <- embed_raster_within_PDFs
@@ -4733,31 +4699,37 @@ DrawAllManuscriptPlots <- function(CRISPR_df) {
     "Have_homologies"                  = expression("Share subsequences" >= "8 bp")
   )
 
-  use_folder <- file.path(output_plots_directory, "_Manuscript")
+  use_folder <- file.path(output_plots_directory, "Manuscript")
 
   for (var_name in names(labels_list)) {
     file_number <- formatC(match(var_name, names(labels_list)),
                            width = 2, flag = "0"
                            )
     file_name <- paste0(file_number, ") ", var_name)
-    for (make_PDF in c(TRUE)) {
+    for (filter_genes in c(TRUE, FALSE)) {
       if (make_PDF) {
-        pdf(file.path(use_folder, paste0(file_name, ".pdf")),
+        pdf(file.path(use_folder,
+                      paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
+                      paste0(file_name, ".pdf")
+                      ),
             width = if (var_name == "Have_homologies") horizontal_width + 0.3 else horizontal_width,
             height = horizontal_height
             )
       }
       if (var_name %in% names(mat_list)) {
         ManuscriptBars(mat_list[[var_name]],
-                       axis_label = labels_list[[var_name]],
-                       numeric_limits = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
-                       lollipop = var_name == "Num_genes",
-                       horizontal = FALSE,
-                       modality_on_side = var_name == "Have_homologies"
+                       axis_label            = labels_list[[var_name]],
+                       numeric_limits        = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
+                       lollipop              = var_name == "Num_genes",
+                       horizontal            = FALSE,
+                       filter_complete_genes = filter_genes,
+                       modality_on_side      = var_name == "Have_homologies"
                        )
       } else if (var_name %in% names(df_list)) {
-        ManuscriptViolinBox(df_list[[var_name]], axis_label = labels_list[[var_name]],
-                            horizontal = FALSE
+        ManuscriptViolinBox(df_list[[var_name]],
+                            axis_label             = labels_list[[var_name]],
+                            horizontal            = FALSE,
+                            filter_complete_genes = filter_genes,
                             )
       }
       if (make_PDF) {
