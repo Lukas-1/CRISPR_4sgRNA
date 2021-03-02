@@ -21,6 +21,7 @@ plate2_directory       <- file.path(CRISPR_root_directory, "6) Individual experi
 p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
 file_output_directory  <- file.path(plate2_directory, "3) Output")
 plots_output_directory <- file.path(file_output_directory, "Figures")
+manuscript_directory   <- file.path(plots_output_directory, "For the manuscript")
 
 
 
@@ -40,6 +41,15 @@ load(file.path(p2_R_objects_directory, "08) Process demultiplexed reads - with s
 sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] == 2,
                                           TRUE, FALSE
                                           )
+
+
+
+
+# Export individual graphics ----------------------------------------------
+
+ExportAlterationsForManuscript(sl7_ccs7_df_list[["filtered_summary_df"]],
+                               "Colony-picked controls"
+                               )
 
 
 

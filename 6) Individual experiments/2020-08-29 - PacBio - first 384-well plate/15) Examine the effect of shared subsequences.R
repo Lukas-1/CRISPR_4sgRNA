@@ -11,6 +11,7 @@ R_functions_directory <- file.path(file_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "01) Define titles and labels.R"))
 source(file.path(R_functions_directory, "10) Examining the effect of shared subsequences.R"))
+source(file.path(R_functions_directory, "09) Producing heatmaps.R"))
 
 
 
@@ -128,8 +129,47 @@ for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
 }
 
 
+manuscript_vars <- c("Num_under_2kb", "Count_all_4")
+manuscript_directory <- file.path(file_output_directory, "Figures", "For the manuscript")
 
-PlotBySharedSubsequence(sl7_ccs5_df_list[["original_summary_df"]], "Count_mean_sg1to4")
+axis_labels <- c(
+  "Num_under_2kb" = "Truncated reads (< 2000 bp)",
+  "Count_all_4"   = "All 4 sgRNAs + tracRNAs correct"
+)
+
+
+for (var in manuscript_vars) {
+  pdf(file.path(manuscript_directory, paste0("Shared sub-sequences - ", var, ".pdf")),
+      width = 3.9, height = 2.6
+      )
+  par(cex = 0.7, lwd = 0.8, mai = rep(0.5, 4))
+  PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]],
+                          var,
+                          grid_light_gray = "gray85",
+                          grid_dark_gray  = "gray95",
+                          use_spacing     = 0.4,
+                          use_boxwex      = 0.75,
+                          grid_lwd        = 0.75,
+                          y_axis_label    = axis_labels[[var]],
+                          use_title       = "",
+                          corr_line       = 1.3,
+                          bold_corr       = FALSE,
+                          x_axis_label    = "Longest shared subsequence (base pairs)"
+                          )
+  dev.off()
+}
+
+
+
+
+PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Count_all_4")
+
+
+
+
+
+
+
 
 
 

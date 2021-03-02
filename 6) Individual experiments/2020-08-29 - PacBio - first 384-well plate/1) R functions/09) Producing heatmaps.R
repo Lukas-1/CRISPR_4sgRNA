@@ -23,6 +23,15 @@ use_width <- 6.5
 
 
 
+# Choose default color function -------------------------------------------
+
+DefaultColFun <- colorRampPalette(rev(viridis::magma(100)))
+# DefaultColFun <- colorRampPalette(rev(sequential_hcl(n = 10, h = c(51, -341), c = c(60, NA, 0), l = c(12, 96), power = c(0.35, 1.3))))
+
+
+
+
+
 # Define plot titles ------------------------------------------------------
 
 ccs3_title <- expression(plain({"Long-read sequencing of plasmids" *
@@ -390,12 +399,13 @@ DrawAllPlots <- function(PlotFunction,
 
 
 
-
-
-MakeEmptyPlot <- function(y_limits = c(0, 1)) {
+MakeEmptyPlot <- function(y_limits = c(0, 1), use_cex = NULL) {
   plot(1, type = "n", axes = FALSE, ann = FALSE,
        xlim = c(0, 1), ylim = y_limits, xaxs = "i", yaxs = "i"
        )
+  if (!(is.null(use_cex))) {
+    par("cex" = 1)
+  }
 }
 
 
@@ -501,7 +511,16 @@ Do_cimage <- function(color_input) {
   } else {
     input_matrix <- Transposify(color_input)
   }
-  cimage(zcol = input_matrix, axes = FALSE, xlab = "", ylab = "")
+  n_col <- ncol(color_input)
+  n_row <- nrow(color_input)
+  cimage(x    = seq_len(n_col) / n_col - (1 / n_col * 0.5),
+         y    = seq_len(n_row) / n_row - (1 / n_row * 0.5),
+         zcol = input_matrix,
+         axes = FALSE,
+         xlab = "",
+         ylab = "",
+         add  = TRUE
+         )
 }
 
 
@@ -525,11 +544,11 @@ ConcatenateExpressions <- function(expression_list, my_sep = "  \u2013  ") {
   return(results_expression)
 }
 
+
 VerticalAdjust <- function(use_expression) {
-  my_list <- list(expression(phantom("g")), use_expression, expression(phantom("h")))
+  my_list <- list(expression(phantom("gh")), use_expression, expression(phantom("gh")))
   return(ConcatenateExpressions(my_list, my_sep = ""))
 }
-
 
 StripExpression <- function(my_expression) {
   if (is.character(my_expression)) {
@@ -578,12 +597,10 @@ AddVerticalWhiteSpace <- function(color_matrix, groups_vec, whitespace_color = "
   colnames(whitespace_bar) <- "divider"
   whitespace_bar <- whitespace_bar[, rep(1, divider_width)]
   indices_list <- lapply(unique(groups_vec), function(x) which(x == groups_vec))
-  assign("delete_groups_vecs", groups_vec, envir = globalenv())
-  assign("delete_color_matrix", color_matrix, envir = globalenv())
-  assign("delete_indices_list", indices_list, envir = globalenv())
-  assign("delete_whitespace_bar", whitespace_bar, envir = globalenv())
-  assign("delete_divider_width", divider_width, envir = globalenv())
-  matrices_list <- do.call(c, lapply(seq_len(num_groups - 1), function(x) list(color_matrix[, indices_list[[x]], drop = FALSE], whitespace_bar)))
+  matrices_list <- do.call(c, lapply(seq_len(num_groups - 1),
+                                     function(x) list(color_matrix[, indices_list[[x]], drop = FALSE], whitespace_bar)
+                                     )
+                           )
   matrices_list <- c(matrices_list, list(color_matrix[, indices_list[[num_groups]], drop = FALSE]))
   assign("delete_matrices_list", matrices_list, envir = globalenv())
   results_matrix <- do.call(cbind, matrices_list)
@@ -647,22 +664,360 @@ PlotBarplotMat <- function(barplot_mat,
 
 
 
+MakeColorBoxLegend <- function(labels_vec,
+                               colors_vec,
+                               y_pos,
+                               x_pos,
+                               aspect_ratio       = 1,
+                               before_text        = NULL,
+                               after_text         = NULL,
+                               constant_multipler = 1,
+                               use_constant_space = TRUE,
+                               vertical_adjust    = 0.45,
+                               x_space_adjust     = 3.3
+                               ){
+
+  num_labels <- length(labels_vec)
+
+  stopifnot(num_labels == length(colors_vec))
+
+  base_width <- strwidth("a", units = "user")
+
+  if (use_constant_space) {
+    string_widths <- rep(base_width * constant_multipler, num_labels)
+  } else {
+    string_widths <- strwidth(labels_vec, units = "user")
+  }
+
+  rectangle_x_start  <- x_pos
+  rectangle_x_spaces <- string_widths + (x_space_adjust * base_width)
+
+  rectangle_x_mids <- c(rectangle_x_start,
+                        rectangle_x_start +
+                        cumsum(rectangle_x_spaces[seq_len(num_labels - 1)])
+                        )
+  rectangle_width  <- 1.3 * base_width
+  rectangle_height <- rectangle_width * aspect_ratio
+  rectangle_y_mid  <- y_pos
+
+  rect(xleft   = rectangle_x_mids - (rectangle_width / 2),
+       xright  = rectangle_x_mids + (rectangle_width / 2),
+       ytop    = rectangle_y_mid + (rectangle_height / 2),
+       ybottom = rectangle_y_mid - (rectangle_height / 2),
+       xpd     = NA,
+       col     = colors_vec,
+       border  = "gray30"
+       )
+
+  text_gap <- rectangle_width * (-0.5)
+  text_y_pos <- rectangle_y_mid - (vertical_adjust * base_width)
+
+  text(x      = rectangle_x_mids + text_gap,
+       y      = text_y_pos,
+       labels = sapply(labels_vec, VerticalAdjust),
+       adj    = c(0, 0.5),
+       xpd    = NA
+       )
+  side_space <- rectangle_width * 0.9
+
+  text(x      = rectangle_x_start - (text_gap),
+       y      = text_y_pos,
+       labels = VerticalAdjust(before_text),
+       xpd    = NA,
+       adj    = c(1, 0.5)
+       )
+  text(x      = rectangle_x_mids[[length(rectangle_x_mids)]] +
+                side_space,
+       y      = text_y_pos,
+       labels = VerticalAdjust(after_text),
+       xpd    = NA,
+       adj    = c(0, 0.5)
+       )
+
+}
 
 
-DrawAccuracyHeatmap <- function(summary_df,
-                                main_title             = NULL,
-                                ColorFunction          = colorRampPalette(rev(viridis::magma(100))), # colorRampPalette(brewer.pal(9, "YlGnBu")),
-                                reorder_wells          = TRUE,
-                                show_zero_in_legend    = TRUE,
-                                invert_barplot         = TRUE,
-                                gap_weight             = 2L,
-                                show_correct_promoters = FALSE
-                                ) {
+
+
+DrawPercentCorrectBarplot <- function(summary_df,
+                                      invert_barplot         = TRUE,
+                                      add_gap                = FALSE,
+                                      gap_weight             = 2L,
+                                      show_correct_promoters = FALSE,
+                                      ColorFunction          = DefaultColFun,
+                                      show_zero_in_legend    = TRUE,
+                                      prefix_text            = "% plasmids with ",
+                                      postfix_text           = " correct gRNAs (including the tracrRNA)",
+                                      text_at_bottom         = FALSE,
+                                      narrow_lwd             = TRUE,
+                                      all_text_bold          = FALSE,
+                                      color_box_legend       = FALSE,
+                                      aspect_ratio           = 2
+                                      ) {
+
+  if (add_gap) {
+    positions_vec <- GappedPositionsVec(summary_df[, "Block"], gap_weight = gap_weight)
+  } else {
+    positions_vec <- seq_len(nrow(summary_df))
+  }
+
+  barplot_columns <- paste0("Perc_", c(paste0("at_least_", 1:3), "all_4"))
+  if (show_correct_promoters) {
+    barplot_columns <- c(barplot_columns, "Perc_all_4_promoters")
+    barplot_colors <- ColorFunction(6)
+    barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.3, "")
+    BarPlotColorFun <- ColorFunction
+  } else {
+    BarPlotColorFun <- colorRampPalette(ColorFunction(100)[1:86])
+    barplot_colors <- BarPlotColorFun(5)
+    barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.2, "")
+  }
+
+  barplot_mat <- do.call(rbind, lapply(barplot_columns, function(x) summary_df[[x]]))
+  barplot_mat <- barplot_mat / 100
+  barplot_mat <- rbind(
+    "none"      = 1 - barplot_mat[1, ],
+    "exactly_1" = barplot_mat[1, ] - barplot_mat[2, ],
+    "exactly_2" = barplot_mat[2, ] - barplot_mat[3, ],
+    "exactly_3" = barplot_mat[3, ] - barplot_mat[4, ],
+    "all_4"     = barplot_mat[4, ]
+  )
+
+  if (invert_barplot) {
+    PlotBarplotMat(barplot_mat, barplot_colors, positions_vec)
+  } else {
+    PlotBarplotMat(barplot_mat[rev(seq_len(nrow(barplot_mat))), ],
+                   rev(barplot_colors),
+                   positions_vec
+                   )
+  }
+
+  tick_locations <- axTicks(2)
+  tick_labels <- paste0(tick_locations * 100, "%")
+  axis(2,
+       labels   = tick_labels,
+       at       = tick_locations,
+       las      = 1,
+       mgp      = c(3, 0.45, 0),
+       tcl      = -0.3,
+       lwd      = if (narrow_lwd) 0.75 else 1,
+       cex.axis = 0.9,
+       pos      = par("usr")[[1]] - GetHalfLineWidth()
+       )
+  if (!(add_gap)) {
+    DrawOuterBox(use_lwd = if (narrow_lwd) 0.5 else 1)
+  }
+
+  if (color_box_legend) {
+
+    MakeColorBoxLegend(labels_vec         = as.character(0:4),
+                       colors_vec         = barplot_colors,
+                       y_pos              = par("usr")[[1]] - diff(grconvertY(c(0, 1), from = "lines", to = "user")),
+                       x_pos              = 0.13,
+                       before_text        = expression(bold("" >= "")),
+                       after_text         = "correct gRNAs",
+                       aspect_ratio       = aspect_ratio,
+                       use_constant_space = TRUE
+                       )
+
+
+  } else {
+
+    if (show_correct_promoters) {
+      color_text_vec <- c(paste0(if (all_text_bold) 'bold' else 'plain',
+                                 '(color1("', prefix_text, '") * color1("" >= "") *'
+                                 ),
+                          'scriptscriptstyle(" ") *',
+                          'bold(color2("0,")) * ',
+                          'color1(" ") * bold(color3("1,")) * ',
+                          'color1(" ") * bold(color4("2,")) * ',
+                          'color1(" ") * bold(color5("3,")) * ',
+                          'color1(" ") * bold(color6("4")) * ',
+                          paste0('color1(" correct gRNAs ") * '),
+                          'color7("or an entirely correct construct"))'
+                          )
+    } else {
+      color_text_vec <- c(paste0(if (all_text_bold) 'bold' else 'plain',
+                                 '(color1("', prefix_text, '") * color1("" >= "") *'
+                                 ),
+                          'scriptscriptstyle(" ") *',
+                          'bold(color2("0,")) * ',
+                          'color1(" ") * bold(color3("1,")) * ',
+                          'color1(" ") * bold(color4("2,")) * ',
+                          'color1(" ") * bold(color5("3,")) * ',
+                          'color1(" or ") * bold(color6("4")) * ',
+                          'color1("', postfix_text, '"))'
+                          )
+    }
+
+    text_colors <- c("#000000",
+                     "#DDE100",
+                     BarPlotColorFun(length(barplot_colors) + 1)[2:(length(barplot_colors))]
+                     )
+
+    color_indices <- seq_along(text_colors)
+    text_indices <- seq_along(color_text_vec)
+    if (!(show_zero_in_legend)) {
+      are_zero <- grepl('"0,"', color_text_vec, fixed = TRUE)
+      text_indices <- which(!(are_zero))
+      color_indices <- color_indices[-2]
+    }
+    color_text <- paste0(color_text_vec[text_indices], collapse = "")
+
+    for (j in color_indices) {
+      text(x      = 0.5,
+           y      = if (text_at_bottom) -0.18 else 1.05,
+           labels = VerticalAdjust(parse(text = MakeInvisible(color_text, j))),
+           adj    = c(0.5, 0),
+           xpd    = NA,
+           col    = text_colors[[j]]
+           )
+    }
+  }
+
+
+}
+
+
+
+GetHalfLineWidth <- function() {
+  1 / par("pin")[[1]] / 96 / 2 * par("lwd")
+}
+
+
+DrawOuterBox <- function(use_lwd = 1) {
+  half_lwd <- GetHalfLineWidth() * use_lwd
+  rect(xleft   = par("usr")[[1]] - half_lwd,
+       xright  = par("usr")[[2]] + half_lwd,
+       ybottom = par("usr")[[3]] - half_lwd,
+       ytop    = par("usr")[[4]] + half_lwd,
+       xpd     = NA,
+       lwd     = use_lwd,
+       ljoin   = "mitre"
+       )
+}
+
+
+DrawHeatMap <- function(summary_df,
+                        add_gap               = FALSE,
+                        gap_weight            = 2L,
+                        ColorFunction         = DefaultColFun,
+                        trapezoid_on_new_plot = TRUE,
+                        trapezoid_start_x     = 0.85,
+                        trapezoid_end_x       = 1,
+                        trapezoid_start_y     = 0.65,
+                        trapezoid_end_y       = 0.9,
+                        trapezoid_y           = 0.72,
+                        add_percent           = TRUE,
+                        accuracy_label        = expression(bold("Accuracy")),
+                        accuracy_label_cex    = 0.9,
+                        use_lwd               = 0.5,
+                        label_y_factor        = 1,
+                        bold_percentages      = TRUE
+                        ) {
+
+  ## Draw the heatmap
+
+  percent_columns <- paste0("Perc_sg", 1:4, "_cr", 1:4)
+  numeric_mat <- t(as.matrix(summary_df[, percent_columns])) / 100
+
+  my_breaks <- seq(0, 1.01, by = 0.01)
+  my_breaks[c(1, length(my_breaks))] <- c(0, ceiling(my_breaks[length(my_breaks)]))
+
+  my_cmap <- makecmap(numeric_mat, colFn = ColorFunction, breaks = my_breaks)
+  my_color_mat <- cmap(numeric_mat, my_cmap)
+
+  if (add_gap) {
+    my_color_mat <- AddVerticalWhiteSpace(my_color_mat,
+                                          groups_vec = summary_df[, "Block"],
+                                          divider_width = gap_weight
+                                          )
+  }
+
+  MakeEmptyPlot()
+  Do_cimage(my_color_mat)
+  x_range <- par("usr")[[2]] - par("usr")[[1]]
+
+  text(x      = par("usr")[[1]] - (x_range * 0.018),
+       y      = seq(0.875, 0.125, by = -0.25),
+       labels = paste0("sg", 1:4),
+       xpd    = NA,
+       adj    = c(1, 0.5)
+       )
+
+
+  if (trapezoid_on_new_plot) {
+    MakeEmptyPlot()
+  }
+
+  ## Draw the color indicator (trapezoid)
+
+  DrawColorTrapezoid(start_x     = trapezoid_start_x,
+                     end_x       = trapezoid_end_x,
+                     start_y     = trapezoid_start_y,
+                     end_y       = trapezoid_end_y,
+                     trapezoid_y = trapezoid_y,
+                     use_colors  = ColorFunction(100)
+                     )
+
+  line_width <- GetHalfLineWidth() * use_lwd
+  trapezoid_text_start_x <- trapezoid_start_x + line_width
+  trapezoid_text_end_x <- trapezoid_end_x - line_width
+
+  trapezoid_x_range <- trapezoid_text_end_x - trapezoid_text_start_x
+  trapezoid_y_range <- trapezoid_end_y - trapezoid_start_y
+
+  text(x      = trapezoid_text_start_x - (trapezoid_x_range * 0.07),
+       y      = trapezoid_start_y + (trapezoid_y_range * 0.3),
+       adj    = c(1, 0.5),
+       labels = accuracy_label,
+       xpd    = NA,
+       cex    = accuracy_label_cex
+       )
+
+  trapezoid_seq <- seq(trapezoid_text_start_x,
+                       trapezoid_text_end_x,
+                       by = (trapezoid_x_range / 5)
+                       )
+  percent_labels <- seq(0, 100, by = 20)
+  if (add_percent) {
+    percent_labels <- paste0(percent_labels, "%")
+  }
+
+  text(x      = trapezoid_seq,
+       y      = trapezoid_start_y - (0.6 * trapezoid_y_range * label_y_factor),
+       labels = percent_labels,
+       font   = if (bold_percentages) 2 else 1,
+       cex    = 0.6,
+       xpd    = NA
+       )
+  segments(x0   = trapezoid_seq,
+           x1   = trapezoid_seq,
+           y0   = trapezoid_start_y - (0.352 * trapezoid_y_range),
+           y1   = trapezoid_start_y - (0 * trapezoid_y_range),
+           xpd  = NA,
+           lwd  = use_lwd,
+           lend = "square"
+           )
+  segments(x0   = trapezoid_text_start_x,
+           x1   = trapezoid_text_end_x,
+           y0   = trapezoid_start_y - (0 * trapezoid_y_range),
+           y1   = trapezoid_start_y - (0 * trapezoid_y_range),
+           xpd  = NA,
+           lwd  = use_lwd,
+           lend = "square"
+           )
+  return(invisible(NULL))
+}
+
+
+
+
+PrepareSummaryDf <- function(summary_df, reorder_wells = FALSE) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
 
   percent_columns <- paste0("Perc_sg", 1:4, "_cr", 1:4)
-
   if (reorder_wells) {
     mean_accuracies <- rowMeans(as.matrix(summary_df[, percent_columns]))
     new_order <- order(summary_df[["Perc_all_4"]],
@@ -683,9 +1038,40 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   use_indices <- new_order[are_to_include[new_order]]
   summary_df <- summary_df[use_indices, ]
-  row.names(summary_df) <- NULL
 
-  num_wells <- length(use_indices)
+  if ("Block" %in% names(sg_sequences_df)) {
+    summary_df[["Block"]] <- sg_sequences_df[["Block"]][use_indices]
+  }
+
+  summary_df[["Longest_subsequence"]] <- sg_sequences_df[["Longest_subsequence"]][use_indices]
+
+  row.names(summary_df) <- NULL
+  return(summary_df)
+}
+
+
+
+DrawAccuracyHeatmap <- function(summary_df,
+                                main_title             = NULL,
+                                ColorFunction          = DefaultColFun, # colorRampPalette(brewer.pal(9, "YlGnBu")),
+                                reorder_wells          = TRUE,
+                                show_zero_in_legend    = TRUE,
+                                invert_barplot         = TRUE,
+                                gap_weight             = 2L,
+                                show_correct_promoters = FALSE
+                                ) {
+
+  stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
+
+  if (reorder_wells) {
+    add_gap <- FALSE
+  } else {
+    add_gap <- "Block" %in% names(sg_sequences_df)
+  }
+
+  summary_df <- PrepareSummaryDf(summary_df, reorder_wells = reorder_wells)
+
+  num_wells <- nrow(summary_df)
 
   ## Set up the layout
 
@@ -729,131 +1115,29 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   ## Draw a vertical barplot
 
+  DrawPercentCorrectBarplot(summary_df,
+                            ColorFunction          = ColorFunction,
+                            invert_barplot         = invert_barplot,
+                            add_gap                = add_gap,
+                            gap_weight             = gap_weight,
+                            show_correct_promoters = show_correct_promoters,
+                            show_zero_in_legend    = show_zero_in_legend
+                            )
+
+
+  ## Draw the % accuracy horizontal barplot
+
   are_at_least_75 <- summary_df[["Perc_all_4"]] >= 75
   num_above_75 <- sum(are_at_least_75, na.rm = TRUE)
   over_75_fraction <- num_above_75 / num_wells
 
-
-  # six_colors <- c(colorRampPalette(brewer.pal(11, "PuOr"))(21)[[11]],
-  #                 colorRampPalette(brewer.pal(11, "PuOr"))(20)[c(8, 5, 3)],
-  #                 colorRampPalette(brewer.pal(11, "PuOr"))(21)[[17]],
-  #                 colorRampPalette(brewer.pal(11, "RdBu"))(21)[[20]]
-  #                 )
-
-  # lighter_color <- "#ECEBE9"
-  # darker_color <- toupper("#15396d")
-  # other_color <- "#6E1566"
-  # other_color <- "#380030"
-  # five_colors <- c(colorRampPalette(c(lighter_color, darker_color))(5)[2:5],
-  #                  other_color #colorRampPalette(c(darker_color, other_color))(5)[[4]]
-  #                  )
-
-
-  add_gap <- (!(reorder_wells)) && ("Block" %in% names(sg_sequences_df))
   if (add_gap) {
-    block_vec <- sg_sequences_df[["Block"]][are_to_include]
-    positions_vec <- GappedPositionsVec(block_vec, gap_weight = gap_weight)
+    positions_vec <- GappedPositionsVec(summary_df[, "Block"],
+                                        gap_weight = gap_weight
+                                        )
   } else {
-    positions_vec <- seq_len(num_wells)
+    positions_vec <- seq_len(nrow(summary_df))
   }
-
-  barplot_columns <- paste0("Perc_", c(paste0("at_least_", 1:3), "all_4"))
-  if (show_correct_promoters) {
-    barplot_columns <- c(barplot_columns, "Perc_all_4_promoters")
-    barplot_colors <- ColorFunction(6)
-    barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.3, "")
-    BarPlotColorFun <- ColorFunction
-  } else {
-    BarPlotColorFun <- colorRampPalette(ColorFunction(100)[1:86])
-    barplot_colors <- BarPlotColorFun(5)
-    barplot_colors <- vapply(barplot_colors, Palify, fraction_pale = 0.2, "")
-  }
-
-  barplot_mat <- do.call(rbind, lapply(barplot_columns, function(x) summary_df[[x]]))
-  barplot_mat <- barplot_mat / 100
-  barplot_mat <- rbind(
-    "none"      = 1 - barplot_mat[1, ],
-    "exactly_1" = barplot_mat[1, ] - barplot_mat[2, ],
-    "exactly_2" = barplot_mat[2, ] - barplot_mat[3, ],
-    "exactly_3" = barplot_mat[3, ] - barplot_mat[4, ],
-    "all_4"     = barplot_mat[4, ]
-  )
-
-  if (invert_barplot) {
-    PlotBarplotMat(barplot_mat, barplot_colors, positions_vec)
-  } else {
-    PlotBarplotMat(barplot_mat[rev(seq_len(nrow(barplot_mat))), ],
-                   rev(barplot_colors),
-                   positions_vec
-                   )
-  }
-
-
-
-
-  tick_locations <- axTicks(2)
-  tick_labels <- paste0(tick_locations * 100, "%")
-  axis(2,
-       labels   = tick_labels,
-       at       = tick_locations,
-       las      = 1,
-       mgp      = c(3, 0.45, 0),
-       tcl      = -0.3,
-       lwd      = 0.75,
-       cex.axis = 0.9
-       )
-  box(lwd = 0.5, xpd = NA)
-
-
-  if (show_correct_promoters) {
-    color_text_vec <- c('bold(color1("% plasmids with ") * color1("" >= "") *',
-                        'scriptscriptstyle(" ") *',
-                        'color2("0,") * ',
-                        'color1(" ") * color3("1,") * ',
-                        'color1(" ") * color4("2,") * ',
-                        'color1(" ") * color5("3,") * ',
-                        'color1(" ") * color6("4") * ',
-                        'color1(" correct gRNAs ") * ',
-                        'color7("or an entirely correct construct"))'
-                        )
-  } else {
-    color_text_vec <- c('bold(color1("% plasmids with ") * color1("" >= "") *',
-                        'scriptscriptstyle(" ") *',
-                        'color2("0,") * ',
-                        'color1(" ") * color3("1,") * ',
-                        'color1(" ") * color4("2,") * ',
-                        'color1(" ") * color5("3,") * ',
-                        'color1(" or ") * color6("4") * ',
-                        'color1(" correct gRNAs (including the tracrRNA)"))'
-                        )
-  }
-
-  text_colors <- c("#000000",
-                   "#DDE100",
-                   BarPlotColorFun(length(barplot_colors) + 1)[2:(length(barplot_colors))]
-                   )
-
-  color_indices <- seq_along(text_colors)
-  text_indices <- seq_along(color_text_vec)
-  if (!(show_zero_in_legend)) {
-    are_zero <- grepl('"0,"', color_text_vec, fixed = TRUE)
-    text_indices <- which(!(are_zero))
-    color_indices <- color_indices[-2]
-  }
-  color_text <- paste0(color_text_vec[text_indices], collapse = "")
-
-  for (j in color_indices) {
-    text(x      = 0.5,
-         y      = 1.05,
-         labels = VerticalAdjust(parse(text = MakeInvisible(color_text, j))),
-         adj    = c(0.5, 0),
-         xpd    = NA,
-         col    = text_colors[[j]]
-         )
-  }
-
-
-  ## Draw the % accuracy horizontal barplot
 
   for (i in 1:2) {
     MakeEmptyPlot()
@@ -904,85 +1188,9 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   ## Draw the heatmap
 
-  numeric_mat <- t(as.matrix(summary_df[, percent_columns])) / 100
-
-  my_breaks <- seq(0, 1.01, by = 0.01)
-  my_breaks[c(1, length(my_breaks))] <- c(0, ceiling(my_breaks[length(my_breaks)]))
-
-  my_cmap <- makecmap(numeric_mat, colFn = ColorFunction, breaks = my_breaks)
-  my_color_mat <- cmap(numeric_mat, my_cmap)
-
-
-  assign("delete_my_color_mat", my_color_mat, envir = globalenv())
-
-  if (add_gap) {
-    my_color_mat <- AddVerticalWhiteSpace(my_color_mat,
-                                          groups_vec = block_vec,
-                                          divider_width = gap_weight
-                                          )
-  }
-
-  Do_cimage(my_color_mat)
-  x_range <- par("usr")[[2]] - par("usr")[[1]]
-
-  text(x      = par("usr")[[1]] - (x_range * 0.018),
-       y      = 4:1,
-       labels = paste0("sg", 1:4),
-       xpd    = NA,
-       adj    = c(1, 0.5)
-       )
-
-  MakeEmptyPlot()
-
-  ## Draw the color indicator (trapezoid)
-
-  trapezoid_start_x <- 0.85
-  trapezoid_start_y <- 0.65
-  trapezoid_end_y   <- 0.9
-
-  DrawColorTrapezoid(start_x     = trapezoid_start_x,
-                     end_x       = 1,
-                     start_y     = trapezoid_start_y,
-                     end_y       = trapezoid_end_y,
-                     trapezoid_y = 0.72,
-                     use_colors  = ColorFunction(100)
-                     )
-
-  text(x      = trapezoid_start_x - 0.009,
-       y      = trapezoid_start_y + ((trapezoid_end_y - trapezoid_start_y) * 0.3),
-       adj    = c(1, 0.5),
-       labels = "Accuracy",
-       xpd    = NA,
-       font   = 2,
-       cex    = 0.9
-       )
-
-  trapezoid_seq <- seq(trapezoid_start_x, 1, by = ((1 - trapezoid_start_x) / 5))
-
-  text(x      = trapezoid_seq,
-       y      = trapezoid_start_y - 0.16,
-       labels = paste0(seq(0, 100, by = 20), "%"),
-       font   = 2,
-       cex    = 0.6,
-       xpd    = NA
-       )
-  segments(x0   = trapezoid_seq,
-           x1   = trapezoid_seq,
-           y0   = trapezoid_start_y - 0.088,
-           y1   = trapezoid_start_y - 0.02,
-           xpd  = NA,
-           lwd  = 0.5,
-           lend = "butt"
-           )
-
-  segments(x0   = trapezoid_start_x,
-           x1   = 1,
-           y0   = trapezoid_start_y - 0.02,
-           y1   = trapezoid_start_y - 0.02,
-           lwd  = 0.5,
-           lend = "butt"
-           )
-
+  DrawHeatMap(summary_df, ColorFunction = ColorFunction,
+              add_gap = add_gap, gap_weight = gap_weight
+              )
 
   MakeEmptyPlot()
 
@@ -1023,16 +1231,14 @@ DrawAccuracyHeatmap <- function(summary_df,
        xpd    = NA
        )
 
-  MakeEmptyPlot()
 
-
-
-
-  MakeEmptyPlot()
+  for (i in 1:2) {
+    MakeEmptyPlot()
+  }
 
   ## Draw the strip indicating genes with homologies >=8 bp
 
-  longest_subsequence_vec <- sg_sequences_df[["Longest_subsequence"]][use_indices]
+  longest_subsequence_vec <- summary_df[["Longest_subsequence"]]
   have_homology <- longest_subsequence_vec >= 8
 
   homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
@@ -1060,10 +1266,78 @@ DrawAccuracyHeatmap <- function(summary_df,
        )
 
   MakeEmptyPlot()
-
-
   return(invisible(NULL))
 }
+
+
+
+
+ExportFiguresForManuscript <- function(summary_df, use_prefix) {
+
+  use_width <- 3.0
+  use_height <- 1.5
+  use_lwd <- 0.8
+  use_cex <- 0.7
+
+  for (use_PDF in TRUE) {
+
+    file_name <- paste0(use_prefix,
+                        " - stacked barplot - CCS7 (filtered) - SmrtLink 7",
+                        ".pdf"
+                        )
+
+    if (use_PDF) {
+      pdf(file = file.path(manuscript_directory, file_name),
+          width = use_width, height = use_height
+          )
+    }
+    par(mai = c(0.4, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)
+    MakeEmptyPlot()
+    DrawPercentCorrectBarplot(summary_df,
+                              prefix_text      = "",
+                              postfix_text     = " correct gRNAs",
+                              text_at_bottom   = TRUE,
+                              narrow_lwd       = FALSE,
+                              color_box_legend = TRUE,
+                              aspect_ratio     = (use_width  - sum(par("mai")[c(2, 4)])) /
+                                                 (use_height - sum(par("mai")[c(1, 3)]))
+                              )
+
+    if (use_PDF) {
+      dev.off()
+    }
+
+    file_name <- paste0(use_prefix,
+                        " - heatmap - CCS7 (filtered) - SmrtLink 7",
+                        ".pdf"
+                        )
+    if (use_PDF) {
+      pdf(file = file.path(manuscript_directory, file_name),
+          width = use_width, height = use_height
+          )
+    }
+    par(mai = c(0.4, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)
+    DrawHeatMap(summary_df,
+                trapezoid_on_new_plot = FALSE,
+                trapezoid_start_y     = -0.16,
+                trapezoid_y           = -0.125,
+                trapezoid_end_y       = -0.05,
+                trapezoid_start_x     = 0.75,
+                trapezoid_end_x       = 1,
+                add_percent           = FALSE,
+                accuracy_label        = "Accuracy (%)",
+                accuracy_label_cex    = 1,
+                label_y_factor        = 1.15,
+                use_lwd               = 0.75,
+                bold_percentages      = FALSE
+                )
+    if (use_PDF) {
+      dev.off()
+    }
+  }
+  return(invisible(NULL))
+}
+
 
 
 

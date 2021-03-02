@@ -19,6 +19,7 @@ source(file.path(R_functions_directory, "11) Creating stacked barplots for visua
 R_objects_directory    <- file.path(file_directory, "3) R objects")
 file_output_directory  <- file.path(file_directory, "5) Output")
 plots_output_directory <- file.path(file_output_directory, "Figures")
+manuscript_directory   <- file.path(plots_output_directory, "For the manuscript")
 
 
 
@@ -28,6 +29,18 @@ plots_output_directory <- file.path(file_output_directory, "Figures")
 load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 load(file.path(R_objects_directory, "10) Process demultiplexed reads - with subsampling.RData"))
+
+
+
+
+
+# Export individual graphics ----------------------------------------------
+
+ExportAlterationsForManuscript(sl7_ccs7_df_list[["filtered_summary_df"]],
+                               "First 384-well plate"
+                               )
+
+
 
 
 
@@ -43,12 +56,6 @@ DrawAllSubsampledPlots(DrawAlterationBarplot,
                        "Stacked barplots",
                        "Alteration barplots"
                        )
-
-
-
-
-
-
 
 
 

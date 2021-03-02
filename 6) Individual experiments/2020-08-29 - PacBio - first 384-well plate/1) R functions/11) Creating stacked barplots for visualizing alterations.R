@@ -13,29 +13,40 @@ use_width <- 7
 
 # Define functions --------------------------------------------------------
 
+SideTextAndAxes <- function(side_text,
+                            use_lwd            = 0.75,
+                            use_cex_axis       = 0.8,
+                            sg_label_cex       = 1.3,
+                            horizontal_y_label = TRUE,
+                            draw_outer_box     = FALSE
+                            ) {
 
-
-SideTextAndAxes <- function(side_text) {
-
-  tick_locations <- axTicks(2)
+  # tick_locations <- axTicks(2)
+  tick_locations <- seq(0, 1, 0.25)
   tick_labels <- paste0(tick_locations * 100, "%")
   axis(2,
        labels   = tick_labels,
        at       = tick_locations,
        las      = 1,
-       mgp      = c(3, 0.45, 0),
+       mgp      = c(3, 0.38, 0),
        tcl      = -0.3,
-       lwd      = 0.75,
-       cex.axis = 0.8
+       lwd      = use_lwd * par("lwd"),
+       cex.axis = use_cex_axis,
+       pos      = par("usr")[[1]] - (use_lwd * GetHalfLineWidth())
        )
 
-  text(x      = -0.06,
+  text(x      = if (horizontal_y_label) -0.06 else par("usr")[[1]] - diff(grconvertX(c(0, 3), from = "lines", to = "user")),
        y      = 0.5,
-       adj    = c(1, 0.5),
+       adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
        labels = side_text,
        xpd    = NA,
-       cex    = 1.3
+       cex    = sg_label_cex,
+       srt    = if (horizontal_y_label) 0 else 90
        )
+
+  if (draw_outer_box) {
+    DrawOuterBox()
+  }
 
   return(invisible(NULL))
 
@@ -45,9 +56,23 @@ SideTextAndAxes <- function(side_text) {
 
 
 DrawAlterationBarplot <- function(summary_df,
-                                  main_title    = NULL,
-                                  reorder_wells = FALSE,
-                                  gap_weight    = 2L
+                                  main_title         = NULL,
+                                  reorder_wells      = FALSE,
+                                  gap_weight         = 2L,
+                                  space_height       = 1,
+                                  top_space          = 3,
+                                  bottom_space       = 1,
+                                  show_color_text    = TRUE,
+                                  show_color_legend  = FALSE,
+                                  maintain_cex       = FALSE,
+                                  use_lwd            = 0.75,
+                                  use_cex_axis       = 0.8,
+                                  sg_label_cex       = 1.3,
+                                  horizontal_y_label = TRUE,
+                                  left_space         = 0.13,
+                                  right_space        = 0.07,
+                                  draw_outer_box     = FALSE,
+                                  exclude_blocks     = NULL
                                   ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -70,6 +95,10 @@ DrawAlterationBarplot <- function(summary_df,
   } else {
     are_to_include <- rep(TRUE, nrow(sg_sequences_df))
   }
+  have_blocks <- "Block" %in% names(sg_sequences_df)
+  if (have_blocks && !(is.null(exclude_blocks))) {
+    are_to_include[are_to_include] <- !(sg_sequences_df[["Block"]][are_to_include] %in% exclude_blocks)
+  }
 
   use_indices <- new_order[are_to_include[new_order]]
   summary_df <- summary_df[use_indices, ]
@@ -82,14 +111,12 @@ DrawAlterationBarplot <- function(summary_df,
 
   barplot_height <- 2.8
 
-  space_height <- 1
-
   layout(cbind(rep(1, 9),
                3:(9 + 3 - 1),
                rep(2, 9)
                ),
-         widths  = c(0.13, 0.8, 0.07),
-         heights = c(3,
+         widths  = c(left_space, (1 - left_space - right_space), right_space),
+         heights = c(top_space,
                      barplot_height,
                      space_height,
                      barplot_height,
@@ -97,11 +124,16 @@ DrawAlterationBarplot <- function(summary_df,
                      barplot_height,
                      space_height,
                      barplot_height,
-                     space_height
+                     bottom_space
                      )
          )
 
-  par(mar = rep(0, 4))
+  use_cex <- par("cex")
+  if (maintain_cex) {
+    use_cex <- use_cex / 0.66
+  }
+
+  old_par <- par(mar = rep(0, 4), cex = use_cex)
 
   for (i in 1:3) {
     MakeEmptyPlot()
@@ -122,22 +154,8 @@ DrawAlterationBarplot <- function(summary_df,
   four_colors <- rev(four_colors)
   four_alterations <- rev(four_alterations)
 
-  color_text_vec <- c('bold(color1("% plasmids with") * ',
-                      'color1(" ") * color2("mutations,") * ',
-                      'color1(" ") * color3("deletions,") * ',
-                      'color1(" or ") * color4("contaminations"))'
-                      )
 
-  use_colors <- c("#000000",
-                  rev(four_colors)[2:4]
-                  )
-
-  color_indices <- seq_along(use_colors)
-  text_indices <- seq_along(color_text_vec)
-  color_text <- paste0(color_text_vec[text_indices], collapse = "")
-
-
-  add_gap <- (!(reorder_wells)) && ("Block" %in% names(sg_sequences_df))
+  add_gap <- (!(reorder_wells)) && have_blocks
   if (add_gap) {
     positions_vec <- GappedPositionsVec(sg_sequences_df[["Block"]][are_to_include],
                                         gap_weight = gap_weight
@@ -166,37 +184,137 @@ DrawAlterationBarplot <- function(summary_df,
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[1]], four_colors, positions_vec)
-  SideTextAndAxes("sg1")
+  SideTextAndAxes("sg1",
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = horizontal_y_label,
+                  draw_outer_box     = draw_outer_box
+                  )
 
 
-  for (j in color_indices) {
-    text(x      = 0.5,
-         y      = 1.25,
-         labels = VerticalAdjust(parse(text = MakeInvisible(color_text, j))),
-         adj    = c(0.5, 0),
-         xpd    = NA,
-         col    = use_colors[[j]],
-         cex    = 1.2
-         )
+
+
+  if (show_color_text) {
+    color_text_vec <- c('bold(color1("% plasmids with") * ',
+                        'color1(" ") * color2("mutations,") * ',
+                        'color1(" ") * color3("deletions,") * ',
+                        'color1(" or ") * color4("contaminations"))'
+                        )
+
+    use_colors <- c("#000000",
+                    rev(four_colors)[2:4]
+                    )
+
+    color_indices <- seq_along(use_colors)
+    text_indices <- seq_along(color_text_vec)
+    color_text <- paste0(color_text_vec[text_indices], collapse = "")
+
+    for (j in color_indices) {
+      text(x      = 0.5,
+           y      = 1.25,
+           labels = VerticalAdjust(parse(text = MakeInvisible(color_text, j))),
+           adj    = c(0.5, 0),
+           xpd    = NA,
+           col    = use_colors[[j]],
+           cex    = 1.2
+           )
+    }
   }
+
 
   MakeEmptyPlot()
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[2]], four_colors, positions_vec)
-  SideTextAndAxes("sg2")
+  SideTextAndAxes("sg2",
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = horizontal_y_label,
+                  draw_outer_box     = draw_outer_box
+                  )
   MakeEmptyPlot()
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[3]], four_colors, positions_vec)
-  SideTextAndAxes("sg3")
+  SideTextAndAxes("sg3",
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = horizontal_y_label,
+                  draw_outer_box     = draw_outer_box
+                  )
   MakeEmptyPlot()
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[4]], four_colors, positions_vec)
-  SideTextAndAxes("sg4")
+  SideTextAndAxes("sg4",
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = horizontal_y_label,
+                  draw_outer_box     = draw_outer_box
+                  )
   MakeEmptyPlot()
 
 
+  if (show_color_legend) {
+    plot.window(c(0, 1), c(0, 1), "", asp = 1)
+    MakeColorBoxLegend(labels_vec         = rev(four_alterations),
+                       colors_vec         = rev(four_colors),
+                       x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.036),
+                       y_pos              = 0.2,
+                       use_constant_space = FALSE,
+                       vertical_adjust    = 0,
+                       x_space_adjust     = 4
+                       )
+  }
+
+  par(old_par)
   return(invisible(NULL))
 }
+
+
+
+
+ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
+  use_width <- 3.5
+  use_height <- 4
+  use_cex <- 0.7
+  use_lwd <- 0.8
+  for (use_PDF in TRUE) {
+    file_name <- paste0(use_prefix,
+                        " - alterations barplot - CCS7 (filtered) - SmrtLink 7",
+                        ".pdf"
+                        )
+    if (use_PDF) {
+      pdf(file = file.path(manuscript_directory, file_name),
+          width = use_width, height = use_height
+          )
+    }
+    par(lwd = use_lwd, cex = use_cex)
+    DrawAlterationBarplot(summary_df,
+                          space_height       = 0.5,
+                          top_space          = 0.5,
+                          bottom_space       = 1,
+                          show_color_text    = FALSE,
+                          maintain_cex       = FALSE,
+                          use_lwd            = 1,
+                          use_cex_axis       = 1,
+                          sg_label_cex       = 1,
+                          horizontal_y_label = FALSE,
+                          show_color_legend  = TRUE,
+                          left_space         = 0.15,
+                          right_space        = 0.02,
+                          draw_outer_box     = FALSE,
+                          exclude_blocks     = 2
+                          )
+    if (use_PDF) {
+      dev.off()
+    }
+  }
+  return(invisible(NULL))
+}
+
+
