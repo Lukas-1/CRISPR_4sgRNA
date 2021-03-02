@@ -56,6 +56,7 @@ ResolveDuplicateFeaturesTwice <- function(locations_df) {
   message(paste0(num_2nd_pass, " additional duplicates were resolved ",
                  "in a second pass."
                  ))
+  locations_df[["Duplicate_category"]] <- AnnotateRemainingDuplicates(locations_df)
   return(locations_df)
 }
 
@@ -247,6 +248,31 @@ ResolveDuplicateFeatures <- function(locations_df) {
   row.names(locations_df) <- NULL
   return(locations_df)
 }
+
+
+AnnotateRemainingDuplicates <- function(locations_df) {
+
+  location_strings <- do.call(paste, c(locations_df[location_columns], sep = "_"))
+  duplicated_locations <- unique(location_strings[duplicated(location_strings)])
+
+  are_duplicated <- location_strings %in% duplicated_locations
+
+  results_vec <- rep(NA, nrow(locations_df))
+
+  for (location in duplicated_locations) {
+    are_this_location <- location_strings[are_duplicated] %in% location
+    sources <- locations_df[["Source"]][are_duplicated][are_this_location]
+    are_TxDb <- sources == "TxDb"
+    if (all(are_TxDb)) {
+      replacement_vec <- "Other"
+    } else {
+      replacement_vec <- ifelse(are_TxDb, "Only TxDb", "Other")
+    }
+    results_vec[are_duplicated][are_this_location] <- replacement_vec
+  }
+  return(results_vec)
+}
+
 
 
 
@@ -583,6 +609,12 @@ CDS_or_exon_locations_df <- rbind.data.frame(
   make.row.names = FALSE
 )
 
+# Annotate duplicates that are present as both exons of ncRNAs and CDSs of protein-coding genes,
+# while preserving the duplicate status based on exon annotations
+CDS_or_exon_locations_df[["Duplicate_category"]] <- ifelse(is.na(CDS_or_exon_locations_df[["Duplicate_category"]]),
+                                                           AnnotateRemainingDuplicates(CDS_or_exon_locations_df),
+                                                           CDS_or_exon_locations_df[["Duplicate_category"]]
+                                                           )
 
 
 
@@ -595,6 +627,11 @@ save(list = c("gene_locations_df", "transcript_locations_df",
               ),
      file = file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData")
      )
+
+
+
+
+
 
 
 

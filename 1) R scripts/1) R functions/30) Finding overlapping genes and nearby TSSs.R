@@ -165,7 +165,8 @@ PrepareGenesDf <- function(genes_df,
                            exclude_pseudogenes       = TRUE,
                            only_known_gene_type      = TRUE,
                            require_Entrez_ID         = FALSE,
-                           check_entrezs_and_symbols = TRUE
+                           check_entrezs_and_symbols = TRUE,
+                           discard_TxDb_duplicates   = TRUE
                            ) {
 
   all_chromosomes <- paste0("chr", c(1:23, "X", "Y", "M"))
@@ -199,7 +200,7 @@ PrepareGenesDf <- function(genes_df,
     are_selected[are_selected] <- !(are_NA_entrezs[are_selected])
   }
 
-  stopifnot(!(any(grepl(",", genes_df[["Gene_types"]], fixed = TRUE))))
+  stopifnot(!(any(grepl(",", genes_df[, "Gene_types"], fixed = TRUE))))
 
   if (only_protein_coding) {
     are_selected[are_selected] <- genes_df[["Gene_types"]][are_selected] %in% "protein-coding"
@@ -213,6 +214,10 @@ PrepareGenesDf <- function(genes_df,
       exclude_types <- c(exclude_types, "other", "unknown")
     }
     are_selected[are_selected] <- !(genes_df[["Gene_types"]][are_selected] %in% exclude_types)
+  }
+
+  if (discard_TxDb_duplicates) {
+    are_selected[are_selected] <- !(genes_df[["Duplicate_category"]][are_selected] %in% "Only TxDb")
   }
 
   if (!(all(are_selected))) {
@@ -433,19 +438,21 @@ Get4sgProjectedDeletions <- function(CRISPR_df,
 
 FindOverlapsWithDeletions <- function(CRISPR_df,
                                       input_genes_df,
-                                      only_protein_coding       = FALSE,
-                                      exclude_pseudogenes       = TRUE,
-                                      only_known_gene_type      = TRUE,
-                                      require_Entrez_ID         = FALSE
+                                      only_protein_coding     = FALSE,
+                                      exclude_pseudogenes     = TRUE,
+                                      only_known_gene_type    = TRUE,
+                                      require_Entrez_ID       = FALSE,
+                                      discard_TxDb_duplicates = TRUE
                                       ) {
 
   stopifnot(!(any(grepl(",", CRISPR_df[["Entrez_ID"]], fixed = TRUE))))
 
   genes_df <- PrepareGenesDf(input_genes_df,
-                             only_protein_coding  = only_protein_coding,
-                             exclude_pseudogenes  = exclude_pseudogenes,
-                             only_known_gene_type = only_known_gene_type,
-                             require_Entrez_ID    = require_Entrez_ID
+                             only_protein_coding     = only_protein_coding,
+                             exclude_pseudogenes     = exclude_pseudogenes,
+                             only_known_gene_type    = only_known_gene_type,
+                             require_Entrez_ID       = require_Entrez_ID,
+                             discard_TxDb_duplicates = discard_TxDb_duplicates
                              )
 
   rename_gene_columns <- c(
