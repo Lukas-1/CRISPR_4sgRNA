@@ -77,7 +77,6 @@ ViolinBox_Sources(merged_replaced_CRISPRi_df,
 
 
 
-
 # Draw plots describing the 4sg library as a whole ------------------------
 
 PlotNumGenesInLibrary()
