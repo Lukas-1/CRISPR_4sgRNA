@@ -76,6 +76,63 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 
 
 
+# Export plots for the manuscript -----------------------------------------
+
+DrawAllManuscriptPlots(merged_replaced_CRISPRa_df)
+
+
+## Draw the TSS doughnut plot
+
+TSS_colors <- c("#fdd8eb", "#f990c6", "#d31279")
+TSS_colors <- c(TSS_colors, rep(TSS_colors[[length(TSS_colors)]], 6 - length(TSS_colors)))
+
+pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
+              paste0("Doughnut plot - TSSs", ".pdf")
+              ),
+    width = 3.3, height = 2.15
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+do.call(TSSDonutBar,
+        c(manuscript_donut_args[!(names(manuscript_donut_args) %in% c("use_mai", "bar_label_line"))],
+          list(CRISPR_df       = merged_replaced_CRISPRa_df,
+               x_axis_label    = "Genes in CRISPRa library",
+               use_labels      = 1:6,
+               use_colors      = TSS_colors,
+               use_mai         = c(0.01, 1.00, 0.4, 0.15),
+               y_axis_label    = "Number of transcription start sites",
+               text_dark_color = "black",
+               space           = 0.35
+               )
+          )
+        )
+dev.off()
+
+
+
+## Draw the plasmid doughnut plot
+
+pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
+              paste0("Doughnut plots - CRISPRa plasmids", ".pdf")
+              ),
+    width = 3.3, height = 2.15
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+do.call(SummaryDonutBar,
+        c(manuscript_donut_args,
+          list(CRISPR_df    = merged_replaced_CRISPRa_df,
+               targets_df   = TSS_targets_df,
+               x_axis_label = "Plasmids in CRISPRa library",
+               use_map_list = manuscript_map_list,
+               percent_max  = 100
+               )
+          )
+        )
+dev.off()
+
+
+
+
+
 # Draw plots describing the 4sg library as a whole ------------------------
 
 PlotNumGenesInLibrary()
@@ -98,13 +155,11 @@ MakeScatterPlots(merged_replaced_CRISPRa_df)
 
 
 
-
 # Plot categorical data ---------------------------------------------------
 
 UniqueSequencesBarPlots(merged_replaced_CRISPRa_df)
 
 SourcesBarPlots(merged_replaced_CRISPRa_df)
-
 
 
 
