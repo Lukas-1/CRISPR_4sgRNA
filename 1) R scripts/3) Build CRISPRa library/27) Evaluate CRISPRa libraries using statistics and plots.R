@@ -36,7 +36,6 @@ load(file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRN
 
 
 
-
 # Add data on other (unintended) targeted TSSs ----------------------------
 
 merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
@@ -45,7 +44,6 @@ merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
                                                      main_TSS_targets_df,
                                                      main_TSS_protein_targets_df
                                                      )
-
 
 
 
@@ -78,18 +76,20 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 
 # Export plots for the manuscript -----------------------------------------
 
-DrawAllManuscriptPlots(merged_replaced_CRISPRa_df)
+df_mat_list <- PrepareManuscriptPlots(merged_replaced_CRISPRa_df)
+DrawAllManuscriptPlots(df_mat_list)
 
 
 ## Draw the TSS doughnut plot
 
-TSS_colors <- c("#fdd8eb", "#f990c6", "#d31279")
+TSS_colors <- carto_pal(3, "Emrld") # or pink: c("#fdd8eb", "#f990c6", "#d31279")
+TSS_colors <- c(TSS_colors[[1]], colorRampPalette(TSS_colors)(100)[[40]], TSS_colors[[3]])
 TSS_colors <- c(TSS_colors, rep(TSS_colors[[length(TSS_colors)]], 6 - length(TSS_colors)))
 
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Doughnut plot - TSSs", ".pdf")
               ),
-    width = 3.3, height = 2.15
+    width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 do.call(TSSDonutBar,
@@ -98,10 +98,11 @@ do.call(TSSDonutBar,
                x_axis_label    = "Genes in CRISPRa library",
                use_labels      = 1:6,
                use_colors      = TSS_colors,
-               use_mai         = c(0.01, 1.00, 0.4, 0.15),
+               use_mai         = c(0.4, 1, 0.4, 0.15),
                y_axis_label    = "Number of transcription start sites",
                text_dark_color = "black",
-               space           = 0.35
+               space           = 0.4,
+               bar_label_line  = 0.8
                )
           )
         )
@@ -114,7 +115,7 @@ dev.off()
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Doughnut plots - CRISPRa plasmids", ".pdf")
               ),
-    width = 3.3, height = 2.15
+    width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 do.call(SummaryDonutBar,

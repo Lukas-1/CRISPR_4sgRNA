@@ -60,30 +60,39 @@ BarPlot_Sources(merged_CRISPRko_df, "Are_overlapping")
 
 # Export plots for the manuscript -----------------------------------------
 
-DrawAllManuscriptPlots(merged_CRISPRko_df)
+df_mat_list <- PrepareManuscriptPlots(merged_CRISPRko_df)
+DrawAllManuscriptPlots(df_mat_list)
 
 
 ## Draw the deletion histogram
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Histogram - size of expected deletions", ".pdf")),
-    width = 3.2, height = 2.2
+    width = 3.4, height = 2.5
     )
-par(cex = manuscript_cex, lwd = manuscript_lwd, mai = c(0.4, 0.47, 0.4, 0.2))
+par(cex = manuscript_cex,
+    lwd = manuscript_lwd,
+    mai = c(0.7,
+            manuscript_donut_args[["use_mai"]][[2]],
+            0.5,
+            manuscript_donut_args[["use_mai"]][[4]]
+            )
+    )
 hist_results <- DrawDeletionHistogram(sgRNAs_overview_df,
                                       use_title    = "",
                                       x_axis_label = "Size of expected deletion (base pairs)",
                                       y_axis_label = "Number of genes",
-                                      fill_color   = CRISPRo_colors[[2]],
+                                      fill_color   = "#3576c0", #colorRampPalette(CRISPRo_colors)(100)[[75]],
                                       x_label_line = 1.8,
-                                      y_label_line = 2.53
+                                      y_label_line = 2.53,
+                                      use_y_max    = 600
                                       )
 
-text(x      = hist_results[["mids"]][which.max(hist_results[["counts"]])],
-     y      = par("usr")[[4]] + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")),
-     labels = "CRISPRo library",
-     adj    = 0.5,
-     xpd    = NA
-     )
+# text(x      = hist_results[["mids"]][which.max(hist_results[["counts"]])],
+#      y      = par("usr")[[4]] + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")),
+#      labels = "CRISPRo library",
+#      adj    = 0.5,
+#      xpd    = NA
+#      )
 dev.off()
 
 
@@ -93,7 +102,7 @@ dev.off()
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Doughnut plots - CRISPRo plasmids", ".pdf")
               ),
-    width = 3.3, height = 2.15
+    width = 3.4, height = 2.5
     )
 
 par(cex = manuscript_cex, lwd = manuscript_lwd)

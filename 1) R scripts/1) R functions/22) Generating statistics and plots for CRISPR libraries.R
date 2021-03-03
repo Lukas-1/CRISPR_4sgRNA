@@ -788,8 +788,6 @@ ChooseOriginalTop4 <- function(CRISPR_df) {
   fourguides_df <- CRISPR_df[num_occurrences_vec == 4, ]
   other_df <- CRISPR_df[num_occurrences_vec > 4, ]
 
-  # print(head(other_df[, c("Entrez_ID", "Gene_symbol", "Original_symbol", "Source", "sgRNA_sequence")], 10))
-
   other_order <- order(as.integer(other_df[["Entrez_ID"]]),
                        other_df[["Original_symbol"]] != ""
                        )
@@ -1367,7 +1365,7 @@ UniquePointsBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
     numeric_column_labels <- numeric_column_labels[!(names(numeric_column_labels) %in% TSS_columns)]
   }
 
-  main_folder_path <- file.path(output_plots_directory, "Box plots - A) unique points")
+  main_folder_path <- file.path(output_plots_directory, "Box plots", "Box plots - A) unique points")
 
   for (make_PDF in c(FALSE, TRUE)) {
     if (make_PDF) {
@@ -1663,9 +1661,11 @@ SourcesBoxPlots <- function(CRISPR_df, embed_raster_within_PDFs = TRUE) {
             temp_width <- current_width - 1.44 # subtract the margin
             temp_height <- current_height - 1.62 # subtract the margin
 
-            png(file = temp_path,
-                width = temp_width, height = temp_height,
-                units = "in", res = 600
+            png(file   = temp_path,
+                width  = temp_width,
+                height = temp_height,
+                units  = "in",
+                res    = 600
                 )
             plot_df <- do.call(ViolinBox_Sources,
                                c(list(CRISPR_df             = CRISPR_df,
@@ -2717,18 +2717,25 @@ DrawDeletionHistogram <- function(overview_df,
                                   y_axis_label = "Count",
                                   x_label_line = 2.2,
                                   y_label_line = 3,
-                                  use_breaks   = 100
+                                  use_breaks   = 100,
+                                  box_type     = "l",
+                                  use_y_max    = NULL,
+                                  box_color    = "black"
                                   ) {
 
   are_4sg <- overview_df[["In_4sg_library"]] %in% "Yes"
   numeric_vec <- overview_df[[column_name]][are_4sg]
   hist_results <- hist(log10(numeric_vec), breaks = use_breaks, plot = FALSE)
   x_limits <- GetFlexibleAxisLimits(hist_results[["breaks"]],
-                                    start_at_zero = FALSE
+                                    start_at_zero = FALSE,
+                                    add_fraction = 0.01
                                     )
-  y_limits <- GetFlexibleAxisLimits(hist_results[["counts"]],
-                                    subtract_fraction = 0.02
-                                    )
+
+  for_y_lim <- hist_results[["counts"]]
+  if (!(is.null(use_y_max))) {
+    for_y_lim <- c(use_y_max, for_y_lim)
+  }
+  y_limits <- GetFlexibleAxisLimits(for_y_lim, subtract_fraction = 0.02)
 
   hist(log10(numeric_vec),
        col      = fill_color,
@@ -2770,7 +2777,7 @@ DrawDeletionHistogram <- function(overview_df,
   as.character(10^axis_ticks)
   options(old_scipen)
 
-  box(bty = "l")
+  box(bty = box_type, col = box_color)
 
   title(use_title,
         cex.main = 1,
@@ -3064,7 +3071,9 @@ ScatterPlot <- function(CRISPR_df,
 
   if (embed_PNG) {
     current_device <- dev.cur()
-    temp_file_path <- file.path(output_plots_directory, sub_folder, "temp.png")
+    temp_file_path <- file.path(output_plots_directory, "Scatter plots",
+                                sub_folder, "temp.png"
+                                )
     png(file = temp_file_path,
         width = 4.75, height = 4.75, units = "in", res = 600
         )
@@ -3441,7 +3450,8 @@ DonutBars <- function(use_factor         = NULL,
                       bar_label_line     = 0.6,
                       draw_box           = FALSE,
                       y_axis_label       = NULL,
-                      percent_max        = NULL
+                      percent_max        = NULL,
+                      bottom_axis        = FALSE
                       ) {
 
   if (is.null(counts_vec)) {
@@ -3475,20 +3485,14 @@ DonutBars <- function(use_factor         = NULL,
   } else {
     num_positions <- num_bars
   }
-  print(num_positions)
-  print(space)
-  print(num_bars)
-  print(leave_spaces_for)
 
   side_space <- space * (2 / 3)
-
   num_units <- num_positions + ((num_positions - 1) * space) + (2 * side_space)
-
   unit_width <- 1 / num_units
 
   bar_mid_positions <- cumsum(rep(unit_width, num_positions)) +
                        cumsum(rep(unit_width * space, num_positions)) -
-                       (unit_width / 2) - (side_space * unit_width)
+                       (unit_width / 2) - ((side_space * unit_width) / 2)
   bar_mid_positions <- rev(bar_mid_positions)[seq_len(num_bars)]
 
   x_max <- max(counts_vec)
@@ -3517,19 +3521,25 @@ DonutBars <- function(use_factor         = NULL,
           )
   }
 
-  bar_mids <- grconvertY(bar_mid_positions, from = "npc", to = "user")
-  half_bar <- (par("usr")[[4]] - par("usr")[[3]]) * unit_width * 0.5
-
+  x_range <- par("usr")[[2]] - par("usr")[[1]]
   if (draw_box) {
-    box(bty = "]", col = "gray70")
+    x_space_fraction <- 0.015
+  } else {
+    x_space_fraction <- 0
   }
 
+  x_space <- x_space_fraction * x_range
+
+  bar_y_mids <- grconvertY(bar_mid_positions, from = "npc", to = "user")
+  y_half_bar <- (par("usr")[[4]] - par("usr")[[3]]) * unit_width * 0.5
+
+  corr_bar_lengths <- ((1 - x_space_fraction) * bar_lengths)
 
   for (i in seq_len(num_bars)) {
-    rect(xleft   = par("usr")[[1]],
-         xright  = grconvertX(bar_lengths[[i]], from = "npc", to = "user"),
-         ybottom = bar_mids[[i]] - half_bar,
-         ytop    = bar_mids[[i]] + half_bar,
+    rect(xleft   = grconvertX(x_space, from = "npc", to = "user"),
+         xright  = grconvertX(x_space + corr_bar_lengths[[i]], from = "npc", to = "user"),
+         ybottom = bar_y_mids[[i]] - y_half_bar,
+         ytop    = bar_y_mids[[i]] + y_half_bar,
          border  = use_colors[[i]],
          col     = use_colors[[i]],
          lwd     = 0.5,
@@ -3538,12 +3548,9 @@ DonutBars <- function(use_factor         = NULL,
   }
 
   are_too_small <- bar_lengths < (par("usr")[[2]] * 0.2)
-  x_range <- par("usr")[[2]] - par("usr")[[1]]
 
-  text(y      = bar_mids[are_too_small],
-       x      = grconvertX(bar_lengths[are_too_small] + (x_range * 0.02),
-                           from = "npc", to = "user"
-                           ),
+  text(x      = grconvertX(x_space + corr_bar_lengths[are_too_small] + (x_range * 0.02), from = "npc", to = "user"),
+       y      = bar_y_mids[are_too_small],
        xpd    = NA,
        labels = count_labels[are_too_small],
        adj    = c(0, 0.5),
@@ -3553,10 +3560,8 @@ DonutBars <- function(use_factor         = NULL,
        )
 
   assign("delete_use_colors", use_colors, envir = globalenv())
-  text(y      = bar_mids[!(are_too_small)],
-       x      = grconvertX(bar_lengths[!(are_too_small)] / 2,
-                           from = "npc", to = "user"
-                           ),
+  text(x      = grconvertX(x_space + corr_bar_lengths[!(are_too_small)] / 2, from = "npc", to = "user"),
+       y      = bar_y_mids[!(are_too_small)],
        xpd    = NA,
        labels = count_labels[!(are_too_small)],
        adj    = 0.5,
@@ -3568,8 +3573,8 @@ DonutBars <- function(use_factor         = NULL,
                        )
        )
 
-  text(y      = bar_mids,
-       x      = par("usr")[[1]] - (diff(grconvertX(c(0, bar_label_line), from = "lines", to = "user"))),
+  text(x      = par("usr")[[1]] - (diff(grconvertX(c(0, bar_label_line), from = "lines", to = "user"))),
+       y      = bar_y_mids,
        xpd    = NA,
        labels = use_labels,
        adj    = c(1, 0.5),
@@ -3593,11 +3598,12 @@ DonutBars <- function(use_factor         = NULL,
        )
 
   if (show_axis) {
-    actual_pos <- seq(from = par("usr")[[1]],
+    actual_pos <- seq(from = par("usr")[[1]] + x_space,
                       to   = par("usr")[[2]],
-                      by   = (par("usr")[[2]] - par("usr")[[1]]) / (length(pretty_pos) - 1)
+                      by   = (par("usr")[[2]] - (par("usr")[[1]] + x_space)) / (length(pretty_pos) - 1)
                       )
-    axis(3,
+
+    axis(if (bottom_axis) 1 else 3,
          at     = actual_pos,
          labels = paste0(pretty_pos, "%"),
          mgp    = c(3, 0.38, 0),
@@ -3606,18 +3612,25 @@ DonutBars <- function(use_factor         = NULL,
          )
 
     if (!(is.null(x_axis_label))) {
-      mtext(x_axis_label, side = 3, line = 1.7, cex = par("cex"))
+      mtext(x_axis_label, side = if (bottom_axis) 1 else 3,
+            line = 1.7, cex = par("cex")
+            )
     }
   }
 
   if (!(is.null(y_axis_label))) {
-    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2), from = "lines", to = "user")),
+    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2.53), from = "lines", to = "user")),
          y      = grconvertY(0.5, from = "npc", to = "user"),
          labels = VerticalAdjust(y_axis_label),
          srt    = 90,
          xpd    = NA,
          adj    = c(0.5, 0)
          )
+  }
+
+  if (draw_box) {
+    box_gray <- "gray60"
+    box(col = box_gray)
   }
 
   par(old_par)
@@ -3916,13 +3929,15 @@ manuscript_donut_args <- list(
   donut_radius       = 0.28,
   donut_text_size    = 0.9,
   donut_label        = "4sg",
-  use_mai            = c(0.01, 1, 0.4, 0.15),
+  use_mai            = c(0.4, 1, 0.4, 0.15),
   use_omi            = rep(0, 4),
   donut_inner_radius = 0.35,
   use_line_height    = 0.95,
-  donut_x_mid        = 0.5,
-  donut_y_mid        = 0.27,
-  bar_label_line     = 0.5
+  donut_x_mid        = 0.80,
+  donut_y_mid        = 0.26,
+  bar_label_line     = 0.5,
+  draw_box           = FALSE,
+  bottom_axis        = FALSE
 )
 
 
@@ -4115,7 +4130,7 @@ ManuscriptAnnotate <- function(group_positions,
            xpd    = NA
            )
     } else if (modality_on_side) {
-      text(x      = par("usr")[[2]] + diff(grconvertX(c(0, 0.32), from = "lines", to = "user")),
+      text(x      = par("usr")[[2]] + diff(grconvertX(c(0, 0.75), from = "lines", to = "user")), # Formerly 0.32 lines
            y      = grconvertY(0.5, from = "npc", to = "user"),
            labels = modality_label,
            srt    = 270,
@@ -4184,7 +4199,8 @@ ManuscriptBars <- function(counts_mat,
                            modality_on_side     = FALSE,
                            abbreviate_libraries = TRUE,
                            use_cex              = manuscript_cex,
-                           use_lwd              = manuscript_lwd
+                           use_lwd              = manuscript_lwd,
+                           use_mai              = NULL
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -4269,12 +4285,13 @@ ManuscriptBars <- function(counts_mat,
     }
   }
 
-
   ## Draw the bar plot
-  if (horizontal) {
-    use_mai <- horizontal_mai
-  } else {
-    use_mai <- vertical_mai
+  if (is.null(use_mai)) {
+    if (horizontal) {
+      use_mai <- horizontal_mai
+    } else {
+      use_mai <- vertical_mai
+    }
   }
   old_par <- par(mai = use_mai, cex = use_cex, lwd = use_lwd)
 
@@ -4411,8 +4428,9 @@ ManuscriptBars <- function(counts_mat,
            xpd    = NA
            )
     } else {
-      y_position <- par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.16)
-      y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.058
+
+      y_position <- par("usr")[[4]] + diff(grconvertY(c(0, 1.25), from = "lines", to = "user"))
+      y_fraction <- diff(grconvertY(c(0, 0.456), from = "lines", to = "user"))
       text(x      = group_positions,
            y      = y_position - y_fraction,
            labels = divisors,
@@ -4441,12 +4459,14 @@ ManuscriptBars <- function(counts_mat,
 
 
 ManuscriptViolinBox <- function(plot_df,
-                                axis_label = "",
-                                use_width  = horizontal_width,
-                                use_height = horizontal_height,
-                                horizontal = TRUE,
-                                use_cex    = manuscript_cex,
-                                use_lwd    = manuscript_lwd
+                                axis_label           = "",
+                                use_width            = horizontal_width,
+                                use_height           = horizontal_height,
+                                horizontal           = TRUE,
+                                use_cex              = manuscript_cex,
+                                use_lwd              = manuscript_lwd,
+                                use_mai              = NULL,
+                                abbreviate_libraries = TRUE
                                 ) {
 
   ## Prepare colors and labels
@@ -4462,7 +4482,9 @@ ManuscriptViolinBox <- function(plot_df,
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
       group_names[group_names == "hCRISPRa-v2"] <- "hCa-v2"
-      group_names[group_names == "Calabrese"] <- "Calab"
+      if (abbreviate_libraries) {
+        group_names[group_names == "Calabrese"] <- "Calab"
+      }
     }
   } else {
     modality_label <- ""
@@ -4500,19 +4522,21 @@ ManuscriptViolinBox <- function(plot_df,
 
 
   ## Prepare the raster graphics device
-  if (horizontal) {
-    new_mai <- horizontal_mai
-  } else {
-    new_mai <- vertical_mai
+  if (is.null(use_mai)) {
+    if (horizontal) {
+      use_mai <- horizontal_mai
+    } else {
+      use_mai <- vertical_mai
+    }
   }
 
-  old_par <- par(mai = new_mai, cex = use_cex, lwd = use_lwd)
-  main_folder_path <- file.path(output_plots_directory, "_Manuscript")
+  old_par <- par(mai = use_mai, cex = use_cex, lwd = use_lwd)
+  main_folder_path <- file.path(output_plots_directory, "Manuscript")
 
   PDF_device <- dev.cur()
   temp_path <- file.path(main_folder_path, "temp.png")
-  temp_width <- use_width - sum(new_mai[c(2, 4)])
-  temp_height <- use_height - sum(new_mai[c(1, 3)])
+  temp_width <- use_width - sum(use_mai[c(2, 4)])
+  temp_height <- use_height - sum(use_mai[c(1, 3)])
 
   png(file   = temp_path,
       width  = temp_width,
@@ -4616,21 +4640,23 @@ ManuscriptViolinBox <- function(plot_df,
        lwd      = par("lwd")
        )
 
+  group_sizes <- tabulate(plot_df[["Groups_factor"]])
+  one_group <- length(unique(group_sizes)) == 1
+
   ManuscriptAnnotate(group_positions,
                      group_names,
                      modality_label,
                      axis_label,
                      horizontal,
                      use_colors,
-                     modality_on_top = TRUE
+                     modality_on_top = one_group,
+                     modality_on_side = !(one_group)
                      )
 
-  num_per_group <- unique(tabulate(plot_df[["Groups_factor"]]))
-
-  text(x      = par("usr")[[2]],
+  text(x      = if (one_group) par("usr")[[2]] else group_positions,
        y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.78), from = "lines", to = "user")),
-       labels = paste0("(", num_per_group, ")"),
-       adj    = c(1, 0.5),
+       labels = if (one_group) paste0("(", group_sizes[[1]], ")") else group_sizes,
+       adj    = if (one_group) c(1, 0.5) else 0.5,
        xpd    = NA
        )
 
@@ -4643,49 +4669,91 @@ ManuscriptViolinBox <- function(plot_df,
 
 
 
+manuscript_barplot_vars <- c(
+  "Are_overlapping",
+  "all22_SNP_AF_max_Kaviar",
+  "Expected_all22_SNP_AF_max_Kaviar",
+  "Affects_any_unintended_gene",
+  "Affects_any_genes_at_other_loci",
+  "Have_homologies"
+)
 
-DrawAllManuscriptPlots <- function(CRISPR_df) {
+manuscript_violin_vars <- c(
+  "GuideScan_specificity",
+  "CRISPOR_Doench_efficacy",
+  "CRISPOR_3MM_specificity"
+)
 
-  barplot_vars <- c(
-    "Are_overlapping",
-    "all22_SNP_AF_max_Kaviar",
-    "Expected_all22_SNP_AF_max_Kaviar",
-    "Affects_any_unintended_gene",
-    "Affects_any_genes_at_other_loci",
-    "Have_homologies"
-  )
 
-  violin_vars <- c(
-    "GuideScan_specificity",
-    "CRISPOR_Doench_efficacy"
-  )
 
-  mat_list <- sapply(
-    barplot_vars,
+
+PrepareManuscriptPlots <- function(CRISPR_df) {
+
+  mat_list_filtered <- sapply(
+    manuscript_barplot_vars,
     function(x) {
       BarPlot_Sources(CRISPR_df,
                       x,
-                      filter_top4 = TRUE,
-                      show_sublibraries = FALSE
-      )
+                      filter_top4           = TRUE,
+                      show_sublibraries     = FALSE,
+                      filter_complete_genes = TRUE
+                      )
+    }, simplify = FALSE
+  )
+  mat_list_unfiltered <- sapply(
+    manuscript_barplot_vars,
+    function(x) {
+      BarPlot_Sources(CRISPR_df,
+                      x,
+                      filter_top4           = TRUE,
+                      show_sublibraries     = FALSE,
+                      filter_complete_genes = FALSE
+                      )
     }, simplify = FALSE
   )
 
-
-  df_list <- sapply(
-    violin_vars,
+  df_list_filtered <- sapply(
+    manuscript_violin_vars,
     function(x) {
       ViolinBox_Sources(CRISPR_df,
                         x,
-                        filter_top4 = TRUE,
-                        show_sublibraries = FALSE
+                        filter_top4           = TRUE,
+                        show_sublibraries     = FALSE,
+                        filter_complete_genes = TRUE
+                        )
+    },
+    simplify = FALSE
+  )
+  df_list_unfiltered <- sapply(
+    manuscript_violin_vars,
+    function(x) {
+      ViolinBox_Sources(CRISPR_df,
+                        x,
+                        filter_top4           = TRUE,
+                        show_sublibraries     = FALSE,
+                        filter_complete_genes = FALSE
                         )
     },
     simplify = FALSE
   )
 
   num_genes_mat <- NumGenesInLibrary()
-  mat_list <- c(list("Num_genes" = num_genes_mat), mat_list)
+  mat_list_filtered   <- c(list("Num_genes" = num_genes_mat), mat_list_filtered)
+  mat_list_unfiltered <- c(list("Num_genes" = num_genes_mat), mat_list_unfiltered)
+
+  results_list <- list(
+    "mat_list_filtered"   = mat_list_filtered,
+    "mat_list_unfiltered" = mat_list_unfiltered,
+    "df_list_filtered"    = df_list_filtered,
+    "df_list_unfiltered"  = df_list_unfiltered
+  )
+  return(results_list)
+}
+
+
+
+
+DrawAllManuscriptPlots <- function(df_mat_list) {
 
   labels_list <- list(
     "Num_genes"                        = "Number of genes in library",
@@ -4696,7 +4764,8 @@ DrawAllManuscriptPlots <- function(CRISPR_df) {
     "Affects_any_genes_at_other_loci"  = "Affect off-site gene",
     "GuideScan_specificity"            = "GuideScan specificity score",
     "CRISPOR_Doench_efficacy"          = "Efficacy score (Rule Set 2)",
-    "Have_homologies"                  = expression("Share subsequences" >= "8 bp")
+    "Have_homologies"                  = expression("Share subsequences" >= "8 bp"),
+    "CRISPOR_3MM_specificity"          = "CRISPOR 3MM specificity"
   )
 
   use_folder <- file.path(output_plots_directory, "Manuscript")
@@ -4707,34 +4776,52 @@ DrawAllManuscriptPlots <- function(CRISPR_df) {
                            )
     file_name <- paste0(file_number, ") ", var_name)
     for (filter_genes in c(TRUE, FALSE)) {
-      if (make_PDF) {
-        pdf(file.path(use_folder,
-                      paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
-                      paste0(file_name, ".pdf")
-                      ),
-            width = if (var_name == "Have_homologies") horizontal_width + 0.3 else horizontal_width,
-            height = horizontal_height
-            )
+
+      make_wide <- (var_name == "Have_homologies") ||
+                   (!(filter_genes) && (var_name %in% c("Are_overlapping", "GuideScan_specificity", "CRISPOR_3MM_specificity")))
+
+      if (make_wide) {
+        pdf_width <- 3.57
+        pdf_height <- 1.85
+      } else {
+        pdf_width <- horizontal_width
+        pdf_height <- horizontal_height
+      }
+      pdf(file.path(use_folder,
+                    paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
+                    paste0(file_name, ".pdf")
+                    ),
+          width = pdf_width,
+          height = pdf_height
+          )
+      if (filter_genes) {
+        mat_list <- df_mat_list[["mat_list_filtered"]]
+        df_list <- df_mat_list[["df_list_filtered"]]
+      } else {
+        mat_list <- df_mat_list[["mat_list_unfiltered"]]
+        df_list <- df_mat_list[["df_list_unfiltered"]]
       }
       if (var_name %in% names(mat_list)) {
         ManuscriptBars(mat_list[[var_name]],
-                       axis_label            = labels_list[[var_name]],
-                       numeric_limits        = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
-                       lollipop              = var_name == "Num_genes",
-                       horizontal            = FALSE,
-                       filter_complete_genes = filter_genes,
-                       modality_on_side      = var_name == "Have_homologies"
+                       axis_label           = labels_list[[var_name]],
+                       numeric_limits       = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
+                       lollipop             = var_name == "Num_genes",
+                       horizontal           = FALSE,
+                       modality_on_side     = make_wide,
+                       use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
+                       abbreviate_libraries = !(make_wide)
                        )
       } else if (var_name %in% names(df_list)) {
         ManuscriptViolinBox(df_list[[var_name]],
-                            axis_label             = labels_list[[var_name]],
-                            horizontal            = FALSE,
-                            filter_complete_genes = filter_genes,
+                            axis_label           = labels_list[[var_name]],
+                            horizontal           = FALSE,
+                            use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
+                            use_width            = pdf_width,
+                            use_height           = pdf_height,
+                            abbreviate_libraries = !(make_wide)
                             )
       }
-      if (make_PDF) {
-        dev.off()
-      }
+      dev.off()
     }
   }
 }
