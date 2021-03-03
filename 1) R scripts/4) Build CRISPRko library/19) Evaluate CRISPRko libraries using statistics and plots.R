@@ -104,7 +104,6 @@ pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               ),
     width = 3.4, height = 2.5
     )
-
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 do.call(SummaryDonutBar,
         c(manuscript_donut_args,
