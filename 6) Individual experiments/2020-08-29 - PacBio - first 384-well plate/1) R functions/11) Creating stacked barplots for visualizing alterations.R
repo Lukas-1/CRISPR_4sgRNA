@@ -18,11 +18,14 @@ SideTextAndAxes <- function(side_text,
                             use_cex_axis       = 0.8,
                             sg_label_cex       = 1.3,
                             horizontal_y_label = TRUE,
-                            draw_outer_box     = FALSE
+                            draw_outer_box     = FALSE,
+                            sparse_ticks       = TRUE
                             ) {
-
-  # tick_locations <- axTicks(2)
-  tick_locations <- seq(0, 1, 0.25)
+  if (sparse_ticks) {
+    tick_locations <- seq(0, 1, 0.5)
+  } else {
+    tick_locations <- seq(0, 1, 0.25)
+  }
   tick_labels <- paste0(tick_locations * 100, "%")
   axis(2,
        labels   = tick_labels,
@@ -34,7 +37,6 @@ SideTextAndAxes <- function(side_text,
        cex.axis = use_cex_axis,
        pos      = par("usr")[[1]] - (use_lwd * GetHalfLineWidth())
        )
-
   text(x      = if (horizontal_y_label) -0.06 else par("usr")[[1]] - diff(grconvertX(c(0, 3), from = "lines", to = "user")),
        y      = 0.5,
        adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
@@ -43,11 +45,9 @@ SideTextAndAxes <- function(side_text,
        cex    = sg_label_cex,
        srt    = if (horizontal_y_label) 0 else 90
        )
-
   if (draw_outer_box) {
     DrawOuterBox()
   }
-
   return(invisible(NULL))
 
 }
@@ -72,7 +72,8 @@ DrawAlterationBarplot <- function(summary_df,
                                   left_space         = 0.13,
                                   right_space        = 0.07,
                                   draw_outer_box     = FALSE,
-                                  exclude_blocks     = NULL
+                                  exclude_blocks     = NULL,
+                                  sparse_ticks       = FALSE
                                   ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -181,7 +182,6 @@ DrawAlterationBarplot <- function(summary_df,
     return(t(use_mat))
   })
 
-
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[1]], four_colors, positions_vec)
   SideTextAndAxes("sg1",
@@ -189,9 +189,9 @@ DrawAlterationBarplot <- function(summary_df,
                   use_cex_axis       = use_cex_axis,
                   sg_label_cex       = sg_label_cex,
                   horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks
                   )
-
 
 
 
@@ -232,7 +232,8 @@ DrawAlterationBarplot <- function(summary_df,
                   use_cex_axis       = use_cex_axis,
                   sg_label_cex       = sg_label_cex,
                   horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks
                   )
   MakeEmptyPlot()
 
@@ -243,7 +244,8 @@ DrawAlterationBarplot <- function(summary_df,
                   use_cex_axis       = use_cex_axis,
                   sg_label_cex       = sg_label_cex,
                   horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks
                   )
   MakeEmptyPlot()
 
@@ -254,7 +256,8 @@ DrawAlterationBarplot <- function(summary_df,
                   use_cex_axis       = use_cex_axis,
                   sg_label_cex       = sg_label_cex,
                   horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks
                   )
   MakeEmptyPlot()
 
@@ -308,7 +311,8 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
                           left_space         = 0.15,
                           right_space        = 0.02,
                           draw_outer_box     = FALSE,
-                          exclude_blocks     = 2
+                          exclude_blocks     = 2,
+                          sparse_ticks       = FALSE
                           )
     if (use_PDF) {
       dev.off()
