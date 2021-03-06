@@ -64,6 +64,7 @@ df_mat_list <- PrepareManuscriptPlots(merged_CRISPRko_df)
 DrawAllManuscriptPlots(df_mat_list)
 
 
+
 ## Draw the deletion histogram
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Histogram - size of expected deletions", ".pdf")),
