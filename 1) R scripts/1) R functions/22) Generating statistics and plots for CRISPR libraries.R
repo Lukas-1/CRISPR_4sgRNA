@@ -2535,7 +2535,7 @@ SourcesBarPlots <- function(CRISPR_df) {
         }
         if (make_PDF) {
           PDF_file_name <- paste0("Bar charts - ", file_name, ".pdf")
-          pdf(file = file.path(output_plots_directory, PDF_file_name),
+          pdf(file = file.path(output_plots_directory, "Bar charts", PDF_file_name),
               width = use_width, height = use_height
               )
         }
@@ -3559,7 +3559,6 @@ DonutBars <- function(use_factor         = NULL,
        col    = if (is.null(text_dark_color)) "gray52" else text_dark_color
        )
 
-  assign("delete_use_colors", use_colors, envir = globalenv())
   text(x      = grconvertX(x_space + corr_bar_lengths[!(are_too_small)] / 2, from = "npc", to = "user"),
        y      = bar_y_mids[!(are_too_small)],
        xpd    = NA,
@@ -3875,7 +3874,7 @@ DrawAllDonutBars <- function(CRISPR_df = NULL) {
 
     if (use_PDF) {
       PDF_file_name <- "Doughnut charts.pdf"
-      pdf(file = file.path(output_plots_directory, PDF_file_name),
+      pdf(file = file.path(output_plots_directory, "Whole library", PDF_file_name),
           width = 6, height = 4.45
           )
     }
@@ -3939,11 +3938,6 @@ manuscript_donut_args <- list(
   draw_box           = FALSE,
   bottom_axis        = FALSE
 )
-
-
-
-
-
 
 
 
@@ -4260,7 +4254,6 @@ ManuscriptBars <- function(counts_mat,
     numeric_axis_labels <- paste0(numeric_axis_labels, "%")
   }
 
-
   ## Prepare the groups axis
   num_groups <- ncol(counts_mat)
   if (space_like_boxplot) {
@@ -4304,7 +4297,6 @@ ManuscriptBars <- function(counts_mat,
        axes = FALSE,
        ann  = FALSE
        )
-
   axis_ticks <- ManuscriptGrid(horizontal)
 
   if (space_like_boxplot) {
@@ -4377,7 +4369,6 @@ ManuscriptBars <- function(counts_mat,
                      use_colors,
                      modality_on_side = modality_on_side
                      )
-
   box(bty = "l")
 
   ## Annotate the bars with fractions (counts)
@@ -4681,7 +4672,8 @@ manuscript_barplot_vars <- c(
 manuscript_violin_vars <- c(
   "GuideScan_specificity",
   "CRISPOR_Doench_efficacy",
-  "CRISPOR_3MM_specificity"
+  "CRISPOR_3MM_specificity",
+  "CRISPOR_4MM_specificity"
 )
 
 
@@ -4765,7 +4757,8 @@ DrawAllManuscriptPlots <- function(df_mat_list) {
     "GuideScan_specificity"            = "GuideScan specificity score",
     "CRISPOR_Doench_efficacy"          = "Efficacy score (Rule Set 2)",
     "Have_homologies"                  = expression("Share subsequences" >= "8 bp"),
-    "CRISPOR_3MM_specificity"          = "CRISPOR 3MM specificity"
+    "CRISPOR_3MM_specificity"          = "CRISPOR 3MM specificity",
+    "CRISPOR_4MM_specificity"          = "CRISPOR 4MM specificity"
   )
 
   use_folder <- file.path(output_plots_directory, "Manuscript")
@@ -4777,8 +4770,7 @@ DrawAllManuscriptPlots <- function(df_mat_list) {
     file_name <- paste0(file_number, ") ", var_name)
     for (filter_genes in c(TRUE, FALSE)) {
 
-      make_wide <- (var_name == "Have_homologies") ||
-                   (!(filter_genes) && (var_name %in% c("Are_overlapping", "GuideScan_specificity", "CRISPOR_3MM_specificity")))
+      make_wide <- (var_name == "Have_homologies") && filter_genes
 
       if (make_wide) {
         pdf_width <- 3.57
