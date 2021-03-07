@@ -813,9 +813,8 @@ DrawPercentCorrectBarplot <- function(summary_df,
     MakeColorBoxLegend(labels_vec         = as.character(0:4),
                        colors_vec         = barplot_colors,
                        y_pos              = par("usr")[[1]] - diff(grconvertY(c(0, 1), from = "lines", to = "user")),
-                       x_pos              = 0.13,
-                       before_text        = expression(bold("" >= "")),
-                       after_text         = "correct gRNAs",
+                       x_pos              = 0.092,
+                       after_text         = "correct sgRNAs",
                        aspect_ratio       = aspect_ratio,
                        use_constant_space = TRUE
                        )
