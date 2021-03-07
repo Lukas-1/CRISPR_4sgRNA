@@ -16,7 +16,6 @@ source(file.path(general_functions_directory, "22) Generating statistics and plo
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory    <- "~/CRISPR"
@@ -24,7 +23,7 @@ RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory  <- file.path(RData_directory, "2) CRISPRa")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
-file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Analysis")
+file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Analysis", "Venn diagrams")
 
 
 
@@ -45,10 +44,12 @@ MixColors <- function (rcol_in) {
   # This was taken entirely from eulerr:::mix_colors
   rgb_in <- t(grDevices::col2rgb(rcol_in))
   lab_in <- grDevices::convertColor(rgb_in, "sRGB", "Lab",
-                                    scale.in = 255)
+                                    scale.in = 255
+                                    )
   mean_col <- colMeans(lab_in)
   rgb_out <- grDevices::convertColor(mean_col, "Lab",
-                                     "sRGB", scale.out = 1)
+                                     "sRGB", scale.out = 1
+                                     )
   grDevices::rgb(rgb_out)
 }
 
@@ -219,6 +220,13 @@ ThreeSetsVenn <- function(use_factor,
 }
 
 
+
+Get4sgFactor <- function(CRISPR_df) {
+  CRISPR_df <- FilterCRISPRDf(CRISPR_df)
+  are_chosen <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
+  all_sources_fac <- ReformatSourceToFactor(CRISPR_df[["Source"]][are_chosen])
+  return(all_sources_fac)
+}
 
 
 
