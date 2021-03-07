@@ -2314,10 +2314,14 @@ BarPlot_Sources <- function(CRISPR_df,
   AnnotateBars(bar_positions, counts_mat, bars_mat, text_cex = 0.4, smaller_plot_factor  = TRUE)
 
   colnames(counts_mat) <- colors_df[, "Group_label"]
+  results_list <- list(
+    "plot_df" = plot_df,
+    "counts_mat" = counts_mat
+  )
 
   ## Final steps
   par(old_mar)
-  return(invisible(counts_mat))
+  return(invisible(results_list))
 }
 
 
@@ -4194,7 +4198,8 @@ ManuscriptBars <- function(counts_mat,
                            abbreviate_libraries = TRUE,
                            use_cex              = manuscript_cex,
                            use_lwd              = manuscript_lwd,
-                           use_mai              = NULL
+                           use_mai              = NULL,
+                           expected_SNP_percent = TRUE
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -4230,7 +4235,11 @@ ManuscriptBars <- function(counts_mat,
   } else if (is_proportion) {
     bars_mat <- prop.table(counts_mat, margin = 2) * 100
   } else {
-    bars_mat <- t(counts_mat[1, ] / counts_mat[2, ]) * 100
+    if (expected_SNP_percent) {
+      bars_mat <- t(counts_mat[1, ] / counts_mat[2, ]) * 100
+    } else {
+      bars_mat <- counts_mat[1, , drop = FALSE]
+    }
   }
 
   ## Prepare the data axis
@@ -4250,7 +4259,7 @@ ManuscriptBars <- function(counts_mat,
   } else {
     numeric_axis_labels <- format(numeric_axis_pos)
   }
-  if (!(one_row)) {
+  if (!(one_row) && !(!is_proportion && !expected_SNP_percent)) {
     numeric_axis_labels <- paste0(numeric_axis_labels, "%")
   }
 
@@ -4391,9 +4400,9 @@ ManuscriptBars <- function(counts_mat,
   } else {
     if (is_proportion) {
       dividends <- counts_mat[2, ]
-      divisors <-  colSums(counts_mat)
+      divisors <- colSums(counts_mat)
     } else {
-      dividends <- format(RoundSmallPercentages(counts_mat[1, ]))
+      dividends <- RoundSmallPercentages(counts_mat[1, ])
       divisors <- counts_mat[2, ]
     }
 
@@ -4689,7 +4698,7 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
                       filter_top4           = TRUE,
                       show_sublibraries     = FALSE,
                       filter_complete_genes = TRUE
-                      )
+                      )[["counts_mat"]]
     }, simplify = FALSE
   )
   mat_list_unfiltered <- sapply(
@@ -4700,7 +4709,7 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
                       filter_top4           = TRUE,
                       show_sublibraries     = FALSE,
                       filter_complete_genes = FALSE
-                      )
+                      )[["counts_mat"]]
     }, simplify = FALSE
   )
 
