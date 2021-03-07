@@ -16,7 +16,7 @@ source(file.path(general_functions_directory, "22) Generating statistics and plo
 # Define folder paths -----------------------------------------------------
 
 file_directory        <- "~/CRISPR/6) Individual experiments/2021-01-27 - calculate gene-wise p values for a pooled CRISPR screen"
-file_input_directory  <- file.path(file_directory, "1) Input", "Sent by Tingting")
+file_input_directory  <- file.path(file_directory, "1) Input")
 file_output_directory <- file.path(file_directory, "2) Output")
 RData_directory       <- file.path(file_directory, "3) R objects")
 
@@ -25,19 +25,29 @@ RData_directory       <- file.path(file_directory, "3) R objects")
 
 # Read in data ------------------------------------------------------------
 
-file_names <- list.files(file_input_directory)
+file_names_1 <- list.files(file.path(file_input_directory, "Sent by Tingting"))
 
-df_list <- lapply(file_names, function(x) {
-  read.csv(file.path(file_input_directory, x),
+df_list_1 <- lapply(file_names_1, function(x) {
+  read.csv(file.path(file_input_directory,"Sent by Tingting", x),
            check.names = FALSE,
            stringsAsFactors = FALSE
            )
 })
-
-names(df_list) <- sub(".csv", "", file_names, fixed = TRUE)
-
+names(df_list_1) <- sub(".csv", "", file_names_1, fixed = TRUE)
 
 
+file_names_2 <- list.files(file.path(file_input_directory, "Sent by Davide", "2) After TMM"))
+file_names_2_splits <- sapply(strsplit(file_names_2, "_without", fixed = TRUE), "[", 2)
+are_selected <- grepl("NBH", file_names_2_splits, fixed = TRUE) &
+                grepl("RML6", file_names_2_splits, fixed = TRUE)
+file_names_2 <- file_names_2[are_selected]
+
+df_list_2 <- lapply(file_names_2, function(x) {
+  read.csv(file.path(file_input_directory,"Sent by Davide", "2) After TMM", x),
+           check.names = FALSE,
+           stringsAsFactors = FALSE
+           )
+})
 
 
 
@@ -522,25 +532,33 @@ PlotPValueHistograms <- function(use_list,
 
 num_simulations <- 100L
 
-by_transcript_list <- lapply(df_list,
-                             function(x) CompleteAnalysis(x,
-                                                          split_by_column = "transcript_id",
-                                                          num_repetitions = num_simulations,
-                                                          calculate_q_values = TRUE,
-                                                          order_by_top2 = TRUE
-                                                          )
-                             )
+by_transcript_list_1 <- lapply(df_list_1,
+                               function(x) CompleteAnalysis(x,
+                                                            split_by_column = "transcript_id",
+                                                            num_repetitions = num_simulations,
+                                                            calculate_q_values = TRUE,
+                                                            order_by_top2 = TRUE
+                                                            )
+                               )
 
-by_symbol_list <- lapply(df_list,
-                         function(x) CompleteAnalysis(x,
-                                                      split_by_column = "gene_name",
-                                                      num_repetitions = num_simulations,
-                                                      calculate_q_values = TRUE,
-                                                      order_by_top2 = TRUE
-                                                      )
-                         )
+by_symbol_list_1 <- lapply(df_list_2,
+                           function(x) CompleteAnalysis(x,
+                                                        split_by_column = "gene_name",
+                                                        num_repetitions = num_simulations,
+                                                        calculate_q_values = TRUE,
+                                                        order_by_top2 = TRUE
+                                                        )
+                           )
 
 
+by_transcript_list_2 <- lapply(df_list_2,
+                               function(x) CompleteAnalysis(x,
+                                                            split_by_column = "transcript_id",
+                                                            num_repetitions = num_simulations,
+                                                            calculate_q_values = TRUE,
+                                                            order_by_top2 = TRUE
+                                                            )
+                               )
 
 
 
@@ -550,36 +568,60 @@ by_symbol_list <- lapply(df_list,
 for (make_PDF in c(FALSE, TRUE)) {
 
   if (make_PDF) {
-    pdf(file = file.path(file_output_directory, "P value distribution.pdf"),
+    pdf(file = file.path(file_output_directory, "Sample selection 1", "P value distribution.pdf"),
         height = 8.1, width = 7.5
         )
   }
 
-  PlotPValueHistograms(by_transcript_list,
+  PlotPValueHistograms(by_transcript_list_1,
                        num_guides = 2,
                        main_title = "Top 2 sgRNAs per transcript",
                        num_repetitions = num_simulations
                        )
 
-  PlotPValueHistograms(by_transcript_list,
+  PlotPValueHistograms(by_transcript_list_1,
                        num_guides = 3,
                        main_title = "Top 3 sgRNAs per transcript",
                        passage_y_position = 0.92,
                        num_repetitions = num_simulations
                        )
 
-  PlotPValueHistograms(by_symbol_list,
+  PlotPValueHistograms(by_symbol_list_1,
                        num_guides = 2,
                        main_title = "Top 2 sgRNAs per gene symbol",
                        num_repetitions = num_simulations
                        )
 
-  PlotPValueHistograms(by_symbol_list,
+  PlotPValueHistograms(by_symbol_list_2,
                        num_guides = 3,
                        main_title = "Top 3 sgRNAs per gene symbol",
                        passage_y_position = 0.92,
                        num_repetitions = num_simulations
                        )
+
+  if (make_PDF) {
+    dev.off()
+  }
+
+  if (make_PDF) {
+    pdf(file = file.path(file_output_directory, "Sample selection 2", "P value distribution.pdf"),
+        height = 8.1, width = 7.5
+        )
+  }
+
+  PlotPValueHistograms(by_transcript_list_2,
+                       num_guides = 2,
+                       main_title = "Top 2 sgRNAs per transcript",
+                       num_repetitions = num_simulations
+                       )
+
+  PlotPValueHistograms(by_transcript_list_2,
+                       num_guides = 3,
+                       main_title = "Top 3 sgRNAs per transcript",
+                       passage_y_position = 0.92,
+                       num_repetitions = num_simulations
+                       )
+
 
   if (make_PDF) {
     dev.off()
@@ -591,49 +633,66 @@ for (make_PDF in c(FALSE, TRUE)) {
 
 # Export data -------------------------------------------------------------
 
-for (i in seq_along(df_list)) {
-  WriteTable(by_transcript_list[[i]][["summary_df"]],
+for (i in seq_along(df_list_1)) {
+  WriteTable(by_transcript_list_1[[i]][["summary_df"]],
              file = file.path(file_output_directory,
+                              "Sample selection 1",
                               "Ordered by top 2 sgRNAs",
                               "By transcript",
-                              paste0(names(df_list)[[i]], "_top2_by_transcript.tsv")
+                              paste0(names(df_list_1)[[i]], "_top2_by_transcript.tsv")
                               )
              )
 }
 
 
-for (i in seq_along(df_list)) {
-  WriteTable(by_symbol_list[[i]][["summary_df"]],
+for (i in seq_along(df_list_1)) {
+  WriteTable(by_symbol_list_1[[i]][["summary_df"]],
              file = file.path(file_output_directory,
+                              "Sample selection 1",
                               "Ordered by top 2 sgRNAs",
                               "By gene symbol",
-                              paste0(names(df_list)[[i]], "_top2_by_gene_symbol.tsv")
+                              paste0(names(df_list_1)[[i]], "_top2_by_gene_symbol.tsv")
                               )
              )
 }
 
 
-for (i in seq_along(df_list)) {
-  WriteTable(ReorderByTop3(by_transcript_list[[i]][["summary_df"]]),
+for (i in seq_along(df_list_1)) {
+  WriteTable(ReorderByTop3(by_transcript_list_1[[i]][["summary_df"]]),
              file = file.path(file_output_directory,
+                              "Sample selection 1",
                               "Ordered by top 3 sgRNAs",
                               "By transcript",
-                              paste0(names(df_list)[[i]], "_top3_by_transcript.tsv")
+                              paste0(names(df_list_1)[[i]], "_top3_by_transcript.tsv")
                               )
              )
 }
 
 
-for (i in seq_along(df_list)) {
-  WriteTable(ReorderByTop3(by_symbol_list[[i]][["summary_df"]]),
+for (i in seq_along(df_list_1)) {
+  WriteTable(ReorderByTop3(by_symbol_list_1[[i]][["summary_df"]]),
              file = file.path(file_output_directory,
+                              "Sample selection 1",
                               "Ordered by top 3 sgRNAs",
                               "By gene symbol",
-                              paste0(names(df_list)[[i]], "_top3_by_gene_symbol.tsv")
+                              paste0(names(df_list_1)[[i]], "_top3_by_gene_symbol.tsv")
                               )
              )
 }
 
+
+
+
+for (i in seq_along(df_list_2)) {
+  WriteTable(by_transcript_list_2[[i]][["summary_df"]],
+             file = file.path(file_output_directory,
+                              "Sample selection 1",
+                              "Ordered by top 2 sgRNAs",
+                              "By transcript",
+                              paste0(names(df_list_2)[[i]], "_top2_by_transcript.tsv")
+                              )
+             )
+}
 
 
 
@@ -642,7 +701,9 @@ for (i in seq_along(df_list)) {
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("by_transcript_list", "by_symbol_list"),
+save(list = c("by_transcript_list_1", "by_symbol_list_1",
+              "by_transcript_list_2", "by_symbol_list_2"
+              ),
      file = file.path(RData_directory, "1) Calculate gene-wise p values for a pooled CRISPR screen.RData")
      )
 
@@ -740,14 +801,6 @@ save(list = c("by_transcript_list", "by_symbol_list"),
 # }
 #
 #
-#
-#
-#
-#
-#
-#
-
-
 
 
 
