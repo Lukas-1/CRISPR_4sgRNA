@@ -74,8 +74,3 @@ top_genes <- GetTopGenes(by_transcript_list)
 
 
 
-
-
-
-
-ls()
