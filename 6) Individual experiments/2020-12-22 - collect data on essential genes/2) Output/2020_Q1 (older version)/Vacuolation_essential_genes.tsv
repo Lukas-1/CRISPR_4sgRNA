@@ -1,0 +1,469 @@
+Category	Included_for_CRISPRi	Entrez_ID	Gene_symbol	Achilles_mean_probability	Achilles_common	BlomenHart_intersect	BlomenHart_intersect_DepMap	Hart_3_or_more_lines	Hart_HeLa	Blomen_HAP1_KBM7_intersect
+Vacuolation hits	Yes	9913	SUPT7L		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	64922	LRRC19	0.00105597303578907	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	29796	UQCR10	0.260149055295959	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	158931	TCEAL6		Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	79415	CYBC1	0.0645288184228148	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2652	OPN1MW		N/A	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	7367	UGT2B17	0.00401172066767669	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10622	POLR3G		Non-essential	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	10921	RNPS1		Essential	Non-essential	Essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	64841	GNPNAT1	0.460073410790556	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1044	CDX1	0.00528279706409165	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10403	NDC80	0.978147999038495	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	7348	UPK1B	0.00856973093097216	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27044	SND1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	284325	C19orf54	0.0105061798583146	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	114904	C1QTNF6	0.0544787508237442	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5364	PLXNB1	0.0134687319606958	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	127069	OR2T10	0.00912306835602602	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8838	CCN6	0.00554650339763678	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	254359	ZDHHC24	0.156710052682786	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	58157	NGB	0.00795288927387275	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11338	U2AF2		Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	121536	AEBP2		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+LSm genes	Yes	27257	LSM1	0.0588368642056002	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	90167	FRMD7		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	200312	RNF215	0.0323084704908309	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	28992	MACROD1	0.0857711153697952	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	123036	TC2N	0.0122102798819553	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	29967	LRP12	0.0208208907776552	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10907	TXNL4A	0.998715902234487	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	2517	FUCA1	0.0625998792525018	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	90952	ESAM	0.00438707856292474	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5428	POLG	0.407828813085879	Non-essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	64901	RANBP17	0.00401995755758744	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9587	MAD2L1BP	0.337286997541408	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6482	ST3GAL1	0.161281285505379	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	27439	TMEM121B	0.0774335857254849	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	353091	RAET1G	0.0181073990556902	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+LSm genes	Yes	23658	LSM5	0.722935434609476	Essential	Non-essential	Essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	26595	OR8B2	0.00806337792693569	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	3868	KRT16	0.175305722448134	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	22889	KHDC4	0.212296370975288	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11325	DDX42	0.943138853292077	Essential	N/A	N/A	Essential	Essential	N/A
+Vacuolation hits	Yes	655	BMP7	0.0104147301603638	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	390502	SERPINA2		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	283150	FOXR1	0.0116488892780235	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23636	NUP62	0.878293524970141	Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	820	CAMP	0.0379334256854131	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	158038	LINGO2	0.00677519380598268	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	10588	MTHFS	0.0324280697208696	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84976	DISP1	0.0089448171615856	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6625	SNRNP70	0.962411108915775	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	126731	CCSAP	0.123792899700849	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1820	ARID3A		Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3726	JUNB	0.251754503945974	Non-essential	Non-essential	Non-essential	Essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9380	GRHPR	0.0713840742965475	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84859	LRCH3	0.0579227030735502	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79156	PLEKHF1	0.0369935829134933	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	51115	RMDN1	0.094486584146709	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4069	LYZ	0.0235902341141258	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3978	LIG1	0.274831352453517	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	23640	HSPBP1	0.00990398493905512	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	137970	UNC5D	0.00741055083500275	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	143458	LDLRAD3	0.0124243996625933	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4249	MGAT5	0.0501863923146193	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	4654	MYOD1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6642	SNX1	0.0416310253591053	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	574028	CLLU1		N/A	Non-essential	N/A	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10641	NPRL2	0.0317655573114141	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	25804	LSM4	0.889552752003283	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	84220	RGPD5		N/A	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	90139	TSPAN18	0.0325726640503846	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	79339	OR51B4	0.001122852064251	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54106	TLR9	0.0870489885882615	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	150244	ZDHHC8P1		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	65094	JMJD4		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	29085	PHPT1	0.0143808400897704	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	126068	ZNF441	0.0654955158592837	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	166815	TIGD2	0.0104693891428166	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10094	ARPC3	0.703837229591041	Essential	N/A	N/A	N/A	N/A	Essential
+Vacuolation hits	Yes	1396	CRIP1	0.00935730479962578	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	7545	ZIC1	0.00396598862884317	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	29766	TMOD3	0.0100779662395566	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6635	SNRPE		Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	293	SLC25A6		Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	9839	ZEB2	0.197160962628002	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	645104	CLRN2	0.0420564334057953	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4927	NUP88	0.909254838882487	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	345274	SLC10A6	0.0187992200376067	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	417	ART1	0.0280439968515982	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	196264	MPZL3	0.0118975107298093	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	130106	CIB4	0.140561097030906	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	64137	ABCG4	0.0159375398325876	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9991	PTBP3	0.0503257731590124	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	252884	ZNF396	0.0190520682628827	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8989	TRPA1	0.0416696475082416	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23379	ICE1	0.762439576040934	Essential	Essential	Non-essential	Essential	Essential	Essential
+Vacuolation hits	Yes	60312	AFAP1	0.00224314563631905	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	838	CASP5	0.00830681289866275	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4668	NAGA	0.0105081378915872	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23028	KDM1A		Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	79411	GLB1L	0.0139505007654639	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	389434	IYD	0.0612811359102078	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11069	RAPGEF4	0.0148613257619562	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	91689	SMDT1	0.0486711637512471	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84626	KRBA1		N/A	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	56919	DHX33	0.965880543960937	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	25963	TMEM87A	0.169517847638291	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8562	DENR	0.834974041016599	Essential	Non-essential	Essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	29	ABR	0.0550568418913561	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5936	RBM4	0.435798365696486	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	55316	RSAD1	0.327931146887533	Non-essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	2492	FSHR	0.00229299918924792	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	662	BNIP1	0.53130039567904	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	120425	JAML	0.0565419507932905	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23064	SETX	0.253888004148808	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	159963	SLC5A12	0.00477907196155339	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	54716	SLC6A20	0.0243717542567548	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	22839	DLGAP4	0.00707891829082741	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	648	BMI1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	51592	TRIM33		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	65012	SLC26A10	0.178678278113123	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57502	NLGN4X		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	140739	UBE2F	0.0360076688202263	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	81282	OR51G2	0.00804224574225356	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11186	RASSF1	0.0154828844411593	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23272	TASOR	0.0294443377437898	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3694	ITGB6	0.0362701159593988	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	388276	C16orf97		N/A	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	23770	FKBP8	0.180233061825041	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	6240	RRM1	0.995575055677663	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	930	CD19	0.0282633868539081	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	252983	STXBP4	0.0142911578865842	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4357	MPST	0.0215068145297801	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54033	RBM11	0.00502432917921387	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2745	GLRX	0.00114900599026593	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10656	KHDRBS3	0.0719736844703972	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	147906	DACT3	0.162781109455676	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	80856	LNPK	0.0105155722494697	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	116092	DNTTIP1	0.0497994307905436	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	64067	NPAS3	0.0208172409451911	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2184	FAH	0.0252880581188643	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	164395	TTLL9	0.00363970401096882	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	5719	PSMD13	0.966483367970008	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	85478	CCDC65	0.0379486079291359	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	26280	IL1RAPL2		Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	54813	KLHL28	0.00728024530905582	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57409	MIF4GD	0.0681611224806392	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5092	PCBD1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	26297	SERGEF	0.0267673339090039	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	22852	ANKRD26	0.00234890307213225	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	284254	DYNAP	0.00209311158438863	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23366	KIAA0895	0.00413603127878007	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	7014	TERF2		Essential	N/A	N/A	Essential	Essential	N/A
+Vacuolation hits	Yes	10628	TXNIP	0.00533995174677974	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	93323	HAUS8	0.765178579444406	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	114799	ESCO1	0.0253164285817497	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6631	SNRPC	0.965151023307778	Essential	Essential	Essential	Essential	Non-essential	Essential
+Vacuolation hits	Yes	136306	SVOPL	0.0254488998949669	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	7053	TGM3	0.00382766474743685	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	81894	SLC25A28	0.366021852578559	Non-essential	Non-essential	Non-essential	Essential	Non-essential	Non-essential
+Vacuolation hits	Yes	114571	SLC22A9	0.0923856054432992	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57369	GJD2	0.00889741482014134	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	117245	PLAAT5	0.133635048185882	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	158724	FAM47A		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	122740	OR4K14	0.00708006278838185	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	200576	PIKFYVE	0.00880206557667631	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84659	RNASE7	0.0200988705467752	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10322	SMYD5		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	284525	SLC9C2	0.00622678571660514	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54978	SLC35F6	0.0224740327687921	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+LSm genes	Yes	51691	LSM8	0.975356771097741	Essential	N/A	N/A	N/A	N/A	Essential
+Vacuolation hits	Yes	3768	KCNJ12	0.125731554729514	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	169200	TMEM64	0.303995973012095	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6404	SELPLG	0.0457727307925468	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	124245	ZC3H18	0.810685789796108	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	53841	CDHR5	0.0320189838350892	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23237	ARC	0.00924250329382649	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79842	ZBTB3	0.0939265600144843	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	5371	PML		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	28987	NOB1	0.947295487539337	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	5725	PTBP1	0.638275212344445	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	21	ABCA3	0.0276615724369986	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11024	LILRA1	0.0185207673753778	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	134553	C5orf24	0.0222368135022315	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79856	SNX22	0.149101404590638	Non-essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	23371	TNS2	0.219841575871976	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3713	IVL	0.000707037053990489	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27019	DNAI1	0.0359438024121971	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	284340	CXCL17	0.0471728514334865	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	56729	RETN	0.0400266765452268	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	64397	ZNF106	0.125845079620873	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	547	KIF1A	0.073046958016126	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10245	TIMM17B		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3597	IL13RA1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4836	NMT1	0.790635660166507	Essential	N/A	N/A	Essential	Essential	N/A
+Vacuolation hits	Yes	9820	CUL7	0.369713030266241	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	7023	TFAP4	0.353498656758788	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5571	PRKAG1	0.10985036139997	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	146279	TEKT5	0.0276162688889314	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23335	WDR7	0.916586901343439	Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	55627	SMPD4	0.0645124655275137	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1143	CHRNB4	0.0138560586697914	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	51003	MED31		Essential	Non-essential	Essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	2634	GBP2	0.0336974751138543	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9868	TOMM70	0.295966218121232	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	27258	LSM3	0.951144574248844	Essential	N/A	N/A	N/A	N/A	Essential
+Vacuolation hits	Yes	4599	MX1	0.025444289901896	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10538	BATF	0.0117436311830281	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	284467	TAFA3	0.0440893387885432	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10257	ABCC4	0.0150713796485272	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54932	EXD3	0.0142709543030052	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8836	GGH	0.00873761504391326	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6331	SCN5A	0.0552379139308635	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57594	HOMEZ	0.0644784321492911	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	221443	OARD1	0.02588740420846	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23576	DDAH1	0.00245748587264972	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84262	PSMG3	0.92758205288813	Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	931	MS4A1	0.00187589812441316	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	439915	KRTAP5-5	0.0698373623095575	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	3066	HDAC2		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23451	SF3B1	0.974285546853462	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	2523	FUT1	0.0600819010742364	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	60487	TRMT11	0.00928974142587502	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	10319	LAMC3	0.0472722099738759	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57544	TXNDC16	0.0229773474463935	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	26121	PRPF31		Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	25852	ARMC8	0.00696437643379212	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	9749	PHACTR2	0.0257659714171906	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3617	IMPG1	0.00242594985099849	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4741	NEFM	0.0191600380831753	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	53635	PTOV1	0.15635423640769	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	79953	SYNDIG1	0.000870647275643257	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10000	AKT3	0.0177680204660046	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	55103	RALGPS2	0.0137814672058041	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2760	GM2A	0.0171116504677719	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	55631	LRRC40	0.0040911790093277	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84447	SYVN1	0.323301872399884	Non-essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	84255	SLC37A3	0.0240059084306878	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	92126	DSEL	0.00626424457032444	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27165	GLS2		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1592	CYP26A1	0.168877949462182	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	7805	LAPTM5	0.00803456621482577	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2904	GRIN2B	0.00450779473465704	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	337975	KRTAP20-1	0.0130924374313659	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	440730	TRIM67	0.0157173057550689	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23127	COLGALT2	0.00998862366170073	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	158055	C9orf163		N/A	Non-essential	N/A	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79991	STN1	0.530976243984127	Essential	Non-essential	Non-essential	Essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1774	DNASE1L1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	170384	FUT11	0.0813185313242615	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	788	SLC25A20	0.12617733686378	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9153	SLC28A2	0.0320502049307343	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57192	MCOLN1	0.018350749175271	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84689	MS4A14	0.00557741031249018	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54851	ANKRD49	0.616170359256521	Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	10307	APBB3	0.0313929806127418	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54512	EXOSC4	0.956273277917046	Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	79750	ZNF385D	0.00176266204271859	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	286827	TRIM59	0.00245831915828501	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5916	RARG	0.0409514618448502	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79007	DBNDD1	0.106612964263793	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	94056	SYAP1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	83882	TSPAN10		N/A	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	9167	COX7A2L	0.0335193589604493	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	2775	GNAO1	0.0336006809312046	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	59286	UBL5	0.989719208028536	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	6241	RRM2	0.99823666746461	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	23648	SSBP3	0.73145524845813	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	112401	BIRC8	0.100261228934342	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3053	SERPIND1	0.0558466048471175	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54431	DNAJC10	0.0364673177926408	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6678	SPARC	0.0287891546859487	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	7919	DDX39B	0.526188330437667	Non-essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	51184	GPN3	0.973362420771355	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	23148	NACAD	0.0133748782582705	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6668	SP2	0.436048579657901	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3036	HAS1	0.0155095259781539	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3234	HOXD8	0.0265095113860397	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8665	EIF3F	0.883727929282722	Essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	340811	AKR1C8P		N/A	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	56139	PCDHA10	0.0039439475417762	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	7745	ZKSCAN8	0.0168521624506983	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	80031	SEMA6D	0.0112532513040985	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	51191	HERC5	0.0371521714049166	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	146433	IL34	0.125956913215793	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	7224	TRPC5		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79085	SLC25A23	0.00903487200030716	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84153	RNASEH2C	0.470490386901109	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	92840	REEP6	0.0572347319901819	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57569	ARHGAP20	0.00543549023969881	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1036	CDO1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6783	SULT1E1	0.0399578916180993	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57488	ESYT2	0.0181311433700418	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	901	CCNG2	0.00106338802595702	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	727910	TLCD2	0.0321017092252195	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3426	CFI	0.0083890400421067	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	90522	YIF1B	0.044314491725358	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	135892	TRIM50	0.0819115273617197	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5082	PDCL	0.393941853684525	Non-essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	10559	SLC35A1	0.130577271818624	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	64407	RGS18	0.0127022872198563	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84502	JPH4	0.201276003607613	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4548	MTR	0.107313709798394	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	133688	UGT3A1	0.0145138060334804	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23318	TUT4	0.00896784367254182	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2555	GABRA2	0.00330055423010527	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11040	PIM2		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	55211	DPPA4	0.00667504407773871	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23062	GGA2	0.00763105258065695	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6281	S100A10	0.00257575961950849	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	56951	C5orf15	0.104434359935317	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+LSm genes	Yes	51690	LSM7	0.976890341380006	Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	5055	SERPINB2	0.00327947778149543	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84190	METTL25	0.155125840886184	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	7364	UGT2B7	0.0166511498133622	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	81603	TRIM8	0.0195507767147333	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10570	DPYSL4	0.0170858202369517	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	43	ACHE	0.176985767853696	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	441907	LOC441907		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	6720	SREBF1	0.399184603698121	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23593	HEBP2	0.0117493136221509	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	4340	MOG	0.686195856168198	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	121278	TPH2	0.229959577839189	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27146	FAM184B	0.000942841934287041	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5009	OTC		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9942	XYLB	0.00272512636126273	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	50846	DHH	0.0439032878063954	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5976	UPF1		Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	79861	TUBAL3	0.00420987836537957	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	117289	TAGAP	0.00296175721070239	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	80127	BBOF1	0.0328317671084309	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1041	CDSN	0.0799191359152523	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79623	GALNT14	0.0220940977924115	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27179	IL36A	0.156236884348377	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4974	OMG	0.0211764896156319	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8861	LDB1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84286	TMEM175	0.00192079859955729	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3543	IGLL1	0.0251737272240264	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84131	CEP78	0.135881896680221	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1123	CHN1	0.00136779153374629	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57819	LSM2	0.999255957461301	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	8356	H3C12	0.118235967087051	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	158866	ZDHHC15		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	25929	GEMIN5	0.988563274363296	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	30010	NXPH1	0.0117782430788595	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9953	HS3ST3B1	0.0381324656396837	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10166	SLC25A15	0.0173717969724998	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	308	ANXA5	0.00406968755833628	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1072	CFL1	0.626530322397744	Essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	126326	GIPC3	0.0798272847022468	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	5436	POLR2G		Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	1291	COL6A1	0.00505891867635383	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5539	PPY	0.694054931749226	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54920	DUS2	0.0548680532606521	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10357	HMGB1P1		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	11243	PMF1		Essential	Essential	Essential	Essential	Non-essential	Essential
+Vacuolation hits	Yes	25841	ABTB2	0.0108927523695851	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	10206	TRIM13	0.00771342144834554	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9326	ZNHIT3	0.844827485006143	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	3161	HMMR	0.0240168458117014	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4141	MARS1	0.983118790097093	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	50485	SMARCAL1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	158248	TTC16	0.00171684486855383	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	26504	CNNM4	0.0366876662197642	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23630	KCNE5		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	340024	SLC6A19	0.0152643925458553	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10574	CCT7	0.577026747429197	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	85378	TUBGCP6	0.786720332671717	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	9819	TSC22D2	0.49370690308825	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	121340	SP7	0.11242426869224	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9194	SLC16A7	0.0297035657246487	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	10444	ZER1	0.131074316902773	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	617	BCS1L	0.538079445879839	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	155435	RBM33	0.428486451461986	Non-essential	Essential	Essential	Essential	Non-essential	Essential
+Vacuolation hits	Yes	1294	COL7A1	0.163095498570306	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2181	ACSL3	0.384492134067626	Non-essential	Non-essential	Non-essential	Essential	Non-essential	Non-essential
+Vacuolation hits	Yes	1809	DPYSL3	0.0038902252475958	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	768239	PSAPL1	0.00368336236562566	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	729911	ANKRD34C-AS1		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	29799	YPEL1	0.408596695259834	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4330	MN1	0.00404908302229921	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54553	MIR4453HG		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	3381	IBSP	0.00720528671464382	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27159	CHIA	0.0119759339473439	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	9362	CPNE6	0.150787135139782	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	8487	GEMIN2	0.312042841780802	Non-essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	80097	MZT2B	0.0649123969628518	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	7328	UBE2H	0.526997225421426	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	644890	MEIG1	0.000397579241006541	Non-essential	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	10325	RRAGB		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	260294	NSUN5P2		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	23082	PPRC1	0.702866975658438	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	399665	FAM102A	0.0344685989929575	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4313	MMP2	0.0262640433087002	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	56126	PCDHB10	0.0253180738476672	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	26140	TTLL3	0.0230132825345309	Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	221833	SP8	0.0710123140729032	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	57758	SCUBE2	0.00221898262431178	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	118430	MUCL1	0.0245535285551419	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	79645	EFCAB1	0.00210194502940957	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	388677	NOTCH2NLA		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	Yes	9443	MED7		Essential	Essential	Essential	Essential	Non-essential	Essential
+Vacuolation hits	Yes	7109	TRAPPC10	0.0243117170385785	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2304	FOXE1	0.0461632726408522	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	58497	PRUNE1	0.27487290752172	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	158584	FAAH2		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	782	CACNB1	0.141069128858311	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	8288	EPX	0.0629994216260874	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6283	S100A12	0.0711920079007116	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5682	PSMA1	0.999358750382207	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	29980	DONSON	0.996858814836889	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	26027	ACOT11	0.0248316778330555	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6159	RPL29	0.903638935825921	Essential	Essential	Essential	Essential	Non-essential	Essential
+Vacuolation hits	Yes	90806	ANGEL2	0.0286087201391304	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6881	TAF10		Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	326	AIRE		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23229	ARHGEF9		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	2264	FGFR4	0.0252466637950909	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	23469	PHF3		Non-essential	N/A	N/A	Non-essential	Non-essential	N/A
+Vacuolation hits	Yes	25807	RHBDD3	0.0256411672105788	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	80318	GKAP1	0.00879391945972926	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	84798	C19orf48		N/A	Non-essential	N/A	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	3703	STT3A	0.226773113915813	Non-essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	57037	ANKMY2	0.0638351672340717	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	4647	MYO7A	0.0519596471732136	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	6949	TCOF1	0.642892374174456	Essential	Non-essential	Non-essential	Non-essential	Non-essential	Essential
+Vacuolation hits	Yes	11080	DNAJB4	0.00765937675510927	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	284098	PIGW	0.224372395621655	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	51279	C1RL	0.00342267378956705	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	341116	MS4A10	0.0537903821175952	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	22866	CNKSR2		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5376	PMP22	0.0370740884568641	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	5702	PSMC3		Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	57472	CNOT6	0.0641242442537921	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	54606	DDX56	0.9936779188392	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	56922	MCCC1	0.0193456571864258	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	222658	KCTD20	0.0168596379209884	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	11157	LSM6	0.919116999196447	Essential	N/A	N/A	N/A	N/A	Essential
+Vacuolation hits	Yes	256435	ST6GALNAC3	0.0454001777195417	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	116225	ZMYND19	0.0160213261836065	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	90390	MED30		Essential	Non-essential	Non-essential	Essential	Essential	Non-essential
+Vacuolation hits	Yes	8671	SLC4A4	0.00925312826206	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	51264	MRPL27	0.835142830351141	Essential	Essential	Essential	Essential	Non-essential	Essential
+Vacuolation hits	Yes	23481	PES1	0.914069274331527	Essential	Essential	Essential	Essential	Essential	Essential
+Vacuolation hits	Yes	27433	TOR2A	0.493441521699222	Essential	Non-essential	Non-essential	Non-essential	Essential	Non-essential
+Vacuolation hits	Yes	130162	CLHC1	0.0376180326703782	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	25803	SPDEF	0.0179286758212875	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	26025	PCDHGA12	0.0274530892140481	Non-essential	N/A	N/A	N/A	N/A	Non-essential
+Vacuolation hits	Yes	254295	PHYHD1		Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	27076	LYPD3	0.0176193197074992	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	81469	OR2G3	0.0105576446935005	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	Yes	55002	TMCO3	0.19484484896562	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential	Non-essential
+Vacuolation hits	No	553128	KIR2DL5B		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	643085	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	651732	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	653348	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	728200	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	728303	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	728316	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	728628	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	728789	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	728804	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	729715	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	730132	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	730194	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	730240	N/A		N/A	N/A	N/A	N/A	N/A	N/A
+Vacuolation hits	No	731286	N/A		N/A	N/A	N/A	N/A	N/A	N/A
