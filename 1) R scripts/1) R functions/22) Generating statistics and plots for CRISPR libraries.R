@@ -2714,7 +2714,7 @@ GetFlexibleAxisLimits <- function(numeric_vec, start_at_zero = TRUE, subtract_fr
 
 
 DrawDeletionHistogram <- function(overview_df,
-                                  column_name  = "Deletion_size",
+                                  column_name  = "Max_deletion_size",
                                   use_title    = "Size of the expected deletion (between the first and fourth cut sites)",
                                   fill_color   = brewer.pal(9, "Blues")[[8]],
                                   x_axis_label = "Number of base pairs (logarithmic scale)",
@@ -2799,7 +2799,6 @@ DrawDeletionHistogram <- function(overview_df,
        )
 
   mtext(x_axis_label, line = x_label_line, side = 1, cex = par("cex"))
-
   return(invisible(hist_results))
 }
 
@@ -2880,7 +2879,7 @@ Plot4sgData <- function(overview_df, CRISPR_df) {
           )
     }
     par(oma = c(0, 1, 0.5, 1))
-    if ("Deletion_size" %in% names(overview_df)) {
+    if ("Max_deletion_size" %in% names(overview_df)) {
       DrawDeletionHistogram(overview_df)
     }
     SharedSubsequencesBarplot(CRISPR_df)
@@ -4773,56 +4772,79 @@ DrawAllManuscriptPlots <- function(df_mat_list) {
   use_folder <- file.path(output_plots_directory, "Manuscript")
 
   for (var_name in names(labels_list)) {
-    file_number <- formatC(match(var_name, names(labels_list)),
-                           width = 2, flag = "0"
-                           )
-    file_name <- paste0(file_number, ") ", var_name)
-    for (filter_genes in c(TRUE, FALSE)) {
+    for (SNP_as_percent in c(TRUE, FALSE)) {
+      if (SNP_as_percent && (var_name != "Expected_all22_SNP_AF_max_Kaviar")) {
+        next
+      }
+      for (filter_genes in c(TRUE, FALSE)) {
 
-      make_wide <- (var_name == "Have_homologies") && filter_genes
+        file_number <- formatC(match(var_name, names(labels_list)),
+                               width = 2, flag = "0"
+                               )
+        file_name <- paste0(file_number, ") ", var_name)
 
-      if (make_wide) {
-        pdf_width <- 3.57
-        pdf_height <- 1.85
-      } else {
-        pdf_width <- horizontal_width
-        pdf_height <- horizontal_height
+        if (var_name == "Expected_all22_SNP_AF_max_Kaviar") {
+          if (SNP_as_percent) {
+            file_name <- paste0(file_name, " - percentage")
+            use_numeric_limits <- c(0, 2)
+          } else {
+            file_name <- paste0(file_name, " - absolute number")
+            if (filter_genes) {
+              use_numeric_limits <- c(0, 1200)
+            } else {
+              next
+            }
+          }
+        } else {
+          use_numeric_limits <- NULL
+        }
+
+        make_wide <- (var_name == "Have_homologies") && filter_genes
+
+        if (make_wide) {
+          pdf_width <- 3.57
+          pdf_height <- 1.85
+        } else {
+          pdf_width <- horizontal_width
+          pdf_height <- horizontal_height
+        }
+        pdf(file.path(use_folder,
+                      paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
+                      paste0(file_name, ".pdf")
+                      ),
+            width = pdf_width,
+            height = pdf_height
+            )
+        if (filter_genes) {
+          mat_list <- df_mat_list[["mat_list_filtered"]]
+          df_list <- df_mat_list[["df_list_filtered"]]
+        } else {
+          mat_list <- df_mat_list[["mat_list_unfiltered"]]
+          df_list <- df_mat_list[["df_list_unfiltered"]]
+        }
+        if (var_name %in% names(mat_list)) {
+          ManuscriptBars(mat_list[[var_name]],
+                         axis_label           = labels_list[[var_name]],
+                         numeric_limits       = use_numeric_limits,
+                         lollipop             = var_name == "Num_genes",
+                         horizontal           = FALSE,
+                         modality_on_side     = make_wide,
+                         use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
+                         abbreviate_libraries = !(make_wide),
+                         expected_SNP_percent = SNP_as_percent
+                         )
+        } else if (var_name %in% names(df_list)) {
+          ManuscriptViolinBox(df_list[[var_name]],
+                              axis_label           = labels_list[[var_name]],
+                              horizontal           = FALSE,
+                              use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
+                              use_width            = pdf_width,
+                              use_height           = pdf_height,
+                              abbreviate_libraries = !(make_wide)
+                              )
+        }
+        dev.off()
       }
-      pdf(file.path(use_folder,
-                    paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
-                    paste0(file_name, ".pdf")
-                    ),
-          width = pdf_width,
-          height = pdf_height
-          )
-      if (filter_genes) {
-        mat_list <- df_mat_list[["mat_list_filtered"]]
-        df_list <- df_mat_list[["df_list_filtered"]]
-      } else {
-        mat_list <- df_mat_list[["mat_list_unfiltered"]]
-        df_list <- df_mat_list[["df_list_unfiltered"]]
-      }
-      if (var_name %in% names(mat_list)) {
-        ManuscriptBars(mat_list[[var_name]],
-                       axis_label           = labels_list[[var_name]],
-                       numeric_limits       = if (var_name == "Expected_all22_SNP_AF_max_Kaviar") c(0, 2) else NULL,
-                       lollipop             = var_name == "Num_genes",
-                       horizontal           = FALSE,
-                       modality_on_side     = make_wide,
-                       use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
-                       abbreviate_libraries = !(make_wide)
-                       )
-      } else if (var_name %in% names(df_list)) {
-        ManuscriptViolinBox(df_list[[var_name]],
-                            axis_label           = labels_list[[var_name]],
-                            horizontal           = FALSE,
-                            use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
-                            use_width            = pdf_width,
-                            use_height           = pdf_height,
-                            abbreviate_libraries = !(make_wide)
-                            )
-      }
-      dev.off()
     }
   }
 }
