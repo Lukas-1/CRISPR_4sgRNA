@@ -71,41 +71,23 @@ hart_df <- data.frame(read_excel(file.path(essential_genes_directory,
 # Read in lists of essential genes from DepMap / Project Achilles ---------
 ## Download link: https://depmap.org/portal/download/all/
 
-depmap_hart_blomen_df <- read.csv(file.path(essential_genes_directory,
-                                            "DepMap",
-                                            "common_essentials_20Q4.csv"
-                                            ),
-                                  stringsAsFactors = FALSE
-                                  )
+ReadDepMapFile <- function(file_name) {
+  read.csv(file.path(essential_genes_directory,
+                     "DepMap", "2021_Q1",
+                     paste0(file_name, ".csv")
+                     ),
+           stringsAsFactors = FALSE, check.names = FALSE
+           )
+}
 
+depmap_hart_blomen_df        <- ReadDepMapFile("common_essentials_21Q1")
 
-achilles_common_df <- read.csv(file.path(essential_genes_directory,
-                                         "DepMap",
-                                         "Achilles_common_essentials_20Q4_v2.csv"
-                                         ),
-                               stringsAsFactors = FALSE
-                               )
+achilles_common_df           <- ReadDepMapFile("Achilles_common_essentials_21Q1")
+achilles_original_effects_df <- ReadDepMapFile("Achilles_gene_effect_21Q1")
+achilles_original_depend_df  <- ReadDepMapFile("Achilles_gene_dependency_21Q1")
 
-achilles_original_effects_df <- read.csv(file.path(essential_genes_directory,
-                                                   "DepMap",
-                                                   "Achilles_gene_effect_20Q4_v2.csv"
-                                                   ),
-                                         stringsAsFactors = FALSE, check.names = FALSE
-                                         )
+depmap_samples_df            <- ReadDepMapFile("sample_info_21Q1")
 
-achilles_original_depend_df <- read.csv(file.path(essential_genes_directory,
-                                                  "DepMap",
-                                                  "Achilles_gene_dependency_20Q4_v2.csv"
-                                                  ),
-                                        stringsAsFactors = FALSE, check.names = FALSE
-                                        )
-
-depmap_samples_df <- read.csv(file.path(essential_genes_directory,
-                                        "DepMap",
-                                        "sample_info_20Q4.csv"
-                                        ),
-                              stringsAsFactors = FALSE
-                              )
 
 
 
@@ -275,19 +257,28 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
     return(results_list)
   }
 
-
-
   symbols_vec <- vapply(entrez_to_symbol_list[as.character(entrezs_vec)],
                         function(x) if (is.null(x)) NA_character_ else paste0(x, collapse = ", "),
                         ""
                         )
 
 
+  Achilles_matches <- match(entrezs_vec, achilles_depend_df[["Entrez_ID"]])
+  Achilles_depend_mat <- as.matrix(achilles_depend_df[, 4:ncol(achilles_depend_df)], na.rm = TRUE)
+  Achilles_depend_mat <- Achilles_depend_mat[Achilles_matches, ]
 
   genes_list <- list(
     "Entrez_ID"                 = entrezs_vec,
     "Gene_symbol"               = symbols_vec,
-    "Achilles_mean_probability" = achilles_depend_df[["Mean"]][match(entrezs_vec, achilles_depend_df[["Entrez_ID"]])]
+    "Achilles_mean_probability" = achilles_depend_df[["Mean"]][Achilles_matches],
+    "Achilles_num_essential"    = ifelse(is.na(Achilles_matches),
+                                         NA,
+                                         rowSums(Achilles_depend_mat > 0.5, na.rm = TRUE)
+                                         ),
+    "Achilles_num_cell_lines"   = ifelse(is.na(Achilles_matches),
+                                         NA,
+                                         rowSums(!(is.na(Achilles_depend_mat)))
+                                         )
   )
 
   genes_list <- c(
@@ -321,10 +312,10 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 
 # Process vacuolation-related genes ---------------------------------------
 
-vac_df <- data.frame("Category"            = c(rep("LSm genes", length(LSm_genes)),
-                                               rep("Vacuolation hits", length(vacuolation_genes))
-                                               ),
-                     "Entrez_ID"            = c(LSm_genes, vacuolation_genes),
+vac_df <- data.frame("Category"       = c(rep("LSm genes", length(LSm_genes)),
+                                          rep("Vacuolation hits", length(vacuolation_genes))
+                                          ),
+                     "Entrez_ID"      = c(LSm_genes, vacuolation_genes),
                      stringsAsFactors = FALSE
                      )
 vac_df[["Gene_symbol"]] <- vapply(as.character(vac_df[, "Entrez_ID"]), function(x) {
@@ -442,7 +433,6 @@ depmap_hart_blomen_df <- ProcessAchillesGenesDf(depmap_hart_blomen_df)
 achilles_common_df <- ProcessAchillesGenesDf(achilles_common_df)
 
 
-
 ### Achilles gene effects ###
 
 achilles_effects_df <- ProcessAchillesDataDf(achilles_original_effects_df,
@@ -452,8 +442,9 @@ achilles_depend_df  <- ProcessAchillesDataDf(achilles_original_depend_df,
                                              depmap_samples_df
                                              )
 
-stopifnot(identical(names(achilles_depend_df), names(achilles_depend_df)))
+stopifnot(identical(names(achilles_depend_df), names(achilles_effects_df)))
 stopifnot(identical(achilles_effects_df[, "Entrez_ID"], achilles_depend_df[, "Entrez_ID"]))
+
 
 
 
@@ -581,7 +572,7 @@ hist(hart_df[["BF_hela"]][!(are_hart_essentials)], breaks = 200)
 # Export data -------------------------------------------------------------
 
 vac_export_df <- vacuolation_df
-for (column_name in "Achilles_mean_probability") {
+for (column_name in c("Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines")) {
   vac_export_df[, column_name] <- ifelse(is.na(vac_export_df[, column_name]),
                                          "",
                                          vac_export_df[, column_name]
@@ -597,6 +588,9 @@ write.table(vac_essential_list[["fisher_df"]],
             file = file.path(file_output_directory, "Vacuolation_overrepresentation.tsv"),
             sep = "\t", quote = FALSE, row.names = FALSE
             )
+
+
+
 
 
 
