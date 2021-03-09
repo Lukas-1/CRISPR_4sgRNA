@@ -175,7 +175,8 @@ SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
       "Num_unspaced_transcripts"    = NA_integer_,
       "Num_incomplete_transcripts"  = NA_integer_,
       "Spacing"                     = NA_character_,
-      "Deletion_size"               = NA_integer_,
+      "Max_deletion_size"           = NA_integer_,
+      "Min_deletion_size"           = NA_integer_,
       "GuideScan_specificity"       = NA_real_,
       "CRISPOR_3MM_specificity"     = NA_real_,
       "CRISPOR_4MM_specificity"     = NA_real_,
@@ -212,7 +213,8 @@ SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
       results_list[["TSS_regions"]] <- NULL
     }
     if (include_transcripts) {
-      results_list[["Deletion_size"]] <- NULL
+      results_list[["Max_deletion_size"]] <- NULL
+      results_list[["Min_deletion_size"]] <- NULL
       transcripts_vec <- CRISPR_df[["TSS_ID"]][x]
       if (all(is.na(transcripts_vec))) {
         transcripts_vec <- CRISPR_df[["AltTSS_ID"]][x]
@@ -272,16 +274,25 @@ SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
             results_list[["Longest_subsequence"]] <- max(subsequence_lengths, na.rm = TRUE)
           }
         } else {
-          cut_locations_vec <- CRISPR_df[["Cut_location"]][x[are_top_4]]
+          cut_locations_vec <- sort(CRISPR_df[["Cut_location"]][x[are_top_4]])
+          num_guides <- length(cut_locations_vec)
           chromosomes_vec <- CRISPR_df[["Chromosome"]][x[are_top_4]]
           assign("delete_cut_locations_vec", cut_locations_vec, envir = globalenv())
           assign("delete_are_top_4", are_top_4, envir = globalenv())
           assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
           assign("delete_x", x, envir = globalenv())
           if (anyNA(chromosomes_vec) || (length(unique(chromosomes_vec)) > 1)) {
-            results_list[["Deletion_size"]] <- NA
+            results_list[["Max_deletion_size"]] <- NA
+            results_list[["Min_deletion_size"]] <- NA
           } else {
-            results_list[["Deletion_size"]] <- max(cut_locations_vec) - min(cut_locations_vec)
+            results_list[["Max_deletion_size"]] <- cut_locations_vec[[num_guides]] - cut_locations_vec[[1]]
+            if (num_guides == 1) {
+              results_list[["Min_deletion_size"]] <- 0L
+            } else {
+              results_list[["Min_deletion_size"]] <- min(cut_locations_vec[seq_len(num_guides - 1) + 1] -
+                                                         cut_locations_vec[seq_len(num_guides - 1)]
+                                                         )
+            }
           }
           results_list[["GuideScan_specificity"]]   <- AggregateSpecificityScores(CRISPR_df[["GuideScan_specificity"]][x[are_top_4]])
           results_list[["CRISPOR_3MM_specificity"]] <- AggregateSpecificityScores(CRISPR_df[["CRISPOR_3MM_specificity"]][x[are_top_4]])
@@ -290,7 +301,8 @@ SummarizeCRISPRDf <- function(CRISPR_df, sublibraries_entrezs_list) {
         }
       }
     } else {
-      results_list[["Deletion_size"]]             <- NULL
+      results_list[["Max_deletion_size"]]         <- NULL
+      results_list[["Min_deletion_size"]]         <- NULL
       results_list[["Spacing"]]                   <- NULL
       results_list[["Num_overlaps"]]              <- NULL
       results_list[["Num_top4_outside_criteria"]] <- NULL
