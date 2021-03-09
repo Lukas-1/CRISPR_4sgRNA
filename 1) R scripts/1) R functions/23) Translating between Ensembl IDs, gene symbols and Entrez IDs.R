@@ -26,7 +26,8 @@ MapEnsemblIDs <- function(input_df, warn = TRUE, use_dataset = "hsapiens_gene_en
 
   ## Create an Ensembl-Entrez mapping using BioMart
   message("Attempting to look up Ensembl-Entrez mappings in Ensembl's BioMart (requires an internet connection...)")
-  mart <- useDataset(use_dataset, useMart("ensembl")) # host = "useast.ensembl.org"
+  use_host <- "http://apr2020.archive.ensembl.org"
+  mart <- useDataset(use_dataset, useMart("ensembl", host = use_host))
   ensembl_to_entrez_df <- getBM(
     filters = "ensembl_gene_id",
     attributes = c("ensembl_gene_id", "entrezgene_id"),
@@ -118,6 +119,19 @@ MapEnsemblIDs <- function(input_df, warn = TRUE, use_dataset = "hsapiens_gene_en
 
   ensembl_mappings_df[["Are_conflicting"]] <- are_not_identical
   ensembl_mappings_df[["Are_problematic"]] <- are_NA | are_not_identical
+
+  ensembl_mappings_df[["Conflicting_symbol"]] <- !(is.na(ensembl_mappings_df[["Symbol_entrez_symbol"]])) &
+                                                 !(is.na(ensembl_mappings_df[["Gene_symbol"]])) &
+                                                 mapply(identical,
+                                                        ensembl_mappings_df[["Gene_symbol"]],
+                                                        ensembl_mappings_df[["Symbol_entrez_symbol"]]
+                                                        ) &
+                                                 !(mapply(identical,
+                                                          ensembl_mappings_df[["Gene_symbol"]],
+                                                          ensembl_mappings_df[["Consensus_symbol"]]
+                                                          )
+                                                   )
+
 
   return(ensembl_mappings_df)
 }
