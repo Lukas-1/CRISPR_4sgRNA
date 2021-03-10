@@ -32,7 +32,6 @@ load(file.path(general_RData_directory, "04) Read in data on genetic polymorphis
 # Define functions --------------------------------------------------------
 
 CharacterVecToAFList <- function(AF_char_vec, prefix) {
-
   AF_vec <- gsub("(?<=,)\\.(?=(,|$))", ",", AF_char_vec, perl = TRUE)
   AF_vec <- gsub(",+$", "", AF_vec)
   AF_vec <- gsub(",,+", ",", AF_vec)
@@ -44,7 +43,6 @@ CharacterVecToAFList <- function(AF_char_vec, prefix) {
 
   AF_list <- mapply(c, as.list(AF_1_vec), AF_rest)
   return(AF_list)
-
 }
 
 
