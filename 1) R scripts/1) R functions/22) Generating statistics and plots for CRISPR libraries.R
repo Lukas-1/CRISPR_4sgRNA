@@ -1112,6 +1112,9 @@ DrawViolinGridAndAxes <- function(y_column,
 
 
 
+
+
+
 PlotViolin <- function(plot_df,
                        x_positions,
                        x_limits,
@@ -3985,38 +3988,55 @@ OuterTitleForLayout <- function(title_text, title_cex = 1, extra_space = FALSE) 
 
 # Functions for formatting figures for the manuscript ---------------------
 
+
+## Define plot dimensions for the manuscript
 horizontal_width <- 2.4
 horizontal_height <- 1.7
 
 horizontal_mai <- c(0.43, 0.61, 0.16, 0.38)
 vertical_mai   <- c(0.30, 0.47, 0.30, 0.32)
 
-# use_ratio <- 60.9 / 92.4
+manuscript_wide_width <- 3.57
+manuscript_wide_height <- 1.85
+manuscript_wide_mai <- c(0.30, 1, 0.30, 0.32)
+
 manuscript_cex <- 0.7
 manuscript_lwd <- 0.8
 
 
-
-# horizontal_width <- 3.65
-# horizontal_height <- 2.62
-#
-# horizontal_mai <- c(0.65, 0.92, 0.25, 0.58)
-# vertical_mai   <- c(0.45, 0.72, 0.45, 0.48)
-#
-# manuscript_cex <- 1
-# manuscript_lwd <- 1
-
-
-
-CRISPRo_colors <- brewer.pal(11, "RdBu")[c(7, 10)]
+## Define plot color schemes for the manuscript
+manuscript_CRISPRo_colors <- brewer.pal(11, "RdBu")[c(7, 10)]
 dark_blue <- Palify("#1A59B4", fraction_pale = 0.05)
-CRISPRo_colors[[2]] <- colorRampPalette(c(CRISPRo_colors[[2]], dark_blue))(6)[[4]]
+manuscript_CRISPRo_colors[[2]] <- colorRampPalette(c(manuscript_CRISPRo_colors[[2]], dark_blue))(6)[[4]]
 
-CRISPRa_colors <- brewer.pal(11, "PiYG")[c(5, 2)]
-CRISPRa_colors[[2]] <- colorRampPalette(c("#FF007F", CRISPRa_colors[[2]]))(3)[[2]]
-CRISPRa_colors[[2]] <- Palify(CRISPRa_colors[[2]], fraction_pale = 0.15)
-# CRISPRa_colors[[2]] <- "#DF4999"
-CRISPRa_colors[[2]] <- "#E44499"
+manuscript_CRISPRa_colors <- brewer.pal(11, "PiYG")[c(5, 2)]
+# manuscript_CRISPRa_colors[[2]] <- colorRampPalette(c("#FF007F", manuscript_CRISPRa_colors[[2]]))(3)[[2]]
+# manuscript_CRISPRa_colors[[2]] <- Palify(manuscript_CRISPRa_colors[[2]], fraction_pale = 0.15)
+manuscript_CRISPRa_colors[[2]] <- "#E44499"
+
+
+
+
+## Define dimensions and color scheme to PNGs
+
+PNG_increment <- 0.05
+PNG_multiplier <- 2
+# PNG_height <- (horizontal_height + PNG_increment) * PNG_multiplier
+PNG_height <- 3.75
+PNG_width <- horizontal_width * PNG_multiplier
+PNG_wide_width <- manuscript_wide_width * PNG_multiplier
+PNG_wide_height <- manuscript_wide_height * PNG_multiplier
+PNG_cex <- manuscript_cex * PNG_multiplier * 0.9
+PNG_lwd <- manuscript_lwd * PNG_multiplier
+PNG_vertical_mai <- vertical_mai
+PNG_vertical_mai[[1]] <- PNG_vertical_mai[[1]] + PNG_increment
+PNG_vertical_mai <- PNG_vertical_mai * PNG_multiplier
+PNG_wide_mai <- manuscript_wide_mai * PNG_multiplier
+PNG_CRISPRa_colors <- manuscript_CRISPRa_colors
+PNG_CRISPRa_colors[[2]] <- "#D45498"
+
+
+
 
 
 
@@ -4026,9 +4046,6 @@ GetBarPlotStart <- function(num_bars, space, use_factor = 0.04) {
 GetBarplotEnd <- function(num_bars, space, use_factor = 0.04) {
   space + (((space * (num_bars - 1)) + num_bars) * (1 + use_factor))
 }
-
-
-
 
 
 
@@ -4090,11 +4107,12 @@ ManuscriptAnnotate <- function(group_positions,
                                group_names,
                                modality_label,
                                axis_label,
-                               horizontal       = TRUE,
-                               use_colors       = "#000000",
-                               colored_modality = FALSE,
-                               modality_on_top  = FALSE,
-                               modality_on_side = FALSE
+                               horizontal         = TRUE,
+                               use_colors         = "#000000",
+                               colored_modality   = FALSE,
+                               modality_on_top    = FALSE,
+                               modality_on_side   = FALSE,
+                               modality_on_bottom = FALSE
                                ) {
 
   if (horizontal) {
@@ -4132,6 +4150,13 @@ ManuscriptAnnotate <- function(group_positions,
            labels = modality_label,
            srt    = 270,
            adj    = c(0.5, 0),
+           col    = modality_color,
+           xpd    = NA
+           )
+    } else if (modality_on_bottom) {
+      text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.5),
+           y      = par("usr")[[3]] - diff(grconvertY(c(0, 2), from = "lines", to = "user")),
+           labels = modality_label,
            col    = modality_color,
            xpd    = NA
            )
@@ -4194,18 +4219,21 @@ ManuscriptBars <- function(counts_mat,
                            use_space            = if (horizontal) 0.6 else 0.8,
                            abbreviate_thousands = TRUE,
                            modality_on_side     = FALSE,
+                           modality_on_bottom   = FALSE,
                            abbreviate_libraries = TRUE,
                            use_cex              = manuscript_cex,
                            use_lwd              = manuscript_lwd,
                            use_mai              = NULL,
-                           expected_SNP_percent = TRUE
+                           expected_SNP_percent = TRUE,
+                           CRISPRa_colors       = manuscript_CRISPRa_colors,
+                           CRISPRo_colors       = manuscript_CRISPRo_colors
                            ) {
 
   ## Prepare colors, percentages and labels
   group_names <- colnames(counts_mat)
   if ("Brunello" %in% colnames(counts_mat)) {
     modality_label <- "CRISPRo"
-    use_colors <- CRISPRo_colors
+    use_colors <- manuscript_CRISPRo_colors
   } else if ("Calabrese" %in% colnames(counts_mat)) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
@@ -4375,7 +4403,8 @@ ManuscriptBars <- function(counts_mat,
                      axis_label,
                      horizontal,
                      use_colors,
-                     modality_on_side = modality_on_side
+                     modality_on_side = modality_on_side,
+                     modality_on_bottom = modality_on_bottom
                      )
   box(bty = "l")
 
@@ -4465,7 +4494,10 @@ ManuscriptViolinBox <- function(plot_df,
                                 use_cex              = manuscript_cex,
                                 use_lwd              = manuscript_lwd,
                                 use_mai              = NULL,
-                                abbreviate_libraries = TRUE
+                                abbreviate_libraries = TRUE,
+                                modality_on_bottom   = FALSE,
+                                CRISPRa_colors       = manuscript_CRISPRa_colors,
+                                CRISPRo_colors       = manuscript_CRISPRo_colors
                                 ) {
 
   ## Prepare colors and labels
@@ -4648,8 +4680,9 @@ ManuscriptViolinBox <- function(plot_df,
                      axis_label,
                      horizontal,
                      use_colors,
-                     modality_on_top = one_group,
-                     modality_on_side = !(one_group)
+                     modality_on_top = !(modality_on_bottom) && one_group,
+                     modality_on_side = !(modality_on_bottom) && !(one_group),
+                     modality_on_bottom = modality_on_bottom
                      )
 
   text(x      = if (one_group) par("usr")[[2]] else group_positions,
@@ -4658,7 +4691,6 @@ ManuscriptViolinBox <- function(plot_df,
        adj    = if (one_group) c(1, 0.5) else 0.5,
        xpd    = NA
        )
-
   box()
   par(old_par)
 }
@@ -4753,7 +4785,7 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
 
 
 
-DrawAllManuscriptPlots <- function(df_mat_list) {
+DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
 
   labels_list <- list(
     "Num_genes"                        = "Number of genes in library",
@@ -4770,6 +4802,23 @@ DrawAllManuscriptPlots <- function(df_mat_list) {
   )
 
   use_folder <- file.path(output_plots_directory, "Manuscript")
+
+  if (make_PNGs) {
+    use_folder <- file.path(use_folder, "PNGs")
+    horizontal_height <- PNG_height
+    horizontal_width <- PNG_width
+    manuscript_wide_width <- PNG_wide_width
+    manuscript_wide_height <- PNG_wide_height
+    manuscript_cex <- PNG_cex
+    manuscript_lwd <- PNG_lwd
+    vertical_mai <- PNG_vertical_mai
+    wide_mai <- PNG_wide_mai
+    manuscript_CRISPRa_colors <- PNG_CRISPRa_colors
+  }
+
+  print(make_PNGs)
+  print(pdf_width)
+  original_PDF_height <- pdf_height
 
   for (var_name in names(labels_list)) {
     for (SNP_as_percent in c(TRUE, FALSE)) {
@@ -4802,19 +4851,33 @@ DrawAllManuscriptPlots <- function(df_mat_list) {
         make_wide <- (var_name == "Have_homologies") && filter_genes
 
         if (make_wide) {
-          pdf_width <- 3.57
-          pdf_height <- 1.85
+          pdf_width <- manuscript_wide_width
+          pdf_height <- manuscript_wide_height
         } else {
           pdf_width <- horizontal_width
           pdf_height <- horizontal_height
         }
-        pdf(file.path(use_folder,
-                      paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
-                      paste0(file_name, ".pdf")
-                      ),
-            width = pdf_width,
-            height = pdf_height
-            )
+        sub_folder <- paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes")
+        if (make_PNGs) {
+          png(file.path(use_folder,
+                        paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
+                        paste0(file_name, ".png")
+                        ),
+              width  = pdf_width,
+              height = pdf_height,
+              units  = "in",
+              res    = 900
+              )
+        } else {
+          pdf(file.path(use_folder,
+                        paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
+                        paste0(file_name, ".pdf")
+                        ),
+              width = pdf_width,
+              height = pdf_height
+              )
+        }
+
         if (filter_genes) {
           mat_list <- df_mat_list[["mat_list_filtered"]]
           df_list <- df_mat_list[["df_list_filtered"]]
@@ -4822,25 +4885,44 @@ DrawAllManuscriptPlots <- function(df_mat_list) {
           mat_list <- df_mat_list[["mat_list_unfiltered"]]
           df_list <- df_mat_list[["df_list_unfiltered"]]
         }
+        if (make_wide) {
+          use_mai <- manuscript_wide_mai
+        } else if (make_PNGs) {
+          use_mai <- vertical_mai
+          use_mai[[1]] <- use_mai[[1]] + PNG_increment
+        } else {
+          use_mai <- NULL
+        }
+
         if (var_name %in% names(mat_list)) {
           ManuscriptBars(mat_list[[var_name]],
                          axis_label           = labels_list[[var_name]],
                          numeric_limits       = use_numeric_limits,
                          lollipop             = var_name == "Num_genes",
                          horizontal           = FALSE,
-                         modality_on_side     = make_wide,
-                         use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
+                         modality_on_side     = make_wide && !(make_PNGs),
+                         use_mai              = use_mai,
                          abbreviate_libraries = !(make_wide),
-                         expected_SNP_percent = SNP_as_percent
+                         expected_SNP_percent = SNP_as_percent,
+                         modality_on_bottom   = make_PNGs,
+                         use_cex              = manuscript_cex,
+                         use_lwd              = manuscript_lwd,
+                         CRISPRa_colors       = manuscript_CRISPRa_colors,
+                         CRISPRo_colors       = manuscript_CRISPRo_colors
                          )
         } else if (var_name %in% names(df_list)) {
           ManuscriptViolinBox(df_list[[var_name]],
                               axis_label           = labels_list[[var_name]],
                               horizontal           = FALSE,
-                              use_mai              = if (make_wide) c(0.30, 1, 0.30, 0.32) else NULL,
+                              use_mai              = use_mai,
                               use_width            = pdf_width,
                               use_height           = pdf_height,
-                              abbreviate_libraries = !(make_wide)
+                              abbreviate_libraries = !(make_wide),
+                              modality_on_bottom   = make_PNGs,
+                              use_cex              = manuscript_cex,
+                              use_lwd              = manuscript_lwd,
+                              CRISPRa_colors       = manuscript_CRISPRa_colors,
+                              CRISPRo_colors       = manuscript_CRISPRo_colors
                               )
         }
         dev.off()

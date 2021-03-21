@@ -111,35 +111,53 @@ labels_list <- list(
 )
 
 
-for (SNP_as_percent in c(TRUE, FALSE)) {
-  for (var_name in names(bar_mat_list_list)) {
-    for (modality in c("CRISPRa", "CRISPRko")) {
-      file_name <- paste0(var_name, " - ", modality)
-      if (var_name == "Expected_all22_SNP_AF_max_Kaviar") {
-        if (SNP_as_percent) {
-          file_name <- paste0(file_name, " - percentage")
-          use_numeric_limits <- c(0, 2)
+for (make_PNGs in c(TRUE, FALSE)) {
+  for (SNP_as_percent in c(TRUE, FALSE)) {
+    for (var_name in names(bar_mat_list_list)) {
+      for (modality in c("CRISPRa", "CRISPRko")) {
+        file_name <- paste0(var_name, " - ", modality)
+        if (var_name == "Expected_all22_SNP_AF_max_Kaviar") {
+          if (SNP_as_percent) {
+            file_name <- paste0(file_name, " - percentage")
+            use_numeric_limits <- c(0, 2)
+          } else {
+            file_name <- paste0(file_name, " - absolute number")
+            use_numeric_limits <- c(0, 1200)
+          }
+        } else if (SNP_as_percent) {
+          next
         } else {
-          file_name <- paste0(file_name, " - absolute number")
-          use_numeric_limits <- c(0, 1200)
+          use_numeric_limits <- NULL
         }
-      } else if (SNP_as_percent) {
-        next
-      } else {
-        use_numeric_limits <- NULL
+        if (make_PNGs) {
+          png(file.path(file_output_directory,
+                        paste0("Comparison - ", file_name, ".png")
+                        ),
+              width  = PNG_width,
+              height = PNG_height,
+              units  = "in",
+              res    = 900
+              )
+        } else {
+          pdf(file.path(file_output_directory,
+                        paste0("Comparison - ", file_name, ".pdf")
+                        ),
+              width  = horizontal_width,
+              height = horizontal_height
+              )
+        }
+        ManuscriptBars(bar_mat_list_list[[var_name]][[paste0(modality, "_mat")]],
+                       axis_label           = labels_list[[var_name]],
+                       numeric_limits       = use_numeric_limits,
+                       expected_SNP_percent = SNP_as_percent,
+                       modality_on_bottom   = make_PNGs,
+                       CRISPRa_colors       = if (make_PNGs) PNG_CRISPRa_colors else manuscript_CRISPRa_colors,
+                       use_mai              = if (make_PNGs) PNG_vertical_mai,
+                       use_cex              = if (make_PNGs) PNG_cex else manuscript_cex,
+                       use_lwd              = if (make_PNGs) PNG_lwd else manuscript_lwd
+                       )
+        dev.off()
       }
-      pdf(file.path(file_output_directory,
-                    paste0("Comparison - ", file_name, ".pdf")
-                    ),
-          width  = horizontal_width,
-          height = horizontal_height
-          )
-      ManuscriptBars(bar_mat_list_list[[var_name]][[paste0(modality, "_mat")]],
-                     axis_label           = labels_list[[var_name]],
-                     numeric_limits       = use_numeric_limits,
-                     expected_SNP_percent = SNP_as_percent
-                     )
-      dev.off()
     }
   }
 }

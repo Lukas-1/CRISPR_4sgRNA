@@ -44,6 +44,24 @@ merged_CRISPRko_df <- AddOtherTargetBooleans(merged_CRISPRko_df,
 
 
 
+
+
+# Tabulate data for the manuscript ----------------------------------------
+
+CRISPRko_figure_list <- PrepareManuscriptPlots(merged_CRISPRko_df)
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "CRISPRko_figure_list",
+     file = file.path(CRISPRko_RData_directory, "19) Evaluate CRISPRko libraries using statistics and plots.RData")
+     )
+
+
+
+
 # Show some example plots -------------------------------------------------
 
 ViolinBox_Sources(merged_CRISPRko_df, "CRISPOR_4MM_specificity",
@@ -60,8 +78,8 @@ BarPlot_Sources(merged_CRISPRko_df, "Are_overlapping")
 
 # Export plots for the manuscript -----------------------------------------
 
-df_mat_list <- PrepareManuscriptPlots(merged_CRISPRko_df)
-DrawAllManuscriptPlots(df_mat_list)
+DrawAllManuscriptPlots(CRISPRko_figure_list)
+DrawAllManuscriptPlots(CRISPRko_figure_list, make_PNGs = TRUE)
 
 
 

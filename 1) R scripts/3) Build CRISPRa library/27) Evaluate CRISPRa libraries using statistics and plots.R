@@ -73,11 +73,26 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 
 
 
+# Tabulate data for the manuscript ----------------------------------------
+
+CRISPRa_figure_list <- PrepareManuscriptPlots(merged_replaced_CRISPRa_df)
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "CRISPRa_figure_list",
+     file = file.path(CRISPRa_RData_directory, "27) Evaluate CRISPRa libraries using statistics and plots.RData")
+     )
+
+
+
 
 # Export plots for the manuscript -----------------------------------------
 
-df_mat_list <- PrepareManuscriptPlots(merged_replaced_CRISPRa_df)
-DrawAllManuscriptPlots(df_mat_list)
+DrawAllManuscriptPlots(CRISPRa_figure_list, make_PNGs = TRUE)
+DrawAllManuscriptPlots(CRISPRa_figure_list)
+
 
 
 ## Draw the TSS doughnut plot
