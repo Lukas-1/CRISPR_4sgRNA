@@ -24,9 +24,9 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
+load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(general_RData_directory, "08) Compile a list of human transcription factors - all_TF_df.RData"))
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
-
 
 
 
@@ -35,7 +35,9 @@ load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guide
 
 CRISPRa_TF_sgRNAs_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% all_TF_df[["Combined_ID"]], ]
 
-TF_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRa_TF_sgRNAs_df)
+TF_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRa_TF_sgRNAs_df,
+                                          sublibraries_all_entrezs_list
+                                          )
 
 reorganized_df <- ReorganizeSummaryDf(TF_sgRNAs_summary_df, all_TF_df[["Combined_ID"]])
 all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[["Combined_ID"]], all_TF_df[["Combined_ID"]]), ],
@@ -43,7 +45,6 @@ all_TF_summary_df <- data.frame(all_TF_df[match(reorganized_df[["Combined_ID"]],
                                 stringsAsFactors = FALSE,
                                 row.names = NULL
                                 )
-
 
 
 
@@ -57,9 +58,6 @@ row.names(TF_overview_df) <- NULL
 table(TF_overview_df[["Num_total"]] == 0)
 table(TF_overview_df[["Num_total"]] < 4)
 table(TF_overview_df[["Num_meeting_criteria"]] < 4)
-
-
-
 
 
 
