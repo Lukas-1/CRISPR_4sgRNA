@@ -72,6 +72,8 @@ sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
 
 #  Combine the TF library with the rest of the 4sg library ----------------
 
+are_TF_controls <- TF_v1_CRISPRa_df[["Is_control"]] %in% "Yes"
+TF_v1_CRISPRa_df[["AltTSS_ID"]][are_TF_controls] <- TF_v1_CRISPRa_df[["Combined_ID"]][are_TF_controls]
 TF_v1_CRISPRa_df <- RenumberPlatesContinuously(TF_v1_CRISPRa_df)
 
 full_sg4_list <- MergeTFWithRest(sg4_by_well_df, TF_v1_CRISPRa_df)
