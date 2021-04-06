@@ -70,6 +70,8 @@ sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
 
 #  Combine the TF library with the rest of the 4sg library ----------------
 
+TF_v1_CRISPRko_df <- RenumberPlatesContinuously(TF_v1_CRISPRko_df)
+
 full_sg4_list <- MergeTFWithRest(sg4_by_well_df, TF_v1_CRISPRko_df)
 
 full_4sg_by_well_df <- full_sg4_list[["full_4sg_by_well_df"]]
@@ -99,6 +101,43 @@ table(full_4sg_by_well_df[["Is_control"]]) / 4 # Number of controls
 
 
 
+# Check for good examples of guides affecting multiple genes --------------
+
+matches_vec <- match(MakeIDs(full_4sg_by_gene_df),
+                     MakeIDs(merged_CRISPRko_df)
+                     )
+target_one_locus <- tapply(guides_CDS_protein_df[matches_vec, "Distinct_loci"] == 1,
+                           full_4sg_by_gene_df[["Entrez_ID"]],
+                           all
+                           )
+target_two_genes <- tapply(guides_CDS_protein_df[matches_vec, "Affects_unintended_gene"],
+                           full_4sg_by_gene_df[["Entrez_ID"]],
+                           all
+                           )
+target_same_genes <- tapply(guides_CDS_protein_df[matches_vec, "Affected_gene_symbols"],
+                            full_4sg_by_gene_df[["Entrez_ID"]],
+                            function(x) length(unique(x)) == 1
+                            )
+num_sg_targets <- lengths(strsplit(full_4sg_by_gene_df[, "Other_target_symbols"], " ", fixed = TRUE))
+num_del_targets <- lengths(strsplit(full_4sg_by_gene_df[, "Other_symbols_4sg"], " ", fixed = TRUE))
+
+targeting_deletion <- tapply(num_del_targets > num_sg_targets,
+                             full_4sg_by_gene_df[["Entrez_ID"]],
+                             any
+                             )
+
+fulfil_criteria <- target_one_locus & target_two_genes & target_same_genes
+
+candidate_genes <- levels(factor(full_4sg_by_gene_df[["Entrez_ID"]]))[fulfil_criteria %in% TRUE]
+
+example_columns <- c("Gene_symbol", "Other_target_symbols", "Other_symbols_4sg")
+candidates_df <- (full_4sg_by_gene_df[full_4sg_by_gene_df[["Entrez_ID"]] %in% candidate_genes, example_columns])
+
+
+
+
+
+
 # Assign just the PD genes to plates --------------------------------------
 
 are_PD <- (merged_CRISPRko_df[["Combined_ID"]] %in% PD_all_entrezs) #|
@@ -117,6 +156,7 @@ PD_4sg_reordered_df <- ReorderPlates(PD_4sg_df)
 
 PD_4sg_df[["Sublibrary_4sg"]] <- NULL
 PD_4sg_reordered_df[["Sublibrary_4sg"]] <- NULL
+
 
 
 
