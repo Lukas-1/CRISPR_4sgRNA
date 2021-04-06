@@ -14,22 +14,24 @@ use_width <- 7
 # Define functions --------------------------------------------------------
 
 SideTextAndAxes <- function(side_text,
-                            use_lwd            = 0.75,
-                            use_cex_axis       = 0.8,
-                            sg_label_cex       = 1.3,
-                            horizontal_y_label = TRUE,
-                            draw_outer_box     = FALSE,
-                            sparse_ticks       = TRUE
+                            use_lwd               = 0.75,
+                            use_cex_axis          = 0.8,
+                            sg_label_cex          = 1.3,
+                            horizontal_y_label    = TRUE,
+                            vertical_y_label_line = 3,
+                            draw_outer_box        = FALSE,
+                            sparse_ticks          = TRUE,
+                            label_x_axis          = FALSE
                             ) {
   if (sparse_ticks) {
-    tick_locations <- seq(0, 1, 0.5)
+    y_tick_locations <- seq(0, 1, 0.5)
   } else {
-    tick_locations <- seq(0, 1, 0.25)
+    y_tick_locations <- seq(0, 1, 0.25)
   }
-  tick_labels <- paste0(tick_locations * 100, "%")
+  y_tick_labels <- paste0(y_tick_locations * 100, "%")
   axis(2,
-       labels   = tick_labels,
-       at       = tick_locations,
+       labels   = y_tick_labels,
+       at       = y_tick_locations,
        las      = 1,
        mgp      = c(3, 0.38, 0),
        tcl      = -0.3,
@@ -37,7 +39,32 @@ SideTextAndAxes <- function(side_text,
        cex.axis = use_cex_axis,
        pos      = par("usr")[[1]] - (use_lwd * GetHalfLineWidth())
        )
-  text(x      = if (horizontal_y_label) -0.06 else par("usr")[[1]] - diff(grconvertX(c(0, 3), from = "lines", to = "user")),
+  if (label_x_axis) {
+    if (sparse_ticks) {
+      x_tick_locations <- seq(0, 1, 0.2)
+    } else {
+      x_tick_locations <- seq(0, 1, 0.1)
+    }
+    x_tick_labels <- paste0(x_tick_locations * 100)
+    axis(1,
+         labels   = x_tick_labels,
+         at       = x_tick_locations,
+         las      = 1,
+         mgp      = c(3, 0, 0),
+         tcl      = -0.2,
+         lwd      = use_lwd * par("lwd"),
+         cex.axis = use_cex_axis,
+         pos      = par("usr")[[3]] - (use_lwd * GetHalfLineWidth())
+         )
+    text(x      = 0.5,
+         y      =  par("usr")[[3]] - diff(grconvertY(c(0, 1.55), from = "lines", to = "user")),
+         adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
+         labels = "Percentage of sequenced genes",
+         xpd    = NA,
+         cex    = sg_label_cex
+         )
+  }
+  text(x      = if (horizontal_y_label) -0.06 else par("usr")[[1]] - diff(grconvertX(c(0, vertical_y_label_line), from = "lines", to = "user")),
        y      = 0.5,
        adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
        labels = side_text,
@@ -59,8 +86,8 @@ DrawAlterationBarplot <- function(summary_df,
                                   main_title         = NULL,
                                   reorder_wells      = FALSE,
                                   gap_weight         = 2L,
-                                  space_height       = 1,
-                                  top_space          = 3,
+                                  space_height       = 1.2,
+                                  top_space          = 2.5,
                                   bottom_space       = 1,
                                   show_color_text    = TRUE,
                                   show_color_legend  = FALSE,
@@ -320,5 +347,211 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
   }
   return(invisible(NULL))
 }
+
+
+
+
+
+DrawReorderedSandPlots <- function(summary_df,
+                                   main_title         = NULL,
+                                   space_height       = 1.2,
+                                   top_space          = 1.8,
+                                   bottom_space       = 2,
+                                   maintain_cex       = FALSE,
+                                   use_lwd            = 0.5,
+                                   use_cex_axis       = 0.8,
+                                   sg_label_cex       = 0.8,
+                                   left_space         = 0.13 * 1.25,
+                                   right_space        = 0.07 * 1.25,
+                                   draw_outer_box     = FALSE,
+                                   exclude_blocks     = NULL,
+                                   sparse_ticks       = FALSE,
+                                   use_cex            = par("cex")
+                                   ) {
+
+
+  if ("Empty_well" %in% names(sg_sequences_df)) {
+    are_to_include <- !(sg_sequences_df[["Empty_well"]])
+  } else {
+    are_to_include <- rep(TRUE, nrow(sg_sequences_df))
+  }
+  have_blocks <- "Block" %in% names(sg_sequences_df)
+  if (have_blocks && !(is.null(exclude_blocks))) {
+    are_to_include[are_to_include] <- !(sg_sequences_df[["Block"]][are_to_include] %in% exclude_blocks)
+  }
+
+  summary_df <- summary_df[are_to_include, ]
+  row.names(summary_df) <- NULL
+
+  num_wells <- nrow(summary_df)
+
+
+  ## Set up the layout
+
+  barplot_height <- 2.8
+
+  layout_mat <- cbind(rep(1, 11),
+                      3:(11 + 3 - 1),
+                      rep(2, 11)
+                      )
+  layout_mat[1, ] <- 3
+
+
+  layout(layout_mat,
+         widths  = c(left_space, (1 - left_space - right_space), right_space),
+         heights = c(top_space,
+                     barplot_height,
+                     space_height,
+                     barplot_height,
+                     space_height,
+                     barplot_height,
+                     space_height,
+                     barplot_height,
+                     space_height,
+                     barplot_height,
+                     bottom_space
+                     )
+         )
+
+  if (maintain_cex) {
+    use_cex <- use_cex / 0.66
+  }
+
+  old_par <- par(mar = rep(0, 4), cex = use_cex)
+
+  for (i in 1:3) {
+    MakeEmptyPlot()
+  }
+  if (!(is.null(main_title))) {
+    text(x = 0.5,
+         y = 0.5,
+         labels = main_title,
+         cex = 1,
+         xpd = NA
+         )
+
+  }
+
+  positions_vec <- seq_len(num_wells)
+
+  four_columns <- c("Perc_at_least_1", "Perc_at_least_2", "Perc_at_least_3", "Perc_all_4")
+  use_colors <- c("#2A3B6B", "#D2D1CF")
+  barplot_colors <- c("#FCFDCB", "#FDAC87", "#DB678B", "#934E9B", "#4E4073")
+
+  column_mat_list <- lapply(four_columns, function(x) {
+    results_mat <- cbind(summary_df[[x]],
+                         100 - summary_df[[x]]
+                         )
+    results_mat <- results_mat / 100
+    colnames(results_mat) <- c(x, "Rest")
+    results_mat <- results_mat[order(results_mat[, 1]), ]
+    return(t(results_mat))
+  })
+
+  for (i in 2:4) {
+    stopifnot(all(column_mat_list[[i - 1]][1, ] >= column_mat_list[[i]][1, ]))
+  }
+
+  MakeEmptyPlot()
+  PlotBarplotMat(column_mat_list[[1]], use_colors, positions_vec)
+  SideTextAndAxes(expression("" >= "1 correct sgRNA"),
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = FALSE,
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks,
+                  vertical_y_label_line = 2.8,
+                  label_x_axis       = TRUE
+                  )
+  MakeEmptyPlot()
+
+
+  MakeEmptyPlot()
+  PlotBarplotMat(column_mat_list[[2]], use_colors, positions_vec)
+  SideTextAndAxes(expression("" >= "2 correct sgRNAs"),
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = FALSE,
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks,
+                  vertical_y_label_line = 2.75,
+                  label_x_axis       = TRUE
+                  )
+  MakeEmptyPlot()
+
+
+  MakeEmptyPlot()
+  PlotBarplotMat(column_mat_list[[3]], use_colors, positions_vec)
+  SideTextAndAxes(expression("" >= "3 correct sgRNAs"),
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = FALSE,
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks,
+                  vertical_y_label_line = 2.8,
+                  label_x_axis       = TRUE
+                  )
+  MakeEmptyPlot()
+
+
+
+  MakeEmptyPlot()
+  PlotBarplotMat(column_mat_list[[4]], use_colors, positions_vec)
+  SideTextAndAxes(expression("4 correct sgRNAs"),
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  sg_label_cex       = sg_label_cex,
+                  horizontal_y_label = FALSE,
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks,
+                  vertical_y_label_line = 2.8,
+                  label_x_axis       = TRUE
+                  )
+  MakeEmptyPlot()
+
+
+  MakeEmptyPlot()
+  PlotBarplotMat(column_mat_list[[1]], c(barplot_colors[[2]], barplot_colors[[1]]), positions_vec)
+  PlotBarplotMat(column_mat_list[[2]], c(barplot_colors[[3]], NA), positions_vec)
+  PlotBarplotMat(column_mat_list[[3]], c(barplot_colors[[4]], NA), positions_vec)
+  PlotBarplotMat(column_mat_list[[4]], c(barplot_colors[[5]], NA), positions_vec)
+  SideTextAndAxes("Superimposed",
+                  use_lwd            = use_lwd,
+                  use_cex_axis       = use_cex_axis,
+                  draw_outer_box     = draw_outer_box,
+                  sparse_ticks       = sparse_ticks,
+                  horizontal_y_label = FALSE,
+                  sg_label_cex       = sg_label_cex,
+                  vertical_y_label_line = 2.8,
+                  label_x_axis       = TRUE
+                  )
+
+  MakeEmptyPlot()
+
+  plot.window(c(0, 1), c(0, 1), "", asp = 1)
+  par("cex" = par("cex") * 0.9)
+  MakeColorBoxLegend(labels_vec         = as.character(0:4),
+                     colors_vec         = barplot_colors,
+                     x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.16),
+                     y_pos              = 0.28,
+                     use_constant_space = FALSE,
+                     vertical_adjust    = 0.2,
+                     x_space_adjust     = 4,
+                     after_text         = " correct gRNAs",
+                     use_lwd            = use_lwd * 1.5
+                     )
+
+
+  par(old_par)
+  return(invisible(NULL))
+}
+
+
+
+
+
 
 
