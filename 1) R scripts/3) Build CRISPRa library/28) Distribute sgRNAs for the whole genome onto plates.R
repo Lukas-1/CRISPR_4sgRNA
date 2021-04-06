@@ -72,6 +72,8 @@ sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
 
 #  Combine the TF library with the rest of the 4sg library ----------------
 
+TF_v1_CRISPRa_df <- RenumberPlatesContinuously(TF_v1_CRISPRa_df)
+
 full_sg4_list <- MergeTFWithRest(sg4_by_well_df, TF_v1_CRISPRa_df)
 
 full_4sg_by_well_df <- full_sg4_list[["full_4sg_by_well_df"]]
