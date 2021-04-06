@@ -36,11 +36,12 @@ load(file.path(p2_R_objects_directory, "08) Process demultiplexed reads - with s
 
 
 
-# Exclude 4 problematic wells, for the time being -------------------------
+# Exclude problematic wells, for the time being ---------------------------
 
 sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] == 2,
                                           TRUE, FALSE
                                           )
+
 
 
 
@@ -50,6 +51,25 @@ sg_sequences_df[["Empty_well"]] <- ifelse(sg_sequences_df[["Well_number"]] == 2,
 ExportAlterationsForManuscript(sl7_ccs7_df_list[["filtered_summary_df"]],
                                "Colony-picked controls"
                                )
+
+
+pdf(file = file.path(manuscript_directory, "Sand chart - 54 colony-picked controls - second 384-well plate - CCS7 (filtered).pdf"),
+    width = 3.8, height = 6.7
+    )
+DrawReorderedSandPlots(sl7_ccs7_df_list[["filtered_summary_df"]],
+                       main_title = "Genes re-ordered by the percentage of correct sgRNAs",
+                       exclude_blocks = 2
+                       )
+dev.off()
+
+pdf(file = file.path(manuscript_directory, "Sand chart - 51 genes - second 384-well plate - CCS7 (filtered).pdf"),
+    width = 3.8, height = 6.7
+    )
+DrawReorderedSandPlots(sl7_ccs7_df_list[["filtered_summary_df"]],
+                       main_title = "Genes re-ordered by the percentage of correct sgRNAs",
+                       exclude_blocks = 1
+                       )
+dev.off()
 
 
 

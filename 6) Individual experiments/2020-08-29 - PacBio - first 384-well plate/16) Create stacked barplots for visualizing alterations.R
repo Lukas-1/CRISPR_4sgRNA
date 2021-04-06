@@ -41,6 +41,18 @@ ExportAlterationsForManuscript(sl7_ccs7_df_list[["filtered_summary_df"]],
                                )
 
 
+pdf(file = file.path(manuscript_directory, "Sand chart - first 384-well plate - CCS7 (filtered).pdf"),
+    width = 3.8, height = 6.7
+    )
+
+DrawReorderedSandPlots(sl7_ccs7_df_list[["filtered_summary_df"]],
+                       main_title = "382 genes \u2013 re-ordered by the percentage of correct sgRNAs"
+                       )
+
+dev.off()
+
+
+
 
 
 
@@ -56,6 +68,31 @@ DrawAllSubsampledPlots(DrawAlterationBarplot,
                        "Stacked barplots",
                        "Alteration barplots"
                        )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
