@@ -674,7 +674,8 @@ MakeColorBoxLegend <- function(labels_vec,
                                constant_multipler = 1,
                                use_constant_space = TRUE,
                                vertical_adjust    = 0.45,
-                               x_space_adjust     = 3.3
+                               x_space_adjust     = 3.3,
+                               use_lwd            = 1
                                ){
 
   num_labels <- length(labels_vec)
@@ -706,7 +707,8 @@ MakeColorBoxLegend <- function(labels_vec,
        ybottom = rectangle_y_mid - (rectangle_height / 2),
        xpd     = NA,
        col     = colors_vec,
-       border  = "gray30"
+       border  = "gray30",
+       lwd     = use_lwd
        )
 
   text_gap <- rectangle_width * (-0.5)
@@ -824,7 +826,7 @@ DrawPercentCorrectBarplot <- function(summary_df,
 
     if (show_correct_promoters) {
       color_text_vec <- c(paste0(if (all_text_bold) 'bold' else 'plain',
-                                 '(color1("', prefix_text, '") * color1("" >= "") *'
+                                 '(color1("', prefix_text, '") * color1("") *'
                                  ),
                           'scriptscriptstyle(" ") *',
                           'bold(color2("0,")) * ',
@@ -837,7 +839,7 @@ DrawPercentCorrectBarplot <- function(summary_df,
                           )
     } else {
       color_text_vec <- c(paste0(if (all_text_bold) 'bold' else 'plain',
-                                 '(color1("', prefix_text, '") * color1("" >= "") *'
+                                 '(color1("', prefix_text, '") * color1("") *'
                                  ),
                           'scriptscriptstyle(" ") *',
                           'bold(color2("0,")) * ',
