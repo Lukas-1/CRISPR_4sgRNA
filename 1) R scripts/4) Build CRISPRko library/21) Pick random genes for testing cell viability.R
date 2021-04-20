@@ -5,14 +5,6 @@
 
 # Import packages and source code -----------------------------------------
 
-library("readxl")
-
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
-source(file.path(general_functions_directory, "23) Translating between Ensembl IDs, gene symbols and Entrez IDs.R"))
-
-
-
-
 
 
 
@@ -20,7 +12,6 @@ source(file.path(general_functions_directory, "23) Translating between Ensembl I
 
 CRISPR_root_directory    <- "~/CRISPR"
 CRISPR_input_directory   <- file.path(CRISPR_root_directory, "2) Input data")
-HPA_directory            <- file.path(CRISPR_input_directory, "Human genome", "Human Protein Atlas")
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
@@ -29,24 +20,12 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 
 
-
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Hs.eg.db Bioconductor database.RData"))
 load(file.path(general_RData_directory, "22) Compile data on essential genes.RData"))
+load(file.path(general_RData_directory, "23) Compile data on protein localization.RData"))
 load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome.RData"))
 load(file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData"))
-
-
-
-
-
-# Read in data ------------------------------------------------------------
-
-HPA_df <- read.delim(file.path(HPA_directory, "proteinatlas_2021_03_09.tsv"),
-                     stringsAsFactors = FALSE, check.names = FALSE
-                     )
-
 
 
 
@@ -70,7 +49,6 @@ deletion_fac <- factor(deletion_vec,
                        ordered = TRUE
                        )
 
-full_4sg_by_well_df
 
 
 
@@ -95,6 +73,7 @@ table(essential_fac, essential_df[["Achilles_common"]])
 
 
 
+
 # Define eligible genes ---------------------------------------------------
 
 essential_matches <- match(sgRNAs_overview_df[["Entrez_ID"]],
@@ -107,12 +86,14 @@ are_eligible <- (sgRNAs_overview_df[["In_4sg_library"]] %in% "Yes") &
 
 
 
+
 # Retrieve plate coordinates ----------------------------------------------
 
 plate_matches <- match(sgRNAs_overview_df[["Entrez_ID"]][are_eligible],
                        full_4sg_by_well_df[["Entrez_ID"]]
                        )
 plate_string <- sapply(strsplit(full_4sg_by_well_df[["Plate_string"]][plate_matches], "_sg", fixed = TRUE), "[", 1)
+
 
 
 
@@ -149,37 +130,12 @@ row.names(viability_df) <- NULL
 
 # Incorporate data from the Human Protein Atlas ---------------------------
 
-CategorizeReliability <- function(char_vec) {
-  ifelse(char_vec == "",
-         NA,
-         char_vec
-         )
-  results_fac <- factor(char_vec,
-                        levels = c("Uncertain", "Approved", "Supported", "Enhanced"),
-                        ordered = TRUE
-                        )
-  return(results_fac)
-}
-
-cleaned_HPA_df <- data.frame(
-  "Ensembl_gene_ID"      = HPA_df[["Ensembl"]],
-  "Gene_symbol"          = HPA_df[["Gene"]],
-  "Antibody_IDs"         = HPA_df[["Antibody"]],
-  "Antibody_RRIDs"       = HPA_df[["Antibody RRID"]],
-  "Reliability_IH"       = CategorizeReliability(HPA_df[["Reliability (IH)"]]),
-  "Reliability_IF"       = CategorizeReliability(HPA_df[["Reliability (IF)"]]),
-  "Subcellular_location" = sub(",", ", ", HPA_df[["Subcellular location"]], fixed = TRUE),
-  stringsAsFactors       = FALSE
-)
-
-HPA_mappings_df <- MapEnsemblIDs(cleaned_HPA_df)
-
 stopifnot(!(anyNA(viability_df[["Entrez_ID"]])))
-matches_vec <- match(viability_df[["Entrez_ID"]], HPA_mappings_df[["Consensus_entrez"]])
+matches_vec <- match(viability_df[["Entrez_ID"]], HPA_df[["Entrez_ID"]])
 
 select_columns <- c("Reliability_IH", "Reliability_IF", "Subcellular_location", "Antibody_RRIDs")
 viability_df <- data.frame(viability_df,
-                           cleaned_HPA_df[matches_vec, select_columns],
+                           HPA_df[matches_vec, select_columns],
                            stringsAsFactors = FALSE,
                            row.names = NULL
                            )
@@ -218,6 +174,7 @@ are_sel_20 <- ifelse(shuffled_viability_df[["Max_deletion_category"]] %in% delet
                      shuffled_viability_df[["Randomized_rank"]] %in% 1:3
                      )
 viability_20_genes_df <- shuffled_viability_df[are_sel_20, ]
+
 
 
 
