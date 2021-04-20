@@ -24,7 +24,6 @@ p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
@@ -36,6 +35,10 @@ load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 
 sl7_alignments_df <- ExtractAlignedSequences(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
 sl9_alignments_df <- ExtractAlignedSequences(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+
+names(sl7_alignments_df)[names(sl7_alignments_df) == "Source_ID"] <- "Well_number"
+names(sl9_alignments_df)[names(sl9_alignments_df) == "Source_ID"] <- "Well_number"
+
 
 
 

@@ -177,7 +177,7 @@ for (i in seq_len(nrow(sg_sequences_df))) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("guides_ref_list", "guides_with_promoters_list",
-              "plasmid_string", "plasmids_vec"
+              "plasmid_string", "plasmids_vec", "barcoded_plasmids"
               ),
      file = file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData")
      )

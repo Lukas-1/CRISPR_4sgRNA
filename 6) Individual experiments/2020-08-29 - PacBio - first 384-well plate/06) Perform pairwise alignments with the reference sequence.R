@@ -4,9 +4,9 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory  <- "~/CRISPR"
-file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
-R_functions_directory  <- file.path(file_directory, "1) R functions")
+CRISPR_root_directory <- "~/CRISPR"
+file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory <- file.path(file_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "05) Performing pairwise alignments with the reference sequence.R"))
 
@@ -21,7 +21,6 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 
@@ -30,8 +29,13 @@ load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 
 # Extract barcodes --------------------------------------------------------
 
-sl7_alignments_df <- ExtractAlignedSequences(sl7_ccs_df)
-sl9_alignments_df <- ExtractAlignedSequences(sl9_ccs_df)
+sl7_alignments_df <- ExtractAlignedSequences(sl7_ccs_df, parallel_mode = TRUE)
+sl9_alignments_df <- ExtractAlignedSequences(sl9_ccs_df, parallel_mode = TRUE)
+
+names(sl7_alignments_df)[names(sl7_alignments_df) == "Source_ID"] <- "Well_number"
+names(sl9_alignments_df)[names(sl9_alignments_df) == "Source_ID"] <- "Well_number"
+
+
 
 
 

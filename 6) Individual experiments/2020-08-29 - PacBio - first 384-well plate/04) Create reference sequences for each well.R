@@ -171,7 +171,7 @@ for (i in seq_len(384)) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("guides_ref_list", "guides_with_promoters_list",
-              "plasmid_string", "plasmids_vec"
+              "plasmid_string", "plasmids_vec", "barcoded_plasmids"
               ),
      file = file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData")
      )
