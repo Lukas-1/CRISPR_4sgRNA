@@ -139,42 +139,42 @@ CategorizeHPAReliability <- function(char_vec) {
   return(results_fac)
 }
 
-
-ProcessSurfaceEntrezs <- function(mappings_df, UniProt_IDs) {
-  entrez_IDs <- unique(mappings_df[["To"]])
-  results_list <- lapply(entrez_IDs, function(x) {
-    are_this_ID <- mappings_df[["To"]] == x
-    if (!(any(are_this_ID))) {
-      results_vec <- c("Num_IDs" = 0L, "Num_present" = 0L, "Num_absent" = 0L)
-    } else {
-      these_IDs <- mappings_df[["From"]][are_this_ID]
-      are_present <- these_IDs %in% UniProt_IDs
-      results_list <- list(
-        "Entrez_ID"   = x,
-        "Num_IDs"     = sum(are_this_ID),
-        "Num_present" = sum(are_present),
-        "Num_absent"  = sum(!(are_present)),
-        "Present_IDs" = paste0(these_IDs[are_present], collapse = ", "),
-        "Absent_IDs"  = paste0(these_IDs[!(are_present)], collapse = ", ")
-      )
-    }
-  })
-  results_df <- do.call(rbind.data.frame,
-                        c(results_list, list(stringsAsFactors = FALSE,
-                                             make.row.names = FALSE
-                                             )
-                          )
-                        )
-  return(results_df)
-}
-
-
-
-GetSurfaceEntrezs <- function(mappings_df, UniProt_IDs) {
-  entrezs_df <- ProcessSurfaceEntrezs(mappings_df, UniProt_IDs)
-  entrezs_vec <- entrezs_df[["Entrez_ID"]][entrezs_df[["Num_present"]] >= 1]
-  return(entrezs_vec)
-}
+#
+# ProcessSurfaceEntrezs <- function(mappings_df, UniProt_IDs) {
+#   entrez_IDs <- unique(mappings_df[["To"]])
+#   results_list <- lapply(entrez_IDs, function(x) {
+#     are_this_ID <- mappings_df[["To"]] == x
+#     if (!(any(are_this_ID))) {
+#       results_vec <- c("Num_IDs" = 0L, "Num_present" = 0L, "Num_absent" = 0L)
+#     } else {
+#       these_IDs <- mappings_df[["From"]][are_this_ID]
+#       are_present <- these_IDs %in% UniProt_IDs
+#       results_list <- list(
+#         "Entrez_ID"   = x,
+#         "Num_IDs"     = sum(are_this_ID),
+#         "Num_present" = sum(are_present),
+#         "Num_absent"  = sum(!(are_present)),
+#         "Present_IDs" = paste0(these_IDs[are_present], collapse = ", "),
+#         "Absent_IDs"  = paste0(these_IDs[!(are_present)], collapse = ", ")
+#       )
+#     }
+#   })
+#   results_df <- do.call(rbind.data.frame,
+#                         c(results_list, list(stringsAsFactors = FALSE,
+#                                              make.row.names = FALSE
+#                                              )
+#                           )
+#                         )
+#   return(results_df)
+# }
+#
+#
+#
+# GetSurfaceEntrezs <- function(mappings_df, UniProt_IDs) {
+#   entrezs_df <- ProcessSurfaceEntrezs(mappings_df, UniProt_IDs)
+#   entrezs_vec <- entrezs_df[["Entrez_ID"]][entrezs_df[["Num_present"]] >= 1]
+#   return(entrezs_vec)
+# }
 
 
 
@@ -191,11 +191,40 @@ MapUniProtToEntrezs <- function(mappings_df, UniProt_IDs) {
 
 
 
+
+
+
+
 # Explore the mass spectrometry-based surfaceome --------------------------
 
 table(mass_spec_B_df[["CSPA category"]], useNA = "ifany")
 
 stopifnot(all(mass_spec_B_df[["Organisme"]] == "Human"))
+
+
+
+
+
+
+# Explore the predicted human surfaceome ----------------------------------
+
+stopifnot(all(is.na(silico_SURFY_df[["Comment"]])))
+
+table(silico_SURFY_df[["Surfaceome Label"]], useNA = "ifany")
+table(silico_SURFY_df[["Surfaceome Label Source"]], useNA = "ifany")
+table(silico_SURFY_df[["signalpeptide"]], useNA = "ifany")
+table(silico_SURFY_df[["CSPA category"]], useNA = "ifany")
+table(silico_SURFY_df[["MachineLearning FPR class (1=1%, 2=5%, 3=15%)"]], useNA = "ifany")
+
+boxplot(silico_SURFY_df[["MachineLearning score"]] ~ silico_SURFY_df[["Surfaceome Label"]])
+
+table(silico_surfaceome_df[["Surfaceome Label Source"]])
+
+table(silico_groups_df[["Almen category"]])
+table(silico_groups_df[["Almen subclass"]])
+
+hist(silico_HeLa_df[["group probability"]])
+
 
 
 
@@ -256,26 +285,12 @@ mass_spec_AB_df[!(are_identical_CD), ]
 
 
 
-# Explore the predicted human surfaceome ----------------------------------
 
-stopifnot(all(is.na(silico_SURFY_df[["Comment"]])))
+# Define Entrez IDs for the in silico surfaceome --------------------------
 
-table(silico_SURFY_df[["Surfaceome Label"]], useNA = "ifany")
-table(silico_SURFY_df[["Surfaceome Label Source"]], useNA = "ifany")
-table(silico_SURFY_df[["signalpeptide"]], useNA = "ifany")
-table(silico_SURFY_df[["CSPA category"]], useNA = "ifany")
-table(silico_SURFY_df[["MachineLearning FPR class (1=1%, 2=5%, 3=15%)"]], useNA = "ifany")
-
-boxplot(silico_SURFY_df[["MachineLearning score"]] ~ silico_SURFY_df[["Surfaceome Label"]])
-
-table(silico_surfaceome_df[["Surfaceome Label Source"]])
-
-table(silico_groups_df[["Almen category"]])
-table(silico_groups_df[["Almen subclass"]])
-
-hist(silico_HeLa_df[["group probability"]])
-
-
+silico_HeLa_df[["Mapped_Entrez_IDs"]] <- MapUniProtToEntrezs(HeLa_entrezs_df, silico_HeLa_df[["UniProt ID"]])
+silico_surfaceome_df[["Mapped_Entrez_IDs"]] <- MapUniProtToEntrezs(SURFY_acc_entrezs_df, silico_surfaceome_df[["UniProt accession"]])
+silico_surfaceome_df[["Mapped_UniProt_name_to_Entrez_IDs"]] <- MapUniProtToEntrezs(SURFY_name_entrezs_df, silico_surfaceome_df[["UniProt name"]])
 
 
 
@@ -290,9 +305,10 @@ table(mass_spec_B_df[["ENTREZ geneID"]] == 0)
 stopifnot(!(anyNA(mass_spec_B_df[["ENTREZ geneID"]])))
 table(table(mass_spec_B_df[["ENTREZ geneID"]]))
 
+table(!(is.na(mass_spec_AB_df[["Mapped_Entrez_IDs"]])))
 were_found <- mass_spec_B_df[["ID_link"]] %in% mass_spec_entrezs_df[["From"]]
 table(were_found)
-mass_spec_AB_df[!(were_found), ]
+identical(were_found, !(is.na(mass_spec_AB_df[["Mapped_Entrez_IDs"]])))
 
 
 
@@ -311,10 +327,19 @@ table(name_found)
 table(accession_found)
 head(silico_surfaceome_df[!(accession_found), ])
 
-table(HeLa_found)
+identical(name_found, !(is.na(silico_surfaceome_df[["Mapped_UniProt_name_to_Entrez_IDs"]])))
+identical(accession_found, !(is.na(silico_surfaceome_df[["Mapped_Entrez_IDs"]])))
+
+table(name_found, !(is.na(silico_surfaceome_df[["Mapped_Entrez_IDs"]])))
+table(accession_found, !(is.na(silico_surfaceome_df[["Mapped_UniProt_name_to_Entrez_IDs"]])))
+
+
+
 HeLa_found <- silico_HeLa_df[["UniProt ID"]] %in% HeLa_entrezs_df[["From"]]
+table(HeLa_found)
 silico_HeLa_df[!(HeLa_found), ]
 
+identical(HeLa_found, !(is.na(silico_HeLa_df[["Mapped_Entrez_IDs"]])))
 
 
 
