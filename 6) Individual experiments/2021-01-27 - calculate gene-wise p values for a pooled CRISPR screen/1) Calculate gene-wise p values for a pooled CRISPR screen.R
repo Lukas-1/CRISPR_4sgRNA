@@ -48,6 +48,7 @@ df_list_2 <- lapply(file_names_2, function(x) {
            stringsAsFactors = FALSE
            )
 })
+names(df_list_2) <- sub(".csv", "", file_names_2, fixed = TRUE)
 
 
 
@@ -592,7 +593,7 @@ for (make_PDF in c(FALSE, TRUE)) {
                        num_repetitions = num_simulations
                        )
 
-  PlotPValueHistograms(by_symbol_list_2,
+  PlotPValueHistograms(by_symbol_list_1,
                        num_guides = 3,
                        main_title = "Top 3 sgRNAs per gene symbol",
                        passage_y_position = 0.92,
@@ -686,7 +687,7 @@ for (i in seq_along(df_list_1)) {
 for (i in seq_along(df_list_2)) {
   WriteTable(by_transcript_list_2[[i]][["summary_df"]],
              file = file.path(file_output_directory,
-                              "Sample selection 1",
+                              "Sample selection 2",
                               "Ordered by top 2 sgRNAs",
                               "By transcript",
                               paste0(names(df_list_2)[[i]], "_top2_by_transcript.tsv")
@@ -702,7 +703,7 @@ for (i in seq_along(df_list_2)) {
 # Save data ---------------------------------------------------------------
 
 save(list = c("by_transcript_list_1", "by_symbol_list_1",
-              "by_transcript_list_2", "by_symbol_list_2"
+              "by_transcript_list_2"
               ),
      file = file.path(RData_directory, "1) Calculate gene-wise p values for a pooled CRISPR screen.RData")
      )
@@ -713,9 +714,6 @@ save(list = c("by_transcript_list_1", "by_symbol_list_1",
 
 
 
-#
-#
-#
 # # Try stuff ---------------------------------------------------------------
 #
 #
