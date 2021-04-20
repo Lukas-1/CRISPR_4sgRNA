@@ -17,22 +17,25 @@ ReplaceNNNLines <- function(lines_vec, sequences_vec) {
 
   ### Extract the positions of the 4 guides
 
-  matches_list <- gregexpr("n+[n ]*", lines_vec)
-  are_matches <- matches_list != -1
+  all_matches <- gregexpr("n+[n ]*", lines_vec)
 
+  match_positions <- lapply(all_matches, function(x) as.integer(x))
+  match_lengths <- lapply(all_matches, function(x) attributes(x)[["match.length"]])
+
+  have_matches <- !(vapply(match_positions, function(x) identical(x, -1L), logical(1)))
 
   ### Group locations that span two lines
 
-  match_numbers <- rep(NA_integer_, sum(are_matches))
+  match_numbers <- rep(NA_integer_, sum(have_matches))
   current_number <- 0L
   for (i in seq_along(match_numbers)) {
     if (i == 1) {
       previous_reaches_line_end <- FALSE
     } else {
-      previous_reaches_line_end <- grepl("n+[n ]*$", lines_vec[are_matches][[i - 1]])
+      previous_reaches_line_end <- grepl("n+[n ]*$", lines_vec[have_matches][[i - 1]])
     }
     if (previous_reaches_line_end) {
-      starts_from_line_start <- grepl("^[n 0-9]*n", lines_vec[are_matches][[i]])
+      starts_from_line_start <- grepl("^[n 0-9]*n", lines_vec[have_matches][[i]])
       if (!(starts_from_line_start)) {
         current_number <- current_number + 1L
       }
@@ -46,54 +49,64 @@ ReplaceNNNLines <- function(lines_vec, sequences_vec) {
 
   stopifnot(all(match_numbers %in% 1:6))
 
-  only_matches_list_list <- split(matches_list[are_matches], match_numbers)
-  indices_list <- split(seq_len(sum(are_matches)), match_numbers)
+  indices_list <- split(seq_len(sum(have_matches)), match_numbers)
+  new_lines_vec <- rep(NA_character_, sum(have_matches))
 
-  new_lines_vec <- rep(NA_character_, sum(are_matches))
-
+  matches_per_line <- vapply(indices_list,
+                             function(x) max(lengths(match_positions[have_matches][x])),
+                             integer(1)
+                             )
+  sequences_list <- split(sequences_vec, rep(seq_along(indices_list), matches_per_line))
 
   ### Replace the 4 guide sequences
 
-  for (i in seq_along(only_matches_list_list)) {
+  for (i in seq_along(indices_list)) {
     sum_replaced <- 0L
     for (j in indices_list[[i]]) {
-      match_index <- which(are_matches)[[j]]
-      nnn_start <- matches_list[[match_index]][[1]]
-      nnn_length <- attributes(matches_list[[match_index]])[["match.length"]]
-      nnn_end <- nnn_start + nnn_length - 1L
-      nnn_string <- substr(lines_vec[[match_index]], nnn_start, nnn_end)
-      nnn_chars <- strsplit(nnn_string, "", fixed = TRUE)[[1]]
-      replacement_chars <- rep(NA_character_, nnn_length)
-      for (char_index in seq_len(nnn_length)) {
-        if (nnn_chars[[char_index]] == " ") {
-          replacement_chars[[char_index]] <- " "
+      match_index <- which(have_matches)[[j]]
+      current_line <- lines_vec[[match_index]]
+      num_per_line <- length(match_positions[[match_index]])
+      for (k in seq_len(num_per_line)) {
+        nnn_start <- match_positions[[match_index]][[k]]
+        nnn_length <- match_lengths[[match_index]][[k]]
+        nnn_end <- nnn_start + nnn_length - 1L
+        nnn_string <- substr(current_line, nnn_start, nnn_end)
+        nnn_chars <- strsplit(nnn_string, "", fixed = TRUE)[[1]]
+        replacement_chars <- rep(NA_character_, nnn_length)
+        for (char_index in seq_len(nnn_length)) {
+          if (nnn_chars[[char_index]] == " ") {
+            replacement_chars[[char_index]] <- " "
+          } else {
+            sum_replaced <- sum_replaced + 1L
+            replacement_chars[[char_index]] <- substr(sequences_list[[i]][[k]],
+                                                      sum_replaced,
+                                                      sum_replaced
+                                                      )
+          }
+        }
+        replacement_string <- paste0(replacement_chars, collapse = "")
+        if (nnn_start != 1) {
+          string_before <- substr(current_line, 1, nnn_start - 1L)
         } else {
-          sum_replaced <- sum_replaced + 1L
-          assign("delete_sequences_vec", sequences_vec, envir = globalenv())
-          replacement_chars[[char_index]] <- substr(sequences_vec[[i]],
-                                                    sum_replaced,
-                                                    sum_replaced
-                                                    )
+          string_before <- ""
+        }
+        line_length <- nchar(current_line)
+        if (nnn_end != line_length) {
+          string_after <- substr(current_line, nnn_end + 1L, line_length)
+        } else {
+          string_after <- ""
+        }
+        current_line <- paste0(string_before, replacement_string, string_after)
+        if ((num_per_line == 2) && (sum_replaced == nchar(sequences_list[[i]][[k]]))) {
+          sum_replaced <- 0
         }
       }
-      replacement_string <- paste0(replacement_chars, collapse = "")
-      if (nnn_start != 1) {
-        string_before <- substr(lines_vec[[match_index]], 1, nnn_start - 1L)
-      } else {
-        string_before <- ""
-      }
-      line_length <- nchar(lines_vec[[match_index]])
-      if (nnn_end != line_length) {
-        string_after <- substr(lines_vec[[match_index]], nnn_end + 1L, line_length)
-      } else {
-        string_after <- ""
-      }
-      new_lines_vec[[j]] <- paste0(string_before, replacement_string, string_after)
+      new_lines_vec[[j]] <- current_line
     }
   }
 
   results_vec <- lines_vec
-  results_vec[are_matches] <- new_lines_vec
+  results_vec[have_matches] <- new_lines_vec
   return(results_vec)
 }
 
