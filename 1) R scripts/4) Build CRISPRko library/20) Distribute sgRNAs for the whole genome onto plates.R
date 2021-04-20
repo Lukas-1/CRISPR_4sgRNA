@@ -144,18 +144,18 @@ are_PD <- (merged_CRISPRko_df[["Combined_ID"]] %in% PD_all_entrezs) #|
           #(merged_replaced_CRISPRi_df[["Is_control"]] %in% "Yes")
 PD_CRISPRko_df <- merged_CRISPRko_df[are_PD, ]
 
-PD_4sg_df <- AllocateAllGuidesToPlates(PD_CRISPRko_df,
-                                       list("PD" = PD_all_entrezs),
-                                       num_control_wells = 0,
-                                       reorder_df = FALSE
-                                       )
-PD_4sg_df <- AssignPlateStrings(PD_4sg_df, use_prefix = "PD_")
-PD_4sg_df[["Plate_string"]] <- sub("_1_", "_", PD_4sg_df[["Plate_string"]], fixed = TRUE)
+PD_4sg_by_gene_df <- AllocateAllGuidesToPlates(PD_CRISPRko_df,
+                                               list("PD" = PD_all_entrezs),
+                                               num_control_wells = 0,
+                                               reorder_df = FALSE
+                                               )
+PD_4sg_by_gene_df <- AssignPlateStrings(PD_4sg_by_gene_df, use_prefix = "PD_")
+PD_4sg_by_gene_df[["Plate_string"]] <- sub("_1_", "_", PD_4sg_by_gene_df[["Plate_string"]], fixed = TRUE)
 
-PD_4sg_reordered_df <- ReorderPlates(PD_4sg_df)
+PD_4sg_by_well_df <- ReorderPlates(PD_4sg_by_gene_df)
 
-PD_4sg_df[["Sublibrary_4sg"]] <- NULL
-PD_4sg_reordered_df[["Sublibrary_4sg"]] <- NULL
+PD_4sg_by_gene_df[["Sublibrary_4sg"]] <- NULL
+PD_4sg_by_well_df[["Sublibrary_4sg"]] <- NULL
 
 
 
@@ -211,11 +211,11 @@ for (i in 1:4) {
 
 # Export the PD plate layout ----------------------------------------------
 
-ExportPlates(PD_4sg_df, "PD_ordered_by_gene", sub_folder = "PD plate layout")
-ExportPlates(PD_4sg_reordered_df, "PD_ordered_by_well", sub_folder = "PD plate layout")
+ExportPlates(PD_4sg_by_gene_df, "PD_ordered_by_gene", sub_folder = "PD plate layout")
+ExportPlates(PD_4sg_by_well_df, "PD_ordered_by_well", sub_folder = "PD plate layout")
 
 for (i in 1:4) {
-  use_df <- PD_4sg_reordered_df[PD_4sg_reordered_df[["Rank"]] %in% i, ]
+  use_df <- PD_4sg_by_well_df[PD_4sg_by_well_df[["Rank"]] %in% i, ]
   ExportPlates(use_df, paste0("PD_sg", i), sub_folder = "PD plate layout")
 }
 
@@ -232,7 +232,7 @@ save(list = c("full_4sg_by_gene_df", "full_4sg_by_well_df",
      file = file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData")
      )
 
-save(list = c("PD_4sg_df", "PD_4sg_reordered_df"),
+save(list = c("PD_4sg_by_gene_df", "PD_4sg_by_well_df"),
      file = file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates - PD genes.RData")
      )
 
