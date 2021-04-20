@@ -43,7 +43,7 @@ SplitCharVec <- function(char_vec, use_mode = "integer") {
 
 
 
-TidyReportDf <- function(report_df) {
+TidyReportDf <- function(report_df, combo_lookup_map) {
 
   clips_mat <- SplitCharVec(report_df[["ClipsCombined"]])
   colnames(clips_mat) <- paste0("Clip_", c("start", "end"))
@@ -54,9 +54,11 @@ TidyReportDf <- function(report_df) {
   combo_IDs_vec <- paste0(report_df[["IdxLowestNamed"]], "--",
                           report_df[["IdxHighestNamed"]]
                           )
+
+  zmw_splits <- strsplit(report_df[["ZMW"]], "/", fixed = TRUE)
   results_df <- data.frame(
-    "ZMW"                    = as.integer(substr(report_df[["ZMW"]], 22, nchar(report_df[["ZMW"]]))),
-    "Well_number"            = barcodes_to_wells_map[combo_IDs_vec],
+    "ZMW"                    = as.integer(sapply(zmw_splits, "[[", 2)),
+    "Combo_number"           = combo_lookup_map[combo_IDs_vec],
     "Barcode_combined_score" = report_df[["ScoreCombined"]],
     "Barcode_score_lead"     = report_df[["ScoreLead"]],
     "Passed_filters"         = as.logical(report_df[["PassedFilters"]]),
@@ -64,7 +66,8 @@ TidyReportDf <- function(report_df) {
     clips_mat,
     stringsAsFactors = FALSE
   )
-  orientation_vec <- ifelse(is.na(results_df[["Well_number"]]),
+
+  orientation_vec <- ifelse(is.na(results_df[["Combo_number"]]),
                             NA,
                             barcodes_mat[, 1] > barcodes_mat[, 2]
                             )
@@ -74,9 +77,11 @@ TidyReportDf <- function(report_df) {
 
 
 
+
 IntegrateReportDf <- function(sam_df, report_df, ccs5_report_df = NULL) {
 
-  tidied_report_df <- TidyReportDf(report_df)
+  tidied_report_df <- TidyReportDf(report_df, barcodes_to_wells_map)
+  names(tidied_report_df)[names(tidied_report_df) == "Combo_number"] <- "Well_number"
 
   ZMW_matches <- match(sam_df[["ZMW"]], tidied_report_df[["ZMW"]])
 
@@ -121,10 +126,31 @@ IntegrateReportDf <- function(sam_df, report_df, ccs5_report_df = NULL) {
     "Barcode_1_sequence", "Barcode_2_sequence", "Barcode_1_quality", "Barcode_2_quality",
     "Sequence", "Quality"
   )
+  assign("delete_all_columns", all_columns, envir = globalenv())
+  assign("delete_results_df", results_df, envir = globalenv())
   results_df <- results_df[, all_columns]
   return(results_df)
 }
 
+
+
+# tabs_splits <- strsplit(sam_vec, "\t", fixed = TRUE)
+# expanded_tab_splits <- lapply(tabs_splits, function(x) c(x, rep("", 19 - length(x))))
+# expanded_mat <- do.call(rbind, expanded_tab_splits)
+# expanded_mat[1:10, ]
+#
+# table(lengths(tab_search_list))
+#
+# have_15 <- lengths(tab_search_list) == 15
+# have_17 <- lengths(tab_search_list) == 17
+# have_18 <- lengths(tab_search_list) == 18
+#
+# example_indices <- c(
+#   which(have_15)[1:10],
+#   which(have_17)[1:10],
+#   which(have_18)[1:10]
+# )
+# View(expanded_mat[example_indices, ])
 
 
 
@@ -134,8 +160,9 @@ ProcessSAM <- function(SAM_file_path) {
   sam_vec <- as.character(readLines(SAM_file_path))
   tab_search_list <- gregexpr("\t", sam_vec, fixed = TRUE)
 
-  num_tabs <- max(lengths(tab_search_list))
-  are_header <- lengths(tab_search_list) < num_tabs
+  tabs_table <- table(lengths(tab_search_list))
+  common_lengths <- as.integer(names(tabs_table)[tabs_table > 1000])
+  are_header <- !(lengths(tab_search_list) %in% common_lengths)
   last_header <- max(which(are_header))
   stopifnot(all(are_header[seq_len(last_header)]))
   message(paste0("The first ", last_header, " lines seemed to belong to the ",
@@ -153,43 +180,47 @@ ProcessSAM <- function(SAM_file_path) {
   quality_vec <- vapply(seq_along(sam_vec), function(x) {
     substr(sam_vec[[x]], tab_search_list[[x]][[10]] + 1, tab_search_list[[x]][[10]] + sequence_lengths[[x]])
   }, "")
+  stopifnot(identical(sequence_lengths, nchar(quality_vec)))
   last_part_vec <- vapply(seq_along(sam_vec), function(x) {
     substr(sam_vec[[x]], tab_search_list[[x]][[10]] + sequence_lengths[[x]] + 2, nchar(sam_vec[[x]]))
   }, "")
 
+  ## Process the tags following the sequence and read quality fields
   last_part_list <- strsplit(last_part_vec, "\t", fixed = TRUE)
-  last_part_vec_list <- lapply(seq_len(unique(lengths(last_part_list))), function(x) {
-    sapply(last_part_list, "[[", x)
-  })
+  colon_splits <- lapply(last_part_list, function(x) strsplit(x, ":", fixed = TRUE))
+  prefixes_list_list <- lapply(colon_splits, function(x) lapply(x, function(y) y[1:2]))
 
-  last_part_vec_list_list <- lapply(last_part_vec_list, function(x) {
-    split_list <- strsplit(x, ":", fixed = TRUE)
-    var_name <- unique(sapply(split_list, "[[", 1))
-    results_vec <- sapply(split_list, function(x) x[[length(x)]])
-    var_type <- unique(sapply(split_list, "[[", 2))
-    if (var_type == "i") {
-      results_vec <- as.integer(results_vec)
-    } else if (var_type == "f") {
-      results_vec <- as.numeric(results_vec)
+  stopifnot(unique(unlist(lapply(colon_splits, lengths))) == 3)
+  prefixes_vec_list <- lapply(prefixes_list_list, function(x) vapply(x, function(y) paste0(y[[1]], "_", y[[2]]), ""))
+  data_vec_list <- lapply(colon_splits, function(x) vapply(x, function(y) y[[3]], ""))
+
+  unique_prefixes <- unique(unlist(prefixes_list_list, recursive = FALSE, use.names = FALSE))
+  var_names <- sapply(unique_prefixes, "[[", 1)
+  var_types <- sapply(unique_prefixes, "[[", 2)
+  pasted_prefixes <- paste0(var_names, "_", var_types)
+
+  ordered_data_vec_list <- lapply(seq_along(colon_splits), function(x) {
+    matches_vec <- match(pasted_prefixes, prefixes_vec_list[[x]])
+    data_vec_list[[x]][matches_vec]
+  })
+  last_part_mat <- do.call(rbind, ordered_data_vec_list)
+  last_part_df <- data.frame(last_part_mat, stringsAsFactors = FALSE)
+  names(last_part_df) <- var_names
+  for (i in seq_along(var_types)) {
+    if (var_types[[i]] == "i") {
+      last_part_df[[i]] <- as.integer(last_part_df[[i]])
+    } else if (var_types[[i]] == "f") {
+      last_part_df[[i]] <- as.numeric(last_part_df[[i]])
     }
-    results_list <- list(
-      "name" = var_name,
-      "vector" = results_vec
-    )
-    return(results_list)
-  })
+  }
 
-  last_part_df <- do.call(data.frame,
-                          c(lapply(last_part_vec_list_list, function(x) x[["vector"]]),
-                            list(stringsAsFactors = FALSE)
-                            )
-                          )
-  names(last_part_df) <- vapply(last_part_vec_list_list, function(x) x[["name"]], "")
-
+  ## Process the signal-to-noise ratio for the 4 bases
   last_part_df[["sn"]] <- sub("^f,", "", last_part_df[["sn"]])
   sn_mat <- SplitCharVec(last_part_df[["sn"]], "numeric")
   colnames(sn_mat) <- paste0("sn_", c("a", "c", "g", "t"))
 
+
+  ## For demultiplexed data, process the barcode information
   if ("bx" %in% names(last_part_df)) {
     last_part_df[["bx"]] <- sub("^i,", "", last_part_df[["bx"]])
     last_part_df[["bc"]] <- sub("^S,", "", last_part_df[["bc"]])
@@ -204,6 +235,8 @@ ProcessSAM <- function(SAM_file_path) {
     last_part_df <- data.frame(last_part_df, barcode_mat, stringsAsFactors = FALSE)
   }
 
+
+  ## Final steps
   omit_columns <- c("sn", "bc", "bx")
   check_uniqueness_columns <- c("RG", "cx")
   for (column_name in check_uniqueness_columns) {
@@ -229,5 +262,6 @@ ProcessSAM <- function(SAM_file_path) {
   )
   return(results_df)
 }
+
 
 
