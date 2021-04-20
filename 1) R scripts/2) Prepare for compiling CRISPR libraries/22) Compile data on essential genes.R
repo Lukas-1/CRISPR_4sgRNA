@@ -36,7 +36,6 @@ load(file.path(general_RData_directory, "12) Divide the remaining genes into sub
 
 # Define functions --------------------------------------------------------
 
-
 ProcessAchillesGenesDf <- function(genes_df) {
   # genes_df is a single column in the format A1BG (1) {1 being the Entrez ID}
 
@@ -46,7 +45,6 @@ ProcessAchillesGenesDf <- function(genes_df) {
   stopifnot(all(substr(entrezs_vec, nchar(entrezs_vec), nchar(entrezs_vec)) == ")"))
 
   stripped_entrezs <- as.integer(substr(entrezs_vec, 2, nchar(entrezs_vec) - 1))
-  are_present <- stripped_entrezs %in% names(entrez_to_symbol_list)
   stripped_entrezs <- as.integer(stripped_entrezs)
   original_symbols <- sapply(gene_splits, "[[", 1)
   results_df <- data.frame(
@@ -54,17 +52,26 @@ ProcessAchillesGenesDf <- function(genes_df) {
     "Original_symbol" = original_symbols,
     stringsAsFactors = FALSE
   )
-  if (!(all(are_present))) {
-    message(paste0("The following Entrez IDs were not found in ",
-                   "org.Hs.egSYMBOL: ",
-                   paste0(stripped_entrezs[!(are_present)], collapse = ", ")
-                   ))
-    print(results_df[!(are_present), ])
-    message("")
-  }
+  CheckEntrezs(stripped_entrezs, results_df)
   return(results_df)
 }
 
+
+
+CheckEntrezs <- function(entrezs_vec, results_df = NULL) {
+  are_present <- as.character(entrezs_vec) %in% names(entrez_to_symbol_list)
+  if (!(all(are_present))) {
+    message(paste0("The following Entrez IDs were not found in ",
+                   "org.Hs.egSYMBOL: ",
+                   paste0(entrezs_vec[!(are_present)], collapse = ", ")
+                   ))
+    if (!(is.null(results_df))) {
+      print(results_df[!(are_present), ])
+    }
+    message("")
+  }
+  return(invisible(NULL))
+}
 
 
 ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
@@ -73,7 +80,6 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
   cell_line_matches <- match(data_df[, "DepMap_ID"],
                              cell_lines_df[["DepMap_ID"]]
                              )
-
   colnames(data_mat) <- cell_lines_df[["stripped_cell_line_name"]][cell_line_matches]
   genes_df <- data.frame("gene" = row.names(data_mat),
                          stringsAsFactors = FALSE
@@ -82,7 +88,7 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
 
   results_df <- data.frame(
     genes_df,
-    "Mean" = rowMeans(data_mat),
+    "Mean" = rowMeans(data_mat, na.rm = TRUE),
     data_mat,
     stringsAsFactors = FALSE,
     row.names = NULL
@@ -91,6 +97,61 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
 }
 
 
+
+ProcessDEMETERDataDf <- function(data_df) {
+  stopifnot(all(c("depmap_samples_df", "DEMETER2_samples_df") %in% ls(envir = globalenv())))
+
+  new_order <- order(as.integer(sub("ACH-", "", data_df[[1]])))
+  data_df <- data_df[new_order, ]
+  row.names(data_df) <- NULL
+
+  data_mat <- t(as.matrix(data_df[, 2:ncol(data_df)]))
+  cell_line_matches <- match(data_df[[1]], depmap_samples_df[["DepMap_ID"]])
+
+  DEMETER_matches <- match(data_df[[1]], DEMETER2_samples_df[[1]])
+  DEMETER_names <- DEMETER2_samples_df[["Marcotte_name"]][DEMETER_matches]
+  have_no_match <- is.na(cell_line_matches)
+  replaced_names <- DEMETER_names[have_no_match]
+  stopifnot(!(anyNA(replaced_names)))
+  replaced_names <- toupper(replaced_names)
+  stopifnot(!(any(replaced_names %in% depmap_samples_df[["stripped_cell_line_name"]])))
+
+  colnames(data_mat) <- ifelse(have_no_match,
+                               replaced_names,
+                               depmap_samples_df[["stripped_cell_line_name"]][cell_line_matches]
+                               )
+
+  gene_splits <- strsplit(rownames(data_mat), " ", fixed = TRUE)
+  gene_symbols <- sapply(gene_splits, "[[", 1)
+  entrez_IDs <- sapply(gene_splits, "[[", 2)
+  entrez_IDs <- substr(entrez_IDs, 2, nchar(entrez_IDs) - 1)
+  symbol_splits <- strsplit(gene_symbols, "&", fixed = TRUE)
+  entrez_splits <- strsplit(entrez_IDs, "&", fixed = TRUE)
+  stopifnot(identical(lengths(symbol_splits), lengths(entrez_splits)))
+  stopifnot(!(any(unlist(entrez_IDs[lengths(entrez_IDs) == 1]) %in% unlist(entrez_IDs[lengths(entrez_IDs) > 1]))))
+
+  symbols_vec <- unlist(symbol_splits, use.names = FALSE)
+  entrezs_vec <- as.integer(unlist(entrez_splits, use.names = FALSE))
+
+  CheckEntrezs(entrezs_vec)
+  expanded_indices <- rep(seq_along(entrez_IDs), lengths(entrez_splits))
+
+  expanded_df <- data.frame(
+    "Entrez_ID" = entrezs_vec,
+    "Gene_symbol" = symbols_vec,
+    "Num_targeted_genes" = lengths(entrez_splits)[expanded_indices],
+    "Mean" = rowMeans(data_mat[expanded_indices, ], na.rm = TRUE),
+    data_mat[expanded_indices, ],
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+
+
+  expanded_df <- expanded_df[order(expanded_df[["Entrez_ID"]]), ]
+  row.names(expanded_df) <- NULL
+
+  return(expanded_df)
+}
 
 
 
@@ -116,6 +177,10 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
   Achilles_depend_mat <- as.matrix(achilles_depend_df[, 4:ncol(achilles_depend_df)], na.rm = TRUE)
   Achilles_depend_mat <- Achilles_depend_mat[Achilles_matches, ]
 
+  DEMETER_matches <-  match(entrezs_vec, DEMETER2_combined_depend_df[["Entrez_ID"]])
+  DEMETER_depend_mat <- as.matrix(DEMETER2_combined_depend_df[, 4:ncol(DEMETER2_combined_depend_df)], na.rm = TRUE)
+  DEMETER_depend_mat <- DEMETER_depend_mat[DEMETER_matches, ]
+
   genes_list <- list(
     "Entrez_ID"                 = entrezs_vec,
     "Gene_symbol"               = symbols_vec,
@@ -127,6 +192,15 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
     "Achilles_num_cell_lines"   = ifelse(is.na(Achilles_matches),
                                          NA,
                                          rowSums(!(is.na(Achilles_depend_mat)))
+                                         ),
+    "DEMETER2_mean_probability" = DEMETER2_combined_depend_df[["Mean"]][DEMETER_matches],
+    "DEMETER2_num_essential"    = ifelse(is.na(DEMETER_matches),
+                                         NA,
+                                         rowSums(DEMETER_depend_mat > 0.5, na.rm = TRUE)
+                                         ),
+    "DEMETER2_num_cell_lines"   = ifelse(is.na(DEMETER_matches),
+                                         NA,
+                                         rowSums(!(is.na(DEMETER_depend_mat)))
                                          )
   )
 
@@ -145,11 +219,6 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 
   return(genes_df)
 }
-
-
-
-
-
 
 
 
@@ -200,12 +269,14 @@ hart_df <- data.frame(read_excel(file.path(essential_genes_directory,
 
 
 
+
+
 # Read in lists of essential genes from DepMap / Project Achilles ---------
 ## Download link: https://depmap.org/portal/download/all/
 
-ReadDepMapFile <- function(file_name) {
+ReadDepMapFile <- function(file_name, sub_folder = "2021_Q1") {
   read.csv(file.path(essential_genes_directory,
-                     "DepMap", "2021_Q1",
+                     "DepMap", sub_folder,
                      paste0(file_name, ".csv")
                      ),
            stringsAsFactors = FALSE, check.names = FALSE
@@ -224,6 +295,9 @@ CRISPR_original_depend_df    <- ReadDepMapFile("CRISPR_gene_dependency_21Q1")
 
 depmap_samples_df            <- ReadDepMapFile("sample_info_21Q1")
 
+DEMETER2_combined_original_depend_df <- ReadDepMapFile("gene_dependency", sub_folder = "DEMETER 2 Combined RNAi")
+DEMETER2_combined_original_effects_df <- ReadDepMapFile("gene_effect", sub_folder = "DEMETER 2 Combined RNAi")
+DEMETER2_samples_df <- ReadDepMapFile("sample_info", sub_folder = "DEMETER 2 Combined RNAi")
 
 
 
@@ -299,7 +373,6 @@ expanded_hart_df[["Entrez_ID"]] <- as.integer(unlist(hart_symbols_list, use.name
 
 
 
-
 # Intersect the Hart and Blomen datasets (for comparison...) --------------
 
 blomen_are_selected <- (blomen_df[, "KBM7_selected"] == "YES") &
@@ -322,8 +395,8 @@ blomen_hart_2_intersect <- blomen_hart_2_intersect[!(is.na(blomen_hart_2_interse
 ### Split Entrez IDs and gene symbols for lists of common genes ###
 
 depmap_hart_blomen_df <- ProcessAchillesGenesDf(depmap_hart_blomen_df)
-achilles_common_df <- ProcessAchillesGenesDf(achilles_common_df)
-CRISPR_common_df <- ProcessAchillesGenesDf(CRISPR_common_df)
+achilles_common_df    <- ProcessAchillesGenesDf(achilles_common_df)
+CRISPR_common_df      <- ProcessAchillesGenesDf(CRISPR_common_df)
 
 
 ### Achilles gene effects ###
@@ -349,18 +422,13 @@ stopifnot(identical(CRISPR_effects_df[, "Entrez_ID"], CRISPR_depend_df[, "Entrez
 
 
 
+# Process the combined RNAi dataset ---------------------------------------
 
+DEMETER2_combined_depend_df  <- ProcessDEMETERDataDf(DEMETER2_combined_original_depend_df)
+DEMETER2_combined_effects_df <- ProcessDEMETERDataDf(DEMETER2_combined_original_effects_df)
 
-### Check for correspondence between the overlap of Hart and Blomen provided
-### by DepMap, and my own overlap of the same datasets
-
-all_intersect_genes <- union(blomen_hart_2_intersect, depmap_hart_blomen_df[["Entrez_ID"]])
-in_mine <- all_intersect_genes %in% blomen_hart_2_intersect
-in_depmap <- all_intersect_genes %in% depmap_hart_blomen_df[["Entrez_ID"]]
-
-table(in_mine, in_depmap)
-table(all_intersect_genes[!(in_depmap)] %in% achilles_depend_df[["Entrez_ID"]])
-
+stopifnot(identical(names(DEMETER2_combined_depend_df), names(DEMETER2_combined_effects_df)))
+stopifnot(identical(DEMETER2_combined_depend_df[, "Entrez_ID"], DEMETER2_combined_effects_df[, "Entrez_ID"]))
 
 
 
@@ -450,6 +518,33 @@ write.table(essential_export_df,
             file = file.path(file_output_directory, "Essential_genes.tsv"),
             sep = "\t", na = "N/A", quote = FALSE, row.names = FALSE
             )
+
+
+
+
+
+
+# Categorize into three groups by essentiality ----------------------------
+
+essential_fraction <- essential_df[["Achilles_num_essential"]] /
+                      essential_df[["Achilles_num_cell_lines"]]
+essential_vec <- ifelse(essential_fraction < 0.1,
+                        "Non-essential",
+                        ifelse(essential_fraction > 0.9,
+                               "Essential",
+                               "Intermediate"
+                               )
+                        )
+essential_fac <- factor(essential_vec,
+                        levels = c("Essential", "Intermediate", "Non-essential"),
+                        ordered = TRUE
+                        )
+
+table(essential_fac, essential_df[["Achilles_common"]])
+
+essential_df[["Three_categories"]] <- essential_fac
+
+
 
 
 
