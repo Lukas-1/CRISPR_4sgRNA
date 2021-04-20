@@ -92,7 +92,6 @@ ProcessBarcodesDf <- function(barcodes_df, wells_vec = seq_len(384)) {
                               "Ends_with_column_barcode"
                               )
   for (i in wells_vec) {
-
     are_this_well <- barcodes_df[["Well_number"]] %in% i
     row_bc <- row_bc_vec[[i]]
     column_bc <- column_bc_vec[[i]]
