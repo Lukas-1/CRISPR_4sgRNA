@@ -225,9 +225,6 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 
 
   TwoByTwoTable <- function(essential_genes, all_genes, dataset_label = NULL) {
-    assign("delete_essential_genes", essential_genes, envir = globalenv())
-    assign("delete_all_genes", all_genes, envir = globalenv())
-    assign("delete_dataset_label", dataset_label, envir = globalenv())
     stopifnot(all(essential_genes %in% all_genes))
     are_candidates <- all_genes %in% entrezs_vec
     are_essential <- all_genes %in% essential_genes
