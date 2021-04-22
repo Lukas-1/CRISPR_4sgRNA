@@ -18,7 +18,7 @@ RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory  <- file.path(RData_directory, "2) CRISPRa")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
-file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Analysis", "Alexa")
+file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Analysis", "Alexa", "Phosgenes")
 gene_lists_directory     <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists")
 
 
@@ -63,6 +63,7 @@ CRISPRo_plates <- CRISPRo_by_gene_df[["Plate_number"]][CRISPRo_matches]
 
 table(CRISPRa_plates)
 table(CRISPRo_plates)
+
 
 
 
@@ -114,18 +115,5 @@ write.table(phosgenes_CRISPRa_df,
             file = file.path(file_output_directory, "Genes_and_libraries_4sg.tsv"),
             quote = FALSE, row.names = FALSE, sep = "\t"
             )
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
