@@ -54,21 +54,28 @@ stopifnot(identical(fwd_fgcz_barcodes[are_fgcz],
                     ))
 
 combined_barcodes <- ifelse(are_fgcz,
-                            fwd_fgcz_barcodes,
+                            rev_fgcz_barcodes,
                             as.character(barcodes_pb)[barcodes_ods_df[["barcode"]]]
                             )
 combined_barcodes <- substr(combined_barcodes, 1, 16) # Omit the final 'T'
 
 sample_matches <- match(barcodes_ods_df[["Sample"]], samples_df[["Tube Id"]])
 
+
 plates_df <- data.frame(
   "Plate_name"       = samples_df[["Name"]][sample_matches],
   "Plate_ID"         = samples_df[[" Id"]][sample_matches],
   "Plate_number"     = ods_tube_numbers,
+  "Plate_rank"       = NA,
   "Barcode_ID"       = barcodes_ods_df[["barcode"]],
   "Barcode_sequence" = combined_barcodes,
   stringsAsFactors   = FALSE
 )
+
+plate_rank <- order(order(match(sub("-beads", "", plates_df[["Plate_name"]]),
+                                 plates_df[["Plate_name"]]
+                                 )))
+plates_df[["Plate_rank"]] <- plate_rank
 
 
 
@@ -78,7 +85,7 @@ plates_df <- data.frame(
 barcode_fasta_titles <- paste0(">", plates_df[["Barcode_ID"]])
 
 barcodes_fastas <- lapply(seq_len(nrow(plates_df)), function(x) {
-  c(barcode_fasta_titles[[x]], plates_df[["Barcode_sequence"]][[x]])
+  c(barcode_fasta_titles[[x]], paste0(plates_df[["Barcode_sequence"]][[x]], "T"))
 })
 
 
