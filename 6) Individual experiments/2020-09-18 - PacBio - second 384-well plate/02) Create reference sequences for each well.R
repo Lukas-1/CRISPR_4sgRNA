@@ -22,11 +22,6 @@ plate2_directory            <- file.path(CRISPR_root_directory, "6) Individual e
 p1_R_objects_directory      <- file.path(plate1_directory, "3) R objects")
 p2_R_objects_directory      <- file.path(plate2_directory, "2) R objects")
 
-plate1_metadata_directory   <- file.path(plate1_directory, "2) Input", "Metadata")
-tracRNAs_file               <- file.path(plate1_metadata_directory, "tracRNAs_4sg.txt")
-promoters_file              <- file.path(plate1_metadata_directory, "promoters_4sg.txt")
-full_plasmid_file           <- file.path(plate1_metadata_directory, "reference with 4sg and barcode example.fa")
-
 annotated_plasmid_directory <- file.path(plate1_directory, "2) Input", "Annotated plasmids")
 
 file_output_directory       <- file.path(plate2_directory, "3) Output")
@@ -38,23 +33,9 @@ reference_output_directory  <- file.path(file_output_directory, "Reference seque
 # Load data ---------------------------------------------------------------
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
+load(file.path(p1_R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData"))
 load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
 
-
-
-
-
-# Read in data ------------------------------------------------------------
-
-tracRNAs_vec <- read.table(tracRNAs_file, header = FALSE,
-                           stringsAsFactors = FALSE
-                           )[[1]]
-promoters_vec <- read.table(promoters_file, header = FALSE,
-                            stringsAsFactors = FALSE
-                            )[[1]]
-plasmid_lines_vec <- read.table(full_plasmid_file, header = FALSE, skip = 1,
-                                stringsAsFactors = FALSE
-                                )[[1]]
 
 
 
@@ -83,7 +64,7 @@ PlasmidForRow <- function(row_index) {
 plasmid_files <- list.files(annotated_plasmid_directory)
 
 plasmid_list <- sapply(plasmid_files, function(x) {
-  ReadInPlasmids(file.path(annotated_plasmid_directory, x))
+  ReadInPlasmid_gbk(file.path(annotated_plasmid_directory, x))
 }, simplify = FALSE)
 
 
@@ -92,33 +73,11 @@ plasmid_list <- sapply(plasmid_files, function(x) {
 
 # Define the reference sequences ------------------------------------------
 
-rev_tracRNAs_vec <- as.character(reverseComplement(DNAStringSet(tracRNAs_vec)))
-
-guides_ref_list <- lapply(1:4, function(x) {
-  sg_column <- paste0("Sequence_sg", x)
-  paste0(sg_sequences_df[[sg_column]], rev_tracRNAs_vec[[x]], "TTTTT")
-})
-
-guides_with_promoters_list <- lapply(1:4, function(x) {
-  paste0(toupper(promoters_vec[[x]]), guides_ref_list[[x]])
-})
-
-plasmid_string <- toupper(paste0(plasmid_lines_vec, collapse = ""))
-plasmid_string <- substr(plasmid_string, 11, nchar(plasmid_string) - 10)
-plasmids_vec <- vapply(seq_len(nrow(sg_sequences_df)), function(x) {
-  sg_N <- paste0(rep("N", 20), collapse = "")
-  sg_sequences <- vapply(1:4, function(y) {
-    sg_sequences_df[[paste0("Sequence_sg", y)]][[x]]
-  }, "")
-  result_string <- sub(sg_N, sg_sequences[[1]], plasmid_string, fixed = TRUE)
-  result_string <- sub(sg_N, sg_sequences[[2]], result_string, fixed = TRUE)
-  result_string <- sub(sg_N, sg_sequences[[3]], result_string, fixed = TRUE)
-  result_string <- sub(sg_N, sg_sequences[[4]], result_string, fixed = TRUE)
-  return(result_string)
-}, "")
-
-
-
+sg_sequences_df <- AddReferenceSequences(sg_sequences_df,
+                                         tracRNAs_vec,
+                                         promoters_vec,
+                                         plasmid_string
+                                         )
 
 
 
@@ -128,7 +87,8 @@ plasmid_lines_list <- lapply(seq_len(nrow(sg_sequences_df)), function(x) {
   use_plasmid <- PlasmidForRow(x)
   use_lines <- plasmid_list[[use_plasmid]][["sequence"]]
   sg_seqs <- as.character(sg_sequences_df[x, paste0("Sequence_sg", 1:4)])
-  replace_seqs <- c(column_bc_vec[[x]], sg_seqs, row_bc_vec[[x]])
+  well_number <- sg_sequences_df[["Well_number"]][[x]]
+  replace_seqs <- c(column_bc_vec[[well_number]], sg_seqs, row_bc_vec[[well_number]])
   ReplaceNNNLines(use_lines, replace_seqs)
 })
 
@@ -138,7 +98,11 @@ plasmid_lines_list <- lapply(seq_len(nrow(sg_sequences_df)), function(x) {
 # Export the plain plasmid sequences --------------------------------------
 
 well_names <- paste0("Well", formatC(sg_sequences_df[["Well_number"]], flag = "0", width = 3))
-barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+barcoded_plasmids <- paste0(column_bc_vec[sg_sequences_df[["Well_number"]]],
+                            sg_sequences_df[["Whole_plasmid"]],
+                            row_bc_vec[sg_sequences_df[["Well_number"]]]
+                            )
+sg_sequences_df[["Barcoded_plasmid"]] <- toupper(barcoded_plasmids)
 fasta_titles <- paste0(">", well_names)
 fasta_list <- lapply(seq_along(fasta_titles),
                      function(x) c(fasta_titles[[x]], barcoded_plasmids[[x]], "")
@@ -176,10 +140,8 @@ for (i in seq_len(nrow(sg_sequences_df))) {
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("guides_ref_list", "guides_with_promoters_list",
-              "plasmid_string", "plasmids_vec", "barcoded_plasmids"
-              ),
-     file = file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData")
+save(list = "sg_sequences_df",
+     file = file.path(p2_R_objects_directory, "02) Create reference sequences for each well - sg_sequences_df.RData")
      )
 
 save(list = "plasmid_list",

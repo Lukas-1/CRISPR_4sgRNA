@@ -112,8 +112,7 @@ ReplaceNNNLines <- function(lines_vec, sequences_vec) {
 
 
 
-ReadInPlasmids <- function(file_path) {
-
+ReadInPlasmid_gbk <- function(file_path) {
   lines_vec <- scan(file = file_path, what = character(), sep = "\n")
 
   first_index <- which(lines_vec == "ORIGIN") + 1L
@@ -131,6 +130,57 @@ ReadInPlasmids <- function(file_path) {
   )
   return(result_list)
 }
+
+
+
+
+
+
+AddReferenceSequences <- function(sg_df, tracRNAs, promoters, plasmid) {
+
+  stopifnot(length(tracRNAs) == 4)
+  stopifnot(length(promoters) == 4)
+  sg_columns <- paste0("Sequence_sg", 1:4)
+  stopifnot(all(sg_columns %in% names(sg_df)))
+
+  rev_tracRNAs <- as.character(reverseComplement(DNAStringSet(tracRNAs)))
+
+  sg_tracRNA_mat <- do.call(cbind, lapply(1:4, function(x) {
+    paste0(sg_df[[sg_columns[[x]]]], rev_tracRNAs[[x]], "TTTTT")
+  }))
+  colnames(sg_tracRNA_mat) <- paste0("sg_cr_", 1:4)
+
+  sg_with_promoters_mat <- do.call(cbind, lapply(1:4, function(x) {
+    paste0(toupper(promoters[[x]]), sg_tracRNA_mat[, x])
+  }))
+  colnames(sg_with_promoters_mat) <- paste0("sg_cr_pr_", 1:4)
+
+
+  plasmids_vec <- vapply(seq_len(nrow(sg_df)), function(x) {
+    sg_N <- paste0(rep("N", 20), collapse = "")
+    sg_sequences <- vapply(1:4, function(y) {
+      sg_df[[paste0("Sequence_sg", y)]][[x]]
+    }, "")
+    result_string <- sub(sg_N, sg_sequences[[1]], plasmid, fixed = TRUE)
+    result_string <- sub(sg_N, sg_sequences[[2]], result_string, fixed = TRUE)
+    result_string <- sub(sg_N, sg_sequences[[3]], result_string, fixed = TRUE)
+    result_string <- sub(sg_N, sg_sequences[[4]], result_string, fixed = TRUE)
+    return(result_string)
+  }, "")
+
+  sg_sequences_df <- data.frame(
+    sg_df,
+    sg_tracRNA_mat,
+    sg_with_promoters_mat,
+    "Whole_plasmid" = plasmids_vec,
+    stringsAsFactors = FALSE
+  )
+  return(sg_sequences_df)
+}
+
+
+
+
 
 
 

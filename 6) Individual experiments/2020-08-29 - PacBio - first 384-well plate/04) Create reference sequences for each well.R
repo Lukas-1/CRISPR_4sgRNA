@@ -50,9 +50,18 @@ tracRNAs_vec <- read.table(tracRNAs_file, header = FALSE,
 promoters_vec <- read.table(promoters_file, header = FALSE,
                             stringsAsFactors = FALSE
                             )[[1]]
-plasmid_lines_vec <- read.table(full_plasmid_file, header = FALSE, skip = 1,
+plain_plasmid_vec <- read.table(full_plasmid_file, header = FALSE, skip = 1,
                                 stringsAsFactors = FALSE
                                 )[[1]]
+
+
+
+
+# Process the plain plasmid sequence --------------------------------------
+
+plasmid_string <- toupper(paste0(plain_plasmid_vec, collapse = ""))
+plasmid_string <- substr(plasmid_string, 11, nchar(plasmid_string) - 10) # Remove barcode
+
 
 
 
@@ -76,41 +85,8 @@ PlasmidForWell <- function(well_number) {
 plasmid_files <- list.files(annotated_plasmid_directory)
 
 plasmid_list <- sapply(plasmid_files, function(x) {
-  ReadInPlasmids(file.path(annotated_plasmid_directory, x))
+  ReadInPlasmid_gbk(file.path(annotated_plasmid_directory, x))
 }, simplify = FALSE)
-
-
-
-
-
-
-# Define the reference sequences ------------------------------------------
-
-rev_tracRNAs_vec <- as.character(reverseComplement(DNAStringSet(tracRNAs_vec)))
-
-guides_ref_list <- lapply(1:4, function(x) {
-  sg_column <- paste0("Sequence_sg", x)
-  paste0(sg_sequences_df[[sg_column]], rev_tracRNAs_vec[[x]], "TTTTT")
-})
-
-guides_with_promoters_list <- lapply(1:4, function(x) {
-  paste0(toupper(promoters_vec[[x]]), guides_ref_list[[x]])
-})
-
-plasmid_string <- toupper(paste0(plasmid_lines_vec, collapse = ""))
-plasmid_string <- substr(plasmid_string, 11, nchar(plasmid_string) - 10)
-plasmids_vec <- vapply(seq_len(384), function(x) {
-  sg_N <- paste0(rep("N", 20), collapse = "")
-  sg_sequences <- vapply(1:4, function(y) {
-    sg_sequences_df[[paste0("Sequence_sg", y)]][[x]]
-  }, "")
-  result_string <- sub(sg_N, sg_sequences[[1]], plasmid_string, fixed = TRUE)
-  result_string <- sub(sg_N, sg_sequences[[2]], result_string, fixed = TRUE)
-  result_string <- sub(sg_N, sg_sequences[[3]], result_string, fixed = TRUE)
-  result_string <- sub(sg_N, sg_sequences[[4]], result_string, fixed = TRUE)
-  return(result_string)
-}, "")
-
 
 
 
@@ -130,10 +106,22 @@ plasmid_lines_list <- lapply(seq_len(384), function(x) {
 
 
 
+# Define the reference sequences ------------------------------------------
+
+sg_sequences_df <- AddReferenceSequences(sg_sequences_df,
+                                         tracRNAs_vec,
+                                         promoters_vec,
+                                         plasmid_string
+                                         )
+
+
+
+
 # Export the plain plasmid sequences --------------------------------------
 
 well_names <- paste0("Well", formatC(seq_len(384), flag = "0", width = 3))
-barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+barcoded_plasmids <- paste0(column_bc_vec, sg_sequences_df[["Whole_plasmid"]], row_bc_vec)
+sg_sequences_df[["Barcoded_plasmid"]] <- toupper(barcoded_plasmids)
 fasta_titles <- paste0(">", well_names)
 fasta_list <- lapply(seq_len(384),
                      function(x) c(fasta_titles[[x]], barcoded_plasmids[[x]], "")
@@ -170,19 +158,17 @@ for (i in seq_len(384)) {
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("guides_ref_list", "guides_with_promoters_list",
-              "plasmid_string", "plasmids_vec", "barcoded_plasmids"
-              ),
-     file = file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData")
+save(list = c("plasmid_string", "tracRNAs_vec", "promoters_vec"),
+     file = file.path(R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData")
+     )
+
+save(list = "sg_sequences_df",
+     file = file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData")
      )
 
 save(list = "plasmid_list",
      file = file.path(R_objects_directory, "04) Create reference sequences for each well - annotated plasmid.RData")
      )
-
-
-
-
 
 
 
