@@ -112,6 +112,7 @@ sg_sequences_df[have_short_guides, ]
 
 
 
+
 # Export the sgRNA sequences data frame (including well number) -----------
 
 write.table(sg_sequences_df,
