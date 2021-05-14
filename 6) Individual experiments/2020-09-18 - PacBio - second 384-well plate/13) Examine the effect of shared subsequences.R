@@ -9,6 +9,7 @@ plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experim
 R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "01) Define titles and labels.R"))
+source(file.path(R_functions_directory, "09) Producing heatmaps.R")) # for VerticalAdjust
 source(file.path(R_functions_directory, "10) Examining the effect of shared subsequences.R"))
 
 
