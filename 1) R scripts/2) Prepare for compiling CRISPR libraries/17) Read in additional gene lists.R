@@ -71,12 +71,15 @@ table(are_missing)
 table(are_included)
 
 
+## Examine duplicated genes
+num_occurrences <- table(PD_entrezs_vec)[PD_entrezs_vec]
+are_duplicated <- (num_occurrences >= 2) %in% TRUE
+PD_mapped_df[are_duplicated, ]
+
+
 ## Define gene lists
 PD_all_entrezs <- PD_entrezs_vec[!(are_missing)]
 PD_4sg_entrezs <- PD_entrezs_vec[are_included]
-
-
-
 
 
 
