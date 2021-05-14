@@ -21,15 +21,15 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Analy
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "18) Read in additional gene lists.RData"))
+load(file.path(general_RData_directory, "17) Read in additional gene lists.RData"))
 
-load(file.path(CRISPRko_RData_directory, "19) Distribute sgRNAs for the whole genome onto plates - PD genes.RData"))
-PD_4sg_CRISPRko_df <- PD_4sg_reordered_df
-load(file.path(CRISPRa_RData_directory, "27) Distribute sgRNAs for the whole genome onto plates - PD genes.RData"))
-PD_4sg_CRISPRa_df <- PD_4sg_reordered_df
+load(file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates - PD genes.RData"))
+PD_4sg_CRISPRko_df <- PD_4sg_by_well_df
+load(file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates - PD genes.RData"))
+PD_4sg_CRISPRa_df <- PD_4sg_by_well_df
 
-rm(PD_4sg_reordered_df)
-rm(PD_4sg_df)
+rm(PD_4sg_by_well_df)
+rm(PD_4sg_by_gene_df)
 
 
 
