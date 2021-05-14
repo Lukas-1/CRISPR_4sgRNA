@@ -61,7 +61,7 @@ legacy_PD_4sg_entrezs <- setdiff(PD_4sg_entrezs, c("51142", "11315", "9842")) # 
 sg4_by_well_df <- AllocateAllGuides_v2(merged_replaced_CRISPRa_df,
                                        sublibraries_entrezs_list  = sublibraries_all_entrezs_list,
                                        previous_version_CRISPR_df = TF_v1_CRISPRa_df,
-                                       candidate_entrezs          = PD_4sg_entrezs
+                                       candidate_entrezs          = legacy_PD_4sg_entrezs
                                        )
 sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
 
