@@ -24,8 +24,7 @@ sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(sql2_R_objects_directory, "05) Read in PacBio data.RData"))
 
 
@@ -37,7 +36,7 @@ load(file.path(sql2_R_objects_directory, "05) Read in PacBio data.RData"))
 are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
                 (ccs_df[["Read_quality"]] > 0)
 
-stopifnot(all(library_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][are_eligible]))
+stopifnot(all(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][are_eligible]))
 
 # are_ccs3 <- are_eligible & (ccs_df[["Read_quality"]] > 0.99) & (ccs_df[["Num_full_passes"]] > 3)
 
@@ -46,7 +45,7 @@ stopifnot(all(library_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][are_eligi
 
 # Extract barcodes --------------------------------------------------------
 
-plate_numbers <- unique(library_df[["Plate_number"]])
+plate_numbers <- unique(sg_sequences_df[["Plate_number"]])
 chunk_size <- 3
 num_chunks <- ceiling(length(plate_numbers) / chunk_size)
 chunk_vec <- rep(seq_len(num_chunks), each = chunk_size)[seq_len(length(plate_numbers))]
@@ -54,38 +53,41 @@ chunk_list <- split(plate_numbers, chunk_vec)
 
 RData_prefix <- "06) Perform pairwise alignments with the reference sequence"
 
+aligned_list <- vector(mode = "list", length = num_chunks)
 previous_time <- Sys.time()
 
-for (i in seq_len(num_chunks)) {
+for (i in 4:num_chunks) {
 
   message("Processing chunk #", i, " of ", num_chunks, "...")
 
   are_these_plates <- ccs_df[["Plate_number"]] %in% chunk_list[[i]]
   are_selected <- are_eligible & are_these_plates
-  selected_IDs <- library_df[["Combined_ID"]][library_df[["Plate_number"]] %in% chunk_list[[i]]]
 
-  chunk_list[[i]] <- ExtractAlignedSequences(ccs_df[are_selected, ],
-                                             ID_column = "Combined_ID",
-                                             unique_IDs = selected_IDs,
-                                             parallel_mode = TRUE
-                                             )
+  sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% chunk_list[[i]]]
+
+  aligned_list[[i]] <- ExtractAlignedSequences(ccs_df[are_selected, ],
+                                               sg_sub_df,
+                                               ID_column = "Combined_ID",
+                                               parallel_mode = TRUE
+                                               )
   chunk_number <- formatC(i, width = 2, flag = "0")
   file_name <- paste0(RData_prefix, " - chunk ", chunk_number, ".RData")
-  object_name <- paste0("align_chunk", chunk_number, chunk_list[[i]])
-  assign(object_name, chunk_list[[i]])
+  object_name <- paste0("align_chunk", chunk_number)
+  assign(object_name, aligned_list[[i]])
   message("Saving data...")
   save(list = object_name,
-       file = file.path(R_objects_directory, file_name)
+       file = file.path(sql2_R_objects_directory, file_name)
        )
   rm(object_name)
   gc()
-  message(format(previous_time - Sys.time(), digits = 3), " have elapsed.")
+  message(format(Sys.time() - previous_time, digits = 3), " have elapsed.")
   message("")
   previous_time <- Sys.time()
 }
 
-alignments_df <- data.table::rbindlist(chunk_list)
+alignments_df <- data.table::rbindlist(aligned_list)
 data.table::setDF(alignments_df)
+
 
 
 
@@ -93,8 +95,12 @@ data.table::setDF(alignments_df)
 # Save data ---------------------------------------------------------------
 
 save(list = "alignments_df",
-     file = file.path(R_objects_directory, paste0(file_name, ".RData"))
+     file = file.path(sql2_R_objects_directory, paste0(RData_prefix, ".RData"))
      )
+
+
+
+
 
 
 
