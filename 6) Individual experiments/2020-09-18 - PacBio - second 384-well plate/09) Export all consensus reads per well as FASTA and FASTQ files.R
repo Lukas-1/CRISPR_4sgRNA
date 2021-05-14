@@ -32,9 +32,7 @@ fastq_output_directory <- file.path(file_output_directory, "Fastq")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
-load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 load(file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.RData"))
 
@@ -44,8 +42,8 @@ load(file.path(p2_R_objects_directory, "07) Process demultiplexed PacBio reads.R
 
 # Prepare for exporting sequences -----------------------------------------
 
-sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
-sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+sl7_ccs5_lima_zmws <- GetCCS5_ZMWs(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
+sl9_ccs5_lima_zmws <- GetCCS5_ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
 
 sl7_reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
 sl9_reads_df <- sl9_ccs3_df_list[["individual_reads_df"]]
@@ -119,7 +117,7 @@ for (filter_reads in c("Unfiltered", "Filtered barcodes", "Filtered reads", "Fil
                     append_to_file_name = "_ccs3",
                     use_zmws = use_sl7_ccs3_zmws,
                     split_into_chunks = split_reads,
-                    wells_vec = sg_sequences_df[["Well_number"]]
+                    unique_IDs = sg_sequences_df[["Well_number"]]
                     )
 
     message("Exporting reads for SmrtLink7_CCS5...")
@@ -129,7 +127,7 @@ for (filter_reads in c("Unfiltered", "Filtered barcodes", "Filtered reads", "Fil
                     append_to_file_name = "_ccs5",
                     use_zmws = use_sl7_ccs5_zmws,
                     split_into_chunks = split_reads,
-                    wells_vec = sg_sequences_df[["Well_number"]]
+                    unique_IDs = sg_sequences_df[["Well_number"]]
                     )
 
     message("Exporting reads for SmrtLink9_CCS3...")
@@ -139,7 +137,7 @@ for (filter_reads in c("Unfiltered", "Filtered barcodes", "Filtered reads", "Fil
                     append_to_file_name = "_ccs3",
                     use_zmws = use_sl9_ccs3_zmws,
                     split_into_chunks = split_reads,
-                    wells_vec = sg_sequences_df[["Well_number"]]
+                    unique_IDs = sg_sequences_df[["Well_number"]]
                     )
 
     message("Exporting reads for SmrtLink9_CCS5...")
@@ -149,7 +147,7 @@ for (filter_reads in c("Unfiltered", "Filtered barcodes", "Filtered reads", "Fil
                     append_to_file_name = "_ccs5",
                     use_zmws = use_sl9_ccs5_zmws,
                     split_into_chunks = split_reads,
-                    wells_vec = sg_sequences_df[["Well_number"]]
+                    unique_IDs = sg_sequences_df[["Well_number"]]
                     )
 
   }

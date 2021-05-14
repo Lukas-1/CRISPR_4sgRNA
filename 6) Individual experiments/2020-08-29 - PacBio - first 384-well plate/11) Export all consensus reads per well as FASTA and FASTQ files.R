@@ -30,8 +30,7 @@ fastq_output_directory <- file.path(file_output_directory, "Fastq")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well -  sg_sequences_df.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
@@ -41,8 +40,8 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 
 # Prepare for exporting sequences -----------------------------------------
 
-sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df)
-sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df)
+sl7_ccs5_lima_zmws <- GetCCS5_ZMWs(sl7_ccs_df)
+sl9_ccs5_lima_zmws <- GetCCS5_ZMWs(sl9_ccs_df)
 
 sl7_reads_df <- sl7_ccs3_df_list[["individual_reads_df"]]
 sl9_reads_df <- sl9_ccs3_df_list[["individual_reads_df"]]
