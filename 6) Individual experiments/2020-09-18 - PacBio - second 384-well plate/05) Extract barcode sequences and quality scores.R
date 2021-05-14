@@ -25,8 +25,7 @@ p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
 # Load data ---------------------------------------------------------------
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
-load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 load(file.path(p2_R_objects_directory, "04) Perform pairwise alignments with the reference sequence.RData"))
 

@@ -21,7 +21,7 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 
 
@@ -29,12 +29,8 @@ load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 
 # Extract barcodes --------------------------------------------------------
 
-sl7_alignments_df <- ExtractAlignedSequences(sl7_ccs_df, parallel_mode = TRUE)
-sl9_alignments_df <- ExtractAlignedSequences(sl9_ccs_df, parallel_mode = TRUE)
-
-names(sl7_alignments_df)[names(sl7_alignments_df) == "Source_ID"] <- "Well_number"
-names(sl9_alignments_df)[names(sl9_alignments_df) == "Source_ID"] <- "Well_number"
-
+sl7_alignments_df <- ExtractAlignedSequences(sl7_ccs_df, sg_sequences_df, parallel_mode = TRUE)
+sl9_alignments_df <- ExtractAlignedSequences(sl9_ccs_df, sg_sequences_df, parallel_mode = TRUE)
 
 
 
