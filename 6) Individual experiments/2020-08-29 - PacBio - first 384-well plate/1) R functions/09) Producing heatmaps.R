@@ -1239,32 +1239,36 @@ DrawAccuracyHeatmap <- function(summary_df,
 
   ## Draw the strip indicating genes with homologies >=8 bp
 
-  longest_subsequence_vec <- summary_df[["Longest_subsequence"]]
-  have_homology <- longest_subsequence_vec >= 8
+  if ("Longest_subsequence" %in% names("Longest_subsequence")) {
 
-  homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
+    longest_subsequence_vec <- summary_df[["Longest_subsequence"]]
+    have_homology <- longest_subsequence_vec >= 8
 
-  for (i in seq_len(num_wells)) {
-    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
-         xright  = (positions_vec[[i]] / max(positions_vec)),
-         ybottom = 0,
-         ytop    = 1,
-         col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
-         border  = NA
+    homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
+
+    for (i in seq_len(num_wells)) {
+      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+           xright  = (positions_vec[[i]] / max(positions_vec)),
+           ybottom = 0,
+           ytop    = 1,
+           col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
+           border  = NA
+           )
+    }
+
+    text(x      = 0.5,
+         y      = -0.65,
+         adj    = c(0.5, 0.5),
+         labels = bquote(bold(.(as.character(sum(have_homology))) * " / " *
+                              .(as.character(num_wells)) * " genes " *
+                                "had " >= "8bp homology"
+                              )),
+         font   = 2,
+         col    = "black",
+         xpd    = NA
          )
-  }
 
-  text(x      = 0.5,
-       y      = -0.65,
-       adj    = c(0.5, 0.5),
-       labels = bquote(bold(.(as.character(sum(have_homology))) * " / " *
-                            .(as.character(num_wells)) * " genes " *
-                              "had " >= "8bp homology"
-                            )),
-       font   = 2,
-       col    = "black",
-       xpd    = NA
-       )
+  }
 
   MakeEmptyPlot()
   return(invisible(NULL))
