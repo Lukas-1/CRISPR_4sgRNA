@@ -30,9 +30,7 @@ tables_output_directory <- file.path(file_output_directory, "Tables")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(p2_R_objects_directory, "01) Import and process sgRNA sequences.RData"))
-load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(p2_R_objects_directory, "02) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 load(file.path(p2_R_objects_directory, "05) Extract barcode sequences and quality scores.RData"))
 load(file.path(p2_R_objects_directory, "06) Categorize subsequences of reads aligned to the reference.RData"))
