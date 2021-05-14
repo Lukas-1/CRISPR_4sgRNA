@@ -42,6 +42,11 @@ full_HPA_df <- read.delim(file.path(HPA_directory, "proteinatlas_2021_03_09.tsv"
                           stringsAsFactors = FALSE, check.names = FALSE
                           )
 
+CD_df <- read.delim(file.path(surfaceome_directory, "HCDM_CD_list_2021-04-26.txt"),
+                    strip.white = TRUE, header = FALSE,
+                    stringsAsFactors = FALSE
+                    )
+
 ReadSurfaceomeExcel <- function(file_name, ...) {
   results_df <- data.frame(read_excel(file.path(surfaceome_directory, file_name),
                                       ...
@@ -234,6 +239,63 @@ AddConsensusEntrezs <- function(input_df) {
   return(input_df)
 }
 
+
+
+
+
+# Process the CD (Cluster of Differentiation) gene list -------------------
+
+names(CD_df) <- c("CD_NAME", "NCBI_NAME", "GENE_NAME", "NCBI_OTHER_NAME")
+
+CD_mapped_df <- MapToEntrezs(symbols_vec = CD_df[["NCBI_NAME"]])
+combined_CD_df <- data.frame(CD_df, CD_mapped_df)
+
+are_to_ignore <- (CD_df[["NCBI_NAME"]] == "carbohydrate") |
+                 grepl("^see ", CD_df[["NCBI_NAME"]])
+
+are_ambiguous <- !(CD_mapped_df[["Entrez_source"]] %in% c(1, 3))
+
+combined_CD_df[are_ambiguous & !(are_to_ignore), ]
+
+manual_mappings_vec <- c(
+  "CD20"   = "MS4A1",
+  "MCP"    = "CD46",
+  "CD97"   = "ADGRE5",
+  "KIR3DP1; KIR2DS6; KIRX" = "KIR3DP1",
+  "SN"     = "SIGLEC1",
+  "IL8RA"  = "CXCR1"
+)
+
+manual_entrezs_vec <- MapToEntrezs(symbols_vec = manual_mappings_vec)[["Entrez_ID"]]
+names(manual_entrezs_vec) <- names(manual_mappings_vec)
+
+manually_mapped_vec <- manual_mappings_vec[CD_df[["NCBI_NAME"]]]
+stopifnot(identical(sum(!(is.na(manually_mapped_vec))),
+                    length(manual_mappings_vec)
+                    ))
+
+CD_df[["Entrez_ID"]] <- ifelse(is.na(manually_mapped_vec),
+                               CD_mapped_df[["Entrez_ID"]],
+                               manually_mapped_vec
+                               )
+
+
+
+# Create a mapping from Entrez IDs to CD IDs ------------------------------
+
+num_occurrences <- table(CD_df[["Entrez_ID"]])[CD_df[["Entrez_ID"]]]
+CD_df[(num_occurrences > 1) %in% TRUE, ]
+
+are_included <- !(is.na(CD_df[["Entrez_ID"]])) &
+                (!(CD_df[["Entrez_ID"]] %in% "5788") |
+                  (CD_df[["CD_NAME"]] %in% "CD45"))
+CD_to_entrezs_list <- strsplit(CD_df[["Entrez_ID"]][are_included], ", ", fixed = TRUE)
+names(CD_to_entrezs_list) <- CD_df[["CD_NAME"]][are_included]
+
+entrez_to_CD_map <- rep(names(CD_to_entrezs_list),
+                        lengths(CD_to_entrezs_list)
+                        )
+names(entrez_to_CD_map) <- unlist(CD_to_entrezs_list, use.names = FALSE)
 
 
 
@@ -434,8 +496,9 @@ silico_surfaceome_entrezs <- SplitEntrezs(silico_surfaceome_df[["Consensus_Entre
 # Define the final list of surfaceome gene sets ---------------------------
 
 surfaceome_list <- list(
-  "CSC_surfaceome_2015"   = as.integer(MS_surfaceome_entrezs),
   "SURFY_surfaceome_2018" = silico_surfaceome_entrezs,
+  "CSC_surfaceome_2015"   = as.integer(MS_surfaceome_entrezs),
+  "CSC_HeLa_2018"         = silico_HeLa_entrezs,
   "CSC_HeLa_2015"         = MS_HeLa_list[["all_mapped"]],
   "CSC_HEK_2015"          = MS_HEK_list[["all_mapped"]],
   "CSC_LN229_2015"        = MS_LN229_list[["all_mapped"]]
@@ -461,8 +524,6 @@ surfaceome_df <- data.frame(
 
 
 
-
-
 # Tidy data from the Human Protein Atlas ----------------------------------
 
 HPA_df <- data.frame(
@@ -477,6 +538,9 @@ HPA_df <- data.frame(
   stringsAsFactors       = FALSE
 )
 
+HPA_df[["Antibody_RRIDs"]] <- gsub(": (?=$|,)", "", HPA_df[["Antibody_RRIDs"]], perl = TRUE)
+HPA_df[["Antibody_RRIDs"]] <- gsub(": ", "/", HPA_df[["Antibody_RRIDs"]], fixed = TRUE)
+
 HPA_mappings_df <- MapEnsemblIDs(HPA_df)
 names(HPA_df)[names(HPA_df) == "Gene_symbol"] <- "Original_symbol"
 
@@ -485,10 +549,11 @@ HPA_df[["Entrez_ID"]] <- HPA_mappings_df[["Consensus_entrez"]]
 
 
 
-
 # Save data ---------------------------------------------------------------
 
-save(list = c("HPA_df", "surfaceome_df"),
+save(list = c("HPA_df", "surfaceome_df",
+              "CD_df", "entrez_to_CD_map"
+              ),
      file = file.path(general_RData_directory, "23) Compile data on protein localization.RData")
      )
 
