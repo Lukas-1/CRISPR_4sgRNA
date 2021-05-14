@@ -758,7 +758,7 @@ AllocateAllGuides_v2 <- function(CRISPR_df,
   first_plate_df <- RenumberPlatesContinuously(first_plate_df)
   other_plates_df <- RenumberPlatesContinuously(other_plates_df, start_at_plate_number = 6)
 
-  reordered_other_plates_df <- PlaceCandidateGenesTogether(other_plates_df, PD_4sg_entrezs)
+  reordered_other_plates_df <- PlaceCandidateGenesTogether(other_plates_df, candidate_entrezs)
 
   all_plates_df <- rbind.data.frame(first_plate_df,
                                     reordered_other_plates_df,
