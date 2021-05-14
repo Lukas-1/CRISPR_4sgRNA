@@ -25,7 +25,6 @@ sql2_R_objects_directory    <- file.path(sql2_directory, "3) R objects")
 annotated_plasmid_directory <- file.path(sql2_directory, "2) Input", "Annotated plasmid")
 
 file_output_directory       <- file.path(sql2_directory, "5) Output")
-reference_output_directory  <- file.path(file_output_directory, "Reference sequences")
 
 
 
@@ -83,9 +82,8 @@ plasmid_lines_list <- lapply(library_seq, function(x) {
 
 
 
+# Create the full plasmid sequences ---------------------------------------
 
-
-# Export the plain plasmid sequences --------------------------------------
 
 barcoded_plasmids <- paste0(plate_barcodes,
                             "T",
@@ -97,26 +95,40 @@ barcoded_plasmids <- paste0(plate_barcodes,
                             )
 sg_sequences_df[["Barcoded_plasmid"]] <- barcoded_plasmids
 
+
+
+
+# Export the plain plasmid sequences --------------------------------------
+
+plate_number_strings <- paste0("Plate", formatC(plates_df[["Plate_number"]], width = 2, flag = "0"))
+
 fasta_titles <- paste0(">", sg_sequences_df[["Combined_ID"]])
 fasta_list <- lapply(library_seq,
                      function(x) c(fasta_titles[[x]], barcoded_plasmids[[x]], "")
                      )
 
-write.table(unlist(fasta_list),
-            file = file.path(file_output_directory, "reference_sequences.fa"),
-            quote = FALSE, row.names = FALSE, col.names = FALSE,
-            )
+plain_path <- file.path(file_output_directory, "Plasmid sequences (plain)")
 
+for (plate_number in plates_df[["Plate_number"]]) {
+  are_this_plate <- library_df[["Plate_number"]] == plate_number
+  file_name <- paste0(plate_number_strings[[plate_number]], "_reference_sequences.fa")
+  write.table(unlist(fasta_list[are_this_plate]),
+              file = file.path(plain_path, file_name),
+              quote = FALSE, row.names = FALSE, col.names = FALSE
+              )
+}
 
 
 
 
 # Export the annotated plasmids -------------------------------------------
 
-plate_folders <- paste0("Plate", formatC(plates_df[["Plate_number"]], width = 2, flag = "0"))
 for (plate_number in plates_df[["Plate_number"]]) {
   are_this_plate <- library_df[["Plate_number"]] == plate_number
-  folder_path <- file.path(reference_output_directory, plate_folders[[plate_number]])
+  folder_path <- file.path(file_output_directory,
+                           "Reference plasmid sequences (annotated)",
+                           plate_number_strings[[plate_number]]
+                           )
   dir.create(folder_path, showWarnings = FALSE)
   for (i in which(are_this_plate)) {
     file_name <- paste0(library_df[["Combined_ID"]][[i]], "_barcoded_cassette.gbk")
