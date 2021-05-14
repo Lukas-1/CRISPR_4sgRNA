@@ -449,7 +449,7 @@ DrawReorderedSandPlots <- function(summary_df,
   })
 
   for (i in 2:4) {
-    stopifnot(all(column_mat_list[[i - 1]][1, ] >= column_mat_list[[i]][1, ]))
+    stopifnot(all(column_mat_list[[i - 1]][1, ] >= column_mat_list[[i]][1, ], na.rm = TRUE))
   }
 
   MakeEmptyPlot()
