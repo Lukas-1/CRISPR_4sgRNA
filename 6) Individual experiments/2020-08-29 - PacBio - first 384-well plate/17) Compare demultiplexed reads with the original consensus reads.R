@@ -27,11 +27,9 @@ four_seq_output_directory <- file.path(file_output_directory, "4 sequences")
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs3.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - consensus reads - ccs5.RData"))
-load(file.path(R_objects_directory, "05) Read in PacBio data - demultiplexed - ccs5.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
+load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
@@ -280,7 +278,7 @@ ExamineAlignment <- function(alignment) {
 
 # Add barcodes to plasmid sequences ---------------------------------------
 
-barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
+barcoded_plasmids <- sg_sequences_df[["Barcoded_plasmid"]]
 barcoded_plasmids_NNN <- paste0(column_bc_vec, plasmid_string, row_bc_vec)
 
 
