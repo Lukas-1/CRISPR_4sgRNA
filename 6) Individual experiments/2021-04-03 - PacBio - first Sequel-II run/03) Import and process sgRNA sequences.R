@@ -67,7 +67,7 @@ TidySequencesDf <- function(CRISPR_df) {
   results_df[["Plate_string"]] <- sub("_sg[1-4]$", "", results_df[["Plate_string"]])
   results_df[["Plate_string"]] <- toupper(results_df[["Plate_string"]])
   results_df[["Plate_string"]] <- sub("+", "plus", results_df[["Plate_string"]], fixed = TRUE)
-  names(results_df) <- c("Plate_name", "Well", "Sg_number", "Sequence")
+  names(results_df) <- c("Plate_name", "Well_number", "Sg_number", "Sequence")
   return(results_df)
 }
 
@@ -102,7 +102,7 @@ are_present <- !(is.na(controls_mat))
 control_wells <- wells_mat[are_present]
 
 are_controls <- (CRISPRko_seq_df[["Plate_name"]] %in% "HO_38") &
-                (CRISPRko_seq_df[["Well"]] %in% control_wells)
+                (CRISPRko_seq_df[["Well_number"]] %in% control_wells)
 control_plate_df <- CRISPRko_seq_df[are_controls, ]
 control_plate_df[["Plate_name"]] <- "Intctrl"
 
@@ -118,6 +118,7 @@ combined_df <- rbind.data.frame(combined_df,
                                 beads_df,
                                 stringsAsFactors = FALSE
                                 )
+
 
 
 # Re-format the data frame ------------------------------------------------
@@ -139,10 +140,39 @@ library_df <- data.frame("Combined_ID" = NA,
 plate_matches <- match(library_df[["Plate_name"]], plates_df[["Plate_name"]])
 plate_numbers <- plates_df[["Plate_number"]][plate_matches]
 well_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"), "_",
-                     "Well", formatC(library_df[["Well"]], width = 3, flag = "0")
+                     "Well", formatC(library_df[["Well_number"]], width = 3, flag = "0")
                      )
 library_df[["Combined_ID"]] <- well_names
 library_df[["Plate_number"]] <- plate_numbers
+
+
+
+
+
+# Correct for the mix-up on plate 13 --------------------------------------
+
+are_plate_13 <- library_df[["Plate_number"]] == 13
+
+scheme_mat <- rbind(rep(c("A", "B"), times = 12), rep(c("C", "D"), times = 12))
+full_scheme_mat <- do.call(rbind, lapply(1:8, function(x) scheme_mat))
+
+scheme_vec <- unlist(lapply(1:16, function(x) full_scheme_mat[x, ]))
+
+original_13_mat <- as.matrix(library_df[are_plate_13, paste0("Sequence_sg", 1:4)])
+rownames(original_13_mat) <- NULL
+
+new_13_mat <- matrix(nrow = 384, ncol = 4)
+for (i in 1:4) {
+  new_13_mat[scheme_vec == "B", ] <- original_13_mat[scheme_vec == "D", ]
+  new_13_mat[scheme_vec == "D", ] <- original_13_mat[scheme_vec == "B", ]
+  new_13_mat[scheme_vec == "A", ] <- original_13_mat[scheme_vec == "A", ]
+  new_13_mat[scheme_vec == "C", ] <- original_13_mat[scheme_vec == "C", ]
+}
+
+for (i in 1:4) {
+  library_df[[paste0("Sequence_sg", i)]][are_plate_13] <- new_13_mat[, i]
+}
+
 
 
 
