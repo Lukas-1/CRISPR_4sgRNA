@@ -24,7 +24,7 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+# load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 
