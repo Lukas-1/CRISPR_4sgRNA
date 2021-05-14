@@ -30,9 +30,8 @@ subreads_zmws_directory   <- file.path(subreads_output_directory, "Individual ZM
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
-load(file.path(R_objects_directory, "17) Import raw subreads.RData"))
+load(file.path(R_objects_directory, "18) Import raw subreads.RData"))
 
 
 
@@ -42,7 +41,6 @@ load(file.path(R_objects_directory, "17) Import raw subreads.RData"))
 
 ExportReadsForZMW(57672593, sl7_ccs_df)
 ExportReadsForZMW(4522423, sl7_ccs_df)
-
 ExportReadsForZMW(32965024, sl7_ccs_df)
 
 
