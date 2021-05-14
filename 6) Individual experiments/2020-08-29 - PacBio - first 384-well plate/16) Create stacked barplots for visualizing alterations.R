@@ -73,26 +73,3 @@ DrawAllSubsampledPlots(DrawAlterationBarplot,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
