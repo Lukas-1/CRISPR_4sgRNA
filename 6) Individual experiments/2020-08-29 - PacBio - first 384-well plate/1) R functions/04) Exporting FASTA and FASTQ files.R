@@ -45,6 +45,50 @@ BuildChunksDf <- function(total_number, number_per_file = 20L) {
 
 
 
+
+
+NoteLongReads <- function(reads_object, are_too_long, export_dir, file_name, max_length) {
+  assign("delete_reads_object", reads_object, envir = globalenv())
+  assign("delete_are_too_long", are_too_long, envir = globalenv())
+  stopifnot(!(all(are_too_long)))
+  if (any(are_too_long)) {
+    long_IDs <- names(reads_object)[are_too_long]
+    write_message <- paste0("The following reads were too long (>",
+                            max_length, " bp) and could not",
+                            " be exported: ", paste0(long_IDs, collapse = ", ")
+                            )
+    message(write_message)
+    write.table(write_message,
+                file = file.path(export_dir, paste0(file_name, " - log.txt")),
+                quote = FALSE, row.names = FALSE, col.names = FALSE
+                )
+  }
+}
+
+
+ExportFASTA <- function(export_fasta, export_dir, file_name, max_length = 20000L) {
+  are_too_long <- lengths(export_fasta) > max_length
+  NoteLongReads(export_fasta, are_too_long, export_dir, file_name, max_length)
+  writeXStringSet(export_fasta[!(are_too_long)],
+                  filepath = file.path(export_dir, paste0(file_name, ".fasta"))
+                  )
+  return(invisible(NULL))
+}
+
+
+ExportFASTQ <- function(export_fastq, export_dir, file_name, max_length = 20000L) {
+  are_too_long <- lengths(export_fastq) > max_length
+  NoteLongReads(export_fastq, are_too_long, export_dir, file_name, max_length)
+  writeQualityScaledXStringSet(export_fastq[!(are_too_long)],
+                               filepath = file.path(export_dir, paste0(file_name, ".fastq"))
+                               )
+  return(invisible(NULL))
+}
+
+
+
+
+
 ExportSequences <- function(ccs_df,
                             fasta_output_dir,
                             fastq_output_dir,
@@ -53,11 +97,25 @@ ExportSequences <- function(ccs_df,
                             use_zmws            = NULL,
                             split_into_chunks   = FALSE,
                             chunk_size          = 50L,
-                            wells_vec           = seq_len(384)
+                            ID_column           = "Well_number",
+                            unique_IDs          = seq_len(384),
+                            export_fasta        = TRUE
                             ) {
 
-  wells_formatted <- formatC(seq_len(384), flag = "0", width = 3)
-  well_names <- paste0("well", wells_formatted)
+  if ("ID_column" == "Well_number") {
+    wells_formatted <- formatC(unique_IDs, flag = "0", width = 3)
+    well_names <- paste0("well", wells_formatted)
+  } else {
+    wells_formatted <- unique_IDs
+    well_names <- unique_IDs
+    has_plate_number <- "Plate_number" %in% names(ccs_df)
+    if (has_plate_number) {
+      matches_vec <- match(unique_IDs, ccs_df[["Combined_ID"]])
+      plate_numbers <- ccs_df[["Plate_number"]][matches_vec]
+      plate_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"))
+    }
+  }
+
   file_names <- paste0(well_names, append_to_file_name)
 
   lima_zmws <- ccs_df[["ZMW"]][ccs_df[["Passed_filters"]]]
@@ -66,53 +124,79 @@ ExportSequences <- function(ccs_df,
     lima_zmws <- use_zmws
   }
 
-  lima_well_numbers <- ccs_df[["Well_number"]][match(lima_zmws, ccs_df[["ZMW"]])]
+  lima_well_IDs <- ccs_df[[ID_column]][match(lima_zmws, ccs_df[["ZMW"]])]
 
-  for (i in wells_vec) {
-    are_this_well <- lima_well_numbers %in% i
-    this_well_zmws <- lima_zmws[are_this_well]
-    ccs_matches <- match(this_well_zmws, ccs_df[["ZMW"]])
-    stopifnot(!(anyNA(ccs_matches)))
-    if (prefer_ccs) {
-      export_seq <- ccs_df[["Sequence"]][ccs_matches]
-      export_qual <- ccs_df[["Quality"]][ccs_matches]
+  for (i in seq_along(unique_IDs)) {
+
+    are_this_well <- lima_well_IDs %in% unique_IDs[[i]]
+    any_reads <- any(are_this_well)
+
+    if (any_reads) {
+      this_well_zmws <- lima_zmws[are_this_well]
+      ccs_matches <- match(this_well_zmws, ccs_df[["ZMW"]])
+      stopifnot(!(anyNA(ccs_matches)))
+      if (prefer_ccs) {
+        export_seq <- ccs_df[["Sequence"]][ccs_matches]
+        export_qual <- ccs_df[["Quality"]][ccs_matches]
+      } else {
+        export_seq <- substr(ccs_df[["Sequence"]][ccs_matches],
+                             ccs_df[["Clip_start"]][ccs_matches],
+                             ccs_df[["Clip_end"]][ccs_matches]
+                             )
+        export_qual <- substr(ccs_df[["Quality"]][ccs_matches],
+                              ccs_df[["Clip_start"]][ccs_matches],
+                              ccs_df[["Clip_end"]][ccs_matches]
+                              )
+      }
+      names(export_seq) <- as.character(this_well_zmws)
+      export_seq <- DNAStringSet(export_seq)
+      export_fastq <- QualityScaledBStringSet(export_seq, PhredQuality(export_qual))
+      message(paste0("Exporting reads for well ", wells_formatted[[i]], "..."))
     } else {
-      export_seq <- substr(ccs_df[["Sequence"]][ccs_matches],
-                           ccs_df[["Clip_start"]][ccs_matches],
-                           ccs_df[["Clip_end"]][ccs_matches]
-                           )
-      export_qual <- substr(ccs_df[["Quality"]][ccs_matches],
-                            ccs_df[["Clip_start"]][ccs_matches],
-                            ccs_df[["Clip_end"]][ccs_matches]
-                            )
+      message(paste0("No reads were present for well ", wells_formatted[[i]], "!"))
     }
-    names(export_seq) <- as.character(this_well_zmws)
-    export_seq <- DNAStringSet(export_seq)
-    export_fastq <- QualityScaledBStringSet(export_seq, PhredQuality(export_qual))
+
+    if ("Plate_number" %in% names(ccs_df)) {
+      plate_folder <- plate_names[[i]]
+      fasta_dir <- file.path(fasta_output_dir, plate_folder)
+      fastq_dir <- file.path(fastq_output_dir, plate_folder)
+      if (export_fasta) {
+        dir.create(fasta_dir, showWarnings = FALSE)
+      }
+      dir.create(fastq_dir, showWarnings = FALSE)
+    } else {
+      fasta_dir <- fasta_output_dir
+      fastq_dir <- fastq_output_dir
+    }
 
     if (split_into_chunks) {
-      message(paste0("Exporting reads for well ", wells_formatted[[i]]), "...")
+      fasta_folder <- file.path(fasta_dir, well_names[[i]])
+      fastq_folder <- file.path(fastq_dir, well_names[[i]])
+      if (export_fasta) {
+        dir.create(fasta_folder, showWarnings = FALSE)
+      }
+      dir.create(fastq_folder, showWarnings = FALSE)
+      if (!(any_reads)) {
+        next
+      }
       num_reads <- length(this_well_zmws)
       chunks_df <- BuildChunksDf(num_reads, chunk_size)
-      fasta_folder <- file.path(fasta_output_dir, well_names[[i]])
-      fastq_folder <- file.path(fastq_output_dir, well_names[[i]])
-      dir.create(fasta_folder, showWarnings = FALSE)
-      dir.create(fastq_folder, showWarnings = FALSE)
-      for (file_number in chunks_df[["File_number"]]) {
+      for (file_number in unique(chunks_df[["File_number"]])) {
         are_this_file <- chunks_df[["File_number"]] == file_number
         file_name <- paste0(file_names[[i]], "_", unique(chunks_df[["File_name"]][are_this_file]))
-        writeXStringSet(export_seq[are_this_file],
-                        filepath = file.path(fasta_folder, paste0(file_name, ".fasta"))
-                        )
-        writeQualityScaledXStringSet(export_fastq[are_this_file],
-                                     filepath = file.path(fastq_folder, paste0(file_name, ".fastq"))
-                                     )
+        if (export_fasta) {
+          ExportFASTA(export_seq[are_this_file], fasta_folder, file_name)
+        }
+        ExportFASTQ(export_fastq[are_this_file], fastq_folder, file_name)
       }
     } else {
-      fasta_path <- file.path(fasta_output_dir, paste0(file_names[[i]], ".fasta"))
-      fastq_path <- file.path(fastq_output_dir, paste0(file_names[[i]], ".fastq"))
-      writeXStringSet(export_seq, filepath = fasta_path)
-      writeQualityScaledXStringSet(export_fastq, filepath = fastq_path)
+      if (!(any_reads)) {
+        next
+      }
+      if (export_fasta) {
+        ExportFASTA(export_seq, fasta_dir, file_names[[i]])
+      }
+      ExportFASTQ(export_fastq, fastq_dir, file_names[[i]])
     }
   }
   if (split_into_chunks) {

@@ -36,21 +36,21 @@ ProcessWithSubsampling <- function(ccs_df,
       subsampled_ccs_df <- ccs_df[sample_indices, ]
       row.names(subsampled_ccs_df) <- NULL
       analysis_list <- AnalyzeWells(subsampled_ccs_df,
+                                    sg_sequences_df,
                                     barcodes_df,
                                     extracted_df,
-                                    wells_vec = wells_vec,
                                     set_seed = FALSE
                                     )
-      ccs5_lima_zmws <- GetCCS5ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
-      ccs7_lima_zmws <- GetCCS7ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
-      ccs3_df_list <- SummarizeWells(analysis_list, wells_vec = wells_vec)
+      ccs5_lima_zmws <- GetCCS5_ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
+      ccs7_lima_zmws <- GetCCS7_ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
+      ccs3_df_list <- SummarizeWells(analysis_list, unique_IDs = wells_vec)
       ccs5_df_list <- SummarizeWells(analysis_list,
                                      use_zmws = ccs5_lima_zmws,
-                                     wells_vec = wells_vec
+                                     unique_IDs = wells_vec
                                      )
       ccs7_df_list <- SummarizeWells(analysis_list,
                                      use_zmws = ccs7_lima_zmws,
-                                     wells_vec = wells_vec
+                                     unique_IDs = wells_vec
                                      )
       df_list_list <- list(
         "ccs3" = ccs3_df_list,
@@ -153,7 +153,7 @@ ContainSequences <- function(query_seq, target_seq) {
   if (num_duplicated_fwd != 0) {
     message(paste0("The same sequence was found more than once for ",
                    num_duplicated_fwd, " read",
-                   if (num_duplicated_fwd == 1) "" else "",
+                   if (num_duplicated_fwd == 1) "" else "s",
                    " in the forward direction!"
                    ))
     sent_message <- TRUE
@@ -227,29 +227,28 @@ ContainSequences <- function(query_seq, target_seq) {
 
 
 
-StatsForWell <- function(well_number, ccs_df, wells_vec = seq_len(384)) {
+StatsForWell <- function(well_index, ccs_df, sg_df) {
 
-  assign("delete_well_number", well_number, envir = globalenv())
+  assign("delete_well_index", well_index, envir = globalenv())
   assign("delete_ccs_df", ccs_df, envir = globalenv())
-  assign("delete_wells_vec", wells_vec, envir = globalenv())
+  assign("delete_sg_df", sg_df, envir = globalenv())
 
-  well_index <- which(wells_vec == well_number)
+  well_number <- sg_df[well_index, "Well_number"]
 
   are_this_well <- (ccs_df[["Well_number"]] %in% well_number) & ccs_df[["Passed_filters"]]
   num_reads <- sum(are_this_well)
-
 
   well_sequences <- DNAStringSet(substr(ccs_df[["Sequence"]][are_this_well],
                                         ccs_df[["Clip_start"]][are_this_well],
                                         ccs_df[["Clip_end"]][are_this_well]
                                         ))
 
-  sg_sequences <- vapply(1:4, function(x) guides_ref_list[[x]][[well_index]], "")
-  sg_with_promoter_seq <- vapply(1:4, function(x) guides_with_promoters_list[[x]][[well_index]], "")
+  sg_sequences <- vapply(1:4, function(x) sg_df[well_index, paste0("sg_cr_", x)], "")
+  sg_with_promoter_seq <- vapply(1:4, function(x) sg_df[well_index, paste0("sg_cr_pr_", x)], "")
 
   contain_sg_cr_mat   <- ContainSequences(sg_sequences, well_sequences)
   contain_sg_prom_mat <- ContainSequences(sg_with_promoter_seq, well_sequences)
-  contain_plasmid_mat <- ContainSequences(plasmids_vec[[well_index]], well_sequences)
+  contain_plasmid_mat <- ContainSequences(sg_df[well_index, "Whole_plasmid"], well_sequences)
 
   colnames(contain_sg_cr_mat)[1:4] <- paste0("sg", 1:4, "_cr", 1:4)
   colnames(contain_sg_cr_mat)[colnames(contain_sg_cr_mat) == "at_least_4"] <- "all_4"
@@ -276,9 +275,13 @@ GetMode <- function(vec) {
 
 
 
-GetContaminationMat <- function(query_seq, ccs_df, wells_vec = seq_len(384)) {
+GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
 
-  stopifnot("guides_ref_list" %in% ls(envir = globalenv()))
+  assign("delete_query_seq_1", query_seq, envir = globalenv())
+  assign("delete_ccs_df", ccs_df, envir = globalenv())
+  assign("delete_sg_df", sg_df, envir = globalenv())
+
+  stopifnot(nrow(sg_df) == length(query_seq))
 
   are_usual_length <- nchar(query_seq) == GetMode(nchar(query_seq))
 
@@ -292,7 +295,7 @@ GetContaminationMat <- function(query_seq, ccs_df, wells_vec = seq_len(384)) {
                                           ))
   counts_mat <- vcountPDict(PDict_object, sequences_object)
 
-  row_list <- vector(mode = "list", length = length(wells_vec))
+  row_list <- vector(mode = "list", length = nrow(sg_df))
   row_list[are_usual_length] <- lapply(seq_len(nrow(counts_mat)),
                                        function(x) counts_mat[x, ]
                                        )
@@ -313,20 +316,94 @@ GetContaminationMat <- function(query_seq, ccs_df, wells_vec = seq_len(384)) {
 
   ## If the sequence of two wells is exactly the same,
   ## perhaps it shouldn't count as a contamination...
-  same_seq_list <- lapply(seq_along(wells_vec),
-                          function(x) which(query_seq %in% vapply(guides_ref_list, function(y) y[[x]], ""))
+  sg_cr <- sg_df[, paste0("sg_cr_", 1:4)]
+  same_seq_list <- lapply(seq_len(nrow(sg_df)),
+                          function(x) which(query_seq %in% vapply(sg_cr, function(y) y[[x]], ""))
                           )
-  are_this_well_list <- lapply(same_seq_list,
+  same_seq_wells_list <- lapply(same_seq_list, function(x) sg_df[["Well_number"]][x])
+  are_this_well_list <- lapply(same_seq_wells_list,
                                function(x) ccs_df[["Well_number"]][have_well] %in% x
                                )
 
   contamination_mat <- all_counts_mat
-  for (i in seq_along(wells_vec)) {
+  for (i in seq_len(nrow(sg_df))) {
     contamination_mat[i, are_this_well_list[[i]]] <- 0L
   }
   return(contamination_mat)
 }
 
+
+
+ContaminationsSummaryDf <- function(reads_df, wells_vec, close_well_range = 3L) {
+
+  assign("delete_reads_df", reads_df, envir = globalenv())
+  assign("delete_wells_vec", wells_vec, envir = globalenv())
+
+  wells_fac <- factor(reads_df[["Well_number"]], levels = wells_vec)
+
+  are_contaminated <- reads_df[, "Num_contaminating_guides"] >= 1
+  are_close_rand <- (reads_df[, "Random_distance"] <= close_well_range) %in% TRUE
+
+  num_other_genes_vec <- tapply(reads_df[, "Contaminating_well"],
+                                wells_fac,
+                                function(x) {
+                                  this_list <- strsplit(x[!(is.na(x))], ", ", fixed = TRUE)
+                                  this_vec <- unlist(this_list, use.names = FALSE)
+                                  length(unique(this_vec))
+                                })
+
+  num_contaminants <- tapply(are_contaminated, wells_fac, sum)
+  num_close_contaminants_rand <- tapply(are_contaminated & are_close_rand, wells_fac, sum)
+
+  plate_num_close_vec <- vapply(manhattan_dist_list,
+                                function(x) sum(x <= close_well_range),
+                                integer(1)
+                                ) - 1L
+
+  num_expected_close_wells <- plate_num_close_vec[wells_vec] * (num_contaminants / (length(wells_vec) - 1))
+
+  per_well_distances_vec <- tapply(reads_df[, "Mean_distance"],
+                                   wells_fac,
+                                   mean,
+                                   na.rm = TRUE
+                                   )
+
+  expected_distances_vec <- vapply(manhattan_dist_list,
+                                   function(x) mean(x[x != 0]),
+                                   numeric(1)
+                                   )
+
+  distances_list <- split(reads_df[, "Mean_distance"], wells_fac)
+
+  p_val_vec <- vapply(seq_along(distances_list),
+                      function(x) {
+                        dist_vec <- distances_list[[x]]
+                        if (all(is.na(dist_vec))) {
+                          return(NA_real_)
+                        } else {
+                          mean_expected <- expected_distances_vec[[x]]
+                          return(suppressWarnings(wilcox.test(x = dist_vec,
+                                                              mu = mean_expected,
+                                                              alternative = "less"
+                                                              )[["p.value"]]
+                                                  ))
+                        }
+                      },
+                      numeric(1)
+                      )
+
+  results_df <- data.frame(
+    "Num_contaminating_genes"   = num_other_genes_vec,
+    "Num_contaminated_reads"    = num_contaminants,
+    "Num_from_close_wells"      = num_close_contaminants_rand,
+    "Expected_from_close_wells" = num_expected_close_wells,
+    "Mean_distance"             = per_well_distances_vec,
+    "Expected_distance"         = expected_distances_vec[wells_vec],
+    "Distance_p_value"          = p_val_vec,
+    stringsAsFactors = FALSE
+  )
+  return(results_df)
+}
 
 
 
@@ -335,8 +412,13 @@ CreateSummaryDf <- function(reads_df,
                             filter_reads = FALSE,
                             filter_subsequences = FALSE,
                             close_well_range = 3L,
-                            wells_vec = seq_len(384)
+                            ID_column = "Well_number",
+                            unique_IDs = seq_len(384)
                             ) {
+
+  assign("delete_reads_df", reads_df, envir = globalenv())
+  assign("delete_ID_column", ID_column, envir = globalenv())
+  assign("delete_unique_IDs", unique_IDs, envir = globalenv())
 
   if (filter_reads) {
     reads_df <- reads_df[reads_df[["Passes_filters"]] == 1, ]
@@ -345,7 +427,7 @@ CreateSummaryDf <- function(reads_df,
     reads_df <- reads_df[reads_df[["Passes_sg_quality"]] == 1, ]
   }
 
-  wells_fac <- factor(reads_df[["Well_number"]], levels = wells_vec)
+  wells_fac <- factor(reads_df[[ID_column]], levels = unique_IDs)
 
 
   ## Process 100% correct read counts and percentages
@@ -365,6 +447,10 @@ CreateSummaryDf <- function(reads_df,
   if (any(are_empty)) {
     stats_vec_list[are_empty] <- list(integer(ncol(well_stats_mat)))
   }
+
+  assign("delete_stats_vec_list", stats_vec_list, envir = globalenv())
+
+
   summary_counts_mat <- do.call(rbind, stats_vec_list)
   mode(summary_counts_mat) <- "integer"
 
@@ -380,77 +466,56 @@ CreateSummaryDf <- function(reads_df,
 
   ## Process alteration categories ##
 
-  alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
-  alterations_vec_list <- tapply(seq_len(nrow(reads_df)),
-                                 wells_fac,
-                                 function(x) colSums(alterations_mat[x, , drop = FALSE])
-                                 )
-  are_empty <- vapply(alterations_vec_list, is.null, logical(1))
-  if (any(are_empty)) {
-    alterations_vec_list[are_empty] <- list(integer(ncol(alterations_mat)))
+  has_alterations <- "sg1_category" %in% names(reads_df)
+  if (has_alterations) {
+    alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
+    alterations_vec_list <- tapply(seq_len(nrow(reads_df)),
+                                   wells_fac,
+                                   function(x) colSums(alterations_mat[x, , drop = FALSE])
+                                   )
+    are_empty <- vapply(alterations_vec_list, is.null, logical(1))
+    if (any(are_empty)) {
+      alterations_vec_list[are_empty] <- list(integer(ncol(alterations_mat)))
+    }
+    alteration_counts_mat <- do.call(rbind, alterations_vec_list)
   }
-  alteration_counts_mat <- do.call(rbind, alterations_vec_list)
+
 
   ## Process contaminations / wrong barcodes
 
-  are_contaminated <- reads_df[["Contam_guides"]] >= 1
-  are_close_rand <- (reads_df[["Random_distance"]] <= close_well_range) %in% TRUE
+  if ("Plate_number" %in% names(reads_df)) {
+    all_plates <- setdiff(reads_df[, "Plate_number"], NA)
+    contam_list <- lapply(all_plates, function(x) {
+      wells_sub_vec <- sg_sequences_df[["Well_number"]][sg_sequences_df[["Plate_number"]] %in% x]
+      sub_df <- reads_df[reads_df[, "Plate_number"] %in% x, ]
+      row.names(sub_df) <- NULL
+      ContaminationsSummaryDf(sub_df,
+                              wells_vec = wells_sub_vec,
+                              close_well_range = close_well_range
+                              )
+    })
+    contam_df <- do.call(rbind.data.frame,
+                         c(contam_list,
+                           stringsAsFactors = FALSE,
+                           make.row.names = FALSE
+                         ))
+  } else {
+    contam_df <- ContaminationsSummaryDf(reads_df,
+                                         wells_vec = unique_IDs,
+                                         close_well_range = close_well_range
+                                         )
+  }
 
-  num_other_genes_vec <- tapply(reads_df[["Contam_well"]],
-                                wells_fac,
-                                function(x) {
-                                  this_list <- strsplit(x[!(is.na(x))], ", ", fixed = TRUE)
-                                  this_vec <- unlist(this_list, use.names = FALSE)
-                                  length(unique(this_vec))
-                                })
 
-  num_contaminants <- tapply(are_contaminated, wells_fac, sum)
-  num_close_contaminants_rand <- tapply(are_contaminated & are_close_rand, wells_fac, sum)
-
-  plate_num_close_vec <- vapply(manhattan_dist_list,
-                                function(x) sum(x <= close_well_range),
-                                integer(1)
-                                ) - 1L
-
-  num_expected_close_wells <- plate_num_close_vec[wells_vec] * (num_contaminants / (length(wells_vec) - 1))
-
-  per_well_distances_vec <- tapply(reads_df[["Mean_distance"]],
-                                   wells_fac,
-                                   mean,
-                                   na.rm = TRUE
-                                   )
-
-  expected_distances_vec <- vapply(manhattan_dist_list,
-                                   function(x) mean(x[x != 0]),
-                                   numeric(1)
-                                   )
-
-  distances_list <- split(reads_df[["Mean_distance"]], wells_fac)
-
-  p_val_vec <- vapply(seq_along(distances_list),
-                      function(x) {
-                        dist_vec <- distances_list[[x]]
-                        if (all(is.na(dist_vec))) {
-                          return(NA_real_)
-                        } else {
-                          mean_expected <- expected_distances_vec[[x]]
-                          return(suppressWarnings(wilcox.test(x = dist_vec,
-                                                              mu = mean_expected,
-                                                              alternative = "less"
-                                                              )[["p.value"]]
-                                                  ))
-                        }
-                      },
-                      numeric(1)
-                      )
-
-  num_under_2kb <- tapply(reads_df[["Clipped_read_length"]],
+  num_under_2kb <- tapply(reads_df[, "Clipped_read_length"],
                           wells_fac,
                           function(x) sum(x < 2000)
                           )
 
   results_df <- data.frame(
-    "Well_number"            = wells_vec,
+    "Combined_ID"            = unique_IDs,
+    "Plate_number"           = NA,
+    "Well_number"            = NA,
     "Count_total"            = total_vec,
     "Num_under_2kb"          = num_under_2kb,
     "Num_low_barcode_scores" = tapply(reads_df[["Passes_barcode_filters"]],
@@ -467,17 +532,26 @@ CreateSummaryDf <- function(reads_df,
                                       ),
     summary_counts_mat,
     summary_perc_mat,
-    "Num_contam_genes"       = num_other_genes_vec,
-    "Num_contam_wells"       = num_contaminants,
-    "Num_from_close_wells"   = num_close_contaminants_rand,
-    "Expected_close_wells"   = num_expected_close_wells,
-    "Mean_distance"          = per_well_distances_vec,
-    "Expected_distance"      = expected_distances_vec[wells_vec],
-    "Distance_p_value"       = p_val_vec,
-    alteration_counts_mat,
+    contam_df,
     stringsAsFactors         = FALSE,
     row.names                = NULL
   )
+
+  if (ID_column == "Well_number") {
+    results_df[["Well_number"]] <- results_df[["Combined_ID"]]
+    results_df <- results_df[, !(names(results_df) %in% c("Combined_ID", "Plate_number"))]
+  } else {
+    results_df[["Plate_number"]] <- as.integer(substr(results_df[["Combined_ID"]], 6, 7))
+    results_df[["Well_number"]]  <- as.integer(substr(results_df[["Combined_ID"]], 13, 15))
+  }
+
+  if (has_alterations) {
+    results_df <- data.frame(results_df,
+                             alteration_counts_mat,
+                             stringsAsFactors = FALSE,
+                             row.names = NULL
+                             )
+  }
   return(results_df)
 }
 
@@ -597,11 +671,9 @@ GetFeaturesData <- function(extracted_df, use_ZMWs = NULL, get_quality = FALSE) 
 
 
 
-
-
 AlterationCategoriesToIntegerMat <- function(input_df) {
   suffix_regex <- "_category$"
-  categories_columns <- grep(suffix_regex, colnames(input_df), value = TRUE)
+  categories_columns <- grep(suffix_regex, names(input_df), value = TRUE)
   all_features <- sub(suffix_regex, "", categories_columns)
   features_mat <- as.matrix(input_df[, categories_columns])
   features_mat[features_mat == "Flanking insertion"] <- "Correct"
@@ -633,14 +705,15 @@ AlterationCategoriesToIntegerMat <- function(input_df) {
 
 
 AnalyzeWells <- function(ccs_df,
+                         sg_df,
                          barcodes_df,
                          extracted_df,
-                         bc_min_comb_score = 60,
-                         bc_min_score_lead = 30,
-                         bc_length_cutoff  = 8L,
-                         min_mean_quality  = 85 / 93 * 100,
-                         wells_vec         = seq_len(384),
-                         set_seed          = TRUE
+                         bc_min_comb_score   = 60,
+                         bc_min_score_lead   = 30,
+                         bc_length_cutoff    = 8L,
+                         min_mean_quality    = 85 / 93 * 100,
+                         set_seed            = TRUE,
+                         use_guides_ref_list = guides_ref_list
                          ) {
 
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
@@ -656,34 +729,35 @@ AnalyzeWells <- function(ccs_df,
 
   ## Add data on contaminations / wrong barcodes
 
-  contamin_mat_list <- lapply(guides_ref_list,
-                              function(x) GetContaminationMat(x,
-                                                              ccs_df,
-                                                              wells_vec = wells_vec
-                                                              )
+  contamin_mat_list <- lapply(sg_df[, paste0("sg_cr_", 1:4)],
+                              function(x) GetContaminationMat(x, ccs_df, sg_df)
                               )
 
   contamin_mat <- Reduce(`+`, contamin_mat_list)
+  assign("delete_contamin_mat_list", contamin_mat_list, envir = globalenv())
+  assign("delete_contamin_mat", contamin_mat, envir = globalenv())
+
   have_contamin_mat <- contamin_mat >= 1
   have_well <- !(is.na(ccs_df[["Well_number"]])) &
                ccs_df[["Passed_filters"]]
-  have_valid_well <- have_well & ccs_df[["Well_number"]] %in% wells_vec
+  have_valid_well <- have_well & ccs_df[["Well_number"]] %in% sg_df[, "Well_number"]
   well_numbers_vec <- ifelse(have_well, ccs_df[["Well_number"]], NA_integer_)
+  assign("delete_well_numbers_vec", well_numbers_vec, envir = globalenv())
   distance_mat <- DistanceForContam(contamin_mat,
                                     well_numbers_vec,
-                                    wells_vec = wells_vec
+                                    wells_vec = sg_df[, "Well_number"]
                                     )
 
-  ccs_df[["Contam_guides"]]   <- NA_integer_
-  ccs_df[["Contam_genes"]]    <- NA_integer_
-  ccs_df[["Contam_well"]]     <- NA_integer_
-  ccs_df[["Min_distance"]]    <- NA_integer_
-  ccs_df[["Random_distance"]] <- NA_integer_
-  ccs_df[["Mean_distance"]]   <- NA_real_
-  ccs_df[["Distances"]]       <- NA_character_
+  ccs_df[["Num_contaminating_guides"]] <- NA_integer_
+  ccs_df[["Num_contaminating_genes"]]  <- NA_integer_
+  ccs_df[["Contaminating_well"]]       <- NA_integer_
+  ccs_df[["Min_distance"]]             <- NA_integer_
+  ccs_df[["Random_distance"]]          <- NA_integer_
+  ccs_df[["Mean_distance"]]            <- NA_real_
+  ccs_df[["Distances"]]                <- NA_character_
 
-  ccs_df[["Contam_guides"]][have_well] <- colSums(contamin_mat)
-  ccs_df[["Contam_genes"]][have_well] <- colSums(have_contamin_mat)
+  ccs_df[["Num_contaminating_guides"]][have_well] <- colSums(contamin_mat)
+  ccs_df[["Num_contaminating_genes"]][have_well] <- colSums(have_contamin_mat)
 
   min_distances_vec <- colMins(distance_mat, na.rm = TRUE)
   min_distances_vec[is.infinite(min_distances_vec)] <- NA_integer_
@@ -721,33 +795,39 @@ AnalyzeWells <- function(ccs_df,
 
 
   contams_vec <- vapply(which(have_contam),
-                        function(x) paste0(which(have_contamin_mat[, x]), collapse = ", "),
+                        function(x) paste0(sg_df[["Well_number"]][which(have_contamin_mat[, x])], collapse = ", "),
                         ""
                         )
-  ccs_df[["Contam_well"]][have_well][have_contam] <- contams_vec
-
+  ccs_df[["Contaminating_well"]][have_well][have_contam] <- contams_vec
 
 
   ## Check for the presence of sequences
 
-  well_stats_mat_list <- lapply(wells_vec,
-                                function(x) StatsForWell(x,
-                                                         ccs_df,
-                                                         wells_vec = wells_vec
-                                                         )
+  well_stats_mat_list <- lapply(seq_len(nrow(sg_df)),
+                                function(x) StatsForWell(x, ccs_df, sg_df)
                                 )
-
 
 
   ## Create a data frame of individual ZMWs
 
   ZMW_mat <- do.call(rbind, well_stats_mat_list)
 
-
   sg_features <- c(paste0("sg", 1:4), paste0("sg", 1:4, "_cr", 1:4))
 
+  only_wells <- "Barcode_combined_score" %in% names(ccs_df)
+  if (only_wells) {
+    barcode_columns <- c("Barcode_combined_score", "Barcode_score_lead")
+    ID_columns <- "Well_number"
+  } else {
+    barcode_columns <- c("Plate_barcode_combined_score", "Plate_barcode_score_lead",
+                         "Well_barcode_combined_score", "Well_barcode_score_lead"
+                         )
+    ID_columns <- c("Combined_ID", "Plate_number", "Well_number")
+  }
+
   all_columns <- c(
-    "ZMW", "Well_number", "Clipped_read_length",
+    "ZMW", ID_columns,
+    "Clipped_read_length",
 
     "Read_quality", "Num_full_passes", "Pass_CCS5",
 
@@ -765,10 +845,12 @@ AnalyzeWells <- function(ccs_df,
 
     paste0(sg_features, "_quality"),
 
-    "Barcode_combined_score", "Barcode_score_lead", "Mean_quality",
+    barcode_columns,
+
+    "Mean_quality",
     "Passes_filters", "Passes_barcode_filters", "Passes_read_quality",
     "Passes_sg_quality",
-    "Contam_guides", "Contam_genes", "Contam_well",
+    "Num_contaminating_guides", "Num_contaminating_genes", "Contaminating_well",
     "Min_distance", "Random_distance", "Mean_distance", "Distances",
     "sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4", "at_least_1", "at_least_2",
     "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
@@ -784,7 +866,7 @@ AnalyzeWells <- function(ccs_df,
                                )
                           ))
 
-  are_real_wells <- wells_ccs_df[["Well_number"]] %in% wells_vec
+  are_real_wells <- wells_ccs_df[["Well_number"]] %in% sg_df[["Well_number"]]
 
   individual_ZMWs_df <- data.frame(
     wells_ccs_df[are_real_wells, ],
@@ -793,30 +875,45 @@ AnalyzeWells <- function(ccs_df,
     row.names = NULL
   )
 
+  contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
+
+  if (is.null(barcodes_df) && is.null(extracted_df)) {
+    results_list <- list(
+      "individual_reads_df" = individual_ZMWs_df[, intersect(all_columns, names(individual_ZMWs_df))],
+      "contamin_mat_list"   = contamin_mat_list
+    )
+    return(results_list)
+  }
+
   matches_vec <- match(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]])
   stopifnot(!(anyNA(matches_vec)))
-
   barcodes_df <- barcodes_df[matches_vec, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
-
   individual_ZMWs_df <- data.frame(individual_ZMWs_df,
                                    barcodes_df,
                                    stringsAsFactors = FALSE,
                                    row.names = NULL
                                    )
 
+  have_correct_row <- individual_ZMWs_df[, "Starts_with_row_barcode"] |
+                      ((individual_ZMWs_df[, "Row_bc_length"] >= bc_length_cutoff) &
+                        individual_ZMWs_df[, "Correct_row_flank"])
 
-  have_correct_row <- individual_ZMWs_df[["Starts_with_row_barcode"]] |
-                      ((individual_ZMWs_df[["Row_bc_length"]] >= bc_length_cutoff) &
-                        individual_ZMWs_df[["Correct_row_flank"]])
-
-  have_correct_column <- individual_ZMWs_df[["Ends_with_column_barcode"]] |
-                         ((individual_ZMWs_df[["Column_bc_length"]] >= bc_length_cutoff) &
-                           individual_ZMWs_df[["Correct_column_flank"]])
+  have_correct_column <- individual_ZMWs_df[, "Ends_with_column_barcode"] |
+                         ((individual_ZMWs_df[, "Column_bc_length"] >= bc_length_cutoff) &
+                           individual_ZMWs_df[, "Correct_column_flank"])
 
 
-  pass_bc <- have_correct_row & have_correct_column &
-             (individual_ZMWs_df[["Barcode_combined_score"]] >= bc_min_comb_score) &
-             (individual_ZMWs_df[["Barcode_score_lead"]] >= bc_min_score_lead)
+  if ("Barcode_combined_score" %in% names(individual_ZMWs_df)) {
+    pass_bc <- have_correct_row & have_correct_column &
+              (individual_ZMWs_df[, "Barcode_combined_score"] >= bc_min_comb_score) &
+              (individual_ZMWs_df[, "Barcode_score_lead"] >= bc_min_score_lead)
+  } else {
+    pass_bc <- have_correct_row & have_correct_column &
+              (individual_ZMWs_df[, "Plate_barcode_combined_score"] >= bc_min_comb_score) &
+              (individual_ZMWs_df[, "Well_barcode_combined_score"] >= bc_min_comb_score) &
+              (individual_ZMWs_df[, "Plate_barcode_score_lead"] >= bc_min_score_lead) &
+              (individual_ZMWs_df[, "Well_barcode_score_lead"] >= bc_min_score_lead)
+  }
 
   pass_rq <- (individual_ZMWs_df[["Mean_quality"]]) >= min_mean_quality
   pass_filters <- pass_bc & pass_rq
@@ -824,6 +921,14 @@ AnalyzeWells <- function(ccs_df,
   individual_ZMWs_df[["Passes_filters"]]         <- as.integer(pass_filters)
   individual_ZMWs_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
   individual_ZMWs_df[["Passes_read_quality"]]    <- as.integer(pass_rq)
+
+  if (is.null(extracted_df)) {
+    results_list <- list(
+      "individual_reads_df" = individual_ZMWs_df[, intersect(all_columns, names(individual_ZMWs_df))],
+      "contamin_mat_list"   = contamin_mat_list
+    )
+    return(results_list)
+  }
 
   alterations_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]])
   subqualities_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]], get_quality = TRUE)
@@ -843,8 +948,6 @@ AnalyzeWells <- function(ccs_df,
 
   individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
 
-  contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
-
   results_list <- list(
     "individual_reads_df" = individual_ZMWs_df,
     "contamin_mat_list"   = contamin_mat_list
@@ -858,64 +961,80 @@ AnalyzeWells <- function(ccs_df,
 SummarizeWells <- function(analysis_list,
                            use_zmws = NULL,
                            close_well_range = 3L,
-                           wells_vec = seq_len(384)
+                           ID_column = "Well_number",
+                           unique_IDs = seq_len(384)
                            ) {
 
-  stopifnot(identical(unique(vapply(analysis_list[["contamin_mat_list"]], ncol, integer(1))),
-                      nrow(analysis_list[["individual_reads_df"]])
-                      ))
-
   reads_df <- analysis_list[["individual_reads_df"]]
-  contamin_mat_list <- analysis_list[["contamin_mat_list"]]
+
+  has_contam <- "contamin_mat_list" %in% names(analysis_list)
+  if (has_contam) {
+    contamin_mat_list <- analysis_list[["contamin_mat_list"]]
+  }
+
   if (!(is.null(use_zmws))) {
     zmw_matches <- match(use_zmws, reads_df[["ZMW"]])
     stopifnot(!(anyNA(zmw_matches)))
     reads_df <- reads_df[zmw_matches, ]
     row.names(reads_df) <- NULL
-    contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, zmw_matches])
+    if (has_contam) {
+      contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, zmw_matches])
+    }
   }
 
   unfiltered_summary_df <- CreateSummaryDf(reads_df,
                                            filter_reads = FALSE,
                                            close_well_range = close_well_range,
-                                           wells_vec = wells_vec
+                                           ID_column = ID_column,
+                                           unique_IDs = unique_IDs
                                            )
   filtered_summary_df   <- CreateSummaryDf(reads_df,
                                            filter_reads = TRUE,
                                            close_well_range = close_well_range,
-                                           wells_vec = wells_vec
-                                           )
-  filtered_gRNAs_df     <- CreateSummaryDf(reads_df,
-                                           filter_reads = TRUE,
-                                           filter_subsequences = TRUE,
-                                           close_well_range = close_well_range,
-                                           wells_vec = wells_vec
+                                           ID_column = ID_column,
+                                           unique_IDs = unique_IDs
                                            )
 
-  cross_contam_mat <- CreateCrossContamMat(contamin_mat_list,
-                                           reads_df[["Well_number"]],
-                                           wells_vec = wells_vec
-                                           )
   results_list <- list(
     "original_summary_df" = unfiltered_summary_df,
-    "filtered_summary_df" = filtered_summary_df,
-    "filtered_gRNAs_df"   = filtered_gRNAs_df,
-    "individual_reads_df" = reads_df,
-    "contaminations_mat"  = cross_contam_mat
+    "filtered_summary_df" = filtered_summary_df
   )
+  if ("Passes_sg_quality" %in% names(reads_df)) {
+    filtered_gRNAs_df <- CreateSummaryDf(reads_df,
+                                         filter_reads = TRUE,
+                                         filter_subsequences = TRUE,
+                                         close_well_range = close_well_range,
+                                         ID_column = ID_column,
+                                         unique_IDs = unique_IDs
+                                         )
+    results_list <- c(results_list, list("filtered_gRNAs_df" = filtered_gRNAs_df))
+  }
+  results_list <- c(results_list, list("individual_reads_df" = reads_df))
+
+  if (has_contam) {
+    stopifnot(ID_column == "Well_number")
+    stopifnot(identical(unique(vapply(contamin_mat_list, ncol, integer(1))),
+                        nrow(reads_df)
+                        ))
+    cross_contam_mat <- CreateCrossContamMat(contamin_mat_list,
+                                             reads_df[["Well_number"]],
+                                             wells_vec = unique_IDs
+                                             )
+    results_list <- c(results_list, list("contaminations_mat"  = cross_contam_mat))
+  }
   return(results_list)
 }
 
 
 
 
-
-
-
 DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq_len(384)) {
 
-  have_wells <- !(is.na(long_wells_vec))
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
+  have_wells <- !(is.na(long_wells_vec))
+
+  stopifnot(ncol(contamination_mat) == sum(have_wells))
+
   distance_mat <- matrix(nrow = nrow(contamination_mat),
                          ncol = ncol(contamination_mat)
                          )
@@ -936,6 +1055,54 @@ DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq
 
 
 
+# Functions for processing multiple plates --------------------------------
+
+AnalyzePlates <- function(use_ccs_df, use_sg_df, use_barcodes_df, use_extracted_df) {
+
+  are_eligible <- (use_ccs_df[["Well_exists"]] %in% TRUE) &
+                  (use_ccs_df[["Read_quality"]] > 0)
+
+  use_ccs_df[["Passed_filters"]] <- use_ccs_df[["Plate_passed_filters"]] &
+                                    (use_ccs_df[["Well_passed_filters"]] %in% TRUE)
+
+  use_ccs_df[["Pass_CCS5"]] <- NA_integer_
+  names(use_ccs_df)[names(use_ccs_df) == "Well_clip_start"]          <- "Clip_start"
+  names(use_ccs_df)[names(use_ccs_df) == "Well_clip_end"]            <- "Clip_end"
+  names(use_ccs_df)[names(use_ccs_df) == "Well_clipped_read_length"] <- "Clipped_read_length"
+
+  all_plates <- setdiff(use_ccs_df[["Plate_number"]], NA)
+
+  sub_list_list <- lapply(all_plates, function(x) {
+    message(paste0("Analyzing plate #", x, "...\n"))
+    ccs_sub_df <- use_ccs_df[are_eligible & (use_ccs_df[["Plate_number"]] %in% x), ]
+    are_this_plate <- sg_sequences_df[["Plate_number"]] == x
+    sg_sub_df <- use_sg_df[are_this_plate, ]
+    row.names(sg_sub_df) <- NULL
+    sub_list <- AnalyzeWells(ccs_sub_df, sg_sub_df, use_barcodes_df, use_extracted_df)
+    message("\n\n")
+    return(sub_list)
+  })
+
+  combined_df <- do.call(rbind.data.frame,
+                         c(lapply(sub_list_list, function(x) x[["individual_reads_df"]]),
+                           stringsAsFactors = FALSE, make.row.names = FALSE
+                           ))
+
+  contamin_mat_list_list <- lapply(sub_list_list, function(x) x[["contamin_mat_list"]])
+  names(contamin_mat_list_list) <- paste0("Plate", all_plates)
+
+  results_list <- list(
+    "individual_reads_df" = combined_df,
+    "contamin_mat_list_list" = contamin_mat_list_list
+  )
+  return(results_list)
+}
+
+
+
+
+
+
 # Functions for exporting data --------------------------------------------
 
 ExportTable <- function(export_df,
@@ -950,6 +1117,7 @@ ExportTable <- function(export_df,
                              export_df[[i]]
                              )
   }
+  print(file_directory)
   write.table(export_df,
               file      = file.path(file_directory, paste0(file_name_only, ".tsv")),
               sep       = "\t",
@@ -982,9 +1150,11 @@ ExportIndivTable <- function(indiv_reads_df, ...) {
 
 
 ExportSummaryTable <- function(summary_df, ...) {
-  p_val_vec <- signif(summary_df[["Distance_p_value"]], 1)
-  p_val_vec <- vapply(signif(p_val_vec, 1), format, scientific = 9L, "")
-  summary_df[["Distance_p_value"]] <- p_val_vec
+  if ("Distance_p_value" %in% names(summary_df)) {
+    p_val_vec <- signif(summary_df[["Distance_p_value"]], 1)
+    p_val_vec <- vapply(signif(p_val_vec, 1), format, scientific = 9L, "")
+    summary_df[["Distance_p_value"]] <- p_val_vec
+  }
   are_integer <- vapply(summary_df, is.integer, logical(1))
   are_numeric <- vapply(summary_df, is.numeric, logical(1))
   for (i in which(!(are_integer) & are_numeric)) {

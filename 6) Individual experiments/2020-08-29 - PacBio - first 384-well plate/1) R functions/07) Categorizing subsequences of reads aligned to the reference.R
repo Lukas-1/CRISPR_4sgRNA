@@ -7,6 +7,7 @@
 # Import packages and source code -----------------------------------------
 
 library("Biostrings")
+library("data.table")
 
 
 
@@ -67,36 +68,65 @@ AdjustForsgRNALength <- function(features_df, sg_vec) {
 }
 
 
+FeaturesListToDf <- function(features_list) {
+  features_mat <- do.call(rbind, features_list)
+  mode(features_mat) <- "integer"
+  rownames(features_mat) <- NULL
+  colnames(features_mat) <- c("Start", "End")
+  features_df <- data.frame("Feature" = names(features_list),
+                            features_mat,
+                            stringsAsFactors = FALSE
+                            )
+}
 
-ExtractAlignedSequences <- function(ccs_df, alignments_df, wells_vec = seq_len(384)) {
 
-  stopifnot(all(c("features_df", "features_mat_list", "barcoded_plasmids") %in% ls(envir = globalenv())))
+
+ExtractAlignedSequences <- function(ccs_df,
+                                    alignments_df,
+                                    ID_column = "Well_number",
+                                    unique_IDs = seq_len(384)
+                                    ) {
+
+  stopifnot(all(c("features_df", "features_templates_list", "features_indices_list") %in% ls(envir = globalenv())))
 
   num_features <- nrow(features_df)
   features_vec <- features_df[["Feature"]]
 
-  well_df_list <- lapply(wells_vec, function(well_number) {
+  well_df_list <- lapply(seq_along(unique_IDs), function(x) {
 
-    message(paste0("Processing well #", well_number, "..."))
+    current_ID <- unique_IDs[[x]]
 
-    are_this_well <- alignments_df[["Well_number"]] == well_number
+    message(paste0("Processing the well: ", current_ID, "..."))
 
-    aligned_plasmid_vec <- alignments_df[["Aligned_plasmid"]][are_this_well]
-    aligned_read_vec <- alignments_df[["Aligned_read"]][are_this_well]
+    are_this_ID <- alignments_df[[ID_column]] == current_ID
+
+    aligned_plasmid_vec <- alignments_df[["Aligned_plasmid"]][are_this_ID]
+    aligned_read_vec <- alignments_df[["Aligned_read"]][are_this_ID]
 
     aligned_plasmid_char_list <- strsplit(aligned_plasmid_vec, "")
     aligned_read_char_list <- strsplit(aligned_read_vec, "")
 
-    this_well_zmws <- alignments_df[["ZMW"]][are_this_well]
-    zmw_matches <- match(this_well_zmws, ccs_df[["ZMW"]])
+    this_ID_zmws <- alignments_df[["ZMW"]][are_this_ID]
+    zmw_matches <- match(this_ID_zmws, ccs_df[["ZMW"]])
 
     unaligned_qual_vec <- ccs_df[["Quality"]][zmw_matches]
-    this_well_fwd <- alignments_df[["Orientation_fwd"]][are_this_well]
-    unaligned_qual_vec[!(this_well_fwd)] <- reverse(unaligned_qual_vec[!(this_well_fwd)])
+    this_ID_fwd <- alignments_df[["Orientation_fwd"]][are_this_ID]
+
+    assign("delete_unaligned_qual_vec", unaligned_qual_vec, envir = globalenv())
+    assign("delete_this_ID_fwd",        this_ID_fwd,        envir = globalenv())
+    assign("delete_x",                  x,                  envir = globalenv())
+
+    unaligned_qual_vec[!(this_ID_fwd)] <- reverse(unaligned_qual_vec[!(this_ID_fwd)])
 
     unaligned_qual_char_list <- strsplit(unaligned_qual_vec, "")
 
-    num_reads <- length(this_well_zmws)
+    num_reads <- length(this_ID_zmws)
+
+    if (is.character(current_ID)) {
+      use_index <- x
+    } else {
+      use_index <- current_ID
+    }
 
     extracted_mat_list <- lapply(seq_len(num_reads), function(x) {
 
@@ -111,7 +141,7 @@ ExtractAlignedSequences <- function(ccs_df, alignments_df, wells_vec = seq_len(3
       stopifnot(max(read_char_numbers) == original_read_length)
       stopifnot(sum(!(are_gaps)) == original_read_length)
 
-      feature_indices <- lapply(features_indices_list[[well_number]],
+      feature_indices <- lapply(features_indices_list[[use_index]],
                                 function(x) which(plasmid_char_numbers %in% x)
                                 )
       aligned_templates <- vapply(feature_indices,
@@ -136,33 +166,93 @@ ExtractAlignedSequences <- function(ccs_df, alignments_df, wells_vec = seq_len(3
     well_mat <- do.call(rbind, extracted_mat_list)
 
     well_df <- data.frame(
-      "Well_number" = well_number,
-      "ZMW"         = rep(this_well_zmws, each = num_features),
-      "Feature"     = rep(features_vec, times = num_reads),
-      "Template"    = rep(features_templates_list[[well_number]], times = num_reads),
+      "Source_ID" = current_ID,
+      "ZMW"       = rep(this_ID_zmws, each = num_features),
+      "Feature"   = rep(features_vec, times = num_reads),
+      "Template"  = rep(features_templates_list[[use_index]], times = num_reads),
       well_mat,
       stringsAsFactors = FALSE
     )
     return(well_df)
   })
   message("Collating the final data frame...")
-  results_df <- do.call(rbind.data.frame, c(well_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  results_df <- data.table::rbindlist(well_df_list)
+  data.table::setDF(results_df)
+
+  if (ID_column == "Source_ID") {
+    ID_matches <- match(results_df[, "Source_ID"], ccs_df[, "Combined_ID"])
+    results_df[["Plate_number"]] <- ccs_df[, "Plate_number"][ID_matches]
+    results_df[["Well_number"]] <- ccs_df[, "Well_number"][ID_matches]
+    names(results_df)[names(results_df) == "Source_ID"] <- "Combined_ID"
+  } else if (ID_column == "Well_number") {
+    names(results_df)[names(results_df) == "Source_ID"] <- "Well_number"
+  }
+  results_df[["Template"]] <- toupper(results_df[["Template"]])
+
   message("Processing the final data frame...")
-  results_df <- ProcessExtractedDf(results_df)
+  results_df <- ProcessExtractedDf(results_df, unique_IDs)
   return(results_df)
 }
 
 
 
-ProcessExtractedDf <- function(extracted_df) {
+GetMeanQualityInChunks <- function(phred_vec) {
+  chunk_size <- 500 * 1000
+  num_chunks <- ceiling(length(phred_vec) / chunk_size)
+  chunks_vec <- rep(seq_len(num_chunks), each = chunk_size)[seq_along(phred_vec)]
+  mean_quality_list <- tapply(phred_vec,
+                              chunks_vec,
+                              GetMeanQualityNoGaps,
+                              simplify = FALSE
+                              )
+  mean_quality_vec <- unlist(mean_quality_list, use.names = FALSE)
+  return(mean_quality_vec)
+}
 
-  quality_int_list <- as(PhredQuality(extracted_df[["Quality"]]), "IntegerList")
+
+
+GetMeanQualityNoGaps <- function(phred_vec) {
+  quality_int_list <- as(PhredQuality(phred_vec), "IntegerList")
   quality_int_list <- lapply(quality_int_list, function(x) x[x != -1L])
-
   mean_quality_vec <- vapply(quality_int_list,
                              function(x) if (length(x) == 0) NA_real_ else mean(x),
                              numeric(1)
                              )
+  return(mean_quality_vec)
+}
+
+
+
+
+ProcessByPlate <- function(input_df, UseFunction, is_df = TRUE, message_prefix = NULL) {
+  if (is.null(message_prefix)) {
+    message_prefix <- "Processing "
+  }
+  all_plates <- setdiff(input_df[, "Plate_number"], NA)
+  results_list <- lapply(all_plates, function(x) {
+    message(paste0(message_prefix, "plate #", x, "..."))
+    sub_df <- input_df[input_df[, "Plate_number"] %in% x, ]
+    row.names(sub_df) <- NULL
+    UseFunction(sub_df)
+  })
+  if (is_df) {
+    result_object <- do.call(rbind.data.frame,
+                             c(results_list,
+                               stringsAsFactors = FALSE,
+                               make.row.names = FALSE
+                               )
+                             )
+  } else {
+    result_object <- unlist(results_list, use.names = FALSE)
+  }
+  return(result_object)
+}
+
+
+
+ThreeBasicCategories <- function(extracted_df) {
+
+  mean_quality_vec <- GetMeanQualityNoGaps(extracted_df[["Quality"]])
 
   sequence_splits <- strsplit(extracted_df[["Aligned_read"]], "", fixed = TRUE)
 
@@ -186,13 +276,67 @@ ProcessExtractedDf <- function(extracted_df) {
                                 )
                          )
 
+  results_df[["Category"]] <- category_vec
+  return(results_df)
+}
+
+
+
+GetFlankingInsertions <- function(extracted_df) {
+  wells_vec <- unique(extracted_df[, "Well_number"])
+  insertion_possible <- !(extracted_df[, "Is_correct"] |
+                          extracted_df[, "Mostly_deleted"] |
+                          extracted_df[, "Is_contamination"]
+                          )
+  have_flanking_insertion <- rep(FALSE, nrow(extracted_df))
+  for (include_tracrRNA in c(FALSE, TRUE)) {
+    for (i in 1:4) {
+      if (include_tracrRNA) {
+        this_feature <- paste0("sg", i, "_cr", i)
+      } else {
+        this_feature <- paste0("sg", i)
+      }
+      message(paste0("Checking for flanking insertions for ", this_feature, "..."))
+      are_this_feature <- extracted_df[, "Feature"] == this_feature
+      for (well_number in wells_vec) {
+        are_this_well <- (extracted_df[, "Well_number"] == well_number) & are_this_feature
+        well_template <- unique(extracted_df[are_this_well, "Template"])
+        are_selected <- are_this_well & insertion_possible
+        have_flanking_insertion[are_selected] <- grepl(well_template,
+                                                       extracted_df[are_selected, "Aligned_read"],
+                                                       fixed = TRUE
+                                                       )
+      }
+    }
+  }
+  results_vec <- extracted_df[, "Category"]
+  results_vec[have_flanking_insertion] <- "Flanking insertion"
+  return(results_vec)
+}
+
+
+
+
+ProcessExtractedDf <- function(extracted_df, unique_IDs = seq_len(384)) {
+
+  stopifnot(all("sg_sequences_df" %in% ls(envir = globalenv())))
+
+  assign("delete_1_extracted_df", extracted_df, envir = globalenv())
+
+  if ("Plate_number" %in% names(extracted_df)) {
+    results_df <- ProcessByPlate(extracted_df,
+                                 ThreeBasicCategories,
+                                 message_prefix  = "Dividing features into three basic categories for "
+                                 )
+  } else {
+    results_df <- ThreeBasicCategories(extracted_df)
+  }
+
+  assign("delete_1_results_df", results_df, envir = globalenv())
 
   ## Check for contaminations
-
   contamination_possible <- !(results_df[["Is_correct"]] | results_df[["Mostly_deleted"]])
-
   sg_list <- lapply(1:4, function(x) sg_sequences_df[[paste0("Sequence_sg", x)]])
-
   all_guides_vec <- toupper(unlist(sg_list))
 
   tracrRNA_matches <- match(paste0("tracrRNA", 1:4), features_df[["Feature"]])
@@ -213,40 +357,30 @@ ProcessExtractedDf <- function(extracted_df) {
   }
   stopifnot(!(any(are_contamination_sg & are_contamination_sg_cr)))
   are_contamination <- are_contamination_sg | are_contamination_sg_cr
-  stopifnot(all(category_vec[are_contamination] == "Mutation"))
-  category_vec[are_contamination] <- "Contamination"
+  stopifnot(all(results_df[["Category"]][are_contamination] == "Mutation"))
+  results_df[["Is_contamination"]] <- are_contamination
+  results_df[["Category"]][are_contamination] <- "Contamination"
 
+
+  assign("delete_2_results_df", results_df, envir = globalenv())
 
   ## Check for small insertions that may or may not be considered to fall within
   ## the sgRNA + tracrRNA region
-  wells_vec <- unique(extracted_df[["Well_number"]])
-  insertion_possible <- !(results_df[["Is_correct"]] | results_df[["Mostly_deleted"]] | are_contamination)
-  have_flanking_insertion <- rep(FALSE, nrow(results_df))
-  for (include_tracrRNA in c(FALSE, TRUE)) {
-    for (i in 1:4) {
-      if (include_tracrRNA) {
-        this_feature <- paste0("sg", i, "_cr", i)
-      } else {
-        this_feature <- paste0("sg", i)
-      }
-      message(paste0("Checking for flanking insertions for ", this_feature, "..."))
-      are_this_feature <- extracted_df[["Feature"]] == this_feature
-      for (well_number in wells_vec) {
-        are_this_well <-(extracted_df[["Well_number"]] == well_number) & are_this_feature
-        well_template <- unique(extracted_df[["Template"]][are_this_well])
-        are_selected <- are_this_well & insertion_possible
-        have_flanking_insertion[are_selected] <- grepl(well_template,
-                                                       extracted_df[["Aligned_read"]][are_selected],
-                                                       fixed = TRUE
-                                                       )
-      }
-    }
+  if ("Plate_number" %in% names(results_df)) {
+    category_vec <- ProcessByPlate(results_df,
+                                   GetFlankingInsertions,
+                                   is_df = FALSE,
+                                   message_prefix = "Checking for flanking insertions for "
+                                   )
+  } else {
+    category_vec <- GetFlankingInsertions(results_df)
   }
-
-  category_vec[have_flanking_insertion] <- "Flanking insertion"
-
+  assign("delete_category_vec", category_vec, envir = globalenv())
   results_df[["Category"]] <- category_vec
   return(results_df)
 }
+
+
+
 
 

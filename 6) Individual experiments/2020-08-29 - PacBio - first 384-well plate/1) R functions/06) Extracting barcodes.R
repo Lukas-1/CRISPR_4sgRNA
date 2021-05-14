@@ -71,7 +71,7 @@ GetBarcodes <- function(ccs_df, alignments_df, wells_vec = seq_len(384)) {
     stringsAsFactors = FALSE,
     row.names = NULL
   )
-  results_df <- ProcessBarcodesDf(results_df)
+  results_df <- ProcessBarcodesDf(results_df, wells_vec = wells_vec)
   return(results_df)
 }
 
