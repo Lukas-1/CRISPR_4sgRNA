@@ -28,9 +28,7 @@ raw_data_directory      <- file.path(file_input_directory, "Raw data")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "07) Extract barcode sequences and quality scores.RData"))
 load(file.path(R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
@@ -66,22 +64,17 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 # Process the data on the level of individual reads -----------------------
 
 sl7_ccs3_analysis_list <- AnalyzeWells(sl7_ccs_df,
+                                       sg_sequences_df,
                                        sl7_barcodes_df,
                                        sl7_extracted_df
                                        )
 
 sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
+                                       sg_sequences_df,
                                        sl9_barcodes_df,
                                        sl9_extracted_df
                                        )
 
-
-
-
-
-# Process individual reads, but with random sub-sampling ------------------
-
-# AnalyzeWellsWithSubsampling <- function()
 
 
 
@@ -91,10 +84,10 @@ sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
 sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list)
 sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list)
 
-sl7_ccs5_lima_zmws <- GetCCS5ZMWs(sl7_ccs_df)
-sl9_ccs5_lima_zmws <- GetCCS5ZMWs(sl9_ccs_df)
-sl7_ccs7_lima_zmws <- GetCCS7ZMWs(sl7_ccs_df)
-sl9_ccs7_lima_zmws <- GetCCS7ZMWs(sl9_ccs_df)
+sl7_ccs5_lima_zmws <- GetCCS5_ZMWs(sl7_ccs_df)
+sl9_ccs5_lima_zmws <- GetCCS5_ZMWs(sl9_ccs_df)
+sl7_ccs7_lima_zmws <- GetCCS7_ZMWs(sl7_ccs_df)
+sl9_ccs7_lima_zmws <- GetCCS7_ZMWs(sl9_ccs_df)
 
 sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws)
 sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws)
@@ -132,7 +125,7 @@ CheckCountsAreEqual(sl7_ccs5_df_list[["original_summary_df"]],
 
 
 ExportSummaryTable(sl7_ccs3_df_list[["original_summary_df"]],
-                   "SmrtLink7/SmrtLink7_CCS3_99_summary_per_well_original"
+                   "SmrtLink7/SmrtLink7_CCS3_99_summary_per_well_unfiltered"
                    )
 ExportSummaryTable(sl7_ccs3_df_list[["filtered_summary_df"]],
                    "SmrtLink7/SmrtLink7_CCS3_99_summary_per_well_filtered"
@@ -149,7 +142,7 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
 
 
 ExportSummaryTable(sl7_ccs5_df_list[["original_summary_df"]],
-                   "SmrtLink7/SmrtLink7_CCS5_999_summary_per_well_original"
+                   "SmrtLink7/SmrtLink7_CCS5_999_summary_per_well_unfiltered"
                    )
 ExportSummaryTable(sl7_ccs5_df_list[["filtered_summary_df"]],
                    "SmrtLink7/SmrtLink7_CCS5_999_summary_per_well_filtered"
@@ -166,7 +159,7 @@ ExportTable(sl7_ccs5_df_list[["contaminations_mat"]],
 
 
 ExportSummaryTable(sl7_ccs7_df_list[["original_summary_df"]],
-                   "SmrtLink7/SmrtLink7_CCS7_9999_summary_per_well_original"
+                   "SmrtLink7/SmrtLink7_CCS7_9999_summary_per_well_unfiltered"
                    )
 ExportSummaryTable(sl7_ccs7_df_list[["filtered_summary_df"]],
                    "SmrtLink7/SmrtLink7_CCS7_9999_summary_per_well_filtered"
@@ -185,7 +178,7 @@ ExportTable(sl7_ccs7_df_list[["contaminations_mat"]],
 
 
 ExportSummaryTable(sl9_ccs3_df_list[["original_summary_df"]],
-                   "SmrtLink9/SmrtLink9_CCS3_99_summary_per_well_original"
+                   "SmrtLink9/SmrtLink9_CCS3_99_summary_per_well_unfiltered"
                    )
 ExportSummaryTable(sl9_ccs3_df_list[["filtered_summary_df"]],
                    "SmrtLink9/SmrtLink9_CCS3_99_summary_per_well_filtered"
@@ -202,7 +195,7 @@ ExportTable(sl9_ccs3_df_list[["contaminations_mat"]],
 
 
 ExportSummaryTable(sl9_ccs5_df_list[["original_summary_df"]],
-                   "SmrtLink9/SmrtLink9_CCS5_999_summary_per_well_original"
+                   "SmrtLink9/SmrtLink9_CCS5_999_summary_per_well_unfiltered"
                    )
 ExportSummaryTable(sl9_ccs5_df_list[["filtered_summary_df"]],
                    "SmrtLink9/SmrtLink9_CCS5_999_summary_per_well_filtered"
@@ -219,7 +212,7 @@ ExportTable(sl9_ccs5_df_list[["contaminations_mat"]],
 
 
 ExportSummaryTable(sl7_ccs7_df_list[["original_summary_df"]],
-                   "SmrtLink9/SmrtLink9_CCS7_9999_summary_per_well_original"
+                   "SmrtLink9/SmrtLink9_CCS7_9999_summary_per_well_unfiltered"
                    )
 ExportSummaryTable(sl7_ccs7_df_list[["filtered_summary_df"]],
                    "SmrtLink9/SmrtLink9_CCS7_9999_summary_per_well_filtered"
@@ -244,5 +237,8 @@ save(list = c("sl7_ccs3_df_list", "sl7_ccs5_df_list", "sl7_ccs7_df_list",
               ),
      file = file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData")
      )
+
+
+
 
 
