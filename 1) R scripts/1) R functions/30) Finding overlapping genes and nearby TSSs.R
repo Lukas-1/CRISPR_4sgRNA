@@ -623,7 +623,8 @@ StandardLocationString <- function(ranges_df) {
 
 FindOverlappingHits <- function(loci_df,
                                 genes_df,
-                                retain_columns = c("Locus", "Guide_locus")
+                                retain_columns = c("Locus", "Guide_locus"),
+                                ignore_strand = TRUE
                                 ) {
 
   if ("Cut_location" %in% names(loci_df)) {
@@ -635,7 +636,7 @@ FindOverlappingHits <- function(loci_df,
 
   hits_object <- findOverlaps(sgRNA_GRanges_object,
                               genes_GRanges_object,
-                              ignore.strand = TRUE,
+                              ignore.strand = ignore_strand,
                               select = "all"
                               )
 
@@ -643,7 +644,7 @@ FindOverlappingHits <- function(loci_df,
   genes_df[["Gene_locus"]] <- StandardLocationString(genes_df)
 
   combined_df <- data.frame(
-    loci_df[queryHits(hits_object), retain_columns],
+    loci_df[queryHits(hits_object), retain_columns, drop = FALSE],
     genes_df[subjectHits(hits_object), ],
     stringsAsFactors = FALSE,
     row.names = NULL
@@ -788,7 +789,7 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
       are_equal <- gene_ID_df[[use_col]] == symbol_df[[use_col]]
       message(paste0(
         "For the following ", sum(!(are_equal)), " genes, ",
-        " the number of affected genes differs when determined ",
+        " the number of affected genes differs when determined",
         " using Entrez IDs or gene symbols: ",
         paste0(symbol_df[["Intended_gene_symbol"]][!(are_equal)], collapse = ", ")
       ))
@@ -796,9 +797,12 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
   } else {
     compare_columns <- shared_columns
   }
+
+  assign("delete_full_df", full_df, envir = globalenv())
   assign("delete_gene_ID_df", gene_ID_df, envir = globalenv())
   assign("delete_symbol_df", symbol_df, envir = globalenv())
   assign("delete_shared_columns", shared_columns, envir = globalenv())
+  assign("delete_compare_columns", compare_columns, envir = globalenv())
   stopifnot(identical(gene_ID_df[, compare_columns], symbol_df[, compare_columns]))
 
   first_indices <- match(unique(full_df[["Index"]]),
