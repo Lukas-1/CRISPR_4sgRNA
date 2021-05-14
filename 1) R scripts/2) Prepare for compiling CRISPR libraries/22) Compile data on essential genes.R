@@ -6,6 +6,7 @@
 # Import packages and source code -----------------------------------------
 
 library("readxl")
+library("RColorBrewer")
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "23) Translating between Ensembl IDs, gene symbols and Entrez IDs.R"))
@@ -77,7 +78,7 @@ CheckEntrezs <- function(entrezs_vec, results_df = NULL) {
 ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
 
   data_mat <- t(as.matrix(data_df[, 2:ncol(data_df)]))
-  cell_line_matches <- match(data_df[, "DepMap_ID"],
+  cell_line_matches <- match(data_df[[1]],#[, "DepMap_ID"],
                              cell_lines_df[["DepMap_ID"]]
                              )
   colnames(data_mat) <- cell_lines_df[["stripped_cell_line_name"]][cell_line_matches]
@@ -156,9 +157,10 @@ ProcessDEMETERDataDf <- function(data_df) {
 
 
 
+
 GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 
-  required_objects <- "achilles_depend_df"
+  required_objects <- c("achilles_depend_df", "CRISPR_depend_df", "DEMETER2_combined_depend_df")
   stopifnot(all(required_objects %in% ls(envir = globalenv())))
 
   stopifnot(identical("integer", typeof(entrezs_vec)))
@@ -171,37 +173,39 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
            )
   }
 
+  MetricsFromDependDf <- function(use_depend_df, column_prefix = NULL) {
+    matches_vec <- match(entrezs_vec, use_depend_df[, "Entrez_ID"])
+    use_depend_mat <- as.matrix(use_depend_df[, 4:ncol(use_depend_df)])
+    use_depend_mat <- use_depend_mat[matches_vec, ]
+    results_df <- data.frame(
+      "Mean_probability" = use_depend_df[["Mean"]][matches_vec],
+      "Num_essential"    = ifelse(is.na(matches_vec),
+                                  NA,
+                                  rowSums(use_depend_mat > 0.5, na.rm = TRUE)
+                                  ),
+      "Num_cell_lines"   = ifelse(is.na(matches_vec),
+                                  NA,
+                                  rowSums(!(is.na(use_depend_mat)))
+                                  ),
+      stringsAsFactors = FALSE
+    )
+    if (!(is.null(column_prefix))) {
+      names(results_df) <- paste0(column_prefix, tolower(names(results_df)))
+    }
+    return(results_df)
+  }
+
   symbols_vec <- MapToEntrezs(entrez_IDs_vec = as.character(all_entrezs))[["Gene_symbol"]]
 
-  Achilles_matches <- match(entrezs_vec, achilles_depend_df[["Entrez_ID"]])
-  Achilles_depend_mat <- as.matrix(achilles_depend_df[, 4:ncol(achilles_depend_df)], na.rm = TRUE)
-  Achilles_depend_mat <- Achilles_depend_mat[Achilles_matches, ]
-
-  DEMETER_matches <-  match(entrezs_vec, DEMETER2_combined_depend_df[["Entrez_ID"]])
-  DEMETER_depend_mat <- as.matrix(DEMETER2_combined_depend_df[, 4:ncol(DEMETER2_combined_depend_df)], na.rm = TRUE)
-  DEMETER_depend_mat <- DEMETER_depend_mat[DEMETER_matches, ]
+  CRISPR_matches <- match(entrezs_vec, CRISPR_effects_df[, "Entrez_ID"])
 
   genes_list <- list(
-    "Entrez_ID"                 = entrezs_vec,
-    "Gene_symbol"               = symbols_vec,
-    "Achilles_mean_probability" = achilles_depend_df[["Mean"]][Achilles_matches],
-    "Achilles_num_essential"    = ifelse(is.na(Achilles_matches),
-                                         NA,
-                                         rowSums(Achilles_depend_mat > 0.5, na.rm = TRUE)
-                                         ),
-    "Achilles_num_cell_lines"   = ifelse(is.na(Achilles_matches),
-                                         NA,
-                                         rowSums(!(is.na(Achilles_depend_mat)))
-                                         ),
-    "DEMETER2_mean_probability" = DEMETER2_combined_depend_df[["Mean"]][DEMETER_matches],
-    "DEMETER2_num_essential"    = ifelse(is.na(DEMETER_matches),
-                                         NA,
-                                         rowSums(DEMETER_depend_mat > 0.5, na.rm = TRUE)
-                                         ),
-    "DEMETER2_num_cell_lines"   = ifelse(is.na(DEMETER_matches),
-                                         NA,
-                                         rowSums(!(is.na(DEMETER_depend_mat)))
-                                         )
+    "Entrez_ID"   = entrezs_vec,
+    "Gene_symbol" = symbols_vec,
+    MetricsFromDependDf(CRISPR_depend_df, "CRISPR_"),
+    "CRISPR_mean_effect" = CRISPR_effects_df[["Mean"]][CRISPR_matches],
+    MetricsFromDependDf(achilles_depend_df, "Achilles_"),
+    MetricsFromDependDf(DEMETER2_combined_depend_df, "DEMETER2_")
   )
 
   genes_list <- c(
@@ -274,7 +278,7 @@ hart_df <- data.frame(read_excel(file.path(essential_genes_directory,
 # Read in lists of essential genes from DepMap / Project Achilles ---------
 ## Download link: https://depmap.org/portal/download/all/
 
-ReadDepMapFile <- function(file_name, sub_folder = "2021_Q1") {
+ReadDepMapFile <- function(file_name, sub_folder = "2021_Q2") {
   read.csv(file.path(essential_genes_directory,
                      "DepMap", sub_folder,
                      paste0(file_name, ".csv")
@@ -283,17 +287,17 @@ ReadDepMapFile <- function(file_name, sub_folder = "2021_Q1") {
            )
 }
 
-depmap_hart_blomen_df        <- ReadDepMapFile("common_essentials_21Q1")
+depmap_hart_blomen_df        <- ReadDepMapFile("common_essentials_21Q2")
 
-achilles_common_df           <- ReadDepMapFile("Achilles_common_essentials_21Q1")
-achilles_original_effects_df <- ReadDepMapFile("Achilles_gene_effect_21Q1")
-achilles_original_depend_df  <- ReadDepMapFile("Achilles_gene_dependency_21Q1")
+achilles_common_df           <- ReadDepMapFile("Achilles_common_essentials_21Q2")
+achilles_original_effects_df <- ReadDepMapFile("Achilles_gene_effect_21Q2")
+achilles_original_depend_df  <- ReadDepMapFile("Achilles_gene_dependency_21Q2")
 
-CRISPR_common_df             <- ReadDepMapFile("CRISPR_common_essentials_21Q1")
-CRISPR_original_effects_df   <- ReadDepMapFile("CRISPR_gene_effect_21Q1")
-CRISPR_original_depend_df    <- ReadDepMapFile("CRISPR_gene_dependency_21Q1")
+CRISPR_common_df             <- ReadDepMapFile("CRISPR_common_essentials_21Q2")
+CRISPR_original_effects_df   <- ReadDepMapFile("CRISPR_gene_effect_21Q2")
+CRISPR_original_depend_df    <- ReadDepMapFile("CRISPR_gene_dependency_21Q2")
 
-depmap_samples_df            <- ReadDepMapFile("sample_info_21Q1")
+depmap_samples_df            <- ReadDepMapFile("sample_info_21Q2")
 
 DEMETER2_combined_original_depend_df <- ReadDepMapFile("gene_dependency", sub_folder = "DEMETER 2 Combined RNAi")
 DEMETER2_combined_original_effects_df <- ReadDepMapFile("gene_effect", sub_folder = "DEMETER 2 Combined RNAi")
@@ -422,6 +426,8 @@ stopifnot(identical(CRISPR_effects_df[, "Entrez_ID"], CRISPR_depend_df[, "Entrez
 
 
 
+
+
 # Process the combined RNAi dataset ---------------------------------------
 
 DEMETER2_combined_depend_df  <- ProcessDEMETERDataDf(DEMETER2_combined_original_depend_df)
@@ -429,6 +435,7 @@ DEMETER2_combined_effects_df <- ProcessDEMETERDataDf(DEMETER2_combined_original_
 
 stopifnot(identical(names(DEMETER2_combined_depend_df), names(DEMETER2_combined_effects_df)))
 stopifnot(identical(DEMETER2_combined_depend_df[, "Entrez_ID"], DEMETER2_combined_effects_df[, "Entrez_ID"]))
+
 
 
 
@@ -449,13 +456,13 @@ all_blomen_hart_intersect <- intersect(expanded_hart_df[["Entrez_ID"]],
 
 essential_datasets_list <- list(
 
-    "Achilles_common"             = list("essential" = achilles_common_df[["Entrez_ID"]],
+    "CRISPR_common"               = list("essential" = CRISPR_common_df[["Entrez_ID"]],
                                          "all"       = union(achilles_common_df[["Entrez_ID"]],
                                                              achilles_depend_df[["Entrez_ID"]]
                                                              )
                                          ),
 
-    "CRISPR_common"               = list("essential" = CRISPR_common_df[["Entrez_ID"]],
+    "Achilles_common"             = list("essential" = achilles_common_df[["Entrez_ID"]],
                                          "all"       = union(achilles_common_df[["Entrez_ID"]],
                                                              achilles_depend_df[["Entrez_ID"]]
                                                              )
@@ -507,12 +514,19 @@ stopifnot(identical(all_entrezs, essential_df[["Entrez_ID"]]))
 # Export data -------------------------------------------------------------
 
 essential_export_df <- essential_df
-for (column_name in c("Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines")) {
+NA_empty_columns <- c("CRISPR_mean_probability",   "CRISPR_num_essential",   "CRISPR_num_cell_lines",
+                      "CRISPR_mean_effect",
+                      "Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines",
+                      "DEMETER2_mean_probability", "DEMETER2_num_essential", "DEMETER2_num_cell_lines"
+                      )
+for (column_name in NA_empty_columns) {
   essential_export_df[, column_name] <- ifelse(is.na(essential_export_df[, column_name]),
                                                "",
                                                essential_export_df[, column_name]
                                                )
 }
+
+essential_export_df <- essential_export_df[, !(names(essential_export_df) %in% c("Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines"))]
 
 write.table(essential_export_df,
             file = file.path(file_output_directory, "Essential_genes.tsv"),
@@ -524,28 +538,147 @@ write.table(essential_export_df,
 
 
 
-# Categorize into three groups by essentiality ----------------------------
+# # Categorize into three groups by essentiality ----------------------------
+#
+# essential_fraction <- essential_df[["Achilles_num_essential"]] /
+#                       essential_df[["Achilles_num_cell_lines"]]
+# essential_vec <- ifelse(essential_fraction < 0.1,
+#                         "Non-essential",
+#                         ifelse(essential_fraction > 0.9,
+#                                "Essential",
+#                                "Intermediate"
+#                                )
+#                         )
+# essential_fac <- factor(essential_vec,
+#                         levels = c("Essential", "Intermediate", "Non-essential"),
+#                         ordered = TRUE
+#                         )
+#
+# table(essential_fac, essential_df[["Achilles_common"]])
+#
+# essential_df[["Three_categories"]] <- essential_fac
 
-essential_fraction <- essential_df[["Achilles_num_essential"]] /
-                      essential_df[["Achilles_num_cell_lines"]]
-essential_vec <- ifelse(essential_fraction < 0.1,
+
+
+
+# Categorize into four categories by essentiality -------------------------
+
+essential_fraction <- essential_df[["CRISPR_num_essential"]] /
+                      essential_df[["CRISPR_num_cell_lines"]]
+essential_vec <- ifelse(essential_fraction == 0,
                         "Non-essential",
-                        ifelse(essential_fraction > 0.9,
+                        ifelse(essential_fraction > 0.95,
                                "Essential",
-                               "Intermediate"
+                               ifelse((essential_fraction > 0.1) & (essential_fraction < 0.15),
+                                      "Intermediate",
+                                      "Other"
+                                      )
                                )
                         )
 essential_fac <- factor(essential_vec,
-                        levels = c("Essential", "Intermediate", "Non-essential"),
-                        ordered = TRUE
+                        levels = c("Non-essential", "Intermediate", "Essential", "Other")
                         )
 
-table(essential_fac, essential_df[["Achilles_common"]])
-
-essential_df[["Three_categories"]] <- essential_fac
+essential_df[["Four_categories"]] <- essential_fac
 
 
 
+
+# Draw histograms ---------------------------------------------------------
+
+categ_mat <- sapply(levels(essential_df[["Four_categories"]]), function(x) {
+  are_this_category <- essential_df[["Four_categories"]] %in% x
+  CRISPR_effects_df[["Entrez_ID"]] %in% essential_df[["Entrez_ID"]][are_this_category]
+})
+
+
+
+DrawHistogram <- function(numeric_vec,
+                          add = FALSE,
+                          hist_color = brewer.pal(9, "Blues")[[8]],
+                          use_breaks = 1000
+                          ) {
+  points_alpha <- 0.5
+  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+  if (!(is.na(hist_color))) {
+    use_color <- paste0(hist_color, alpha_hex)
+  } else {
+    use_color <- NA
+  }
+  hist_results <- hist(numeric_vec,
+                       breaks = use_breaks,
+                       las    = 1,
+                       mgp    = c(2.5, 0.5, 0),
+                       tcl    = -0.4,
+                       col    = use_color,
+                       border = NA,
+                       main   = "Depmap \u2013 all cell lines",
+                       xlab   = "CRISPR knockout fitness effect",
+                       freq   = TRUE,
+                       add    = add,
+                       axes   = FALSE,
+                       ylab   = ""
+                       )
+  if (!(add)) {
+    box(bty = "l")
+    x_axis_pos <- pretty(par("usr")[c(1, 2)], n = 10)
+    axis(1, at = x_axis_pos)
+  }
+  return(invisible(hist_results))
+}
+
+
+for (make_PNG in c(TRUE, FALSE)) {
+
+  if (make_PNG) {
+    png(file = file.path(file_output_directory, "Histograms - gene effects.png"),
+        height = 6, width = 8, units = "in", res = 900
+        )
+  }
+
+  hist_breaks <- DrawHistogram(as.matrix(CRISPR_effects_df[, 4:ncol(CRISPR_effects_df)]),
+                               hist_color = NA
+                               )[["breaks"]]
+
+  abline(v = seq(-0.1, 0.1, by = 0.1), col = c("gray75", "gray50"), lty = "dashed")
+
+
+  DrawHistogram(as.matrix(CRISPR_effects_df[, 4:ncol(CRISPR_effects_df)]),
+                hist_color = brewer.pal(9, "Greys")[[4]],
+                add = TRUE, use_breaks = hist_breaks
+                )
+
+
+  DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Non-essential"], 4:ncol(CRISPR_effects_df)]),
+                add = TRUE, hist_color = brewer.pal(9, "Greens")[[8]], use_breaks = hist_breaks
+                )
+
+  DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Intermediate"], 4:ncol(CRISPR_effects_df)]),
+                add = TRUE, hist_color = "#aa6c39", use_breaks = hist_breaks
+                )
+
+  DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Essential"], 4:ncol(CRISPR_effects_df)]),
+                add = TRUE, hist_color = brewer.pal(9, "Reds")[[8]], use_breaks = hist_breaks
+                )
+
+
+  legend("topleft",
+         legend = c("All genes", "Non-essential", "Intermediate", "Essential"),
+         fill    = c(brewer.pal(9, "Greys")[[4]],
+                    brewer.pal(9, "Greens")[[8]],
+                    "#aa6c39",
+                    brewer.pal(9, "Reds")[[8]]
+                    ),
+         border  = NA,
+         bty = "n",
+         y.intersp = 1.1
+         )
+
+  if (make_PNG) {
+    dev.off()
+  }
+
+}
 
 
 
@@ -555,11 +688,6 @@ essential_df[["Three_categories"]] <- essential_fac
 save(list = "essential_df",
      file = file.path(general_RData_directory, "22) Compile data on essential genes.RData")
      )
-
-
-
-
-
 
 
 
