@@ -58,10 +58,10 @@ merged_CRISPRko_df <- AddOtherTargets(merged_CRISPRko_df,
 legacy_PD_4sg_entrezs <- setdiff(PD_4sg_entrezs, c("51142", "11315", "9842")) # This is how the full library was ordered
 
 sg4_by_well_df <- AllocateAllGuides_v2(merged_CRISPRko_df,
-                                         sublibraries_entrezs_list  = sublibraries_all_entrezs_list,
-                                         previous_version_CRISPR_df = TF_v1_CRISPRko_df,
-                                         candidate_entrezs          = legacy_PD_4sg_entrezs
-                                         )
+                                       sublibraries_entrezs_list  = sublibraries_all_entrezs_list,
+                                       previous_version_CRISPR_df = TF_v1_CRISPRko_df,
+                                       candidate_entrezs          = legacy_PD_4sg_entrezs
+                                       )
 sg4_by_gene_df <- RestoreOriginalOrder(sg4_by_well_df)
 
 
