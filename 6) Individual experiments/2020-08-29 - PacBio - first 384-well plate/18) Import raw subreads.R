@@ -67,7 +67,8 @@ stopifnot(identical(subreads_stats_df[["length"]], subreads_stats_df[["end"]] - 
 
 subreads_stats_df <- subreads_stats_df[, !(names(subreads_stats_df) %in% c(exclude_columns, "id"))]
 
-table(subreads_stats_df[["hole"]] %in% as.integer(substr(sl7_ccs3_ccs[["qname"]], 22, nchar(sl7_ccs3_ccs[["qname"]]) - 4)))
+
+# table(subreads_stats_df[["hole"]] %in% sl7_ccs_df[["ZMW"]])
 
 
 
