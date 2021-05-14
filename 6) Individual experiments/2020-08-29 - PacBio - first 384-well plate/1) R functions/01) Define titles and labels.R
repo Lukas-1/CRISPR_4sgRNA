@@ -6,7 +6,7 @@
 
 titles_list <- list(
 
-  "Num_contam_wells"       = "Percentage of reads that match sgRNAs from other wells (with 100% accuracy)",
+  "Num_contaminated_reads" = "Percentage of reads that match sgRNAs from other wells (with 100% accuracy)",
 
   "Num_under_2kb"          = "Percentage of truncated reads (shorter than 2000 base pairs)",
 
