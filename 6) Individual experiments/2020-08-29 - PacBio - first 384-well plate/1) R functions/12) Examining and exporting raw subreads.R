@@ -67,20 +67,18 @@ ExportReadsForZMW <- function(zmw,
   are_too_long <- lengths(reads_object) > subread_max_length
   stopifnot(!(all(are_too_long)))
   if (any(are_too_long)) {
-    if (any(are_too_long)) {
-      long_IDs <- names(reads_object)[are_too_long]
-      write_message <- paste0("The following reads were too long (>",
-                              subread_max_length, " bp) and could not",
-                              " be exported: ", paste0(long_IDs, collapse = ", ")
-                              )
-      if (!(use_fastq)) {
-        message(write_message)
-      }
-      write.table(write_message,
-                  file = file.path(output_dir, paste0(file_name, " - log.txt")),
-                  quote = FALSE, row.names = FALSE, col.names = FALSE
-                  )
+    long_IDs <- names(reads_object)[are_too_long]
+    write_message <- paste0("The following reads were too long (>",
+                            subread_max_length, " bp) and could not",
+                            " be exported: ", paste0(long_IDs, collapse = ", ")
+                            )
+    if (!(use_fastq)) {
+      message(write_message)
     }
+    write.table(write_message,
+                file = file.path(output_dir, paste0(file_name, " - log.txt")),
+                quote = FALSE, row.names = FALSE, col.names = FALSE
+                )
   }
   if (use_fastq) {
     writeQualityScaledXStringSet(reads_object[!(are_too_long)],

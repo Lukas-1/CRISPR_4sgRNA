@@ -117,10 +117,9 @@ PlotBySharedSubsequence <- function(summary_df,
        ylim = y_limits,
        xaxs = "i",
        yaxs = "i",
-       ann  = FALSE,
        type = "n",
-       axes = FALSE,
-       mgp  = c(2.7, 1, 0)
+       ann  = FALSE,
+       axes = FALSE
        )
 
   x_mid <- par("usr")[[1]] + (par("usr")[[2]] - par("usr")[[1]]) / 2
