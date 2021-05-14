@@ -30,7 +30,6 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 
 
 
-
 # Define the "individual reads" data frame to be used ---------------------
 
 use_df <- sl7_ccs3_df_list[["individual_reads_df"]]
@@ -72,6 +71,7 @@ are_poor_quality <- use_df[["Mean_quality"]] < mean_quality_cutoff
 
 
 
+
 # Check for associations with contaminations ------------------------------
 
 are_close_contams <- use_df[["Random_distance"]] <= close_well_range
@@ -99,7 +99,6 @@ fisher.test(table("are_contam"      = are_contaminated,
 fisher.test(table("standard_length" = are_standard_lengths,
                   "bad_bc"          = are_poor_barcodes
                   ))
-
 
 
 
