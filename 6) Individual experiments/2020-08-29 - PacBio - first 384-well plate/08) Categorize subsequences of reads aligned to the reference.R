@@ -22,9 +22,7 @@ R_objects_directory <- file.path(file_directory, "3) R objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "01) Process and export barcodes.RData"))
-load(file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(R_objects_directory, "04) Create reference sequences for each well - raw sequences.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 
@@ -34,14 +32,7 @@ load(file.path(R_objects_directory, "06) Perform pairwise alignments with the re
 
 # Define all important features, and generate per-well coordinates --------
 
-features_mat <- do.call(rbind, features_list)
-mode(features_mat) <- "integer"
-rownames(features_mat) <- NULL
-colnames(features_mat) <- c("Start", "End")
-features_df <- data.frame("Feature" = names(features_list),
-                          features_mat,
-                          stringsAsFactors = FALSE
-                          )
+features_df <- FeaturesListToDf(features_list)
 
 features_mat_list <- lapply(seq_len(384), function(x) {
   sg_vec <- as.character(sg_sequences_df[x, paste0("Sequence_sg", 1:4)])
@@ -52,13 +43,10 @@ features_indices_list <- lapply(features_mat_list, function(x) {
   lapply(seq_len(nrow(x)), function(y) seq(from = x[y, "Start"], to = x[y, "End"]))
 })
 
-
-barcoded_plasmids <- paste0(column_bc_vec, plasmids_vec, row_bc_vec)
-
 features_templates_list <- lapply(seq_len(384), function(x) {
   use_mat <- features_mat_list[[x]]
   vapply(seq_len(nrow(use_mat)),
-         function(y) substr(barcoded_plasmids[[x]], use_mat[y, "Start"], use_mat[y, "End"]),
+         function(y) substr(sg_sequences_df[x, "Barcoded_plasmid"], use_mat[y, "Start"], use_mat[y, "End"]),
          ""
          )
 })
@@ -69,6 +57,7 @@ features_templates_list <- lapply(seq_len(384), function(x) {
 
 sl7_extracted_df <- ExtractAlignedSequences(sl7_ccs_df, sl7_alignments_df)
 sl9_extracted_df <- ExtractAlignedSequences(sl9_ccs_df, sl9_alignments_df)
+
 
 
 
