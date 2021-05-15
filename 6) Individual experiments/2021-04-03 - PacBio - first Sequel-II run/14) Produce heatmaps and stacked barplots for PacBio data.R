@@ -13,12 +13,14 @@ source(file.path(R_functions_directory, "11) Creating stacked barplots for visua
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output")
 plots_output_directory   <- file.path(file_output_directory, "Figures")
+
 
 
 
