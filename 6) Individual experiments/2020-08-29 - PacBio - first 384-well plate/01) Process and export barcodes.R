@@ -9,6 +9,7 @@ library("Biostrings") # For taking the reverse complement
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory  <- "~/CRISPR"
