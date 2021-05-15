@@ -13,7 +13,6 @@ library("scales")
 
 
 
-
 # Define plot dimensions --------------------------------------------------
 
 use_height <- 7
