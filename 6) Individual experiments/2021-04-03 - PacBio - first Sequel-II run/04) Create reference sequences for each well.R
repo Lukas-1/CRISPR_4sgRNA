@@ -84,7 +84,6 @@ plasmid_lines_list <- lapply(library_seq, function(x) {
 
 # Create the full plasmid sequences ---------------------------------------
 
-
 barcoded_plasmids <- paste0(plate_barcodes,
                             "T",
                             column_barcodes,
@@ -94,6 +93,11 @@ barcoded_plasmids <- paste0(plate_barcodes,
                             rev_plate_barcodes
                             )
 sg_sequences_df[["Barcoded_plasmid"]] <- barcoded_plasmids
+
+plasmids_NNN <- paste0(plate_barcodes, "T", column_barcodes, plasmid_string,
+                       row_barcodes, "A", rev_plate_barcodes
+                       )
+sg_sequences_df[["Barcoded_plasmid_NNN"]] <- plasmids_NNN
 
 
 
