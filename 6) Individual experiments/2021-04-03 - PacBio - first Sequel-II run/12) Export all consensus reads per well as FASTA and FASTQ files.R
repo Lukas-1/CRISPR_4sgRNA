@@ -87,26 +87,26 @@ for (filter_reads in c("Unfiltered", "Filtered reads")) { #, "Filtered reads" # 
     message(paste0("Exporting reads into the '", sub_folder, "' folders..."))
     message("Exporting reads for CCS3...")
     ExportSequences(ccs_df,
-                    fasta_output_dir = file.path(fasta_output_directory, sub_folder, "CCS3"),
-                    fastq_output_dir = file.path(fastq_output_directory, sub_folder, "CCS3"),
+                    fasta_output_dir    = file.path(fasta_output_directory, sub_folder, "CCS3"),
+                    fastq_output_dir    = file.path(fastq_output_directory, sub_folder, "CCS3"),
                     append_to_file_name = "_ccs3",
-                    use_zmws = use_ccs3_zmws,
-                    split_into_chunks = split_reads,
-                    ID_column = "Combined_ID",
-                    unique_IDs = library_df[["Combined_ID"]],
-                    export_fasta = FALSE
+                    use_zmws            = use_ccs3_zmws,
+                    split_into_chunks   = split_reads,
+                    ID_column           = "Combined_ID",
+                    unique_IDs          = library_df[["Combined_ID"]],
+                    export_fasta        = FALSE
                     )
 
     message("Exporting reads for CCS7...")
     ExportSequences(ccs_df,
-                    fasta_output_dir = file.path(fasta_output_directory, sub_folder, "CCS7"),
-                    fastq_output_dir = file.path(fastq_output_directory, sub_folder, "CCS7"),
+                    fasta_output_dir    = file.path(fasta_output_directory, sub_folder, "CCS7"),
+                    fastq_output_dir    = file.path(fastq_output_directory, sub_folder, "CCS7"),
                     append_to_file_name = "_ccs7",
-                    use_zmws = use_ccs7_zmws,
-                    split_into_chunks = split_reads,
-                    ID_column = "Combined_ID",
-                    unique_IDs = library_df[["Combined_ID"]],
-                    export_fasta = FALSE
+                    use_zmws            = use_ccs7_zmws,
+                    split_into_chunks   = split_reads,
+                    ID_column           = "Combined_ID",
+                    unique_IDs          = library_df[["Combined_ID"]],
+                    export_fasta        = FALSE
                     )
 
   }
