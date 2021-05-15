@@ -56,14 +56,14 @@ RData_prefix <- "06) Perform pairwise alignments with the reference sequence"
 aligned_list <- vector(mode = "list", length = num_chunks)
 previous_time <- Sys.time()
 
-for (i in 4:num_chunks) {
+for (i in seq_len(num_chunks)) {
 
   message("Processing chunk #", i, " of ", num_chunks, "...")
 
   are_these_plates <- ccs_df[["Plate_number"]] %in% chunk_list[[i]]
   are_selected <- are_eligible & are_these_plates
 
-  sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% chunk_list[[i]]]
+  sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% chunk_list[[i]], ]
 
   aligned_list[[i]] <- ExtractAlignedSequences(ccs_df[are_selected, ],
                                                sg_sub_df,
