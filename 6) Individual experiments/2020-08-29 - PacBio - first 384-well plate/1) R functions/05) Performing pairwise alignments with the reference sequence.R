@@ -13,7 +13,8 @@ library("data.table")
 ProcessWell <- function(ccs_df,
                         sg_df,
                         ID_index,
-                        ID_column = "Well_number"
+                        ID_column = "Well_number",
+                        opening_penalty = 30
                         ) {
 
   current_ID <- sg_df[ID_index, ID_column]
@@ -24,8 +25,13 @@ ProcessWell <- function(ccs_df,
   ccs_seq <- DNAStringSet(ccs_df[["Sequence"]][are_this_ID])
   plasmid <- DNAStringSet(sg_df[ID_index, "Barcoded_plasmid"])
 
-  fwd_alignments <- pairwiseAlignment(ccs_seq, plasmid, type = "global")
-  rev_alignments <- pairwiseAlignment(reverseComplement(ccs_seq), plasmid, type = "global")
+  fwd_alignments <- pairwiseAlignment(ccs_seq, plasmid,type = "global",
+                                      gapOpening = opening_penalty
+                                      )
+  rev_alignments <- pairwiseAlignment(reverseComplement(ccs_seq), plasmid,
+                                      type = "global",
+                                      gapOpening = opening_penalty
+                                      )
   are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
 
   new_order <- order(c(which(are_forward_vec), which(!(are_forward_vec))))
