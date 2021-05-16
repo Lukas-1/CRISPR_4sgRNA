@@ -1236,38 +1236,40 @@ DrawAccuracyHeatmap <- function(summary_df,
     MakeEmptyPlot()
   }
 
-  ## Draw the strip indicating genes with homologies >=8 bp
+  ## Draw the bottom strip (indicating homologies / wells with low read numbers)
 
   if ("Longest_subsequence" %in% names("Longest_subsequence")) {
-
-    longest_subsequence_vec <- summary_df[["Longest_subsequence"]]
-    have_homology <- longest_subsequence_vec >= 8
-
-    homology_colors <- two_grey_colors # brewer.pal(8, "Paired")[c(3, 4)]
-
-    for (i in seq_len(num_wells)) {
-      rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
-           xright  = (positions_vec[[i]] / max(positions_vec)),
-           ybottom = 0,
-           ytop    = 1,
-           col     = homology_colors[[as.integer(have_homology[[i]]) + 1]],
-           border  = NA
-           )
-    }
-
-    text(x      = 0.5,
-         y      = -0.65,
-         adj    = c(0.5, 0.5),
-         labels = bquote(bold(.(as.character(sum(have_homology))) * " / " *
-                              .(as.character(num_wells)) * " genes " *
-                                "had " >= "8bp homology"
-                              )),
-         font   = 2,
-         col    = "black",
-         xpd    = NA
-         )
-
+    are_to_highlight <- summary_df[["Longest_subsequence"]] >= 8
+    strip_label <- bquote(bold(.(as.character(sum(are_to_highlight))) * " / " *
+                                 .(as.character(num_wells)) * " genes " *
+                                 "had " >= "8bp homology"
+                               ))
+  } else {
+    are_to_highlight <- summary_df[["Count_total"]] < 20
+    strip_label <- bquote(bold(.(as.character(sum(are_to_highlight))) * " / " *
+                                 .(as.character(num_wells)) * " genes " *
+                                 "had " < "20 reads"
+                               ))
   }
+
+  for (i in seq_len(num_wells)) {
+    rect(xleft   = (positions_vec[[i]] - 1) / max(positions_vec),
+         xright  = (positions_vec[[i]] / max(positions_vec)),
+         ybottom = 0,
+         ytop    = 1,
+         col     = two_grey_colors[[as.integer(are_to_highlight[[i]]) + 1]],
+         border  = NA
+         )
+  }
+
+  text(x      = 0.5,
+       y      = -0.65,
+       adj    = c(0.5, 0.5),
+       labels = strip_label,
+       font   = 2,
+       col    = "black",
+       xpd    = NA
+       )
 
   MakeEmptyPlot()
   return(invisible(NULL))
