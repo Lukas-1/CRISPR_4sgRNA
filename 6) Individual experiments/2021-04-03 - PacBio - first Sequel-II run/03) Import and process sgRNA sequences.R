@@ -177,6 +177,16 @@ for (i in 1:4) {
 
 
 
+# Add data on (known) empty wells -----------------------------------------
+
+empty_wells <- c("Plate08_Well024", "Plate10_Well024")
+
+library_df[["Empty_well"]] <- library_df[["Combined_ID"]] %in% empty_wells
+
+
+
+
+
 # Save data ---------------------------------------------------------------
 
 save(list = "library_df",

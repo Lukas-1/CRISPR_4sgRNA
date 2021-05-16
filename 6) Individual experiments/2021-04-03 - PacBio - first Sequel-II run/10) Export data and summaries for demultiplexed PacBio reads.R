@@ -26,9 +26,8 @@ tables_output_directory  <- file.path(file_output_directory, "Tables")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
-
-
 
 
 
@@ -106,12 +105,6 @@ ExportSummaryTable(ccs7_df_list[["filtered_gRNAs_df"]],
 
 
 
-# Define known problematic wells ------------------------------------------
-
-empty_wells <- c("Plate08_Well024", "Plate10_Well024")
-
-
-
 
 # Define columns to export ------------------------------------------------
 
@@ -154,10 +147,7 @@ use_columns <- c(
 # Identify problematic wells ----------------------------------------------
 
 use_df <- ccs7_df_list[["filtered_summary_df"]]
-
-use_df[["Known_empty"]] <- ifelse(use_df[["Combined_ID"]] %in% empty_wells,
-                                  "Yes", NA
-                                  )
+use_df[["Known_empty"]] <- ifelse(sg_sequences_df[["Empty_well"]], "Yes", NA)
 
 order_by_count   <- order(use_df[, "Count_total"],
                           use_df[, "Perc_at_least_1"],
@@ -167,7 +157,6 @@ order_by_correct <- order(use_df[, "Perc_at_least_1"],
                           use_df[, "Count_total"],
                           na.last = FALSE
                           )
-
 
 ExportSummaryTable(use_df[order_by_count, use_columns],
                    "CCS7_9999_filtered_ordered_by_number_of_reads",
@@ -184,9 +173,6 @@ ExportSummaryTable(use_df[order_by_correct, use_columns],
                                               "Re-ordered (problematic wells first)"
                                               )
                    )
-
-
-
 
 
 
