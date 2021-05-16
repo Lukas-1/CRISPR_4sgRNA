@@ -13,6 +13,7 @@ source(file.path(R_functions_directory, "16) Showing metrics in a schematic of a
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 file_input_directory   <- file.path(file_directory, "2) Input")
@@ -39,17 +40,9 @@ DrawAllSchematicsForOnePlate()
 
 BarPlotPanel(sl7_ccs3_df_list[["original_summary_df"]],
              "Longest_subsequence",
+             sg_sequences_df,
              indicate_homologies = TRUE
              )
-
-
-
-
-
-
-
-
-
 
 
 
