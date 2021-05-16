@@ -26,6 +26,8 @@ BeeBarSubPlot <- function(summary_df,
                           color_scheme = "Blues"
                           ) {
 
+  set.seed(1)
+
   numeric_vec <- summary_df[[show_column]]
 
   is_percentage <- grepl("^(Count|Num)_", show_column)
@@ -69,7 +71,7 @@ BeeBarSubPlot <- function(summary_df,
   abline(h = tick_locations, col = "gray94", lwd = 0.75)
   # box(lwd = 0.75, col = "gray94")
 
-  bar_heights <- vapply(split_list, mean, numeric(1))
+  bar_heights <- vapply(split_list, mean, numeric(1), na.rm = TRUE)
 
   for (i in seq_len(num_groups)) {
     rect(xleft   = x_positions - 0.35,
@@ -81,8 +83,9 @@ BeeBarSubPlot <- function(summary_df,
          )
   }
 
+
   beeswarm_df <- beeswarm(split_list,
-                          priority = "density",
+                          priority = "random",
                           cex      = 0.3,
                           spacing  = 0.8,
                           do.plot  = FALSE
@@ -122,10 +125,17 @@ BeeBarSubPlot <- function(summary_df,
 
 WellLayoutBarplot <- function(summary_df,
                               show_column,
-                              indicate_homologies = FALSE,
-                              number_wells = FALSE,
-                              gap_fraction = 0.25
+                              sg_df,
+                              indicate_homologies   = FALSE,
+                              number_wells          = FALSE,
+                              gap_fraction          = 0.25,
+                              show_low_read_numbers = FALSE
                               ) {
+
+
+  assign("delete_summary_df",  summary_df,  envir = globalenv())
+  assign("delete_show_column", show_column, envir = globalenv())
+  assign("delete_sg_df",       sg_df,       envir = globalenv())
 
   MakeEmptyPlot()
 
@@ -197,19 +207,31 @@ WellLayoutBarplot <- function(summary_df,
        adj    = c(0.5, 1)
        )
 
-  empty_colors <- ifelse(sg_sequences_df[["Empty_well"]],
+  if (show_low_read_numbers) {
+    low_read_number_colors <- ifelse(summary_df[["Count_total"]] < 20,
+                                     "#FFDDCC",
+                                     "#FFFFFF"
+                                     )
+  } else {
+    low_read_number_colors <- "#FFFFFF"
+  }
+  assign("delete_summary_df", summary_df, envir = globalenv())
+
+  empty_colors <- ifelse(sg_df[["Empty_well"]],
                          brewer.pal(9, "Pastel1")[[6]],
-                         "#FFFFFF"
+                         low_read_number_colors
                          )
+  assign("delete_empty_colors", empty_colors, envir = globalenv())
 
 
   homology_color <- brewer.pal(9, "Reds")[[7]]
   no_homology_color <- brewer.pal(9, "Greys")[[7]]
-  homology_colors_vec <- ifelse(sg_sequences_df[["Longest_subsequence"]] >= 8,
-                                homology_color,
-                                no_homology_color
-                                )
-
+  if ("Longest_subsequence" %in% names(sg_df)) {
+    have_homology <- sg_df[["Longest_subsequence"]] >= 8
+  } else {
+    have_homology <- rep(FALSE, nrow(sg_df))
+  }
+  homology_colors_vec <- ifelse(have_homology, homology_color, no_homology_color)
 
   if (indicate_homologies) {
 
@@ -264,6 +286,8 @@ WellLayoutBarplot <- function(summary_df,
          )
   }
 
+  bar_heights <- ifelse(is.na(numeric_vec), 0, numeric_vec) * well_height
+
   for (i in seq_len(nrow(summary_df))) {
 
     well_number <- summary_df[i, "Well_number"]
@@ -271,8 +295,6 @@ WellLayoutBarplot <- function(summary_df,
     are_this_well_mat <- well_number_mat == well_number
     x_coord <- x_starts[col_coords_mat[are_this_well_mat]]
     y_coord <- y_starts[row_coords_mat[are_this_well_mat]]
-
-    bar_height <- numeric_vec[[i]] * well_height
 
     border_fraction <- 0.1
     if (indicate_homologies) {
@@ -285,13 +307,16 @@ WellLayoutBarplot <- function(summary_df,
            )
     }
 
-    rect(xleft   = x_coord,
-         xright  = x_coord + well_width,
-         ybottom = y_coord,
-         ytop    = y_coord + bar_height,
-         border  = NA,
-         col     = brewer.pal(9, "Blues")[[9]]
-         )
+    bar_height <- bar_heights[[i]]
+    if (bar_height > 0) { # This prevents zero-height rectangles being shown as a thin line on some zoom levels in the PDF viewer
+      rect(xleft   = x_coord,
+           xright  = x_coord + well_width,
+           ybottom = y_coord,
+           ytop    = y_coord + bar_height,
+           border  = NA,
+           col     = brewer.pal(9, "Blues")[[9]]
+           )
+    }
 
     rect(xleft   = x_coord,
          xright  = x_coord + well_width,
@@ -332,16 +357,20 @@ CenterText <- function(show_text, y_position = 0.3, use_cex = 1) {
 
 BarPlotPanel <- function(summary_df,
                          show_column,
+                         sg_df,
                          width_to_height_ratio = 2,
-                         indicate_homologies = FALSE,
-                         well_gap = if (indicate_homologies) 0.4 else 0.25,
-                         number_wells = FALSE
+                         indicate_homologies   = FALSE,
+                         well_gap              = if (indicate_homologies) 0.4 else 0.25,
+                         number_wells          = FALSE,
+                         top_text              = "Original 384-well plate",
+                         show_low_read_numbers = FALSE
                          ) {
 
-  stopifnot(all(c("sg_sequences_df", "barcode_combos_df") %in% ls(envir = globalenv())))
+  stopifnot("barcode_combos_df" %in% ls(envir = globalenv()))
+  stopifnot(identical(summary_df[, "Well_number"], sg_df[, "Well_number"]))
 
   if (show_column == "Longest_subsequence") {
-    summary_df[["Longest_subsequence"]] <- sg_sequences_df[["Longest_subsequence"]]
+    summary_df[["Longest_subsequence"]] <- sg_df[["Longest_subsequence"]]
   } else if (show_column == "Count_mean_sg1to4") {
     count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
     summary_df[["Count_mean_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
@@ -411,12 +440,14 @@ BarPlotPanel <- function(summary_df,
 
   text_y <- 0.4
 
-  CenterText("Original 384-well plate", y_position = text_y * (1 / space_1))
+  CenterText(top_text, y_position = text_y * (1 / space_1))
   WellLayoutBarplot(summary_df,
                     show_column,
-                    gap_fraction = well_gap,
-                    indicate_homologies = indicate_homologies,
-                    number_wells = number_wells
+                    sg_df,
+                    gap_fraction          = well_gap,
+                    indicate_homologies   = indicate_homologies,
+                    number_wells          = number_wells,
+                    show_low_read_numbers = show_low_read_numbers
                     )
 
   ## Draw the barplots (with superimposed beeeswarms)
@@ -428,7 +459,7 @@ BarPlotPanel <- function(summary_df,
                                           levels = unique(barcode_combos_df[["Column_number"]])
                                           )
 
-  summary_df <- summary_df[!(sg_sequences_df[["Empty_well"]]), ]
+  summary_df <- summary_df[!(sg_df[["Empty_well"]]), ]
 
   MakeEmptyPlot()
   MakeEmptyPlot()
@@ -515,6 +546,7 @@ DrawAllSchematicsForOnePlate <- function() {
           for (i in seq_along(titles_list)) {
             BarPlotPanel(ccs3_df_list[[df_name]],
                          names(titles_list)[[i]],
+                         sg_sequences_df,
                          indicate_homologies = highlight_homologies,
                          number_wells = show_well_numbers
                          )
@@ -533,12 +565,12 @@ DrawAllSchematicsForOnePlate <- function() {
           for (i in seq_along(titles_list)) {
             BarPlotPanel(ccs5_df_list[[df_name]],
                          names(titles_list)[[i]],
+                         sg_sequences_df,
                          indicate_homologies = highlight_homologies,
                          number_wells = show_well_numbers
                          )
           }
           dev.off()
-
 
 
           pdf(file = file.path(plots_output_directory,
@@ -552,6 +584,7 @@ DrawAllSchematicsForOnePlate <- function() {
           for (i in seq_along(titles_list)) {
             BarPlotPanel(ccs5_df_list[[df_name]],
                          names(titles_list)[[i]],
+                         sg_sequences_df,
                          indicate_homologies = highlight_homologies,
                          number_wells = show_well_numbers
                          )
@@ -563,17 +596,6 @@ DrawAllSchematicsForOnePlate <- function() {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
