@@ -66,8 +66,8 @@ features_templates_list <- lapply(all_indices, function(x) {
 
 extracted_df <- ExtractAlignedSequences(ccs_df,
                                         alignments_df,
-                                        unique_IDs = sg_sequences_df[["Combined_ID"]],
-                                        ID_column = "Source_ID"
+                                        ID_column = "Combined_ID",
+                                        unique_IDs = sg_sequences_df[["Combined_ID"]]
                                         )
 
 

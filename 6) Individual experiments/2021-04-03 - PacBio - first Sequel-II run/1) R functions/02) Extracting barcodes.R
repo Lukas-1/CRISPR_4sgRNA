@@ -80,7 +80,7 @@ GetBarcodes <- function(ccs_df, alignments_df) {
   column_templates_vec <- column_bc_vec[ccs_df[["Well_number"]][matches_vec]]
 
   results_df <- data.frame(
-    alignments_df[, c("ZMW", "Source_ID")],
+    alignments_df[, c("ZMW", "Combined_ID")],
     "Plate_number"          = NA,
     "Well_number"           = ccs_df[["Well_number"]][matches_vec],
     "Match_template_row"    = row_seq == row_templates_vec,
@@ -124,8 +124,8 @@ ProcessBarcodesDf <- function(barcodes_df) {
                               "Starts_with_column_barcode",
                               "Ends_with_column_barcode"
                               )
-  for (well_ID in unique(barcodes_df[["Source_ID"]])) {
-    are_this_ID <- barcodes_df[["Source_ID"]] %in% well_ID
+  for (well_ID in unique(barcodes_df[["Combined_ID"]])) {
+    are_this_ID <- barcodes_df[["Combined_ID"]] %in% well_ID
     well_number <- unique(barcodes_df[["Well_number"]][are_this_ID])
     row_bc <- row_bc_vec[[well_number]]
     column_bc <- column_bc_vec[[well_number]]
