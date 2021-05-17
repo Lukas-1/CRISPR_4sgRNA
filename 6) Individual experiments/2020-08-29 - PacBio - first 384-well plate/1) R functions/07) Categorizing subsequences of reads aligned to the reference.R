@@ -166,10 +166,10 @@ ExtractAlignedSequences <- function(ccs_df,
     well_mat <- do.call(rbind, extracted_mat_list)
 
     well_df <- data.frame(
-      "Source_ID" = current_ID,
-      "ZMW"       = rep(this_ID_zmws, each = num_features),
-      "Feature"   = rep(features_vec, times = num_reads),
-      "Template"  = rep(features_templates_list[[use_index]], times = num_reads),
+      "Combined_ID" = current_ID,
+      "ZMW"         = rep(this_ID_zmws, each = num_features),
+      "Feature"     = rep(features_vec, times = num_reads),
+      "Template"    = rep(features_templates_list[[use_index]], times = num_reads),
       well_mat,
       stringsAsFactors = FALSE
     )
@@ -179,13 +179,13 @@ ExtractAlignedSequences <- function(ccs_df,
   results_df <- data.table::rbindlist(well_df_list)
   data.table::setDF(results_df)
 
-  if (ID_column == "Source_ID") {
-    ID_matches <- match(results_df[, "Source_ID"], ccs_df[, "Combined_ID"])
+  if (ID_column == "Combined_ID") {
+    ID_matches <- match(results_df[, "Combined_ID"], ccs_df[, "Combined_ID"])
     results_df[["Plate_number"]] <- ccs_df[, "Plate_number"][ID_matches]
     results_df[["Well_number"]] <- ccs_df[, "Well_number"][ID_matches]
-    names(results_df)[names(results_df) == "Source_ID"] <- "Combined_ID"
+    names(results_df)[names(results_df) == "Combined_ID"] <- "Combined_ID"
   } else if (ID_column == "Well_number") {
-    names(results_df)[names(results_df) == "Source_ID"] <- "Well_number"
+    names(results_df)[names(results_df) == "Combined_ID"] <- "Well_number"
   }
   results_df[["Template"]] <- toupper(results_df[["Template"]])
 
@@ -253,11 +253,8 @@ ProcessByPlate <- function(input_df, UseFunction, is_df = TRUE, message_prefix =
 ThreeBasicCategories <- function(extracted_df) {
 
   mean_quality_vec <- GetMeanQualityNoGaps(extracted_df[["Quality"]])
-
   sequence_splits <- strsplit(extracted_df[["Aligned_read"]], "", fixed = TRUE)
-
   num_bases_lost <- vapply(sequence_splits, function(x) sum(x == "-"), integer(1))
-
   sequence_lengths <- nchar(extracted_df[["Aligned_read"]])
 
   results_df <- data.frame(
@@ -275,7 +272,6 @@ ThreeBasicCategories <- function(extracted_df) {
                                 "Mutation"
                                 )
                          )
-
   results_df[["Category"]] <- category_vec
   return(results_df)
 }
