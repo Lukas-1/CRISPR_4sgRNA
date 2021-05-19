@@ -144,7 +144,6 @@ ContainSequences <- function(query_seq, target_seq) {
   are_fwd <- rowSums(contain_fwd_mat) > 0
   are_rev <- rowSums(contain_rev_mat) > 0
 
-
   num_duplicated_fwd <- sum(contain_fwd_mat > 1)
   num_duplicated_rev <- sum(contain_rev_mat > 1)
 
@@ -274,6 +273,35 @@ GetMode <- function(vec) {
 
 
 
+OrientationContaminationMat <- function(query_seq, reads_seq) {
+
+  are_usual_length <- nchar(query_seq) == GetMode(nchar(query_seq))
+
+  PDict_object <- PDict(query_seq[are_usual_length], max.mismatch = 0)
+
+  counts_mat <- vcountPDict(PDict_object, reads_seq)
+
+  row_list <- vector(mode = "list", length = length(query_seq))
+  row_list[are_usual_length] <- lapply(seq_len(nrow(counts_mat)),
+                                       function(x) counts_mat[x, ]
+                                       )
+
+  unusual_seq <- DNAStringSet(query_seq[!(are_usual_length)])
+
+  unusual_list <- lapply(seq_len(sum(!(are_usual_length))),
+                         function(x) vcountPattern(unusual_seq[[x]], reads_seq)
+                         )
+
+  row_list[!(are_usual_length)] <- unusual_list
+
+  all_counts_mat <- do.call(rbind, row_list)
+  stopifnot(all(unique(as.vector(all_counts_mat))) %in% 0:1)
+  mode(all_counts_mat) <- "integer"
+  return(all_counts_mat)
+}
+
+
+
 
 GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
 
@@ -283,36 +311,23 @@ GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
 
   stopifnot(nrow(sg_df) == length(query_seq))
 
-  are_usual_length <- nchar(query_seq) == GetMode(nchar(query_seq))
-
-  PDict_object <- PDict(query_seq[are_usual_length], max.mismatch = 0)
-
   have_well <- !(is.na(ccs_df[["Well_number"]])) & ccs_df[["Passed_filters"]]
 
-  sequences_object <- DNAStringSet(substr(ccs_df[["Sequence"]][have_well],
-                                          ccs_df[["Clip_start"]][have_well],
-                                          ccs_df[["Clip_end"]][have_well]
-                                          ))
-  counts_mat <- vcountPDict(PDict_object, sequences_object)
+  read_sequences <- DNAStringSet(substr(ccs_df[["Sequence"]][have_well],
+                                        ccs_df[["Clip_start"]][have_well],
+                                        ccs_df[["Clip_end"]][have_well]
+                                        ))
 
-  row_list <- vector(mode = "list", length = nrow(sg_df))
-  row_list[are_usual_length] <- lapply(seq_len(nrow(counts_mat)),
-                                       function(x) counts_mat[x, ]
-                                       )
 
-  unusual_seq <- DNAStringSet(query_seq[!(are_usual_length)])
+  rev_query_seq <- as.character(reverseComplement(DNAStringSet(query_seq)))
 
-  unusual_list <- lapply(seq_len(sum(!(are_usual_length))),
-                         function(x) vcountPattern(unusual_seq[[x]],
-                                                   sequences_object
-                                                   )
-                         )
+  fwd_counts_mat <- OrientationContaminationMat(query_seq, read_sequences)
+  rev_counts_mat <- OrientationContaminationMat(rev_query_seq, read_sequences)
 
-  row_list[!(are_usual_length)] <- unusual_list
+  counts_mat <- fwd_counts_mat + rev_counts_mat
 
-  all_counts_mat <- do.call(rbind, row_list)
-  stopifnot(all(unique(as.vector(all_counts_mat))) %in% 0:1)
-  mode(all_counts_mat) <- "integer"
+  contamination_mat <- counts_mat
+  contamination_mat[contamination_mat == 2L] <- 1L
 
   ## If the sequence of two wells is exactly the same,
   ## perhaps it shouldn't count as a contamination...
@@ -325,7 +340,6 @@ GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
                                function(x) ccs_df[["Well_number"]][have_well] %in% x
                                )
 
-  contamination_mat <- all_counts_mat
   for (i in seq_len(nrow(sg_df))) {
     contamination_mat[i, are_this_well_list[[i]]] <- 0L
   }
