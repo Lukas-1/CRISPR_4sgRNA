@@ -11,6 +11,7 @@ R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "02) Analyzing reads.R")) # For GetWellNumbers
 source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R"))
+source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio reads.R")) # For GetFeaturesData
 
 
 
@@ -33,13 +34,18 @@ fastq_output_directory   <- file.path(file_output_directory, "Fastq")
 
 load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(sql2_R_objects_directory, "05) Read in PacBio data.RData"))
+load(file.path(sql2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
 load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
 
 
 
+
+
 # Prepare for exporting sequences -----------------------------------------
+
+ccs_df[["Category_string"]] <- MakeCategoryString(ccs_df, extracted_df)
 
 ccs_df[["Passed_filters"]] <- ccs_df[["Plate_passed_filters"]] &
                               (ccs_df[["Well_passed_filters"]] %in% TRUE)
@@ -61,6 +67,7 @@ passing_read_zmws <- reads_df[["ZMW"]][pass_bc & pass_read]
 
 
 
+
 # Export sequences --------------------------------------------------------
 
 for (filter_reads in c("Unfiltered", "Filtered reads")) { #, "Filtered reads" # "Filtered gRNAs"
@@ -68,7 +75,7 @@ for (filter_reads in c("Unfiltered", "Filtered reads")) { #, "Filtered reads" # 
 
     if (filter_reads == "Unfiltered") {
       first_half <- "a) Unfiltered"
-      use_ccs3_zmws <- NULL
+      use_ccs3_zmws <- ccs3_zmws
       use_ccs5_zmws <- ccs5_zmws
       use_ccs7_zmws <- ccs7_zmws
     } else if (filter_reads == "Filtered reads") {
