@@ -46,7 +46,7 @@ DrawAllSigmoidCurves <- function() {
 
   for (smrtlink_version in c(7, 9)) {
 
-    version_folder <- paste0("SmrtLink ", smrtlink_version, " - subsampled")
+    version_folder <- paste0("SmrtLink ", smrtlink_version)
     version_path <- file.path(plots_output_directory, version_folder)
 
     use_sample_list <- get(paste0("sl", smrtlink_version, "_subsampled_list"))
@@ -277,7 +277,7 @@ DrawSigmoidCurve <- function(sampled_list,
     cbind("Fraction_sampled" = as.numeric(sub("% sampled", "", names(rep_mat_list)[[x]])) / 100,
           rep_mat_list[[x]]
           )
-  })
+   })
 
   sample_mat <- do.call(rbind, sample_mat_list)
   sample_mat <- cbind(sample_mat,
@@ -292,11 +292,20 @@ DrawSigmoidCurve <- function(sampled_list,
                         sample_mat[, "Fraction_sampled"]
                         )
 
-  fit <- nls(y ~ SSlogis(x, Asym, xmid, scal),
-             data = data.frame(x = sample_mat[, "Fraction_sampled"] * 100,
-                               y = sample_mat[, "Fraction_passing"] * 100
-                               )
-             )
+  x_vec <- sample_mat[, "Fraction_sampled"] * 100
+  y_vec <- sample_mat[, "Fraction_passing"] * 100
+
+  fit <- try(nls(y ~ SSlogis(x, Asym, xmid, scal),
+                 data = data.frame(x = x_vec, y = y_vec)
+                 ))
+  if (class(fit) == "try-error") {
+    message("A sigmoid curve could not be fitted successfully. Some jitter was added.")
+    set.seed(1)
+    fit <- try(nls(y ~ SSlogis(x, Asym, xmid, scal),
+                   data = data.frame(x = jitter(x_vec), y = jitter(y_vec))
+                   ))
+  }
+
   use_seq <- seq(0, 100, length.out = 100)
   lines(use_seq,
         predict(fit, newdata = data.frame(x = use_seq)),
@@ -328,7 +337,6 @@ DrawSigmoidCurve <- function(sampled_list,
            )
   return(invisible(NULL))
 }
-
 
 
 
