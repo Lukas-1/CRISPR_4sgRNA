@@ -5,6 +5,11 @@
 # Import packages and source code -----------------------------------------
 
 library("readxl")
+CRISPR_root_directory <- "~/CRISPR"
+general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
+source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria
+source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))         # For exporting the library as a reference
+source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))      # For ExportPlates
 
 
 
@@ -13,6 +18,7 @@ library("readxl")
 CRISPR_root_directory    <- "~/CRISPR"
 file_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 file_input_directory     <- file.path(file_directory, "2) Input")
+file_output_directory    <- file.path(file_directory, "5) Output", "Library reference")
 R_objects_directory      <- file.path(file_directory, "3) R objects")
 
 library_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files")
@@ -92,6 +98,7 @@ combined_df[["Sequence"]] <- toupper(combined_df[["Sequence"]])
 
 
 
+
 # Process colony-picked controls ------------------------------------------
 
 controls_mat <- as.matrix(controls_df[15:(15 + 16 - 1), 3:25])
@@ -105,6 +112,7 @@ are_controls <- (CRISPRko_seq_df[["Plate_name"]] %in% "HO_38") &
                 (CRISPRko_seq_df[["Well_number"]] %in% control_wells)
 control_plate_df <- CRISPRko_seq_df[are_controls, ]
 control_plate_df[["Plate_name"]] <- "Intctrl"
+
 
 
 
@@ -182,6 +190,39 @@ for (i in 1:4) {
 empty_wells <- c("Plate08_Well024", "Plate10_Well024")
 
 library_df[["Empty_well"]] <- library_df[["Combined_ID"]] %in% empty_wells
+
+
+
+
+
+# Create a large combined data frame, for reference purposes --------------
+
+df_names <- c("vac_by_well_df", "PD_CRISPRa_df", "PD_CRISPRko_df",
+              "CRISPRa_df", "CRISPRko_df"
+              )
+
+CRISPRa_df[["Modality"]]     <- "CRISPRa"
+CRISPRko_df[["Modality"]]    <- "CRISPRko"
+PD_CRISPRa_df[["Modality"]]  <- "CRISPRa"
+PD_CRISPRko_df[["Modality"]] <- "CRISPRko"
+vac_by_well_df[["Modality"]] <- "CRISPRi"
+
+PD_CRISPRa_df[["Sublibrary_4sg"]]  <- "PD-a"
+PD_CRISPRko_df[["Sublibrary_4sg"]] <- "PD-o"
+vac_by_well_df[["Sublibrary_4sg"]] <- "Vacuolation"
+
+common_columns <- Reduce(intersect, lapply(df_names, function(x) names(get(x))))
+
+df_list <- lapply(df_names, function(x) get(x)[, common_columns])
+
+all_guides_df <- do.call(rbind.data.frame, c(df_list, stringsAsFactors = FALSE, make.row.names = FALSE))
+
+export_columns <- c("Modality", export_columns)
+
+ExportPlates(all_guides_df, sub_folder = "", file_name = "All_guides",
+             no_modality = TRUE, add_primers = FALSE
+             )
+
 
 
 
