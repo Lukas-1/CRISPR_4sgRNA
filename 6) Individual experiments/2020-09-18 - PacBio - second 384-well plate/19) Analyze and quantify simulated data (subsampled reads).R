@@ -11,6 +11,7 @@ source(file.path(R_functions_directory, "14) Drawing sigmoid curves (acceptable 
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 plate2_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
