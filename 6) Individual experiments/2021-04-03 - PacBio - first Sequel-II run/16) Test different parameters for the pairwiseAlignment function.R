@@ -144,13 +144,19 @@ passing_read_zmws <- reads_df[["ZMW"]][pass_bc & pass_read]
 # Find problematic ZMWs ---------------------------------------------------
 
 use_df <- ccs7_df_list[["individual_reads_df"]]
-are_problematic <- (use_df[, "Num_contaminating_guides"] == 4) &
-                   (rowSums(use_df[, paste0("sg", 1:4, "_cr", 1:4, "_category")] == "Contamination") < 4)
 
-problematic_df <- use_df[are_problematic, c("ZMW", "Combined_ID")]
+four_contam_search <- (use_df[, "Num_contaminating_guides"] >= 4)
+four_contam_align  <- (rowSums(use_df[, paste0("sg", 1:4, "_cr", 1:4, "_category")] == "Contamination") == 4)
+
+search_greater_align <- four_contam_search & !(four_contam_align)
+align_greater_search <- four_contam_align & !(four_contam_search)
+
+head(use_df[search_greater_align, c("ZMW", "Combined_ID")])
+head(use_df[align_greater_search, c("ZMW", "Combined_ID")])
 
 
-0
+
+
 
 # Try stuff ---------------------------------------------------------------
 
