@@ -36,8 +36,7 @@ load(file.path(R_objects_directory, "18) Import raw subreads.RData"))
 
 
 
-
-# Export subreads (before consensus calling) ------------------------------
+# Export selected subreads ------------------------------------------------
 
 ExportReadsForZMW(57672593, sl7_ccs_df)
 ExportReadsForZMW(4522423, sl7_ccs_df)
@@ -46,11 +45,13 @@ ExportReadsForZMW(32965024, sl7_ccs_df)
 
 
 
+# Export a small sample of raw subreads (before consensus calling) --------
 
 message("Exporting reads for SmrtLink7_CCS3...")
 ExportSubreadsForWells(sl7_ccs_df,
                        fasta_output_dir = file.path(subreads_fasta_directory, "SmrtLink7_CCS3"),
-                       fastq_output_dir = file.path(subreads_fastq_directory, "SmrtLink7_CCS3")
+                       fastq_output_dir = file.path(subreads_fastq_directory, "SmrtLink7_CCS3"),
+                       max_num_ZMWs = 20L
                        )
 
 
