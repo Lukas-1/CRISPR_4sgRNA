@@ -30,7 +30,7 @@ fastq_output_directory <- file.path(file_output_directory, "Fastq")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "04) Create reference sequences for each well -  sg_sequences_df.RData"))
+load(file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
