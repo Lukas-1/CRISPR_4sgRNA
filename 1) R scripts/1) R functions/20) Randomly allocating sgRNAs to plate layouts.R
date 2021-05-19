@@ -899,7 +899,8 @@ ExportPlates <- function(export_df,
                          file_name,
                          sub_folder,
                          add_padding_between_plates = FALSE,
-                         add_primers = TRUE
+                         add_primers = TRUE,
+                         no_modality = FALSE
                          ) {
   export_df[["Source"]] <- sub("Curated, ", "", export_df[["Source"]], fixed = TRUE)
   use_columns <- intersect(export_columns, names(export_df))
@@ -914,7 +915,8 @@ ExportPlates <- function(export_df,
   DfToTSV(export_df[, union(use_columns, names(export_df))],
           file_name = file.path(sub_folder, file_name),
           add_primers = add_primers, remove_columns = remove_columns,
-          add_padding_between_plates = add_padding_between_plates
+          add_padding_between_plates = add_padding_between_plates,
+          no_modality = no_modality
           )
 }
 

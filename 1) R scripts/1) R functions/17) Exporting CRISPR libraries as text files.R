@@ -113,7 +113,8 @@ FormatForExcel <- function(my_df,
                            convert_controls_to_4      = TRUE,
                            add_primers                = FALSE,
                            allow_curated              = FALSE,
-                           add_padding_between_plates = FALSE
+                           add_padding_between_plates = FALSE,
+                           no_modality                = FALSE
                            ) {
   # Requires the object 'source_abbreviations_vec' in the global environment
 
@@ -163,8 +164,8 @@ FormatForExcel <- function(my_df,
                             !(grepl("TTTT", my_df[["sgRNA_sequence"]], ignore.case = TRUE))
       ones_and_zeros_vec[are_valid_controls] <- 3L
     }
-    if (!(is_CRISPRko)) {
-      transcript_column <- grep("_v2_transcript", colnames(my_df), fixed = TRUE)
+    if (!(is_CRISPRko || no_modality)) {
+      transcript_column <- grep("_v2_transcript", names(my_df), fixed = TRUE)
       my_df[[transcript_column]][are_controls] <- NA_character_
     }
     my_df[["Gene_symbol"]][are_controls] <- my_df[["Combined_ID"]][are_controls]
@@ -216,7 +217,7 @@ FormatForExcel <- function(my_df,
     my_df[[SNP_AF_column]][is.na(my_df[[SNP_ID_column]])] <- NA_real_
   }
 
-  if (!(is_CRISPRko)) {
+  if (!(is_CRISPRko || no_modality)) {
     rank_column <- grep("^(Calabrese|Dolcetto|Caprano|Dolomiti)_", colnames(my_df))
     # This is to prevent the cell value "1/2/3" from being converted into a date by Excel
     my_df[[rank_column]] <- gsub("/", " or ", my_df[[rank_column]], fixed = TRUE)
@@ -229,14 +230,17 @@ FormatForExcel <- function(my_df,
   }
   my_df[["Locations_0MM"]] <- TruncateLongEntries(my_df[["Locations_0MM"]])
 
-  have_multiple_sources <- grepl(", ", my_df[["Source"]], fixed = TRUE)
-  for (source in names(source_abbreviations_vec)) {
-    my_df[["Source"]][have_multiple_sources] <- sub(source,
-                                                    source_abbreviations_vec[[source]],
-                                                    my_df[["Source"]][have_multiple_sources],
-                                                    fixed = TRUE
-                                                    )
+  if (!(no_modality)) {
+    have_multiple_sources <- grepl(", ", my_df[["Source"]], fixed = TRUE)
+    for (source in names(source_abbreviations_vec)) {
+      my_df[["Source"]][have_multiple_sources] <- sub(source,
+                                                      source_abbreviations_vec[[source]],
+                                                      my_df[["Source"]][have_multiple_sources],
+                                                      fixed = TRUE
+                                                      )
+    }
   }
+
   if (is_CRISPRko) {
     my_df[["Source"]] <- ifelse(my_df[["Source"]] == "GPP, Bru, TKOv3",
                                 "GPP, Bru, tk3",
@@ -287,14 +291,16 @@ DfToTSV <- function(CRISPR_df,
                     probability_to_percentage  = FALSE,
                     add_primers                = FALSE,
                     allow_curated              = FALSE,
-                    add_padding_between_plates = FALSE
+                    add_padding_between_plates = FALSE,
+                    no_modality                = FALSE
                     ) {
   formatted_df <- FormatForExcel(CRISPR_df,
                                  remove_columns             = remove_columns,
                                  probability_to_percentage  = probability_to_percentage,
                                  add_primers                = add_primers,
                                  allow_curated              = allow_curated,
-                                 add_padding_between_plates = add_padding_between_plates
+                                 add_padding_between_plates = add_padding_between_plates,
+                                 no_modality                = no_modality
                                  )
   # Requires the objects 'full_omit_columns' and 'file_output_directory' in the global environment
   write.table(formatted_df,
