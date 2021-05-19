@@ -89,6 +89,31 @@ ExportFASTQ <- function(export_fastq, export_dir, file_name, max_length = 20000L
 
 
 
+MakeCategoryString <- function(ccs_df, extracted_df) {
+  abbreviations_vec <- c(
+    "Correct"            = "P",
+    "Flanking insertion" = "P",
+    "Mutation"           = "M",
+    "Contamination"      = "C",
+    "Deletion"           = "D"
+  )
+  are_present <- ccs_df[["ZMW"]] %in% extracted_df[["ZMW"]]
+  features_mat <- GetFeaturesData(extracted_df, ccs_df[["ZMW"]][are_present])
+  cat_mat <- features_mat[, paste0("sg", 1:4, "_cr", 1:4, "_category")]
+  for (i in 1:4) {
+    cat_mat[, i] <- abbreviations_vec[cat_mat[, i]]
+  }
+  cat_vec <- do.call(paste, c(lapply(1:4, function(i) paste0(cat_mat[, i], i)), sep = "_"))
+  cat_vec <- ifelse(cat_vec == "P1_P2_P3_P4", "4_correct", cat_vec)
+  results_vec <- rep(NA, nrow(ccs_df))
+  results_vec[are_present] <- cat_vec
+  return(results_vec)
+}
+
+
+
+
+
 ExportSequences <- function(ccs_df,
                             fasta_output_dir,
                             fastq_output_dir,
@@ -102,7 +127,7 @@ ExportSequences <- function(ccs_df,
                             export_fasta        = TRUE
                             ) {
 
-  if ("ID_column" == "Well_number") {
+  if (ID_column == "Well_number") {
     wells_formatted <- formatC(unique_IDs, flag = "0", width = 3)
     well_names <- paste0("well", wells_formatted)
   } else {
@@ -124,7 +149,10 @@ ExportSequences <- function(ccs_df,
     lima_zmws <- use_zmws
   }
 
-  lima_well_IDs <- ccs_df[[ID_column]][match(lima_zmws, ccs_df[["ZMW"]])]
+  ccs_matches_vec <- match(lima_zmws, ccs_df[["ZMW"]])
+
+  lima_well_IDs <- ccs_df[ccs_matches_vec, ID_column]
+  category_strings <- ccs_df[ccs_matches_vec, "Category_string"]
 
   for (i in seq_along(unique_IDs)) {
 
@@ -148,7 +176,7 @@ ExportSequences <- function(ccs_df,
                               ccs_df[["Clip_end"]][ccs_matches]
                               )
       }
-      names(export_seq) <- as.character(this_well_zmws)
+      names(export_seq) <- paste0(this_well_zmws, "_", category_strings[are_this_well])
       export_seq <- DNAStringSet(export_seq)
       export_fastq <- QualityScaledBStringSet(export_seq, PhredQuality(export_qual))
       message(paste0("Exporting reads for well ", wells_formatted[[i]], "..."))
@@ -183,7 +211,7 @@ ExportSequences <- function(ccs_df,
       chunks_df <- BuildChunksDf(num_reads, chunk_size)
       for (file_number in unique(chunks_df[["File_number"]])) {
         are_this_file <- chunks_df[["File_number"]] == file_number
-        file_name <- paste0(file_names[[i]], "_", unique(chunks_df[["File_name"]][are_this_file]))
+        file_name <- paste0(file_names[[i]], "__", unique(chunks_df[["File_name"]][are_this_file]))
         if (export_fasta) {
           ExportFASTA(export_seq[are_this_file], fasta_folder, file_name)
         }
