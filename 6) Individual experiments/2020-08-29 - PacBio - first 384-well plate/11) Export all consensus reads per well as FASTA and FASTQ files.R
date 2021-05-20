@@ -9,9 +9,9 @@ CRISPR_root_directory  <- "~/CRISPR"
 file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory  <- file.path(file_directory, "1) R functions")
 
-source(file.path(R_functions_directory, "02) Analyzing reads.R")) # For GetWellNumbers
+source(file.path(R_functions_directory, "02) Analyzing reads.R")) # For GetCCS5_ZMWs
 source(file.path(R_functions_directory, "04) Exporting FASTA and FASTQ files.R"))
-
+source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio reads.R")) # For GetFeaturesData
 
 
 
@@ -32,6 +32,7 @@ fastq_output_directory <- file.path(file_output_directory, "Fastq")
 
 load(file.path(R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
+load(file.path(R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
 load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
 
 
@@ -39,6 +40,9 @@ load(file.path(R_objects_directory, "09) Process demultiplexed PacBio reads.RDat
 
 
 # Prepare for exporting sequences -----------------------------------------
+
+sl7_ccs_df[["Category_string"]] <- MakeCategoryString(sl7_ccs_df, sl7_extracted_df)
+sl9_ccs_df[["Category_string"]] <- MakeCategoryString(sl9_ccs_df, sl9_extracted_df)
 
 sl7_ccs5_lima_zmws <- GetCCS5_ZMWs(sl7_ccs_df)
 sl9_ccs5_lima_zmws <- GetCCS5_ZMWs(sl9_ccs_df)
