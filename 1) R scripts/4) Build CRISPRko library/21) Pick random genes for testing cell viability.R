@@ -184,7 +184,7 @@ are_sel_28 <- ifelse(shuffled_viability_df[["Essential_category"]] %in% c("Essen
                      shuffled_viability_df[["Randomized_rank"]] == 1,
                      ifelse(shuffled_viability_df[["Max_deletion_category"]] %in% deletion_categories[c(1, 4)],
                             shuffled_viability_df[["Randomized_rank"]] %in% 1:4,
-                            shuffled_viability_df[["Randomized_rank"]] %in% 1:6
+                            shuffled_viability_df[["Randomized_rank"]] %in% 1:8
                             )
                      )
 viability_28_genes_df <- shuffled_viability_df[are_sel_28, ]
@@ -214,7 +214,7 @@ ExportViabilityDf <- function(viab_df, file_name) {
 }
 
 ExportViabilityDf(shuffled_viability_df, "All eligible genes")
-ExportViabilityDf(viability_28_genes_df, "28 random genes")
+ExportViabilityDf(viability_28_genes_df, "32 random genes")
 
 
 
