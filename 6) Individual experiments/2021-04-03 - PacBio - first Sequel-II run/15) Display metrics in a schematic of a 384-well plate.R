@@ -108,6 +108,8 @@ for (i in seq_along(ccs_numbers)) {
             width  = 2 * expansion_factor,
             height = 1 * expansion_factor
             )
+
+        plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
         for (plate_number in use_plate_numbers) {
           summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
           sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
@@ -115,7 +117,7 @@ for (i in seq_along(ccs_numbers)) {
                        use_metrics[[j]],
                        sg_sub_df,
                        number_wells = number_wells,
-                       top_text = plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number],
+                       top_text = plate_labels[plates_df[["Plate_number"]] == plate_number],
                        show_low_read_numbers = TRUE
                        )
         }
