@@ -47,7 +47,10 @@ merged_CRISPRko_df[[preferred_AF_max_column]] <- NA_real_
 
 # Create an overview data frame -------------------------------------------
 
-sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df)
+sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df,
+                                              sublibraries_entrezs_list = list(collected_entrez_IDs),
+                                              is_rat = TRUE
+                                              )
 
 
 

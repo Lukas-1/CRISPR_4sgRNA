@@ -414,7 +414,7 @@ ReorganizeSummaryDf <- function(summary_df, reference_IDs) {
 
 
 
-ProduceGenomeOverviewDf <- function(strict_CRISPR_df, sublibraries_entrezs_list, lax_CRISPR_df = NULL, use_lax_df = FALSE, is_mouse = FALSE) {
+ProduceGenomeOverviewDf <- function(strict_CRISPR_df, sublibraries_entrezs_list, lax_CRISPR_df = NULL, use_lax_df = FALSE, is_mouse = FALSE, is_rat = FALSE) {
   ## requires 'collected_entrez_IDs' in the global environment
 
   ## Collect all Entrez IDs from various sources
@@ -432,7 +432,7 @@ ProduceGenomeOverviewDf <- function(strict_CRISPR_df, sublibraries_entrezs_list,
   sgRNAs_all_genes_df <- ReorganizeSummaryDf(sgRNAs_summary_df, unique_entrez_IDs)
   sgRNAs_all_genes_df[["Entrez_ID"]] <- sgRNAs_all_genes_df[["Combined_ID"]]
   sgRNAs_all_genes_df <- sgRNAs_all_genes_df[, names(sgRNAs_all_genes_df) != "Combined_ID"]
-  sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df, is_mouse = is_mouse)
+  sgRNAs_overview_df <- FixSymbolsForSummaryDf(sgRNAs_all_genes_df, is_mouse = is_mouse, is_rat = is_rat)
   if (!(is.null(lax_CRISPR_df))) {
     are_different <- DifferUsingRelaxedLocations(sgRNAs_overview_df[["Entrez_ID"]], strict_CRISPR_df, lax_CRISPR_df)
     sgRNAs_overview_df[["Lax_locations_differ"]] <- ifelse(are_different, "Yes", "No")
@@ -445,9 +445,9 @@ ProduceGenomeOverviewDf <- function(strict_CRISPR_df, sublibraries_entrezs_list,
 
 # Functions for exporting overview tables ---------------------------------
 
-FixSymbolsForSummaryDf <- function(reorganized_df, is_mouse = FALSE) {
+FixSymbolsForSummaryDf <- function(reorganized_df, is_mouse = FALSE, is_rat = FALSE) {
   have_no_symbol <- is.na(reorganized_df[["Gene_symbol"]])
-  entrez_symbols_df <- MapToEntrezs(reorganized_df[["Entrez_ID"]][have_no_symbol], is_mouse = is_mouse)
+  entrez_symbols_df <- MapToEntrezs(reorganized_df[["Entrez_ID"]][have_no_symbol], is_mouse = is_mouse, is_rat = is_rat)
   could_be_mapped <- !(is.na(entrez_symbols_df[["Gene_symbol"]]))
   results_df <- reorganized_df
   results_df[["Gene_symbol"]][have_no_symbol][could_be_mapped] <- entrez_symbols_df[["Gene_symbol"]][could_be_mapped]
