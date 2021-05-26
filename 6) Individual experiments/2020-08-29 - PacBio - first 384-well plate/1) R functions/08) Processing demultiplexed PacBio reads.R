@@ -22,28 +22,51 @@ ProcessWithSubsampling <- function(ccs_df,
                                    num_repetitions = 10L
                                    ) {
 
+  stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
+
   set.seed(1)
 
   results_list <- lapply(use_fractions, function(use_fraction) {
+
     num_reads <- round(nrow(ccs_df) * use_fraction)
     if (use_fraction == 1) {
       reps_vec <- 1
     } else {
       reps_vec <- seq_len(num_repetitions)
     }
+
     rep_list <- lapply(reps_vec, function(i) {
+
       sample_indices <- sample(seq_len(nrow(ccs_df)), size = num_reads)
       subsampled_ccs_df <- ccs_df[sample_indices, ]
       row.names(subsampled_ccs_df) <- NULL
-      analysis_list <- AnalyzeWells(subsampled_ccs_df,
-                                    sg_sequences_df,
-                                    barcodes_df,
-                                    extracted_df,
-                                    set_seed = FALSE
-                                    )
+
+      if ("Plate_number" %in% names(ccs_df)) {
+        subsampled_ccs_df[["Passed_filters"]] <- subsampled_ccs_df[["Plate_passed_filters"]] &
+                                                (subsampled_ccs_df[["Well_passed_filters"]] %in% TRUE)
+        ccs3_lima_zmws <- GetCCS3_ZMWs(subsampled_ccs_df)
+        analysis_list <- AnalyzePlates(subsampled_ccs_df,
+                                       sg_sequences_df,
+                                       barcodes_df,
+                                       extracted_df,
+                                       set_seed = FALSE
+                                       )
+      } else {
+        ccs3_lima_zmws <- NULL
+        analysis_list <- AnalyzeWells(subsampled_ccs_df,
+                                      sg_sequences_df,
+                                      barcodes_df,
+                                      extracted_df,
+                                      set_seed = FALSE
+                                      )
+      }
       ccs5_lima_zmws <- GetCCS5_ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
       ccs7_lima_zmws <- GetCCS7_ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
-      ccs3_df_list <- SummarizeWells(analysis_list, unique_IDs = wells_vec)
+
+      ccs3_df_list <- SummarizeWells(analysis_list,
+                                     use_zmws = ccs3_lima_zmws,
+                                     unique_IDs = wells_vec
+                                     )
       ccs5_df_list <- SummarizeWells(analysis_list,
                                      use_zmws = ccs5_lima_zmws,
                                      unique_IDs = wells_vec
@@ -1071,7 +1094,12 @@ DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq
 
 # Functions for processing multiple plates --------------------------------
 
-AnalyzePlates <- function(use_ccs_df, use_sg_df, use_barcodes_df, use_extracted_df) {
+AnalyzePlates <- function(use_ccs_df,
+                          use_sg_df,
+                          use_barcodes_df,
+                          use_extracted_df,
+                          set_seed = TRUE
+                          ) {
 
   are_eligible <- (use_ccs_df[["Well_exists"]] %in% TRUE) &
                   (use_ccs_df[["Read_quality"]] > 0)
@@ -1084,7 +1112,7 @@ AnalyzePlates <- function(use_ccs_df, use_sg_df, use_barcodes_df, use_extracted_
   names(use_ccs_df)[names(use_ccs_df) == "Well_clip_end"]            <- "Clip_end"
   names(use_ccs_df)[names(use_ccs_df) == "Well_clipped_read_length"] <- "Clipped_read_length"
 
-  all_plates <- setdiff(use_ccs_df[["Plate_number"]], NA)
+  all_plates <- sort(setdiff(use_ccs_df[["Plate_number"]], NA))
 
   sub_list_list <- lapply(all_plates, function(x) {
     message(paste0("Analyzing plate #", x, "...\n"))
@@ -1092,7 +1120,12 @@ AnalyzePlates <- function(use_ccs_df, use_sg_df, use_barcodes_df, use_extracted_
     are_this_plate <- sg_sequences_df[["Plate_number"]] == x
     sg_sub_df <- use_sg_df[are_this_plate, ]
     row.names(sg_sub_df) <- NULL
-    sub_list <- AnalyzeWells(ccs_sub_df, sg_sub_df, use_barcodes_df, use_extracted_df)
+    sub_list <- AnalyzeWells(ccs_sub_df,
+                             sg_sub_df,
+                             use_barcodes_df,
+                             use_extracted_df,
+                             set_seed = set_seed
+                             )
     message("\n\n")
     return(sub_list)
   })
@@ -1111,8 +1144,6 @@ AnalyzePlates <- function(use_ccs_df, use_sg_df, use_barcodes_df, use_extracted_
   )
   return(results_list)
 }
-
-
 
 
 
