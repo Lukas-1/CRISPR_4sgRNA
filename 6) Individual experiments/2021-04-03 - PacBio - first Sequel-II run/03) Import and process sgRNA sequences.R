@@ -64,7 +64,6 @@ controls_df <- as.data.frame(read_excel(controls_file, col_names = FALSE),
 
 
 
-
 # Assemble a data frame of sgRNA sequences --------------------------------
 
 TidySequencesDf <- function(CRISPR_df) {
@@ -185,11 +184,27 @@ for (i in 1:4) {
 
 
 
+# Annotate duplicated sgRNAs ----------------------------------------------
+
+all_sequences <- unlist(library_df[, paste0("Sequence_sg", 1:4)])
+num_occurrences_mat <- do.call(cbind,
+                               lapply(library_df[, paste0("Sequence_sg", 1:4)],
+                                      function(x) vapply(x, function(y) sum(y == all_sequences), integer(1), USE.NAMES = FALSE)
+                               ))
+colnames(num_occurrences_mat) <- paste0("Num_occurrences_sg", 1:4)
+
+library_df <- data.frame(library_df, num_occurrences_mat, stringsAsFactors = FALSE)
+
+
+
+
+
 # Add data on (known) empty wells -----------------------------------------
 
 empty_wells <- c("Plate08_Well024", "Plate10_Well024")
 
 library_df[["Empty_well"]] <- library_df[["Combined_ID"]] %in% empty_wells
+
 
 
 
@@ -222,8 +237,6 @@ export_columns <- c("Modality", export_columns)
 ExportPlates(all_guides_df, sub_folder = "", file_name = "All_guides",
              no_modality = TRUE, add_primers = FALSE
              )
-
-
 
 
 
