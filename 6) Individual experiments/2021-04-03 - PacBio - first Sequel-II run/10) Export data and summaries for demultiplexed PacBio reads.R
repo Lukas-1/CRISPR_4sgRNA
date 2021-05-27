@@ -33,7 +33,6 @@ load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads
 
 
 
-
 # Export individual reads -------------------------------------------------
 
 ccs_numbers <- c(3, 5, 7)
