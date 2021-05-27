@@ -42,6 +42,8 @@ ProcessWithSubsampling <- function(ccs_df,
       row.names(subsampled_ccs_df) <- NULL
 
       if ("Plate_number" %in% names(ccs_df)) {
+        use_unique_IDs <- sg_sequences_df[["Combined_ID"]]
+        use_ID_column <- "Combined_ID"
         subsampled_ccs_df[["Passed_filters"]] <- subsampled_ccs_df[["Plate_passed_filters"]] &
                                                 (subsampled_ccs_df[["Well_passed_filters"]] %in% TRUE)
         ccs3_lima_zmws <- GetCCS3_ZMWs(subsampled_ccs_df)
@@ -52,6 +54,8 @@ ProcessWithSubsampling <- function(ccs_df,
                                        set_seed = FALSE
                                        )
       } else {
+        use_unique_IDs <- wells_vec
+        use_ID_column <- "Well_number"
         ccs3_lima_zmws <- NULL
         analysis_list <- AnalyzeWells(subsampled_ccs_df,
                                       sg_sequences_df,
@@ -65,15 +69,18 @@ ProcessWithSubsampling <- function(ccs_df,
 
       ccs3_df_list <- SummarizeWells(analysis_list,
                                      use_zmws = ccs3_lima_zmws,
-                                     unique_IDs = wells_vec
+                                     unique_IDs = use_unique_IDs,
+                                     ID_column = use_ID_column
                                      )
       ccs5_df_list <- SummarizeWells(analysis_list,
                                      use_zmws = ccs5_lima_zmws,
-                                     unique_IDs = wells_vec
+                                     unique_IDs = use_unique_IDs,
+                                     ID_column = use_ID_column
                                      )
       ccs7_df_list <- SummarizeWells(analysis_list,
                                      use_zmws = ccs7_lima_zmws,
-                                     unique_IDs = wells_vec
+                                     unique_IDs = use_unique_IDs,
+                                     ID_column = use_ID_column
                                      )
       df_list_list <- list(
         "ccs3" = ccs3_df_list,
@@ -1188,7 +1195,10 @@ ExportIndivTable <- function(indiv_reads_df, ...) {
   exclude_columns <- c("Min_distance", "Random_distance", "Mean_distance",
                        "Passes_barcode_filters", "Passes_read_quality"
                        )
-  indiv_reads_df <- indiv_reads_df[, !(colnames(indiv_reads_df) %in% exclude_columns)]
+  if (all(is.na(indiv_reads_df[["Pass_CCS5"]]))) {
+    exclude_columns <- c(exclude_columns, "Pass_CCS5")
+  }
+  indiv_reads_df <- indiv_reads_df[, !(names(indiv_reads_df) %in% exclude_columns)]
   ExportTable(indiv_reads_df, ...)
 }
 
