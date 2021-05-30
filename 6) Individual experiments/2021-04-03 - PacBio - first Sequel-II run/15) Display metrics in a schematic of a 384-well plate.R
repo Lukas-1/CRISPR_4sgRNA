@@ -51,8 +51,6 @@ BarPlotPanel(summary_sub_df,
              show_low_read_numbers = TRUE
              )
 
-
-
 BarPlotPanel(summary_sub_df,
              "Count_at_least_1",
              sg_sub_df,
