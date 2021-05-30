@@ -26,17 +26,22 @@ BeeBarSubPlot <- function(summary_df,
                           color_scheme = "Blues"
                           ) {
 
-  set.seed(1)
+  is_binary <- grepl("^[Bb]inary_", show_column)
+
+  if (!(is_binary)) {
+    set.seed(1)
+  }
 
   numeric_vec <- summary_df[[show_column]]
 
   is_percentage <- grepl("^(Count|Num)_", show_column)
-
   if (show_column == "Longest_subsequence") {
     y_limits <- c(0, 20)
-  } else if (is_percentage) {
-    numeric_vec <- numeric_vec / summary_df[["Count_total"]]
+  } else if (is_percentage || is_binary) {
     y_limits <- c(0, 1)
+    if (is_percentage) {
+      numeric_vec <- numeric_vec / summary_df[["Count_total"]]
+    }
   } else {
     y_limits <- c(0, max(numeric_vec) * 1.02)
   }
@@ -56,7 +61,7 @@ BeeBarSubPlot <- function(summary_df,
   MakeEmptyPlot(x_limits = x_limits, y_limits = y_limits)
 
   tick_locations <- axTicks(2)
-  if (is_percentage) {
+  if (is_binary || is_percentage) {
     tick_labels <- paste0(tick_locations * 100, "%")
   } else {
     tick_labels <- TRUE
@@ -83,20 +88,21 @@ BeeBarSubPlot <- function(summary_df,
          )
   }
 
-
-  beeswarm_df <- beeswarm(split_list,
-                          priority = "random",
-                          cex      = 0.3,
-                          spacing  = 0.8,
-                          do.plot  = FALSE
-                          )
-  points(beeswarm_df[["x"]],
-         beeswarm_df[["y"]],
-         pch = 16,
-         col = brewer.pal(9, color_scheme)[[8]],
-         xpd = NA,
-         cex = 0.3
-         )
+  if (!(is_binary)) {
+    beeswarm_df <- beeswarm(split_list,
+                            priority = "random",
+                            cex      = 0.3,
+                            spacing  = 0.8,
+                            do.plot  = FALSE
+                            )
+    points(beeswarm_df[["x"]],
+           beeswarm_df[["y"]],
+           pch = 16,
+           col = brewer.pal(9, color_scheme)[[8]],
+           xpd = NA,
+           cex = 0.3
+           )
+  }
 
   axis(2,
        labels   = tick_labels,
@@ -129,7 +135,9 @@ WellLayoutBarplot <- function(summary_df,
                               indicate_homologies   = FALSE,
                               number_wells          = FALSE,
                               gap_fraction          = 0.25,
-                              show_low_read_numbers = FALSE
+                              show_low_read_numbers = FALSE,
+                              outline_few_reads     = FALSE,
+                              few_reads_cutoff      = 20L
                               ) {
 
 
@@ -207,8 +215,8 @@ WellLayoutBarplot <- function(summary_df,
        adj    = c(0.5, 1)
        )
 
-  if (show_low_read_numbers) {
-    low_read_number_colors <- ifelse(summary_df[["Count_total"]] < 20,
+  if (show_low_read_numbers && !(outline_few_reads)) {
+    low_read_number_colors <- ifelse(summary_df[["Count_total"]] < few_reads_cutoff,
                                      "#FFDDCC",
                                      "#FFFFFF"
                                      )
@@ -224,67 +232,127 @@ WellLayoutBarplot <- function(summary_df,
   assign("delete_empty_colors", empty_colors, envir = globalenv())
 
 
-  homology_color <- brewer.pal(9, "Reds")[[7]]
-  no_homology_color <- brewer.pal(9, "Greys")[[7]]
-  if ("Longest_subsequence" %in% names(sg_df)) {
-    have_homology <- sg_df[["Longest_subsequence"]] >= 8
-  } else {
-    have_homology <- rep(FALSE, nrow(sg_df))
+  draw_outlines <- indicate_homologies || outline_few_reads
+
+  if (draw_outlines) {
+    outline_color <- brewer.pal(9, "Reds")[[7]]
+    no_outline_color <- brewer.pal(9, "Greys")[[7]]
+    if (indicate_homologies && ("Longest_subsequence" %in% names(sg_df))) {
+      are_to_outline <- sg_df[["Longest_subsequence"]] >= 8
+    } else if (outline_few_reads) {
+      are_to_outline <- summary_df[["Count_total"]] < few_reads_cutoff
+    } else {
+      are_to_outline <- rep(FALSE, nrow(sg_df))
+    }
+    outline_colors_vec <- ifelse(are_to_outline, outline_color, no_outline_color)
+
+    if (indicate_homologies) {
+
+      x_coord <- 0.3
+      y_coord <- -0.09
+      text_y <- y_coord + (well_height * 0.25)
+
+      rect(xleft   = x_coord,
+           xright  = x_coord + (well_width / 2),
+           ybottom = y_coord,
+           ytop    = y_coord + (well_height / 2),
+           border  = no_outline_color,
+           lwd     = 1,
+           col     = NA,
+           xpd     = NA
+           )
+
+      rect(xleft   = x_coord + 0.1,
+           xright  = x_coord + 0.1 + (well_width / 2),
+           ybottom = y_coord,
+           ytop    = y_coord + (well_height / 2),
+           border  = outline_color,
+           lwd     = 1,
+           col     = NA,
+           xpd     = NA
+           )
+
+      text(x      = x_coord - 0.22,
+           y      = text_y,
+           adj    = c(0, 0.5),
+           labels = "Longest subsequence:",
+           cex    = 0.9,
+           xpd    = NA
+           )
+
+      text(x      = x_coord + 0.018,
+           y      = text_y,
+           adj    = c(0, 0.5),
+           labels = expression("" <= "7 bp"),
+           col    = no_outline_color,
+           cex    = 0.9,
+           xpd    = NA
+           )
+
+      text(x      = x_coord + 0.118,
+           y      = text_y,
+           adj    = c(0, 0.5),
+           labels = expression("" > "8 bp"),
+           col    = outline_color,
+           cex    = 0.9,
+           xpd    = NA
+           )
+    } else if (outline_few_reads) {
+
+      x_coord <- 0.3
+      y_coord <- -0.09
+      text_y <- y_coord + (well_height * 0.25)
+
+      rect(xleft   = x_coord,
+           xright  = x_coord + (well_width / 2),
+           ybottom = y_coord,
+           ytop    = y_coord + (well_height / 2),
+           border  = no_outline_color,
+           lwd     = 1,
+           col     = NA,
+           xpd     = NA
+           )
+
+      rect(xleft   = x_coord + 0.14,
+           xright  = x_coord + 0.14 + (well_width / 2),
+           ybottom = y_coord,
+           ytop    = y_coord + (well_height / 2),
+           border  = outline_color,
+           lwd     = 1,
+           col     = NA,
+           xpd     = NA
+           )
+
+      text(x      = x_coord - 0.22,
+           y      = text_y,
+           adj    = c(0, 0.5),
+           labels = "Total number of reads:",
+           cex    = 0.9,
+           xpd    = NA
+           )
+
+      text(x      = x_coord + 0.018,
+           y      = text_y,
+           adj    = c(0, 0.5),
+           labels = expression("" < "20 reads"),
+           col    = no_outline_color,
+           cex    = 0.9,
+           xpd    = NA
+           )
+
+      text(x      = x_coord + 0.158,
+           y      = text_y,
+           adj    = c(0, 0.5),
+           labels = expression("" >= "20 reads"),
+           col    = outline_color,
+           cex    = 0.9,
+           xpd    = NA
+           )
+
+    }
   }
-  homology_colors_vec <- ifelse(have_homology, homology_color, no_homology_color)
 
-  if (indicate_homologies) {
 
-    x_coord <- 0.3
-    y_coord <- -0.09
-    text_y <- y_coord + (well_height * 0.25)
-
-    text(x      = x_coord - 0.22,
-         y      = text_y,
-         adj    = c(0, 0.5),
-         labels = "Longest subsequence:",
-         cex    = 0.9,
-         xpd    = NA
-         )
-
-    rect(xleft   = x_coord,
-         xright  = x_coord + (well_width / 2),
-         ybottom = y_coord,
-         ytop    = y_coord + (well_height / 2),
-         border  = no_homology_color,
-         lwd     = 1,
-         col     = NA,
-         xpd     = NA
-         )
-
-    text(x      = x_coord + 0.018,
-         y      = text_y,
-         adj    = c(0, 0.5),
-         labels = expression("" <= "7 bp"),
-         col    = no_homology_color,
-         cex    = 0.9,
-         xpd    = NA
-         )
-
-    rect(xleft   = x_coord + 0.1,
-         xright  = x_coord + 0.1 + (well_width / 2),
-         ybottom = y_coord,
-         ytop    = y_coord + (well_height / 2),
-         border  = homology_color,
-         lwd     = 1,
-         col     = NA,
-         xpd     = NA
-         )
-
-    text(x      = x_coord + 0.118,
-         y      = text_y,
-         adj    = c(0, 0.5),
-         labels = expression("" > "8 bp"),
-         col    = homology_color,
-         cex    = 0.9,
-         xpd    = NA
-         )
-  }
 
   bar_heights <- ifelse(is.na(numeric_vec), 0, numeric_vec) * well_height
 
@@ -297,13 +365,13 @@ WellLayoutBarplot <- function(summary_df,
     y_coord <- y_starts[row_coords_mat[are_this_well_mat]]
 
     border_fraction <- 0.1
-    if (indicate_homologies) {
+    if (draw_outlines) {
       rect(xleft   = x_coord - (well_width * border_fraction),
            xright  = x_coord + well_width + (well_width * border_fraction),
            ybottom = y_coord - (well_height  * border_fraction),
            ytop    = y_coord + well_height + (well_height * border_fraction),
            border  = NA,
-           col     = homology_colors_vec[[i]],
+           col     = outline_colors_vec[[i]],
            )
     }
 
@@ -318,13 +386,15 @@ WellLayoutBarplot <- function(summary_df,
            )
     }
 
-    rect(xleft   = x_coord,
-         xright  = x_coord + well_width,
-         ybottom = y_coord + bar_height,
-         ytop    = y_coord + well_height,
-         border  = NA,
-         col     = empty_colors[[i]]
-         )
+    if (bar_height < well_height) {
+      rect(xleft   = x_coord,
+           xright  = x_coord + well_width,
+           ybottom = y_coord + bar_height,
+           ytop    = y_coord + well_height,
+           border  = NA,
+           col     = empty_colors[[i]]
+           )
+    }
 
     if (number_wells) {
       text(x      = x_coord + (well_width / 2),
@@ -359,21 +429,40 @@ BarPlotPanel <- function(summary_df,
                          show_column,
                          sg_df,
                          width_to_height_ratio = 2,
-                         indicate_homologies   = FALSE,
-                         well_gap              = if (indicate_homologies) 0.4 else 0.25,
                          number_wells          = FALSE,
                          top_text              = "Original 384-well plate",
-                         show_low_read_numbers = FALSE
+                         indicate_homologies   = FALSE,
+                         show_low_read_numbers = FALSE,
+                         outline_few_reads     = FALSE,
+                         few_reads_cutoff      = 20L,
+                         well_gap              = if (indicate_homologies || outline_few_reads) 0.4 else 0.25,
+                         binary_cutoff         = 0.5
                          ) {
 
-  stopifnot("barcode_combos_df" %in% ls(envir = globalenv()))
+  stopifnot(all(c("titles_list", "barcode_combos_df") %in% ls(envir = globalenv())))
   stopifnot(identical(summary_df[, "Well_number"], sg_df[, "Well_number"]))
 
   if (show_column == "Longest_subsequence") {
     summary_df[["Longest_subsequence"]] <- sg_df[["Longest_subsequence"]]
-  } else if (show_column == "Count_mean_sg1to4") {
+  } else if (grepl("[Cc]ount_mean_sg1to4$", show_column)) {
     count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
     summary_df[["Count_mean_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
+  }
+
+  if (grepl("^[Bb]inary_", show_column)) {
+    if (show_column == "Binary_all_four_guides") {
+      use_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
+      fraction_correct_mat <- as.matrix(summary_df[, use_columns]) / summary_df[["Count_total"]]
+      binary_vec <- rowSums(fraction_correct_mat >= binary_cutoff) == 4
+    } else {
+      original_column <- sub("^[Bb]inary_", "", show_column)
+      original_column <- paste0(toupper(substr(original_column, 1, 1)),
+                                substr(original_column, 2, nchar(original_column))
+                                )
+      stopifnot(grepl("^(Count|Num)_", original_column))
+      binary_vec <- (summary_df[, original_column] / summary_df[, "Count_total"])>= binary_cutoff
+    }
+    summary_df[[show_column]] <- as.integer(binary_vec)
   }
 
   ## Set up the layout
@@ -428,7 +517,10 @@ BarPlotPanel <- function(summary_df,
   layout(layout_mat, widths = widths_vec, heights = heights_vec)
 
   MakeEmptyPlot()
-  CenterText(as.expression(bquote(bold(.(titles_list[[show_column]])))),
+  use_titles_list <- titles_list
+  names(use_titles_list) <- toupper(names(use_titles_list))
+  use_title <- use_titles_list[[toupper(show_column)]]
+  CenterText(as.expression(bquote(bold(.(use_title)))),
              y_position = 0.35,
              use_cex = 1.1
              )
@@ -447,10 +539,12 @@ BarPlotPanel <- function(summary_df,
                     gap_fraction          = well_gap,
                     indicate_homologies   = indicate_homologies,
                     number_wells          = number_wells,
-                    show_low_read_numbers = show_low_read_numbers
+                    show_low_read_numbers = show_low_read_numbers,
+                    outline_few_reads     = outline_few_reads,
+                    few_reads_cutoff      = few_reads_cutoff
                     )
 
-  ## Draw the barplots (with superimposed beeeswarms)
+  ## Draw the bar plots (with superimposed swarm plots)
 
   summary_df[["Row_groups"]]    <- factor(barcode_combos_df[["Row_number"]][summary_df[["Well_number"]]],
                                           levels = unique(barcode_combos_df[["Row_number"]])

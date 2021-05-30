@@ -53,6 +53,44 @@ BarPlotPanel(summary_sub_df,
 
 
 
+BarPlotPanel(summary_sub_df,
+             "Count_at_least_1",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
+
+
+BarPlotPanel(summary_sub_df,
+             "Binary_count_at_least_1",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
+
+BarPlotPanel(summary_sub_df,
+             "Binary_count_all_4",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
+
+BarPlotPanel(summary_sub_df,
+             "Binary_all_four_guides",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
+
+BarPlotPanel(summary_sub_df,
+             "Binary_count_mean_sg1to4",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
+
+
+
 
 # Export all plates -------------------------------------------------------
 
@@ -61,15 +99,23 @@ use_plate_numbers <- plates_df[["Plate_number"]][order(plates_df[["Plate_rank"]]
 ccs_numbers <- c(3, 5, 7)
 accuracy_percentages <- c(99, 99.9, 99.99)
 
-use_metrics <- c(
-  "Num_contaminated_reads", "Num_under_2kb",
-  # "Num_low_barcode_scores", "Num_low_quality_scores", "Num_low_bc_or_qual", "Mean_read_quality",
+count_metrics <- c(
   # "Count_sg1_cr1", "Count_sg2_cr2", "Count_sg3_cr3", "Count_sg4_cr4",
   "Count_mean_sg1to4",
   "Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4",
   "Count_all_4_promoters", "Count_whole_plasmid"
 )
 
+percentages_metrics <- c(
+  "Num_contaminated_reads", "Num_under_2kb", count_metrics
+)
+
+binarized_metrics <- c(
+  "Binary_all_four_guides",
+  paste0("Binary_", tolower(substr(count_metrics, 1, 1)),
+         substr(count_metrics, 2, nchar(count_metrics))
+         )
+)
 
 
 for (i in seq_along(ccs_numbers)) {
@@ -86,42 +132,58 @@ for (i in seq_along(ccs_numbers)) {
     folder_path <- file.path(plots_output_directory, folder_name)
     dir.create(folder_path, showWarnings = FALSE)
 
-    file_prefix <- paste0("Plate layout - ", folder_name)
+    file_prefix <- folder_name
 
     for (number_wells in c(TRUE, FALSE)) {
-      for (j in seq_along(use_metrics)) {
+      for (binarize in c(TRUE, FALSE)) {
 
-        if (number_wells) {
-          sub_folder_path <- file.path(folder_path, "Numbered wells")
+        if (binarize) {
+          current_metrics <- binarized_metrics
         } else {
-          sub_folder_path <- file.path(folder_path, "Plain")
+          current_metrics <- percentages_metrics
         }
-        dir.create(sub_folder_path, showWarnings = FALSE)
 
-        expansion_factor <- 5
-        file_name <- paste0(file_prefix, " - ",
-                            formatC(j, width = 2, flag = "0"), ") ",
-                            use_metrics[[j]],
-                            ".pdf"
-                            )
-        pdf(file   = file.path(sub_folder_path, file_name),
-            width  = 2 * expansion_factor,
-            height = 1 * expansion_factor
-            )
+        for (j in seq_along(current_metrics)) {
 
-        plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
-        for (plate_number in use_plate_numbers) {
-          summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
-          sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
-          BarPlotPanel(summary_sub_df,
-                       use_metrics[[j]],
-                       sg_sub_df,
-                       number_wells = number_wells,
-                       top_text = plate_labels[plates_df[["Plate_number"]] == plate_number],
-                       show_low_read_numbers = TRUE
-                       )
+          if (binarize) {
+            sub_folder_path <- file.path(folder_path, "Binarized - ")
+          } else {
+            sub_folder_path <- file.path(folder_path, "Percentages - ")
+          }
+          if (number_wells) {
+            sub_folder_path <- paste0(sub_folder_path, "numbered")
+          } else {
+            sub_folder_path <- paste0(sub_folder_path, "plain")
+          }
+          dir.create(sub_folder_path, showWarnings = FALSE)
+
+          expansion_factor <- 5
+          file_name <- paste0(file_prefix, " - ",
+                              formatC(j, width = 2, flag = "0"), ") ",
+                              current_metrics[[j]],
+                              ".pdf"
+                              )
+          pdf(file   = file.path(sub_folder_path, file_name),
+              width  = 2 * expansion_factor,
+              height = 1 * expansion_factor
+              )
+
+          plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
+          for (plate_number in use_plate_numbers) {
+            summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
+            sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
+            BarPlotPanel(summary_sub_df,
+                         current_metrics[[j]],
+                         sg_sub_df,
+                         number_wells = number_wells,
+                         top_text = plate_labels[plates_df[["Plate_number"]] == plate_number],
+                         show_low_read_numbers = TRUE,
+                         outline_few_reads = binarize
+                         )
+          }
+          dev.off()
         }
-        dev.off()
+
       }
 
     }
