@@ -153,7 +153,7 @@ WellLayoutBarplot <- function(summary_df,
   } else if (grepl("^(Count|Num)_", show_column)) {
     numeric_vec <- numeric_vec / summary_df[["Count_total"]]
   } else {
-    numeric_vec <- numeric_vec / max(numeric_vec)
+    numeric_vec <- numeric_vec / max(numeric_vec, na.rm = TRUE)
   }
 
   row_coords_mat <- matrix(rep(rev(seq_len(16)), each = 24),
