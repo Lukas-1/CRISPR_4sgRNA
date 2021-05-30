@@ -63,7 +63,15 @@ ComparePlates <- function(summary_df, show_column) {
     y_limits <- c(0, 1)
   } else {
     numeric_vec <- numeric_vec
-    y_limits <- c(0, max(numeric_vec, na.rm = TRUE) * 1.02)
+    y_max <-  max(numeric_vec, na.rm = TRUE)
+    if (show_column == "Mean_read_quality") {
+      y_min <- min(numeric_vec, na.rm = TRUE)
+      y_span <- y_max - y_min
+      y_range <- c(y_min - (y_span * 0.02), y_max + (y_span * 0.02))
+      y_limits <- range(pretty(y_range))
+    } else {
+      y_limits <- c(0, y_max * 1.02)
+    }
   }
 
   groups_fac <- factor(summary_df[["Plate_number"]],
