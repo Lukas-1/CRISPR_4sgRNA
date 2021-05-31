@@ -23,7 +23,6 @@ sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 
 
 
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
@@ -57,8 +56,8 @@ subsampled_list <- ProcessWithSubsampling(ccs_df,
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sl7_subsampled_list", "sl9_subsampled_list"),
-     file = file.path(R_objects_directory, "11) Process demultiplexed reads - with subsampling.RData")
+save(list = "subsampled_list",
+     file = file.path(sql2_R_objects_directory, "11) Process demultiplexed reads - with subsampling.RData")
      )
 
 
