@@ -32,6 +32,7 @@ titles_list <- list(
   "Count_all_4_promoters"  = "Percentage of reads for which all 4 gRNAs (including the promoters) are 100% correct",
   "Count_whole_plasmid"    = "Percentage of reads where the entire plasmid sequence is 100% correct",
 
+  "Binary_num_contaminated_reads" = "20% or more of the reads match gRNAs from other wells (with 100% accuracy)",
 
   "Binary_all_four_guides"        = "For all 4 gRNAs, the majority of reads contain the correct sequence",
   "Binary_count_mean_sg1to4"      = "The mean percentage of correct gRNAs (for sg1-4) is 50% or higher",

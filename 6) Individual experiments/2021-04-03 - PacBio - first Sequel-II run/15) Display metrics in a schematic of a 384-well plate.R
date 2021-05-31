@@ -112,7 +112,8 @@ binarized_metrics <- c(
   "Binary_all_four_guides",
   paste0("Binary_", tolower(substr(count_metrics, 1, 1)),
          substr(count_metrics, 2, nchar(count_metrics))
-         )
+         ),
+  "Binary_num_contaminated_reads"
 )
 
 
@@ -176,14 +177,13 @@ for (i in seq_along(ccs_numbers)) {
                          number_wells = number_wells,
                          top_text = plate_labels[plates_df[["Plate_number"]] == plate_number],
                          show_low_read_numbers = TRUE,
-                         outline_few_reads = binarize
+                         outline_few_reads = binarize,
+                         binary_cutoff = if (current_metrics[[j]] == "Binary_num_contaminated_reads") 0.2 else 0.5
                          )
           }
           dev.off()
         }
-
       }
-
     }
   }
 }
