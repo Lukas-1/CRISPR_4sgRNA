@@ -19,7 +19,8 @@ ProcessWithSubsampling <- function(ccs_df,
                                    extracted_df,
                                    wells_vec = seq_len(384),
                                    use_fractions = c(1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.025, 0.01),
-                                   num_repetitions = 10L
+                                   num_repetitions = 10L,
+                                   verbose = FALSE
                                    ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -27,6 +28,8 @@ ProcessWithSubsampling <- function(ccs_df,
   set.seed(1)
 
   results_list <- lapply(use_fractions, function(use_fraction) {
+
+    message(paste0("Using a subsampling ratio of ", use_fraction, "..."))
 
     num_reads <- round(nrow(ccs_df) * use_fraction)
     if (use_fraction == 1) {
@@ -41,6 +44,8 @@ ProcessWithSubsampling <- function(ccs_df,
       subsampled_ccs_df <- ccs_df[sample_indices, ]
       row.names(subsampled_ccs_df) <- NULL
 
+      message(paste0("Processing repetition #", i, "..."))
+
       if ("Plate_number" %in% names(ccs_df)) {
         use_unique_IDs <- sg_sequences_df[["Combined_ID"]]
         use_ID_column <- "Combined_ID"
@@ -51,7 +56,8 @@ ProcessWithSubsampling <- function(ccs_df,
                                        sg_sequences_df,
                                        barcodes_df,
                                        extracted_df,
-                                       set_seed = FALSE
+                                       set_seed = FALSE,
+                                       verbose = verbose
                                        )
       } else {
         use_unique_IDs <- wells_vec
@@ -61,9 +67,11 @@ ProcessWithSubsampling <- function(ccs_df,
                                       sg_sequences_df,
                                       barcodes_df,
                                       extracted_df,
-                                      set_seed = FALSE
+                                      set_seed = FALSE,
+                                      verbose = verbose
                                       )
       }
+      message("Summarizing well data...")
       ccs5_lima_zmws <- GetCCS5_ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
       ccs7_lima_zmws <- GetCCS7_ZMWs(subsampled_ccs_df, wells_vec = wells_vec)
 
@@ -145,7 +153,7 @@ MakeDistanceList <- function(manhattan_distance = FALSE, matrix_format = FALSE) 
 
 # Functions for processing reads ------------------------------------------
 
-ContainSequences <- function(query_seq, target_seq) {
+ContainSequences <- function(query_seq, target_seq, verbose = TRUE) {
 
   assign("delete_query_seq", query_seq, envir = globalenv())
   assign("delete_target_seq", target_seq, envir = globalenv())
@@ -179,22 +187,25 @@ ContainSequences <- function(query_seq, target_seq) {
 
   sent_message <- FALSE
 
-  if (num_duplicated_fwd != 0) {
-    message(paste0("The same sequence was found more than once for ",
-                   num_duplicated_fwd, " read",
-                   if (num_duplicated_fwd == 1) "" else "s",
-                   " in the forward direction!"
-                   ))
-    sent_message <- TRUE
+  if (verbose) {
+    if (num_duplicated_fwd != 0) {
+      message(paste0("The same sequence was found more than once for ",
+                     num_duplicated_fwd, " read",
+                     if (num_duplicated_fwd == 1) "" else "s",
+                     " in the forward direction!"
+                     ))
+      sent_message <- TRUE
+    }
+    if (num_duplicated_rev != 0) {
+      message(paste0("The same sequence was found more than once for ",
+                     num_duplicated_rev, " read",
+                     if (num_duplicated_rev == 1) "" else "s",
+                     " in the reverse direction!"
+                     ))
+      sent_message <- TRUE
+    }
   }
-  if (num_duplicated_rev != 0) {
-    message(paste0("The same sequence was found more than once for ",
-                   num_duplicated_rev, " read",
-                   if (num_duplicated_rev == 1) "" else "s",
-                   " in the reverse direction!"
-                   ))
-    sent_message <- TRUE
-  }
+
   # stopifnot(!(any(contain_fwd_mat == 2)))
   # stopifnot(!(any(contain_rev_mat == 2)))
 
@@ -204,19 +215,21 @@ ContainSequences <- function(query_seq, target_seq) {
   have_duplication <- rowSums(same_guide_twice_mat) > 0
 
   if (any(have_duplication)) {
-    message(paste0("For ", sum(same_guide_twice_mat), " out of 4 * ",
-                   num_targets, " searches, the same query matched in both the",
-                   " forward and reverse direction (an inverted duplication)..."
-                   ))
+    if (verbose) {
+      message(paste0("For ", sum(same_guide_twice_mat), " out of 4 * ",
+                     num_targets, " searches, the same query matched in both the",
+                     " forward and reverse direction (an inverted duplication)..."
+                     ))
+      sent_message <- TRUE
+    }
     fwd_helper_mat <- contain_fwd_mat
     fwd_helper_mat[same_guide_twice_mat] <- 0L
     have_inversion <- (rowSums(contain_fwd_mat) > 0) &
                       (rowSums(contain_rev_mat) > 0)
-    sent_message <- TRUE
   } else {
     have_inversion <- are_fwd & are_rev
   }
-  if (any(have_inversion)) {
+  if (verbose && any(have_inversion)) {
     message(paste0("There was a likely inversion for ", sum(have_inversion),
                    " out of ", num_targets, " reads in this well ",
                    "(some queries matched in the forward and others in ",
@@ -256,7 +269,7 @@ ContainSequences <- function(query_seq, target_seq) {
 
 
 
-StatsForWell <- function(well_index, ccs_df, sg_df) {
+StatsForWell <- function(well_index, ccs_df, sg_df, verbose = TRUE) {
 
   assign("delete_well_index", well_index, envir = globalenv())
   assign("delete_ccs_df", ccs_df, envir = globalenv())
@@ -275,9 +288,9 @@ StatsForWell <- function(well_index, ccs_df, sg_df) {
   sg_sequences <- vapply(1:4, function(x) sg_df[well_index, paste0("sg_cr_", x)], "")
   sg_with_promoter_seq <- vapply(1:4, function(x) sg_df[well_index, paste0("sg_cr_pr_", x)], "")
 
-  contain_sg_cr_mat   <- ContainSequences(sg_sequences, well_sequences)
-  contain_sg_prom_mat <- ContainSequences(sg_with_promoter_seq, well_sequences)
-  contain_plasmid_mat <- ContainSequences(sg_df[well_index, "Whole_plasmid"], well_sequences)
+  contain_sg_cr_mat   <- ContainSequences(sg_sequences, well_sequences, verbose = verbose)
+  contain_sg_prom_mat <- ContainSequences(sg_with_promoter_seq, well_sequences, verbose = verbose)
+  contain_plasmid_mat <- ContainSequences(sg_df[well_index, "Whole_plasmid"], well_sequences, verbose = verbose)
 
   colnames(contain_sg_cr_mat)[1:4] <- paste0("sg", 1:4, "_cr", 1:4)
   colnames(contain_sg_cr_mat)[colnames(contain_sg_cr_mat) == "at_least_4"] <- "all_4"
@@ -757,7 +770,8 @@ AnalyzeWells <- function(ccs_df,
                          bc_length_cutoff    = 8L,
                          min_mean_quality    = 85 / 93 * 100,
                          set_seed            = TRUE,
-                         use_guides_ref_list = guides_ref_list
+                         use_guides_ref_list = guides_ref_list,
+                         verbose             = TRUE
                          ) {
 
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
@@ -848,7 +862,7 @@ AnalyzeWells <- function(ccs_df,
   ## Check for the presence of sequences
 
   well_stats_mat_list <- lapply(seq_len(nrow(sg_df)),
-                                function(x) StatsForWell(x, ccs_df, sg_df)
+                                function(x) StatsForWell(x, ccs_df, sg_df, verbose = verbose)
                                 )
 
 
@@ -1105,7 +1119,8 @@ AnalyzePlates <- function(use_ccs_df,
                           use_sg_df,
                           use_barcodes_df,
                           use_extracted_df,
-                          set_seed = TRUE
+                          set_seed = TRUE,
+                          verbose = TRUE
                           ) {
 
   are_eligible <- (use_ccs_df[["Well_exists"]] %in% TRUE) &
@@ -1122,7 +1137,10 @@ AnalyzePlates <- function(use_ccs_df,
   all_plates <- sort(setdiff(use_ccs_df[["Plate_number"]], NA))
 
   sub_list_list <- lapply(all_plates, function(x) {
-    message(paste0("Analyzing plate #", x, "...\n"))
+    message(paste0("Analyzing plate #", x, "..."))
+    if (verbose) {
+      message("")
+    }
     ccs_sub_df <- use_ccs_df[are_eligible & (use_ccs_df[["Plate_number"]] %in% x), ]
     are_this_plate <- sg_sequences_df[["Plate_number"]] == x
     sg_sub_df <- use_sg_df[are_this_plate, ]
@@ -1131,9 +1149,12 @@ AnalyzePlates <- function(use_ccs_df,
                              sg_sub_df,
                              use_barcodes_df,
                              use_extracted_df,
-                             set_seed = set_seed
+                             set_seed = set_seed,
+                             verbose = verbose
                              )
-    message("\n\n")
+    if (verbose) {
+      message("\n\n")
+    }
     return(sub_list)
   })
 
