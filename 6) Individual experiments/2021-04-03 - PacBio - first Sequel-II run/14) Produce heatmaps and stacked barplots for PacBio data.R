@@ -29,6 +29,7 @@ plots_output_directory   <- file.path(file_output_directory, "Figures")
 load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
+load(file.path(sql2_R_objects_directory, "11) Process demultiplexed reads - with subsampling.RData"))
 
 
 
@@ -55,9 +56,9 @@ for (reorder_wells in c(TRUE, FALSE)) {
     titles_list <- lapply(plates_df[["Plate_number"]], function(x) {
       bquote({"Plate #" * .(as.character(x)) * " \u2013 " *
           bold(.(plates_df[x, "Plate_name"])) *
-          " (" >= .(as.character(ccs_numbers[[i]])) * " consensus reads "} *
-            "and " >= .(as.character(accuracy_percentages[[i]])) * "% accuracy)"
-      )
+               " (" >= .(as.character(ccs_numbers[[i]])) * " consensus reads "} *
+               "and " >= .(as.character(accuracy_percentages[[i]])) * "% accuracy)"
+               )
     })
 
     for (filter_stage in 1:2) {
@@ -73,7 +74,7 @@ for (reorder_wells in c(TRUE, FALSE)) {
 
 
       pdf(file = file.path(plots_output_directory, heatmaps_folder, paste0("Heatmaps - ", file_name, ".pdf")),
-          width  = use_width, height = use_height
+          width = use_width, height = use_height
           )
       for (plate_number in use_plate_numbers) {
         sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
@@ -100,8 +101,7 @@ for (reorder_wells in c(TRUE, FALSE)) {
 
 
       pdf(file = file.path(plots_output_directory, barplots_folder, paste0("Stacked barplots - ", file_name, ".pdf")),
-          height = use_height,
-          width  = use_width
+          height = use_height, width = use_width
           )
       for (plate_number in use_plate_numbers) {
         sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
@@ -116,6 +116,91 @@ for (reorder_wells in c(TRUE, FALSE)) {
   }
 }
 
+
+
+
+# Export the results of subsampling simulations ---------------------------
+
+sampling_levels <- names(subsampled_list)
+are_all <- sampling_levels == "100% sampled"
+title_prefixes <- ifelse(are_all,
+                         "All reads",
+                         paste0("Sampled ", sub(" sampled", "", sampling_levels, fixed = TRUE), " of reads")
+                         )
+use_num_reps <- 3L
+
+for (i in seq_along(ccs_numbers)) {
+
+  for (filter_stage in 1:2) {
+
+    df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+
+    use_summary_df <- use_df_list[[df_name]]
+
+    folder_name <- paste0("CCS", ccs_numbers[[i]],
+                          " (", accuracy_percentages[[i]], ") - ",
+                          c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                          )
+
+    heatmaps_path <- file.path(plots_output_directory, "Sub-sampled", "Heatmaps", folder_name)
+    barplots_path <- file.path(plots_output_directory, "Sub-sampled", "Stacked barplots", folder_name)
+
+    dir.create(heatmaps_path, showWarnings = FALSE)
+    dir.create(barplots_path, showWarnings = FALSE)
+
+    for (plate_number in use_plate_numbers) {
+      plate_name <- paste0("Plate", formatC(plate_number, width = 2, flag = "0"))
+      plate_name <- paste0(plate_name, " - ", plates_df[["Plate_name"]][[match(plate_number, plates_df[["Plate_number"]])]])
+
+      sg_sequences_df <- library_df[library_df[["Plate_number"]] %in% plate_number, ]
+
+      pdf(file = file.path(heatmaps_path, paste0(plate_name, ".pdf")),
+          width  = use_width, height = use_height
+          )
+      for (j in seq_along(subsampled_list)) {
+        for (rep in seq_len(min(length(subsampled_list[[j]]), use_num_reps))) {
+          title_prefix <- title_prefixes[[j]]
+          if (names(subsampled_list)[[j]] != "100% sampled") {
+            title_prefix <- paste0(title_prefix,  " \u2013 repetition #", rep)
+          }
+          use_title <- paste0(title_prefix, " (", plate_name, ")")
+          use_ccs <- paste0("ccs", ccs_numbers[[i]])
+          use_df <- subsampled_list[[j]][[rep]][[use_ccs]][[df_name]]
+          use_df <- use_df[use_df[["Plate_number"]] %in% plate_number, ]
+          DrawAccuracyHeatmap(use_df,
+                              main_title = use_title,
+                              reorder_wells = FALSE
+                              )
+        }
+      }
+      dev.off()
+
+
+      pdf(file   = file.path(barplots_path, paste0(plate_name, ".pdf")),
+          height = use_height, width = use_width
+          )
+      for (j in seq_along(subsampled_list)) {
+        for (rep in seq_len(min(length(subsampled_list[[j]]), use_num_reps))) {
+          title_prefix <- title_prefixes[[j]]
+          if (names(subsampled_list)[[j]] != "100% sampled") {
+            title_prefix <- paste0(title_prefix,  " \u2013 repetition #", rep)
+          }
+          use_title <- paste0(title_prefix, " (", plate_name, ")")
+          use_ccs <- paste0("ccs", ccs_numbers[[i]])
+          use_df <- subsampled_list[[j]][[rep]][[use_ccs]][[df_name]]
+          use_df <- use_df[use_df[["Plate_number"]] %in% plate_number, ]
+          DrawAlterationBarplot(use_df,
+                                main_title = use_title,
+                                reorder_wells = FALSE
+                                )
+        }
+      }
+      dev.off()
+
+    }
+
+  }
+}
 
 
 
