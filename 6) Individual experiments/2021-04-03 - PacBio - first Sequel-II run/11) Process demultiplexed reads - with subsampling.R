@@ -44,10 +44,12 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Process reads, with subsampling -----------------------------------------
 
+sampling_fractions <- c(1, 0.5, 0.4, 0.3, 0.25, 0.2, 0.1, 0.05, 0.01)
+
 subsampled_list <- ProcessWithSubsampling(ccs_df,
                                           barcodes_df,
                                           extracted_df,
-                                          use_fractions = c(1, 0.5, 0.25, 0.1, 0.05, 0.01),
+                                          use_fractions = sampling_fractions,
                                           num_repetitions = 3L
                                           )
 
