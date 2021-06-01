@@ -31,22 +31,51 @@ ccs7_title <- expression(plain({"" >= "7 consensus reads "} *
 
 # Define functions --------------------------------------------------------
 
-DrawAllSigmoidCurves <- function() {
+DrawFourCurves <- function(use_sample_list, use_summary_df_name) {
 
-  summary_df_names <- c("original_summary_df", "filtered_summary_df", "filtered_gRNAs_df")
-  use_colors <- c("Blues", "Reds", "Purples", "Greys")
   num_reads <- c(10, 20, 30, 50)
+  use_colors <- c("Blues", "Reds", "Purples", "Greys")
   legend_labels <- lapply(as.character(num_reads),
                           function(x) bquote(plain("" >= .(x) ~ "reads"))
                           )
   legend_labels <- sapply(legend_labels, as.expression)
 
-  use_height <- 7
-  use_width <- 7
+  for (ccs_number in c(3, 5, 7)) {
+    for (i in seq_along(use_colors)) {
+      DrawSigmoidCurve(use_sample_list,
+                       summary_df_name  = use_summary_df_name,
+                       use_ccs          = ccs_number,
+                       add_curve        = if (i == 1) FALSE else TRUE,
+                       threshold_number = num_reads[[i]],
+                       use_color        = use_colors[[i]]
+                       )
+      legend(x        = 65,
+             y        = 20,
+             lwd      = 2,
+             legend   = legend_labels,
+             col      = vapply(use_colors, function(x) brewer.pal(9, x)[[5]], ""),
+             text.col = vapply(use_colors, function(x) brewer.pal(9, x)[[7]], ""),
+             bty      = "n",
+             seg.len  = 1,
+             adj      = c(0.12, 0.5),
+             inset    = 0.02,
+             xpd      = NA
+             )
+    }
+  }
+}
+
+
+
+
+
+DrawAllSigmoidCurves <- function() {
+
+  summary_df_names <- c("original_summary_df", "filtered_summary_df", "filtered_gRNAs_df")
 
   for (smrtlink_version in c(7, 9)) {
 
-    version_folder <- paste0("SmrtLink ", smrtlink_version)
+    version_folder <- paste0("SmrtLink ", smrtlink_version, " - subsampled")
     version_path <- file.path(plots_output_directory, version_folder)
 
     use_sample_list <- get(paste0("sl", smrtlink_version, "_subsampled_list"))
@@ -57,34 +86,12 @@ DrawAllSigmoidCurves <- function() {
                           )
 
       pdf(file = file.path(version_path, "Sigmoid curves", paste0(file_name, ".pdf")),
-          height = use_height,
-          width  = use_width
+          height = 7, width = 7
           )
       old_mar <- par(mar = c(5, 5.5, 5, 2.5))
 
-      for (ccs_number in c(3, 5, 7)) {
-        for (i in seq_along(use_colors)) {
-          DrawSigmoidCurve(use_sample_list,
-                           summary_df_name  = summary_df_names[[df_i]],
-                           use_ccs          = ccs_number,
-                           add_curve        = if (i == 1) FALSE else TRUE,
-                           threshold_number = num_reads[[i]],
-                           use_color        = use_colors[[i]]
-                           )
-          legend(x        = 65,
-                 y        = 20,
-                 lwd      = 2,
-                 legend   = legend_labels,
-                 col      = vapply(use_colors, function(x) brewer.pal(9, x)[[5]], ""),
-                 text.col = vapply(use_colors, function(x) brewer.pal(9, x)[[7]], ""),
-                 bty      = "n",
-                 seg.len  = 1,
-                 adj      = c(0.12, 0.5),
-                 inset    = 0.02,
-                 xpd      = NA
-                 )
-        }
-      }
+      DrawFourCurves(use_sample_list, summary_df_names[[df_i]])
+
       par(old_mar)
       dev.off()
     }
@@ -237,34 +244,31 @@ MakeTransparent <- function(color_string, fraction = 0.5) {
 
 
 
-DrawSigmoidCurve <- function(sampled_list,
-                             use_ccs = 7L,
-                             threshold_number = 20L,
-                             add_curve = FALSE,
-                             use_color = "Blues",
-                             summary_df_name = "filtered_summary_df"
-                             ) {
+
+
+GetFractionsSampleMat <- function(sampled_list,
+                                  use_ccs = 7L,
+                                  summary_df_name = "filtered_summary_df",
+                                  threshold_number = 20L,
+                                  exclude_empty_wells = TRUE
+                                  ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
 
-  if ("Empty_well" %in% names(sg_sequences_df)) {
+  if (exclude_empty_wells && ("Empty_well" %in% names(sg_sequences_df))) {
     are_empty <- sg_sequences_df[["Empty_well"]]
   } else {
     are_empty <- rep(FALSE, nrow(sg_sequences_df))
   }
+  are_included <- !(are_empty)
 
   ccs_name <- paste0("ccs", use_ccs)
 
   use_title <- get(paste0(ccs_name, "_title"))
 
-  num_meet_target <- lapply(seq_along(sampled_list), function(x) {
-    lapply(seq_along(sampled_list[[x]]), function(y) {
-      sum(sampled_list[[x]][[y]][[ccs_name]][[summary_df_name]][["Count_total"]][!(are_empty)] > threshold_number)
-    })
-  })
   num_meet_target <- lapply(sampled_list, function(x) {
     lapply(x, function(y) {
-      sum(y[[ccs_name]][[summary_df_name]][["Count_total"]][!(are_empty)] >= threshold_number)
+      sum(y[[ccs_name]][[summary_df_name]][["Count_total"]][are_included] >= threshold_number)
     })
   })
 
@@ -281,10 +285,30 @@ DrawSigmoidCurve <- function(sampled_list,
 
   sample_mat <- do.call(rbind, sample_mat_list)
   sample_mat <- cbind(sample_mat,
-                      "Fraction_passing" = sample_mat[, "Num_passing"] / sum(!(are_empty))
+                      "Fraction_passing" = sample_mat[, "Num_passing"] / sum(are_included)
                       )
+  return(sample_mat)
+}
+
+
+
+
+DrawSigmoidCurve <- function(sampled_list,
+                             use_ccs = 7L,
+                             summary_df_name = "filtered_summary_df",
+                             threshold_number = 20L,
+                             add_curve = FALSE,
+                             use_color = "Blues"
+                             ) {
+
+  sample_mat <- GetFractionsSampleMat(sampled_list,
+                                      use_ccs = use_ccs,
+                                      summary_df = summary_df_name,
+                                      threshold_number = threshold_number
+                                      )
 
   if (!(add_curve)) {
+    use_title <- get(paste0("ccs", use_ccs, "_title"))
     SetUpPlot(main_title = use_title)
   }
 
