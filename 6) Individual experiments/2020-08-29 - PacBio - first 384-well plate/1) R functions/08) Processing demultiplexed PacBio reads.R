@@ -1231,6 +1231,11 @@ ExportSummaryTable <- function(summary_df, ...) {
     p_val_vec <- vapply(signif(p_val_vec, 1), format, scientific = 9L, "")
     summary_df[["Distance_p_value"]] <- p_val_vec
   }
+
+  use_index <- which(names(summary_df) == "Num_contaminated_reads")
+  summary_df[["Perc_contaminated_reads"]] <- summary_df[[use_index]] / summary_df[["Count_total"]]
+  column_indices <- c(1:use_index, ncol(summary_df), (use_index + 1):(ncol(summary_df) - 1))
+  summary_df <- summary_df[, column_indices]
   are_integer <- vapply(summary_df, is.integer, logical(1))
   are_numeric <- vapply(summary_df, is.numeric, logical(1))
   for (i in which(!(are_integer) & are_numeric)) {
