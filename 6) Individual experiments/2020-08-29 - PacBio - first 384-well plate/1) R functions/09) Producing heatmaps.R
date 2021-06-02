@@ -52,7 +52,6 @@ ccs7_title <- expression(plain({"Long-read sequencing of plasmids" *
 
 
 
-
 # Define functions --------------------------------------------------------
 
 
