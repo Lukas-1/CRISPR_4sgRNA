@@ -40,29 +40,52 @@ DrawFourCurves <- function(use_sample_list, use_summary_df_name) {
                           )
   legend_labels <- sapply(legend_labels, as.expression)
 
-  for (ccs_number in c(3, 5, 7)) {
-    for (i in seq_along(use_colors)) {
-      DrawSigmoidCurve(use_sample_list,
-                       summary_df_name  = use_summary_df_name,
-                       use_ccs          = ccs_number,
-                       add_curve        = if (i == 1) FALSE else TRUE,
-                       threshold_number = num_reads[[i]],
-                       use_color        = use_colors[[i]]
-                       )
+  constant_columns <- c("Fraction_sampled", "Rep_number")
+
+  ccs_list <- lapply(c(3, 5, 7), function(ccs_number) {
+    tresholds_list <- lapply(seq_along(use_colors), function(x) {
+      sample_mat <- DrawSigmoidCurve(use_sample_list,
+                                     summary_df_name  = use_summary_df_name,
+                                     use_ccs          = ccs_number,
+                                     add_curve        = if (x == 1) FALSE else TRUE,
+                                     threshold_number = num_reads[[x]],
+                                     use_color        = use_colors[[x]]
+                                     )
+      colnames(sample_mat) <- ifelse(colnames(sample_mat) %in% constant_columns,
+                                     colnames(sample_mat),
+                                     paste0(num_reads[[x]], "reads_", tolower(colnames(sample_mat)))
+                                     )
       legend(x        = 65,
              y        = 20,
              lwd      = 2,
              legend   = legend_labels,
-             col      = vapply(use_colors, function(x) brewer.pal(9, x)[[5]], ""),
-             text.col = vapply(use_colors, function(x) brewer.pal(9, x)[[7]], ""),
+             col      = vapply(use_colors, function(y) brewer.pal(9, y)[[5]], ""),
+             text.col = vapply(use_colors, function(y) brewer.pal(9, y)[[7]], ""),
              bty      = "n",
              seg.len  = 1,
              adj      = c(0.12, 0.5),
              inset    = 0.02,
              xpd      = NA
              )
-    }
-  }
+      return(sample_mat)
+    })
+    tresholds_mat <- do.call(cbind, tresholds_list)
+    colnames(tresholds_mat) <- ifelse(colnames(tresholds_mat) %in% constant_columns,
+                                      colnames(tresholds_mat),
+                                      paste0("ccs", ccs_number, "_", tolower(colnames(tresholds_mat)))
+                                      )
+    return(tresholds_mat)
+  })
+  ccs_mat <- do.call(cbind, ccs_list)
+  are_duplicated <- duplicated(lapply(seq_len(ncol(ccs_mat)), function(x) ccs_mat[, x]))
+
+  results_mat <- ccs_mat[, !(are_duplicated)]
+  columns_order <- order(colnames(results_mat) %in% constant_columns,
+                         grepl("fraction_passing", colnames(results_mat), fixed = TRUE),
+                         decreasing = TRUE
+                         )
+  results_mat <- results_mat[, columns_order]
+  return(results_mat)
 }
 
 
@@ -359,7 +382,7 @@ DrawSigmoidCurve <- function(sampled_list,
            spacing  = 0.8,
            priority = "random"
            )
-  return(invisible(NULL))
+  return(invisible(sample_mat))
 }
 
 

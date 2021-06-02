@@ -34,7 +34,7 @@ load(file.path(sql2_R_objects_directory, "11) Process demultiplexed reads - with
 
 # Draw plots --------------------------------------------------------------
 
-DrawFourCurves(subsampled_list, "filtered_summary_df")
+filtered_results_mat <- DrawFourCurves(subsampled_list, "filtered_summary_df")
 
 summary_df_names <- c("original_summary_df", "filtered_summary_df", "filtered_gRNAs_df")
 
@@ -48,7 +48,15 @@ for (df_i in seq_along(summary_df_names)) {
       )
   old_mar <- par(mar = c(5, 5.5, 5, 2.5))
 
-  DrawFourCurves(subsampled_list, summary_df_names[[df_i]])
+  data_mat <- DrawFourCurves(subsampled_list, summary_df_names[[df_i]])
+
+  write.table(data_mat,
+              file      = file.path(plots_output_directory, "Tables", paste0(file_name, ".tsv")),
+              sep       = "\t",
+              col.names = TRUE,
+              row.names = FALSE,
+              quote     = FALSE
+              )
 
   par(old_mar)
   dev.off()
