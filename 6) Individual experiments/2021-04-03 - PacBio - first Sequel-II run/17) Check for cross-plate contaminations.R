@@ -191,7 +191,7 @@ names(export_contam_df)[names(export_contam_df) == "Are_cross_plate"] <- "Cross_
 # Export data -------------------------------------------------------------
 
 write.table(export_contam_df,
-            file      = file.path(output_directory, paste0("Aligned contaminations.tsv")),
+            file      = file.path(output_directory, "Aligned contaminations.tsv"),
             sep       = "\t",
             col.names = TRUE,
             row.names = FALSE,
