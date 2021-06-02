@@ -33,7 +33,6 @@ load(file.path(sql2_R_objects_directory, "06) Perform pairwise alignments with t
 
 
 
-
 # Define all important features, and generate per-well coordinates --------
 
 features_df <- FeaturesListToDf(features_list)
