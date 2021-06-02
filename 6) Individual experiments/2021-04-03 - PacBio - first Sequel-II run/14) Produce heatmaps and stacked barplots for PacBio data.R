@@ -198,7 +198,6 @@ for (i in seq_along(ccs_numbers)) {
       dev.off()
 
     }
-
   }
 }
 
