@@ -33,32 +33,9 @@ load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads
 
 
 
-# Export individual reads -------------------------------------------------
-
-ccs_numbers <- c(3, 5, 7)
-ccs_folders <- c("CCS3_99", "CCS5_999", "CCS7_9999")
-
-for (i in seq_along(ccs_numbers)) {
-  this_df <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))[["individual_reads_df"]]
-  plate_numbers <- setdiff(this_df[, "Plate_number"], NA)
-  plate_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"))
-  this_dir <- file.path(tables_output_directory, "Individual reads", ccs_folders[[i]])
-  for (j in seq_along(plate_numbers)) {
-    sub_df <- this_df[this_df[, "Plate_number"] %in% j, ]
-    row.names(sub_df) <- NULL
-    ExportIndivTable(sub_df,
-                     paste0(ccs_folders[[i]], "_individual_reads_", plate_names[[j]]),
-                     this_dir
-                     )
-
-  }
-}
 
 
-
-
-
-# Export tables -----------------------------------------------------------
+# Export summary tables ---------------------------------------------------
 
 ExportSummaryTable(ccs3_df_list[["original_summary_df"]],
                    "CCS3_99_summary_per_well_unfiltered",
@@ -105,7 +82,33 @@ ExportSummaryTable(ccs7_df_list[["filtered_gRNAs_df"]],
 
 
 
-# Define columns to export ------------------------------------------------
+# Export individual reads -------------------------------------------------
+
+ccs_numbers <- c(3, 5, 7)
+ccs_folders <- c("CCS3_99", "CCS5_999", "CCS7_9999")
+
+for (i in seq_along(ccs_numbers)) {
+  this_df <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))[["individual_reads_df"]]
+  plate_numbers <- setdiff(this_df[, "Plate_number"], NA)
+  plate_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"))
+  this_dir <- file.path(tables_output_directory, "Individual reads", ccs_folders[[i]])
+  for (j in seq_along(plate_numbers)) {
+    sub_df <- this_df[this_df[, "Plate_number"] %in% j, ]
+    row.names(sub_df) <- NULL
+    ExportIndivTable(sub_df,
+                     paste0(ccs_folders[[i]], "_individual_reads_", plate_names[[j]]),
+                     this_dir
+                     )
+
+  }
+}
+
+
+
+
+
+
+# Define columns to export (for problematic wells) ------------------------
 
 use_columns <- c(
   "Combined_ID", "Plate_number", "Well_number",
