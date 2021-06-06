@@ -50,8 +50,9 @@ merged_CRISPRko_df <- RankCRISPRDf(merged_CRISPRko_df, ID_column = "Combined_ID"
 
 merged_CRISPRko_df <- PrioritizeNonOverlapping(merged_CRISPRko_df,
                                                ID_column = "Combined_ID",
-                                               parallel_mode = TRUE,
-                                               tolerate_divergent_chromosomes = FALSE
+                                               parallel_mode = FALSE,
+                                               tolerate_divergent_chromosomes = FALSE,
+                                               only_top_10_GPP = TRUE
                                                )
 
 
