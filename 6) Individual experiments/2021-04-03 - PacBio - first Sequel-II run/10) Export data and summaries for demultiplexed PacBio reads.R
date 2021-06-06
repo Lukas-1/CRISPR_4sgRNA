@@ -113,9 +113,7 @@ for (i in seq_along(ccs_numbers)) {
 use_columns <- c(
   "Combined_ID", "Plate_number", "Well_number",
 
-  "Known_empty",
-
-  "Count_total",
+  "Known_empty", "Count_total",
 
   "Perc_at_least_1", "Perc_at_least_2", "Perc_at_least_3", "Perc_all_4",
   "Perc_all_4_promoters", "Perc_whole_plasmid",
