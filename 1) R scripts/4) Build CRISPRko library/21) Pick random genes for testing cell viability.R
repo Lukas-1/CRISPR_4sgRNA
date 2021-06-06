@@ -241,10 +241,10 @@ are_neutral <- (integrated_df[["CRISPR_num_essential"]] == 0) &
                (integrated_df[["CRISPR_mean_effect"]] >= -0.1) &
                (integrated_df[["CRISPR_mean_effect"]] < 0.1)
 
-use_surfaceome_columns <- c(
-  "SURFY_surfaceome_2018", "CSC_surfaceome_2015", "CSC_HeLa_2018",
-  "CSC_HeLa_2015", "CSC_HEK_2015", "CSC_LN229_2015"
-)
+# use_surfaceome_columns <- c(
+#   "SURFY_surfaceome_2018", "CSC_surfaceome_2015", "CSC_HeLa_2018",
+#   "CSC_HeLa_2015", "CSC_HEK_2015", "CSC_LN229_2015"
+# )
 
 use_surfaceome_columns <- c(
   "SURFY_surfaceome_2018", "CSC_HEK_2015"
@@ -261,6 +261,7 @@ row.names(FACS_df) <- NULL
 FACS_df[["Essential_category"]] <- NULL
 
 table(FACS_df[["Max_deletion_category"]])
+
 
 
 
