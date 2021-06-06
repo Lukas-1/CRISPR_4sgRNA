@@ -52,6 +52,34 @@ original_4i_df <- data.frame(read_excel(file.path(gene_lists_directory, "4i_Anti
 
 
 
+
+
+# Define functions --------------------------------------------------------
+
+ReplaceNAs <- function(input_df) {
+  NA_columns <- c("Achilles_common", "CRISPR_common", "Hart_3_or_more_lines",
+                  "Hart_HeLa", "Blomen_HAP1_KBM7_intersect"
+                  )
+  no_entrez <- is.na(input_df[["Entrez_ID"]])
+  for (column_name in NA_columns) {
+    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
+                                      ifelse(no_entrez, "", "N/A"),
+                                      as.character(input_df[, column_name])
+                                      )
+  }
+
+  for (column_name in setdiff(names(input_df), NA_columns)) {
+    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
+                                      "",
+                                      as.character(input_df[, column_name])
+                                      )
+  }
+  return(input_df)
+}
+
+
+
+
 # Translate 4i antibody names ---------------------------------------------
 
 are_all_NA <- apply(original_4i_df[, 2:ncol(original_4i_df)], 1, function(x) all(is.na(x)))
@@ -67,6 +95,7 @@ intermediate_4i_df <- data.frame(
   original_4i_df[, 2:ncol(original_4i_df)],
   stringsAsFactors = FALSE
 )
+
 
 
 
@@ -267,6 +296,39 @@ all_genes_df <- data.frame(all_4sg_df,
 
 
 
+
+
+
+# Select surface proteins that are not expressed for CRISPRa FACS ---------
+
+are_CRISPRa <- all_genes_df[["CRISPRa_4sg"]] %in% "Yes"
+are_surfaceome <- all_genes_df[, "SURFY_surfaceome_2018"] %in% "Yes"
+
+use_surface_columns <- c("CSC_HeLa_2018", "CSC_HeLa_2015", "CSC_HEK_2015", "CSC_LN229_2015")
+are_not_expressed <- rowSums((as.matrix(all_genes_df[, use_surface_columns]) == "Yes"), na.rm = TRUE) == 0
+
+are_plasma_membrane <- all_genes_df[["Subcellular_location"]] %in% "Plasma membrane"
+
+are_eligible <- are_CRISPRa & are_surfaceome & are_not_expressed & are_plasma_membrane
+
+FACS_df <- all_genes_df[are_eligible, ]
+row.names(FACS_df) <- NULL
+
+set.seed(1)
+FACS_df[["Randomized_rank"]] <- sample(seq_len(nrow(FACS_df)))
+shuffled_FACS_df <- FACS_df[order(FACS_df[["Randomized_rank"]]), ]
+row.names(shuffled_FACS_df) <- NULL
+
+export_FACS_df <- ReplaceNAs(shuffled_FACS_df)
+
+write.table(export_FACS_df,
+            file = file.path(file_output_directory, "CRISPRa_for_FACS.tsv"),
+            quote = FALSE, row.names = FALSE, sep = "\t"
+            )
+
+
+
+
 # Integrate the 4i data ---------------------------------------------------
 
 matches_4i_4sg <- match(combined_4i_df[["Entrez_ID"]], all_genes_df[["Entrez_ID"]])
@@ -301,28 +363,6 @@ all_4i_4sg_df <- data.frame(
 
 
 # Replace NAs with empty strings ------------------------------------------
-
-ReplaceNAs <- function(input_df) {
-  NA_columns <- c("Achilles_common", "CRISPR_common", "Hart_3_or_more_lines",
-                  "Hart_HeLa", "Blomen_HAP1_KBM7_intersect"
-                  )
-  no_entrez <- is.na(input_df[["Entrez_ID"]])
-  for (column_name in NA_columns) {
-    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
-                                      ifelse(no_entrez, "", "N/A"),
-                                      as.character(input_df[, column_name])
-                                      )
-  }
-
-  for (column_name in setdiff(names(input_df), NA_columns)) {
-    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
-                                      "",
-                                      as.character(input_df[, column_name])
-                                      )
-  }
-  return(input_df)
-}
-
 
 export_4i_4sg_df <- ReplaceNAs(all_4i_4sg_df)
 export_all_genes_df <- ReplaceNAs(all_genes_df)
