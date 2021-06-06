@@ -154,7 +154,7 @@ CreateCombinations <- function(sub_df_reordered,
 SortCombinations <- function(CRISPR_sub_df,
                              min_spaces      = 50L,
                              num_sgRNAs      = 4L,
-                             only_top_24_GPP = FALSE,
+                             only_top_10_GPP = FALSE,
                              max_overlaps    = 999L, # warning: If this is changed to, for instance, 0:12, then the number of overlaps is prioritized over the number of unambiguous guides (with exactly one 0MM location!)
                              tolerate_divergent_chromosomes = FALSE
                              ) {
@@ -201,9 +201,9 @@ SortCombinations <- function(CRISPR_sub_df,
                    !(are_curated)
                    #((sub_df_reordered[["Source"]] != "GPP") | (sub_df_reordered[["GPP_rank"]] %in% 1:24))
 
-  if (only_top_24_GPP) {
-    are_GPP_top_24 <- (sub_df_reordered[["Source"]] != "GPP") | (sub_df_reordered[["GPP_rank"]] %in% 1:24)
-    were_included <- were_included & are_GPP_top_24
+  if (only_top_10_GPP) {
+    are_GPP_top_10 <- (sub_df_reordered[["Source"]] != "GPP") | (sub_df_reordered[["GPP_rank"]] %in% 1:10)
+    were_included <- were_included & are_GPP_top_10
   }
 
   sgRNAs_found <- FALSE
@@ -289,7 +289,7 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                      ID_column       = "AltTSS_ID",
                                      max_overlaps    = 999L,
                                      min_spaces      = 50L,
-                                     only_top_24_GPP = FALSE,
+                                     only_top_10_GPP = FALSE,
                                      parallel_mode   = TRUE,
                                      num_cores       = NULL,
                                      tolerate_divergent_chromosomes = FALSE
@@ -308,7 +308,7 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                         "ReorderSubDfByLocation", "NumHomologousPairs", "SplitIntoSubstrings",
                                         "CRISPR_df", "tolerate_divergent_chromosomes",
                                         "preferred_AF_max_column", "SNP_frequency_cutoff",
-                                        "max_overlaps", "min_spaces", "only_top_24_GPP"
+                                        "max_overlaps", "min_spaces", "only_top_10_GPP"
                                         ),
                             envir = environment()
                             )
@@ -317,7 +317,7 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                                              function(x) SortCombinations(CRISPR_df[CRISPR_df[[ID_column]] == x, , drop = FALSE],
                                                                           max_overlaps    = max_overlaps,
                                                                           min_spaces      = min_spaces,
-                                                                          only_top_24_GPP = only_top_24_GPP,
+                                                                          only_top_10_GPP = only_top_10_GPP,
                                                                           tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
                                                                           )
                                              )
@@ -327,7 +327,7 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
     reordered_df_list <- lapply(unique_IDs,
                                 function(x) SortCombinations(CRISPR_df[CRISPR_df[[ID_column]] == x, , drop = FALSE],
                                                              min_spaces      = min_spaces,
-                                                             only_top_24_GPP = only_top_24_GPP,
+                                                             only_top_10_GPP = only_top_10_GPP,
                                                              max_overlaps    = max_overlaps,
                                                              tolerate_divergent_chromosomes = tolerate_divergent_chromosomes
                                                              )
