@@ -70,7 +70,6 @@ MakeCombinedIDs <- function(plate_numbers, well_numbers) {
 
 
 
-
 # Process the Excel sheet from Sanger sequencing --------------------------
 
 sanger_list <- lapply(sanger_list, function(x) as.data.frame(x, stringsAsFactors = FALSE))
@@ -191,7 +190,10 @@ beads_df <- AddPercentages(beads_df)
 
 contam_delta_vec <- columns_df[["Perc_contaminated_reads"]] -
                     beads_df[["Perc_contaminated_reads"]]
-mean_contam_delta <- mean(contam_delta_vec )
+are_to_exclude <- (columns_df[["Perc_contaminated_reads"]] >= 0.3) |
+                  (beads_df[["Perc_contaminated_reads"]] >= 0.3)
+
+mean_contam_delta <- mean(contam_delta_vec[!(are_to_exclude)])
 
 
 
@@ -609,7 +611,6 @@ text(x      = grconvertX(x = rect_mid, from = "npc", to = "user"),
 
 
 dev.off()
-
 
 
 
