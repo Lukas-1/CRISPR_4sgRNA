@@ -167,6 +167,9 @@ show_seq <- AlignmentsForZMW(106171035, gap_opening = 30)
 show_seq <- AlignmentsForZMW(131269636, gap_opening = 30)
 show_seq <- AlignmentsForZMW(83952293,  gap_opening = 30)
 
+show_seq <- AlignmentsForZMW(131072176, gap_opening = 30)
+show_seq <- AlignmentsForZMW(66062756, gap_opening = 30)
+show_seq <- AlignmentsForZMW(66062756, gap_opening = 100)
 
 
 
