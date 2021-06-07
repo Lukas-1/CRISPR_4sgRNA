@@ -25,6 +25,64 @@ AnnotateDeletions <- function(deletions_df) {
   deletions_df[["Span_tracrRNAs"]] <- FindSpanningDeletions(deletions_df, use_features_df, "tracrRNA")
   deletions_df[["Span_promoters"]] <- FindSpanningDeletions(deletions_df, use_features_df, "promoter")
   deletions_df[["Span_sg_cr"]]     <- FindSpanningDeletions(deletions_df, use_features_df, "sg_cr_")
+  deletions_df[["Span_sgRNAs"]]    <- FindSpanningDeletions(deletions_df, use_features_df, "sg")
+  return(deletions_df)
+}
+
+
+CheckThatFactorIsInOrder <- function(my_factor) {
+  stopifnot(identical(length(unique(my_factor)),
+                      length(rle(as.integer(my_factor))[["lengths"]])
+                      )
+            )
+}
+
+
+
+FindLargestDeletion <- function(deletions_df, set_seed = TRUE) {
+  zmw_fac <- factor(deletions_df[["ZMW"]])
+  CheckThatFactorIsInOrder(zmw_fac)
+  if (set_seed) {
+    set.seed(1)
+  }
+  are_largest_random <- tapply(deletions_df[["Deletion_size"]], zmw_fac, function(x) {
+    are_max <- x == max(x)
+    if (sum(are_max) > 1) {
+      candidates_vec <- which(are_max)
+      use_index <- sample(candidates_vec, 1)
+      are_max <- seq_along(x) == use_index
+    }
+    return(are_max)
+    stopifnot(sum(are_max) == 1)
+    return(are_max)
+  }, simplify = FALSE)
+  deletions_df[["Is_largest_selected"]] <- unlist(are_largest_random, use.names = FALSE)
+  are_largest <- tapply(deletions_df[["Deletion_size"]], zmw_fac, function(x) {
+    x == max(x)
+  }, simplify = FALSE)
+  deletions_df[["Is_largest"]] <- unlist(are_largest, use.names = FALSE)
+  return(deletions_df)
+}
+
+
+PrioritizeDeletions <- function(deletions_df, set_seed = TRUE) {
+  zmw_fac <- factor(deletions_df[["ZMW"]])
+  wells_fac <- factor(deletions_df[["Combined_ID"]])
+  CheckThatFactorIsInOrder(zmw_fac)
+  CheckThatFactorIsInOrder(wells_fac)
+  if (set_seed) {
+    set.seed(1)
+  }
+  random_del_ranks <- tapply(deletions_df[["Deletion_size"]], zmw_fac, function(x) {
+    sample(seq_along(x))
+  }, simplify = FALSE)
+  random_well_ranks <- tapply(deletions_df[["Is_largest_selected"]], wells_fac, function(x) {
+    results_vec <- rep(NA, length(x))
+    results_vec[x] <- sample(seq_len(sum(x)))
+    return(results_vec)
+  }, simplify = FALSE)
+  deletions_df[["ZMW_random_rank"]]  <- unlist(random_del_ranks,  use.names = FALSE)
+  deletions_df[["Well_random_rank"]] <- unlist(random_well_ranks, use.names = FALSE)
   return(deletions_df)
 }
 
@@ -146,6 +204,9 @@ CompileDeletions <- function(alignments_df,
   message("Collating the final data frame...")
   results_df <- do.call(rbind.data.frame, c(well_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
   results_df[["Deletion_size"]] <- results_df[["Deletion_end"]] - results_df[["Deletion_start"]]
+  message("Finding the largest deletion for each read...")
+  results_df <- FindLargestDeletion(results_df)
+  message("Annotating deletions...")
   results_df <- AnnotateDeletions(results_df)
   return(results_df)
 }
