@@ -8,7 +8,7 @@
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "30) Finding overlapping genes and nearby TSSs.R"))
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R")) # For Are4sg
-source(file.path(general_functions_directory, "15) Finding non-overlapping sgRNAs.R")) # For CheckThatFactorIsInOrder
+source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
 
 
 
