@@ -378,8 +378,6 @@ GetMainTSS <- function(CRISPR_df) {
 
 
 
-
-
 # Helper functions for vertically aligning text on plots ------------------
 
 StripExpression <- function(my_expression) {
