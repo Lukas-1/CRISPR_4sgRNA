@@ -352,7 +352,7 @@ numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis
 numeric_axis_labels <- paste0(format(numeric_axis_pos * 100), "%")
 
 
-## Draw the plot canvas
+## Set up the plot canvas
 plot(1,
      xlim = group_limits,
      ylim = numeric_limits,
