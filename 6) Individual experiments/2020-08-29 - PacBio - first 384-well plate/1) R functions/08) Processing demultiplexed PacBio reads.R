@@ -353,6 +353,7 @@ GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
   assign("delete_sg_df", sg_df, envir = globalenv())
 
   stopifnot(nrow(sg_df) == length(query_seq))
+  query_seq <- toupper(query_seq)
 
   have_well <- !(is.na(ccs_df[["Well_number"]])) & ccs_df[["Passed_filters"]]
 
@@ -374,9 +375,9 @@ GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
 
   ## If the sequence of two wells is exactly the same,
   ## perhaps it shouldn't count as a contamination...
-  sg_cr <- sg_df[, paste0("sg_cr_", 1:4)]
+  sg_sub_df <- sg_df[, paste0("Sequence_sg", 1:4)]
   same_seq_list <- lapply(seq_len(nrow(sg_df)),
-                          function(x) which(query_seq %in% vapply(sg_cr, function(y) y[[x]], ""))
+                          function(x) which(query_seq %in% toupper(vapply(sg_sub_df, function(y) y[[x]], "")))
                           )
   same_seq_wells_list <- lapply(same_seq_list, function(x) sg_df[["Well_number"]][x])
   are_this_well_list <- lapply(same_seq_wells_list,
@@ -787,7 +788,7 @@ AnalyzeWells <- function(ccs_df,
 
   ## Add data on contaminations / wrong barcodes
 
-  contamin_mat_list <- lapply(sg_df[, paste0("sg_cr_", 1:4)],
+  contamin_mat_list <- lapply(sg_df[, paste0("Sequence_sg", 1:4)],
                               function(x) GetContaminationMat(x, ccs_df, sg_df)
                               )
 
