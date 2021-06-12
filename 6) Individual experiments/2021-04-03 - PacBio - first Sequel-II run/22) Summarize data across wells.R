@@ -6,6 +6,7 @@
 
 library("readxl")
 library("vioplot")
+library("png")
 
 CRISPR_root_directory <- "~/CRISPR"
 plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
@@ -38,6 +39,9 @@ load(file.path(sql2_R_objects_directory, "19) Identify and characterize large de
 
 
 # Define constants --------------------------------------------------------
+
+use_width <- 8
+use_height <- 6
 
 column_labels_list <- list(
   "Count_at_least_1"                            = expression("" >= "1 correct", "gRNA"),
@@ -291,20 +295,13 @@ SetUpPercentagePlot <- function(use_columns,
                                 point_cex        = 1.5,
                                 legend_pch       = 21,
                                 side_gap         = 0.5,
-                                extra_grid_lines = FALSE
+                                draw_grid        = TRUE,
+                                extra_grid_lines = FALSE,
+                                for_embedded_PNG = FALSE,
+                                make_plot        = TRUE
                                 ) {
 
   stopifnot("column_labels_list" %in% ls(envir = globalenv()))
-
-  are_no_contam <- grepl("_no_contam_", use_columns, fixed = TRUE)
-  contams_excluded <- any(are_no_contam)
-
-  if (contams_excluded) {
-    stopifnot(all(are_no_contam))
-    y_axis_label <- "Percentage of reads (excluding contaminations)"
-  } else {
-    y_axis_label <- "Percentage of reads"
-  }
 
   ## Determine group positions
   num_groups <- length(use_columns)
@@ -319,46 +316,66 @@ SetUpPercentagePlot <- function(use_columns,
   numeric_axis_labels <- paste0(format(numeric_axis_pos * 100), "%")
 
 
-  ## Set up the plot canvas
-  plot(1,
-       xlim = group_limits,
-       ylim = numeric_limits,
-       xaxs = "i",
-       yaxs = "i",
-       type = "n",
-       axes = FALSE,
-       ann  = FALSE
-       )
+  if (make_plot) {
+    final_y_range <- numeric_limits[[2]] - numeric_limits[[1]]
+    y_gap <- final_y_range * 0.0075
+    final_y_limits <- c(numeric_limits[[1]] - y_gap, numeric_limits[[2]] + y_gap)
+    ## Set up the plot canvas
+    plot(1,
+         xlim = group_limits,
+         ylim = final_y_limits,
+         xaxs = "i",
+         yaxs = "i",
+         type = "n",
+         axes = FALSE,
+         ann  = FALSE
+         )
+  }
 
-  ## Draw the grid and axis
-  segments(x0   = par("usr")[[1]],
-           x1   = par("usr")[[2]],
-           y0   = seq(0, 1, by = 0.1),
-           col  = "gray88",
-           lend = "butt",
-           xpd  = NA
-           )
 
-  if (extra_grid_lines) {
+  ## Draw the grid
+  if (draw_grid) {
     segments(x0   = par("usr")[[1]],
              x1   = par("usr")[[2]],
-             y0   = seq(0.05, 0.95, by = 0.1),
-             col  = "gray95",
+             y0   = seq(0, 1, by = 0.1),
+             col  = "gray88",
              lend = "butt",
              xpd  = NA
              )
+
+    if (extra_grid_lines) {
+      segments(x0   = par("usr")[[1]],
+               x1   = par("usr")[[2]],
+               y0   = seq(0.05, 0.95, by = 0.1),
+               col  = "gray95",
+               lend = "butt",
+               xpd  = NA
+               )
+    }
   }
 
+  if (for_embedded_PNG) {
+    return(invisible(NULL))
+  }
+
+  ## Draw the axis and axis label
   axis(2,
        at       = numeric_axis_pos,
        labels   = numeric_axis_labels,
        mgp      = c(3, 0.38, 0),
        gap.axis = 0,
        tcl      = -0.3,
-       las      = 1,
-       lwd      = par("lwd")
+       las      = 1
        )
 
+  are_no_contam <- grepl("_no_contam_", use_columns, fixed = TRUE)
+  contams_excluded <- any(are_no_contam)
+  if (contams_excluded) {
+    stopifnot(all(are_no_contam))
+    y_axis_label <- "Percentage of reads (excluding contaminations)"
+  } else {
+    y_axis_label <- "Percentage of reads"
+  }
   mtext(text = y_axis_label, side = 2, line = 3)
 
 
@@ -473,7 +490,7 @@ GetColorMat <- function() {
 LollipopPlot <- function(input_df,
                          plate_names       = NULL,
                          use_columns       = c("Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4"),
-                         set_par           = TRUE,
+                         set_mar           = TRUE,
                          label_percentages = TRUE,
                          use_y_limits      = c(0, 1)
                          ) {
@@ -492,8 +509,8 @@ LollipopPlot <- function(input_df,
     main_title <- "PacBio sequencing"
   }
 
-  if (set_par) {
-    use_mar <- par("mar" = c(5, 5, 4.5, 8))
+  if (set_mar) {
+    old_mar <- par("mar" = c(5, 5, 4.5, 8))
   }
 
   control_mat <- PreparePlates(input_df, "Intctrl")
@@ -563,7 +580,7 @@ LollipopPlot <- function(input_df,
          )
   }
 
-  par(use_mar)
+  par(old_mar)
   return(invisible(NULL))
 }
 
@@ -572,9 +589,10 @@ LollipopPlot <- function(input_df,
 SummaryBoxPlot <- function(input_df,
                            plate_names       = NULL,
                            use_columns       = c("Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4"),
-                           set_par           = TRUE,
+                           set_mar           = TRUE,
                            label_percentages = TRUE,
-                           use_y_limits      = c(0, 1)
+                           use_y_limits      = c(0, 1),
+                           embed_PNG         = FALSE
                            ) {
 
   set.seed(1) # For reproducible jitter
@@ -592,8 +610,9 @@ SummaryBoxPlot <- function(input_df,
     main_title <- "PacBio sequencing"
   }
 
-  if (set_par) {
-    use_mar <- par("mar" = c(5, 5, 4.5, 8))
+  use_mar <- c(5, 5, 4.5, 8)
+  if (set_mar) {
+    old_mar <- par("mar" = use_mar)
   }
 
   control_mat <- PreparePlates(input_df, "Intctrl")
@@ -606,9 +625,35 @@ SummaryBoxPlot <- function(input_df,
   selected_unlisted <- unlist(selected_list)
 
   point_cex <- 1.5
-  SetUpPercentagePlot(use_columns, use_y_limits, main_title, point_cex,
-                      side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE
-                      )
+
+  ## Prepare the raster graphics device
+  if (embed_PNG) {
+    PDF_mar <- par("mar")
+    PDF_device <- dev.cur()
+    temp_path <- file.path(file_output_directory, "temp.png")
+    cur_mai <- par("mar") * 0.2
+    temp_width <- use_width - sum(cur_mai[c(2, 4)])
+    temp_height <- use_height - sum(cur_mai[c(1, 3)])
+
+    png(file   = temp_path,
+        width  = temp_width,
+        height = temp_height,
+        units  = "in",
+        res    = 900,
+        bg     = "transparent"
+        )
+
+    par(mar = rep(0, 4))
+
+    SetUpPercentagePlot(use_columns, use_y_limits, side_gap = 0.3,
+                        for_embedded_PNG = TRUE, extra_grid_lines = TRUE
+                        )
+  } else {
+    SetUpPercentagePlot(use_columns, use_y_limits, main_title, point_cex,
+                        side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE
+                        )
+  }
+
 
   colors_mat <- GetColorMat()
   num_groups <- length(use_columns)
@@ -675,6 +720,32 @@ SummaryBoxPlot <- function(input_df,
          pch = 16
          )
 
+
+  if (embed_PNG) {
+
+    dev.off()
+    raster_array <- readPNG(temp_path)
+    file.remove(temp_path)
+    dev.set(PDF_device)
+    par(PDF_mar)
+
+    SetUpPercentagePlot(use_columns, use_y_limits, main_title = "",
+                        side_gap = 0.3,
+                        for_embedded_PNG = TRUE, draw_grid = FALSE
+                        )
+
+    rasterImage(raster_array,
+                xleft = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+                )
+
+    SetUpPercentagePlot(use_columns, use_y_limits, main_title, point_cex,
+                        legend_pch = 22, draw_grid = FALSE,
+                        make_plot = FALSE
+                        )
+
+  }
+
   ## Draw the superimposed boxplots
   boxplot(control_list,
           at         = control_pos,
@@ -710,7 +781,7 @@ SummaryBoxPlot <- function(input_df,
           lwd        = 1
           )
 
-  par(use_mar)
+  par(old_mar)
   return(invisible(NULL))
 }
 
@@ -773,7 +844,7 @@ accuracy_percentages <- c(99, 99.9, 99.99)
 for (plot_type in c("Box", "Lollipop")) {
 
   if (plot_type == "Box") {
-    UseFunction <- SummaryBoxPlot
+    UseFunction <- function(...) SummaryBoxPlot(..., embed_PNG = TRUE)
   } else {
     UseFunction <- LollipopPlot
   }
@@ -818,7 +889,7 @@ for (plot_type in c("Box", "Lollipop")) {
           sub_folder_path <- file.path(folder_path, sub_folder_name)
           dir.create(sub_folder_path, showWarnings = FALSE)
           pdf(file = file.path(sub_folder_path, file_name),
-              width = 8, height = 6
+              width = use_width, height = use_height
               )
           for (plate_selection in names(plate_selection_titles_list)) {
             print(plate_selection)
