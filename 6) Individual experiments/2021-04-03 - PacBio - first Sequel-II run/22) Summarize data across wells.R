@@ -839,43 +839,23 @@ for (plot_type in c("Box", "Lollipop")) {
 
 
 
-# Try stuff ---------------------------------------------------------------
+# Example plots -----------------------------------------------------------
 
 SummaryBoxPlot(use_df, "All plates")
-
 
 
 LollipopPlot(use_df, "All plates")
 LollipopPlot(use_df, "Bead-purified")
 
 
-
-
 LollipopPlot(use_df,
-             "All plates",
+             "Matched column-purified",
              paste0("Correct_sg", 1:4)
              )
-
 LollipopPlot(use_df,
              "Bead-purified",
              paste0("Correct_sg", 1:4)
              )
-
-
-
-LollipopPlot(use_df,
-             "All plates",
-             paste0("Correct_sg", 1:4, "_cr", 1:4)
-             )
-
-LollipopPlot(use_df,
-             "Bead-purified",
-             paste0("Correct_sg", 1:4, "_cr", 1:4)
-             )
-
-
-
-
 
 LollipopPlot(use_df,
              "Bead-purified",
@@ -886,27 +866,11 @@ LollipopPlot(use_df,
              use_y_limits = c(0, 0.05)
              )
 
-
-
-
-
-
 LollipopPlot(use_df,
              "Bead-purified",
              c("Num_contaminated_reads"),
              use_y_limits = c(0, 0.05)
              )
-
-
-
-LollipopPlot(use_df,
-             "All plates",
-             c("Num_contaminated_reads",
-               "Num_contaminated_reads_aligned",
-               "Num_cross_plate_contaminated"
-               )
-             )
-
 
 LollipopPlot(use_df,
              "All plates",
