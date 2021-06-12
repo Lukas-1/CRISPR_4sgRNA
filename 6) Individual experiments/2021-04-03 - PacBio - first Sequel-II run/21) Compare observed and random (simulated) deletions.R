@@ -44,7 +44,7 @@ MakeWhiskers <- function(numeric_vec, two_SE_whiskers = TRUE, number_of_SEs = if
 
 
 
-SimVsObsDeletions <- function(use_simul_mat, use_del_df) {
+SimVsObsDeletions <- function(use_simul_mat, use_del_df, use_num_sim = 1000L) {
 
   stopifnot("labels_list" %in% ls(envir = globalenv()))
 
@@ -52,7 +52,7 @@ SimVsObsDeletions <- function(use_simul_mat, use_del_df) {
 
   ## Prepare the relevant metrics
   new_column_order <- order(match(colnames(use_simul_mat), names(labels_list)))
-  use_simul_mat <- use_simul_mat[, new_column_order]
+  use_simul_mat <- use_simul_mat[seq_len(use_num_sim), new_column_order]
   simul_means <- colMeans(use_simul_mat)
   real_means <- colSums(use_del_df[, colnames(use_simul_mat)]) / nrow(use_del_df)
 
