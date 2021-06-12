@@ -54,7 +54,6 @@ ccs7_title <- expression(plain({"Long-read sequencing of plasmids" *
 
 # Define functions --------------------------------------------------------
 
-
 DrawAllSmrtLinkPlots <- function(PlotFunction,
                                  folder_prefix,
                                  file_prefix
