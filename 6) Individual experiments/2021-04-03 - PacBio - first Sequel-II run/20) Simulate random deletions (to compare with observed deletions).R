@@ -31,7 +31,7 @@ p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p1_R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData"))
 load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
-load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
+load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 load(file.path(sql2_R_objects_directory, "19) Identify and characterize large deletions.RData"))
 
 

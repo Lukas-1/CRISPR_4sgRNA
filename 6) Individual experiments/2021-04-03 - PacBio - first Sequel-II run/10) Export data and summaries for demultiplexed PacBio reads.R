@@ -27,7 +27,7 @@ tables_output_directory  <- file.path(file_output_directory, "Tables")
 # Load data ---------------------------------------------------------------
 
 load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
-load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
+load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData - ccs_df_lists"))
 
 
 

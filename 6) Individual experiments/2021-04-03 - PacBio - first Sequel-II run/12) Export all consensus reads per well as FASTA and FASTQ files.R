@@ -35,8 +35,7 @@ fastq_output_directory   <- file.path(file_output_directory, "Fastq")
 load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(sql2_R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(sql2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
-load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
-
+load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
 

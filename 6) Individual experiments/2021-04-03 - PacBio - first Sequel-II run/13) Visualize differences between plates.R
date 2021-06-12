@@ -29,7 +29,7 @@ plots_output_directory   <- file.path(file_output_directory, "Figures", "Compare
 # Load data ---------------------------------------------------------------
 
 load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
-load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
+load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
 

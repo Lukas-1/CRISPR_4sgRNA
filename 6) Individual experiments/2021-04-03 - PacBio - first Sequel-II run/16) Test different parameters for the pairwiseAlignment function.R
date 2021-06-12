@@ -33,7 +33,7 @@ sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 load(file.path(p1_R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData"))
 load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(sql2_R_objects_directory, "05) Read in PacBio data.RData"))
-load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData"))
+load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
 
