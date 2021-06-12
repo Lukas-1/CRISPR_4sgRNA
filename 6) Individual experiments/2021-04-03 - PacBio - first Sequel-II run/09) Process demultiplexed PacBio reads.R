@@ -88,8 +88,13 @@ ccs7_df_list <- SummarizeWells(plates_analysis_list,
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("ccs3_df_list", "ccs5_df_list", "ccs7_df_list"),
-     file = file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads.RData")
+save(list = "plates_analysis_list",
+     file = file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - plates_analysis_list.RData")
      )
+
+save(list = c("ccs3_df_list", "ccs5_df_list", "ccs7_df_list"),
+     file = file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - ccs_df_lists.RData")
+     )
+
 
 
