@@ -17,10 +17,10 @@ library("ShortRead") # For processing the quality scores
 ProcessWithSubsampling <- function(ccs_df,
                                    barcodes_df,
                                    extracted_df,
-                                   wells_vec = seq_len(384),
-                                   use_fractions = c(1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.025, 0.01),
+                                   wells_vec       = seq_len(384),
+                                   use_fractions   = c(1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.025, 0.01),
                                    num_repetitions = 10L,
-                                   verbose = FALSE
+                                   verbose         = FALSE
                                    ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
