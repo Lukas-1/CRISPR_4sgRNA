@@ -8,19 +8,20 @@ library("readxl")
 library("vioplot")
 library("png")
 
-CRISPR_root_directory <- "~/CRISPR"
-plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
-R_functions_directory <- file.path(plate1_directory, "1) R functions")
+CRISPR_root_directory      <- "~/CRISPR"
+plate1_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+sql2_directory             <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
+R_functions_directory      <- file.path(plate1_directory, "1) R functions")
+sql2_R_functions_directory <- file.path(sql2_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "09) Producing heatmaps.R")) # For VerticalAdjust and related functions
-
+source(file.path(sql2_R_functions_directory, "03) Summarizing data across wells.R"))
 
 
 
 
 # Define folder paths -----------------------------------------------------
 
-sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "Summaries across wells")
 
@@ -149,6 +150,7 @@ StandardizeCounts <- function(input_df) {
 }
 
 
+
 PreparePlates <- function(input_df, plate_names) {
   stopifnot("plates_df" %in% ls(envir = globalenv()))
   plate_matches <- match(plate_names, plates_df[, "Plate_name"])
@@ -158,6 +160,7 @@ PreparePlates <- function(input_df, plate_names) {
   results_mat <- StandardizeCounts(input_df)
   return(results_mat)
 }
+
 
 
 AddContaminationSummary <- function(ccs_df_list, contamin_df) {
@@ -335,23 +338,9 @@ SetUpPercentagePlot <- function(use_columns,
 
   ## Draw the grid
   if (draw_grid) {
-    segments(x0   = par("usr")[[1]],
-             x1   = par("usr")[[2]],
-             y0   = seq(0, 1, by = 0.1),
-             col  = "gray88",
-             lend = "butt",
-             xpd  = NA
-             )
-
-    if (extra_grid_lines) {
-      segments(x0   = par("usr")[[1]],
-               x1   = par("usr")[[2]],
-               y0   = seq(0.05, 0.95, by = 0.1),
-               col  = "gray95",
-               lend = "butt",
-               xpd  = NA
-               )
-    }
+    DrawGridlines(numeric_limits,
+                  extra_grid_lines = extra_grid_lines
+                  )
   }
 
   if (for_embedded_PNG) {
@@ -811,7 +800,7 @@ plate_selection_list <- list(
 
 
 
-# Export lollipop plots ---------------------------------------------------
+# Export lollipop plots and violin/box plots ------------------------------
 
 ccs_numbers <- c(3, 5, 7)
 accuracy_percentages <- c(99, 99.9, 99.99)
@@ -885,7 +874,6 @@ for (plot_type in c("Box", "Lollipop")) {
 
 
 
-
 # Produce example plots ---------------------------------------------------
 
 SummaryBoxPlot(use_df, "All plates")
@@ -926,8 +914,6 @@ LollipopPlot(use_df,
                "Num_reads_with_deletions_spanning_promoters"
                )
              )
-
-
 
 
 
