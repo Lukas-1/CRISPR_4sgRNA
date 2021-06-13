@@ -390,7 +390,7 @@ SetUpPercentagePlot <- function(use_columns,
   for (i in seq_along(group_positions)) {
     mtext(text = VerticalAdjust(column_labels_list[[use_columns[[i]]]][[1]]),
           at   = group_positions[[i]],
-          line = 1.25,
+          line = start_line,
           side = 1
           )
 
