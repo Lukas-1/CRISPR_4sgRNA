@@ -71,7 +71,7 @@ GPP_CRISPRko_full_df <- ReadGPPOutputFiles(GPP_CRISPRko_path)
 # Process the data from the Broad Institute's GPP portal ------------------
 
 GPP_CRISPRko_df <- TidyGPPOutputDf(GPP_CRISPRko_full_df, CRISPRko_GPP_output_columns)
-GPP_CRISPRko_df <- FilterGPPOutputDf(GPP_CRISPRko_df, c(), n_unproblematic = 50)
+GPP_CRISPRko_df <- FilterGPPOutputDf(GPP_CRISPRko_df, c(), n_unproblematic = 50, n_problematic = 50)
 
 
 
