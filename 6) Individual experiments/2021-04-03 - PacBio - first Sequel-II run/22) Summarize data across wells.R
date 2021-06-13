@@ -496,9 +496,7 @@ LollipopPlot <- function(input_df,
                          ) {
 
   require_objects <- c("plate_selection_list", "plate_selection_titles_list")
-
   stopifnot(all(require_objects %in% ls(envir = globalenv())))
-
   if (is.null(plate_names)) {
     plate_names <- "All plates"
   }
@@ -812,28 +810,6 @@ plate_selection_list <- list(
 
 
 
-# Explore stuff -----------------------------------------------------------
-
-use_df <- ccs7_df_list[["filtered_summary_df"]]
-
-are_bigger <- use_df[["Num_contaminated_reads_aligned"]] >
-              use_df[["Num_contaminated_reads"]]
-
-
-indiv_df <- ccs7_df_list[["individual_reads_df"]]
-
-contam_matches <- match(contam_df[["ZMW"]], indiv_df[["ZMW"]])
-
-contam_df[["Num_contaminating_guides"]] <- indiv_df[["Num_contaminating_guides"]][contam_matches]
-
-are_bigger <- (contam_df[["Num_contaminating_guides"]] %in% 0) &
-              (!(contam_df[["Are_cross_plate"]]))
-
-head(contam_df[are_bigger, ])
-
-
-
-
 
 # Export lollipop plots ---------------------------------------------------
 
@@ -910,7 +886,7 @@ for (plot_type in c("Box", "Lollipop")) {
 
 
 
-# Example plots -----------------------------------------------------------
+# Produce example plots ---------------------------------------------------
 
 SummaryBoxPlot(use_df, "All plates")
 
@@ -953,5 +929,12 @@ LollipopPlot(use_df,
 
 
 
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = c("plate_selection_list", "plate_selection_titles_list"),
+     file = file.path(sql2_R_objects_directory, "22) Summarize data across wells - plate selections.RData")
+     )
 
 
