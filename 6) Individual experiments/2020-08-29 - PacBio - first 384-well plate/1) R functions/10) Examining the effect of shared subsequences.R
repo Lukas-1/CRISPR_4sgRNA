@@ -18,7 +18,10 @@ pdf_height <- 5.4
 pdf_width <- 7.2
 use_mar <- c(4.5, 4, 5.7, 2.5)
 
-exclude_vars <- "Longest_subsequence"
+exclude_vars <- c("Longest_subsequence",
+                  grep("^Binary_", names(titles_list), value = TRUE)
+                  )
+
 exclude_vars <- c(
   exclude_vars,
   "Num_contam_wells",
@@ -100,7 +103,6 @@ PlotBySharedSubsequence <- function(summary_df,
 
   light_color <- brewer.pal(9, "Blues")[[2]]
   dark_color <- brewer.pal(9, "Blues")[[7]]
-
 
   is_percentage <- grepl("^(Count|Num)_", show_column)
 
