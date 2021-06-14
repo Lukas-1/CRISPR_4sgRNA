@@ -699,7 +699,6 @@ SummaryBoxPlot <- function(input_df,
          col = paste0(brewer.pal(9, "Purples")[[8]], alpha_hex),
          pch = 16
          )
-
   points(x   = selected_jittered,
          y   = selected_unlisted,
          cex = 0.4,
@@ -707,9 +706,7 @@ SummaryBoxPlot <- function(input_df,
          pch = 16
          )
 
-
   if (embed_PNG) {
-
     dev.off()
     raster_array <- readPNG(temp_path)
     file.remove(temp_path)
@@ -730,7 +727,6 @@ SummaryBoxPlot <- function(input_df,
                         legend_pch = 22, draw_grid = FALSE,
                         make_plot = FALSE
                         )
-
   }
 
   ## Draw the superimposed boxplots
