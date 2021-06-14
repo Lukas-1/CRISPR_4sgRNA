@@ -8,7 +8,6 @@ AnnotateDeletions <- function(deletions_df) {
 
   stopifnot("features_list" %in% ls(envir = globalenv()))
 
-
   ### Prepare the features data frame
   use_features_df <- FeaturesListToDf(features_list)
 
@@ -21,7 +20,6 @@ AnnotateDeletions <- function(deletions_df) {
 
 
   ### Find spanning deletions
-
   deletions_df[["Span_tracrRNAs"]] <- FindSpanningDeletions(deletions_df, use_features_df, "tracrRNA")
   deletions_df[["Span_promoters"]] <- FindSpanningDeletions(deletions_df, use_features_df, "promoter")
   deletions_df[["Span_sg_cr"]]     <- FindSpanningDeletions(deletions_df, use_features_df, "sg_cr_")
