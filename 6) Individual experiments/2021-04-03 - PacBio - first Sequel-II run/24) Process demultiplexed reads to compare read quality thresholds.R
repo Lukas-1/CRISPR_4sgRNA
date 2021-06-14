@@ -34,6 +34,8 @@ file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "E
 load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(sql2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - plates_analysis_list.RData"))
+load(file.path(sql2_R_objects_directory, "17) Check for cross-plate contaminations.RData"))
+load(file.path(sql2_R_objects_directory, "19) Identify and characterize large deletions.RData"))
 load(file.path(sql2_R_objects_directory, "22) Summarize data across wells - plate selections.RData"))
 
 
@@ -45,9 +47,7 @@ load(file.path(sql2_R_objects_directory, "22) Summarize data across wells - plat
 use_width <- 8
 use_height <- 6
 
-titles_list <- list(
-  "Num_contaminated_reads" = "Reads that match gRNAs from other wells",
-
+count_titles_list <- list(
   "Count_sg1_cr1"         = "Reads where sg1 (+ tracrRNA) is correct",
   "Count_sg2_cr2"         = "Reads where sg2 (+ tracrRNA) is correct",
   "Count_sg3_cr3"         = "Reads where sg3 (+ tracrRNA) is correct",
@@ -62,11 +62,36 @@ titles_list <- list(
   "Count_whole_plasmid"   = "Reads where the entire plasmid sequence is correct"
 )
 
+count_no_contam_titles_list <- count_titles_list
+count_no_contam_titles_list <- paste0(count_no_contam_titles_list,
+                                      " (excluding contaminations)"
+                                      )
+names(count_no_contam_titles_list) <- sub("Count_",
+                                          "Count_no_contam_",
+                                          names(count_titles_list),
+                                          fixed = TRUE
+                                          )
+
+titles_list <- c(
+  count_titles_list,
+  count_no_contam_titles_list,
+  "Num_contaminated_reads"                      = "Reads that match gRNAs from other wells",
+  "Num_contaminated_reads_aligned"              = "Aligned reads that match gRNAs from other wells",
+  "Num_reads_with_deletions_exceeding_20bp"     = "Reads with deletions (of 20 base pairs or more)",
+  "Num_reads_with_deletions_spanning_tracrRNAs" = "Reads with deletions that span tracrRNAs",
+  "Num_reads_with_deletions_spanning_promoters" = "Reads with deletions that span promoters",
+  "Num_reads_with_deletions_spanning_sg_cr"     = "Reads with deletions that span sg+cr sequences",
+  "Num_reads_with_deletions_spanning_sgRNAs"    = "Reads with deletions that span gRNAs"
+)
+
 
 export_metrics <- c("Num_contaminated_reads",
                     "Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4",
                     "Count_all_4_promoters", "Count_whole_plasmid",
-                     "Count_sg1_cr1", "Count_sg2_cr2", "Count_sg3_cr3", "Count_sg4_cr4"
+                    "Num_reads_with_deletions_exceeding_20bp",
+                    "Num_reads_with_deletions_spanning_tracrRNAs",
+                    "Count_no_contam_all_4",
+                    "Count_sg1_cr1", "Count_sg2_cr2", "Count_sg3_cr3", "Count_sg4_cr4"
                     )
 
 
@@ -88,6 +113,7 @@ GetMinQuality <- function(input_integer) {
 
 
 CustomSummarizeWells <- function(analysis_list, input_ccs_number) {
+  required_objects <- c("sg_sequences_df", "contam_df", "deletions_df")
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
   min_quality <- GetMinQuality(input_ccs_number)
   reads_df <- analysis_list[["individual_reads_df"]]
@@ -100,6 +126,11 @@ CustomSummarizeWells <- function(analysis_list, input_ccs_number) {
                                     ID_column = "Combined_ID",
                                     unique_IDs = sg_sequences_df[["Combined_ID"]]
                                     )
+  for (df_name in c("original_summary_df", "filtered_summary_df")) {
+    summary_df_list <- AddContaminationSummary(summary_df_list, contam_df,    summary_df_name = df_name)
+    summary_df_list <- AddDeletionSummary(     summary_df_list, deletions_df, summary_df_name = df_name)
+    summary_df_list <- AddNoContamCounts(      summary_df_list, contam_df,    summary_df_name = df_name)
+  }
   return(summary_df_list)
 }
 
@@ -135,12 +166,17 @@ ExtractMetricForAllCutoffs <- function(all_ccs_list,
   } else {
     use_df_name <- "original_summary_df"
   }
+  if (grepl("Count_no_contam_", use_column, fixed = TRUE)) {
+    total_column <- "Count_total_no_contam"
+  } else {
+    total_column <- "Count_total"
+  }
 
   results_vec_list <- lapply(all_ccs_list, function(x) {
     are_these_plates <- x[[use_df_name]][, "Plate_number"] %in% plate_numbers
     stopifnot(any(are_these_plates))
     metric_vec <- x[[use_df_name]][are_these_plates, use_column]
-    total_vec <- x[[use_df_name]][are_these_plates, "Count_total"]
+    total_vec <- x[[use_df_name]][are_these_plates, total_column]
     stopifnot(identical("integer", class(metric_vec)))
     stopifnot(all(total_vec >= metric_vec, na.rm = TRUE))
     results_vec <- metric_vec / total_vec
@@ -241,7 +277,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
        axes = FALSE,
        ann  = FALSE
        )
-
   DrawGridlines(use_y_limits)
 
   ## Draw the violin
@@ -272,7 +307,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
          )
 
 
-
   if (embed_PNG) {
     dev.off()
     raster_array <- readPNG(temp_path)
@@ -296,7 +330,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
                 )
 
   }
-
 
 
   ## Draw the superimposed boxplots
@@ -395,6 +428,7 @@ plate_selection_titles_list <- c(
 # Produce example plots ---------------------------------------------------
 
 ViolinBoxAllCutoffs(summary_list_list, "Count_all_4", "All plates")
+ViolinBoxAllCutoffs(summary_list_list, "Count_no_contam_all_4", "All plates")
 
 ViolinBoxAllCutoffs(summary_list_list, "Count_all_4", "All plates",
                     filter_mean_quality = TRUE
@@ -407,6 +441,9 @@ ViolinBoxAllCutoffs(summary_list_list, "Num_contaminated_reads",
                     "Colony-picked", use_y_limits = c(0, 0.1)
                     )
 
+ViolinBoxAllCutoffs(summary_list_list, "Num_reads_with_deletions_exceeding_20bp", "All plates")
+ViolinBoxAllCutoffs(summary_list_list, "Num_reads_with_deletions_spanning_tracrRNAs", "All plates")
+ViolinBoxAllCutoffs(summary_list_list, "Count_no_contam_sg4_cr4", "All plates")
 
 
 
@@ -416,10 +453,14 @@ ViolinBoxAllCutoffs(summary_list_list, "Num_contaminated_reads",
 for (filter_stage in 1:2) {
   sub_folder_name <- c("i) unfiltered", "ii) filtered")[[filter_stage]]
   folder_path <- file.path(file_output_directory, sub_folder_name)
-
-  for (i in seq_along(export_metrics)) {
+  metrics_seq <- seq_along(export_metrics)
+  file_numbers <- format(seq_along(export_metrics),
+                         flag = "0",
+                         width = max(nchar(as.character(metrics_seq)))
+                         )
+  for (i in metrics_seq) {
     metric <- export_metrics[[i]]
-    file_name <- paste0("Quality cut-offs - ", i, ") ", metric, ".pdf")
+    file_name <- paste0("Quality cut-offs - ", file_numbers[[i]], ") ", metric, ".pdf")
     pdf(file = file.path(folder_path, file_name),
         width = use_width, height = use_height
         )
