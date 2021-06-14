@@ -107,27 +107,12 @@ contam_df <- data.frame(extracted_df[are_sg_contam, !(names(extracted_df) %in% r
 
 
 
-# Integrate data on thresholds passed -------------------------------------
-
-threshold_vec <- ifelse(contam_df[["ZMW"]] %in% ccs7_df_list[["individual_reads_df"]][["ZMW"]],
-                        "CCS7",
-                        ifelse(contam_df[["ZMW"]] %in% ccs5_df_list[["individual_reads_df"]][["ZMW"]],
-                               "CCS5",
-                               ifelse(contam_df[["ZMW"]] %in% ccs3_df_list[["individual_reads_df"]][["ZMW"]],
-                                      "CCS3",
-                                      "None"
-                                      )
-                               )
-                        )
-contam_df[["Filter_passed"]] <- threshold_vec
-
-
-
-
 # Tidy the data frame on contaminations -----------------------------------
 
 contam_df[["Reference_sg_number"]] <- as.integer(substr(contam_df[["Feature"]], 3, 3))
 contam_df <- contam_df[, names(contam_df) != "Feature"]
+
+contam_df[["Filter_passed"]] <- NA
 
 rename_vec <- c(
                                     "ZMW",
@@ -155,6 +140,25 @@ for (column_name in setdiff(names(rename_vec), "")) {
 contam_df <- contam_df[, order(match(names(contam_df), rename_vec))]
 
 contam_df[["Mean_quality"]] <- contam_df[["Mean_quality"]] / 93
+
+
+
+
+
+# Integrate data on thresholds passed -------------------------------------
+
+threshold_vec <- ifelse(contam_df[["ZMW"]] %in% ccs7_df_list[["individual_reads_df"]][["ZMW"]],
+                        "CCS7",
+                        ifelse(contam_df[["ZMW"]] %in% ccs5_df_list[["individual_reads_df"]][["ZMW"]],
+                               "CCS5",
+                               ifelse(contam_df[["ZMW"]] %in% ccs3_df_list[["individual_reads_df"]][["ZMW"]],
+                                      "CCS3",
+                                      "None"
+                                      )
+                               )
+                        )
+contam_df[["Filter_passed"]] <- threshold_vec
+
 
 
 
@@ -205,6 +209,28 @@ write.table(export_contam_df,
 save(list = "contam_df",
      file = file.path(sql2_R_objects_directory, "17) Check for cross-plate contaminations.RData")
      )
+
+
+
+
+# are_identical <- vapply(names(contam_df), function(x) {
+#   identical(contam_df[[x]], new_contam_df[[x]])
+# }, logical(1))
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
