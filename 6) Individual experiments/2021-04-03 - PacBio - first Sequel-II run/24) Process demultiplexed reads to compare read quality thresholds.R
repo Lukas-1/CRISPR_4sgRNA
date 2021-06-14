@@ -454,10 +454,10 @@ for (filter_stage in 1:2) {
   sub_folder_name <- c("i) unfiltered", "ii) filtered")[[filter_stage]]
   folder_path <- file.path(file_output_directory, sub_folder_name)
   metrics_seq <- seq_along(export_metrics)
-  file_numbers <- format(seq_along(export_metrics),
-                         flag = "0",
-                         width = max(nchar(as.character(metrics_seq)))
-                         )
+  file_numbers <- formatC(seq_along(export_metrics),
+                          flag = "0",
+                          width = max(nchar(as.character(metrics_seq)))
+                          )
   for (i in metrics_seq) {
     metric <- export_metrics[[i]]
     file_name <- paste0("Quality cut-offs - ", file_numbers[[i]], ") ", metric, ".pdf")
