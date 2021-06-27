@@ -764,13 +764,6 @@ SummarizeContaminations <- function(indiv_df, contamin_df, unique_IDs, ID_column
 
 
 
-
-
-
-
-
-
-
 CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec = seq_len(384)) {
 
   well_numbers_fac <- factor(well_numbers_vec, levels = wells_vec)

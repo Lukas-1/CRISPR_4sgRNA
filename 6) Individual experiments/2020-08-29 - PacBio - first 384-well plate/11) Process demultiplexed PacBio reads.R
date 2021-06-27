@@ -32,6 +32,8 @@ load(file.path(R_objects_directory, "04) Create reference sequences for each wel
 load(file.path(R_objects_directory, "05) Read in PacBio data.RData"))
 load(file.path(R_objects_directory, "07) Extract barcode sequences and quality scores.RData"))
 load(file.path(R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(R_objects_directory, "09) Characterize contaminations (using aligned reads).RData"))
+load(file.path(R_objects_directory, "10) Identify and characterize deletions.RData"))
 
 
 
@@ -81,19 +83,30 @@ sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
 
 # Create the summary data frames ------------------------------------------
 
-sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list)
-sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list)
+sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list,
+                                   deletions_df = sl7_deletions_df, aligned_contam_df = sl7_contam_df
+                                   )
+sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list,
+                                   deletions_df = sl9_deletions_df, aligned_contam_df = sl9_contam_df
+                                   )
 
 sl7_ccs5_lima_zmws <- GetCCS5_ZMWs(sl7_ccs_df)
 sl9_ccs5_lima_zmws <- GetCCS5_ZMWs(sl9_ccs_df)
 sl7_ccs7_lima_zmws <- GetCCS7_ZMWs(sl7_ccs_df)
 sl9_ccs7_lima_zmws <- GetCCS7_ZMWs(sl9_ccs_df)
 
-sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws)
-sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws)
-sl7_ccs7_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs7_lima_zmws)
-sl9_ccs7_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs7_lima_zmws)
-
+sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws,
+                                   deletions_df = sl7_deletions_df, aligned_contam_df = sl7_contam_df
+                                   )
+sl7_ccs7_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs7_lima_zmws,
+                                   deletions_df = sl7_deletions_df, aligned_contam_df = sl7_contam_df
+                                   )
+sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws,
+                                   deletions_df = sl9_deletions_df, aligned_contam_df = sl9_contam_df
+                                   )
+sl9_ccs7_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs7_lima_zmws,
+                                   deletions_df = sl9_deletions_df, aligned_contam_df = sl9_contam_df
+                                   )
 
 
 
