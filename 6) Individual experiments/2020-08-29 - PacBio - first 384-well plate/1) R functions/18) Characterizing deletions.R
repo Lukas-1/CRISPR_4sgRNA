@@ -28,6 +28,7 @@ AnnotateDeletions <- function(deletions_df) {
 }
 
 
+
 CheckThatFactorIsInOrder <- function(my_factor) {
   stopifnot(identical(length(unique(my_factor)),
                       length(rle(as.integer(my_factor))[["lengths"]])
@@ -61,6 +62,7 @@ FindLargestDeletion <- function(deletions_df, set_seed = TRUE) {
   deletions_df[["Is_largest"]] <- unlist(are_largest, use.names = FALSE)
   return(deletions_df)
 }
+
 
 
 PrioritizeDeletions <- function(deletions_df, set_seed = TRUE) {
@@ -122,8 +124,6 @@ FindSpanningDeletions <- function(deletions_df, features_df, use_feature) {
 
   return(span_feature)
 }
-
-
 
 
 
@@ -193,7 +193,7 @@ CompileDeletions <- function(alignments_df,
     well_mat <- do.call(rbind, deletions_mat_list)
 
     well_df <- data.frame(
-      "Combined_ID" = current_ID,
+      "ID" = current_ID,
       well_mat,
       stringsAsFactors = FALSE
     )
@@ -201,6 +201,7 @@ CompileDeletions <- function(alignments_df,
   })
   message("Collating the final data frame...")
   results_df <- do.call(rbind.data.frame, c(well_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+  names(results_df)[[1]] <- ID_column
   results_df[["Deletion_size"]] <- results_df[["Deletion_end"]] - results_df[["Deletion_start"]]
   message("Finding the largest deletion for each read...")
   results_df <- FindLargestDeletion(results_df)
@@ -208,8 +209,6 @@ CompileDeletions <- function(alignments_df,
   results_df <- AnnotateDeletions(results_df)
   return(results_df)
 }
-
-
 
 
 
