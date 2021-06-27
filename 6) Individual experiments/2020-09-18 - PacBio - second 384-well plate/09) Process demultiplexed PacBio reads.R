@@ -31,6 +31,8 @@ load(file.path(p2_R_objects_directory, "02) Create reference sequences for each 
 load(file.path(p2_R_objects_directory, "03) Read in PacBio data.RData"))
 load(file.path(p2_R_objects_directory, "05) Extract barcode sequences and quality scores.RData"))
 load(file.path(p2_R_objects_directory, "06) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(p2_R_objects_directory, "07) Characterize contaminations (using aligned reads).RData"))
+load(file.path(p2_R_objects_directory, "08) Identify and characterize deletions.RData"))
 
 
 
@@ -60,11 +62,14 @@ sl9_ccs3_analysis_list <- AnalyzeWells(sl9_ccs_df,
 
 
 
-
 # Create the summary data frames ------------------------------------------
 
-sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list, unique_IDs = sg_sequences_df[["Well_number"]])
-sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list, unique_IDs = sg_sequences_df[["Well_number"]])
+sl7_ccs3_df_list <- SummarizeWells(sl7_ccs3_analysis_list, unique_IDs = sg_sequences_df[["Well_number"]],
+                                   deletions_df = sl7_deletions_df, aligned_contam_df = sl7_contam_df
+                                   )
+sl9_ccs3_df_list <- SummarizeWells(sl9_ccs3_analysis_list, unique_IDs = sg_sequences_df[["Well_number"]],
+                                   deletions_df = sl9_deletions_df, aligned_contam_df = sl9_contam_df
+                                   )
 
 sl7_ccs5_lima_zmws <- GetCCS5_ZMWs(sl7_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
 sl9_ccs5_lima_zmws <- GetCCS5_ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Well_number"]])
@@ -73,16 +78,20 @@ sl9_ccs7_lima_zmws <- GetCCS7_ZMWs(sl9_ccs_df, wells_vec = sg_sequences_df[["Wel
 
 
 sl7_ccs5_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs5_lima_zmws,
-                                   unique_IDs = sg_sequences_df[["Well_number"]]
+                                   unique_IDs = sg_sequences_df[["Well_number"]],
+                                   deletions_df = sl7_deletions_df, aligned_contam_df = sl7_contam_df
                                    )
 sl7_ccs7_df_list <- SummarizeWells(sl7_ccs3_analysis_list, use_zmws = sl7_ccs7_lima_zmws,
-                                   unique_IDs = sg_sequences_df[["Well_number"]]
+                                   unique_IDs = sg_sequences_df[["Well_number"]],
+                                   deletions_df = sl7_deletions_df, aligned_contam_df = sl7_contam_df
                                    )
 sl9_ccs5_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs5_lima_zmws,
-                                   unique_IDs = sg_sequences_df[["Well_number"]]
+                                   unique_IDs = sg_sequences_df[["Well_number"]],
+                                   deletions_df = sl9_deletions_df, aligned_contam_df = sl9_contam_df
                                    )
 sl9_ccs7_df_list <- SummarizeWells(sl9_ccs3_analysis_list, use_zmws = sl9_ccs7_lima_zmws,
-                                   unique_IDs = sg_sequences_df[["Well_number"]]
+                                   unique_IDs = sg_sequences_df[["Well_number"]],
+                                   deletions_df = sl9_deletions_df, aligned_contam_df = sl9_contam_df
                                    )
 
 
