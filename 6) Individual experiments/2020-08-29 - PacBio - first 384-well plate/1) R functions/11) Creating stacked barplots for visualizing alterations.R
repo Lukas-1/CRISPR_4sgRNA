@@ -18,6 +18,7 @@ SideTextAndAxes <- function(side_text,
                             use_cex_axis          = 0.8,
                             sg_label_cex          = 1.3,
                             horizontal_y_label    = TRUE,
+                            horizontal_y_lab_pos  = -0.06,
                             vertical_y_label_line = 3,
                             draw_outer_box        = FALSE,
                             sparse_ticks          = TRUE,
@@ -64,7 +65,7 @@ SideTextAndAxes <- function(side_text,
          cex    = sg_label_cex
          )
   }
-  text(x      = if (horizontal_y_label) -0.06 else par("usr")[[1]] - diff(grconvertX(c(0, vertical_y_label_line), from = "lines", to = "user")),
+  text(x      = if (horizontal_y_label) horizontal_y_lab_pos else par("usr")[[1]] - diff(grconvertX(c(0, vertical_y_label_line), from = "lines", to = "user")),
        y      = 0.5,
        adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
        labels = side_text,
@@ -83,24 +84,28 @@ SideTextAndAxes <- function(side_text,
 
 
 DrawAlterationBarplot <- function(summary_df,
-                                  main_title         = NULL,
-                                  reorder_wells      = FALSE,
-                                  gap_weight         = 2L,
-                                  space_height       = 1.2,
-                                  top_space          = 2.5,
-                                  bottom_space       = 1,
-                                  show_color_text    = TRUE,
-                                  show_color_legend  = FALSE,
-                                  maintain_cex       = FALSE,
-                                  use_lwd            = 0.75,
-                                  use_cex_axis       = 0.8,
-                                  sg_label_cex       = 1.3,
-                                  horizontal_y_label = TRUE,
-                                  left_space         = 0.13,
-                                  right_space        = 0.07,
-                                  draw_outer_box     = FALSE,
-                                  exclude_blocks     = NULL,
-                                  sparse_ticks       = FALSE
+                                  main_title           = NULL,
+                                  reorder_wells        = FALSE,
+                                  gap_weight           = 2L,
+                                  space_height         = 1.2,
+                                  top_space            = 2.5,
+                                  bottom_space         = 1,
+                                  show_color_text      = TRUE,
+                                  show_color_legend    = FALSE,
+                                  maintain_cex         = FALSE,
+                                  use_lwd              = 0.75,
+                                  use_cex_axis         = 0.8,
+                                  sg_label_cex         = 1.3,
+                                  horizontal_y_label   = TRUE,
+                                  left_space           = 0.13,
+                                  right_space          = 0.07,
+                                  draw_outer_box       = FALSE,
+                                  exclude_blocks       = NULL,
+                                  sparse_ticks         = FALSE,
+                                  horizontal_y_lab_pos = -0.6,
+                                  color_legend_x_pos   = 0.036,
+                                  title_y_pos          = 0.65,
+                                  color_box_y_pos      = 0.2
                                   ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -167,11 +172,11 @@ DrawAlterationBarplot <- function(summary_df,
     MakeEmptyPlot()
   }
   if (!(is.null(main_title))) {
-    text(x = 0.5,
-         y = 0.65,
+    text(x      = 0.5,
+         y      = title_y_pos,
          labels = main_title,
-         cex = 1.1,
-         xpd = NA
+         cex    = 1.1,
+         xpd    = NA
          )
 
   }
@@ -212,14 +217,14 @@ DrawAlterationBarplot <- function(summary_df,
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[1]], four_colors, positions_vec)
   SideTextAndAxes("sg1",
-                  use_lwd            = use_lwd,
-                  use_cex_axis       = use_cex_axis,
-                  sg_label_cex       = sg_label_cex,
-                  horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box,
-                  sparse_ticks       = sparse_ticks
+                  use_lwd              = use_lwd,
+                  use_cex_axis         = use_cex_axis,
+                  sg_label_cex         = sg_label_cex,
+                  horizontal_y_label   = horizontal_y_label,
+                  draw_outer_box       = draw_outer_box,
+                  sparse_ticks         = sparse_ticks,
+                  horizontal_y_lab_pos = horizontal_y_lab_pos
                   )
-
 
 
   if (show_color_text) {
@@ -249,58 +254,58 @@ DrawAlterationBarplot <- function(summary_df,
     }
   }
 
-
   MakeEmptyPlot()
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[2]], four_colors, positions_vec)
   SideTextAndAxes("sg2",
-                  use_lwd            = use_lwd,
-                  use_cex_axis       = use_cex_axis,
-                  sg_label_cex       = sg_label_cex,
-                  horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box,
-                  sparse_ticks       = sparse_ticks
+                  use_lwd              = use_lwd,
+                  use_cex_axis         = use_cex_axis,
+                  sg_label_cex         = sg_label_cex,
+                  horizontal_y_label   = horizontal_y_label,
+                  draw_outer_box       = draw_outer_box,
+                  sparse_ticks         = sparse_ticks,
+                  horizontal_y_lab_pos = horizontal_y_lab_pos
                   )
   MakeEmptyPlot()
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[3]], four_colors, positions_vec)
   SideTextAndAxes("sg3",
-                  use_lwd            = use_lwd,
-                  use_cex_axis       = use_cex_axis,
-                  sg_label_cex       = sg_label_cex,
-                  horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box,
-                  sparse_ticks       = sparse_ticks
+                  use_lwd              = use_lwd,
+                  use_cex_axis         = use_cex_axis,
+                  sg_label_cex         = sg_label_cex,
+                  horizontal_y_label   = horizontal_y_label,
+                  draw_outer_box       = draw_outer_box,
+                  sparse_ticks         = sparse_ticks,
+                  horizontal_y_lab_pos = horizontal_y_lab_pos
                   )
   MakeEmptyPlot()
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[4]], four_colors, positions_vec)
   SideTextAndAxes("sg4",
-                  use_lwd            = use_lwd,
-                  use_cex_axis       = use_cex_axis,
-                  sg_label_cex       = sg_label_cex,
-                  horizontal_y_label = horizontal_y_label,
-                  draw_outer_box     = draw_outer_box,
-                  sparse_ticks       = sparse_ticks
+                  use_lwd              = use_lwd,
+                  use_cex_axis         = use_cex_axis,
+                  sg_label_cex         = sg_label_cex,
+                  horizontal_y_label   = horizontal_y_label,
+                  draw_outer_box       = draw_outer_box,
+                  sparse_ticks         = sparse_ticks,
+                  horizontal_y_lab_pos = horizontal_y_lab_pos
                   )
   MakeEmptyPlot()
-
 
   if (show_color_legend) {
     plot.window(c(0, 1), c(0, 1), "", asp = 1)
     MakeColorBoxLegend(labels_vec         = rev(four_alterations),
                        colors_vec         = rev(four_colors),
-                       x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.036),
-                       y_pos              = 0.2,
+                       x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * color_legend_x_pos),
+                       y_pos              = color_box_y_pos,
                        use_constant_space = FALSE,
                        vertical_adjust    = 0,
                        x_space_adjust     = 4
                        )
   }
-
   par(old_par)
   return(invisible(NULL))
 }
