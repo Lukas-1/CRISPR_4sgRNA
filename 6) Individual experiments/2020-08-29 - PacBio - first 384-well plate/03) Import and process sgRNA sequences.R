@@ -9,20 +9,21 @@ library("readxl")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 
-
+CRISPR_root_directory <- "~/CRISPR"
+file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory <- file.path(file_directory, "1) R functions")
+source(file.path(R_functions_directory, "19) Annotating duplicated gRNAs.R"))
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
 file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 file_input_directory  <- file.path(file_directory, "2) Input")
 R_objects_directory   <- file.path(file_directory, "3) R objects")
 
 metadata_directory    <- file.path(file_input_directory, "Metadata")
 sg_sequences_file     <- file.path(metadata_directory, "1-384 sgRNA summary.xlsm")
-
 
 
 
@@ -64,6 +65,12 @@ sg_sequences_df <- data.frame(
   row.names             = NULL
 )
 
+
+
+
+# Annotate duplicated sgRNAs ----------------------------------------------
+
+sg_sequences_df <- AddNumOccurrences(sg_sequences_df)
 
 
 

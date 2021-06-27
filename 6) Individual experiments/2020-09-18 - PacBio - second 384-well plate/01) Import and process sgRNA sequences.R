@@ -9,13 +9,15 @@ library("readxl")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 
-
+CRISPR_root_directory <- "~/CRISPR"
+plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory <- file.path(plate1_directory, "1) R functions")
+source(file.path(R_functions_directory, "19) Annotating duplicated gRNAs.R"))
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory  <- "~/CRISPR"
 plate2_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
 file_input_directory   <- file.path(plate2_directory, "1) Input")
 p2_R_objects_directory <- file.path(plate2_directory, "2) R objects")
@@ -103,12 +105,18 @@ sg_sequences_df <- data.frame(
 
 
 
+# Annotate duplicated sgRNAs ----------------------------------------------
+
+sg_sequences_df <- AddNumOccurrences(sg_sequences_df)
+
+
+
+
 # Check for plasmids with guides <20 bp -----------------------------------
 
 have_short_guides <- apply(guide_seq_mat, 1, function(x) any(nchar(x) != 20))
 t(apply(guide_seq_mat[have_short_guides, ], 1, nchar))
 sg_sequences_df[have_short_guides, ]
-
 
 
 
@@ -122,7 +130,6 @@ write.table(sg_sequences_df,
             row.names = FALSE,
             quote     = FALSE
             )
-
 
 
 # Save data ---------------------------------------------------------------
