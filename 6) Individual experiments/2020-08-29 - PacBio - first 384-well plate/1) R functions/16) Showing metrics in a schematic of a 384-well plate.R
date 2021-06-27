@@ -147,7 +147,7 @@ WellLayoutBarplot <- function(summary_df,
 
   MakeEmptyPlot()
 
-  numeric_vec <- summary_df[[show_column]]
+  numeric_vec <- summary_df[, show_column]
   if (show_column == "Longest_subsequence") {
     numeric_vec <- numeric_vec / 20
   } else if (grepl("^(Count|Num)_", show_column)) {
@@ -353,7 +353,6 @@ WellLayoutBarplot <- function(summary_df,
   }
 
 
-
   bar_heights <- ifelse(is.na(numeric_vec), 0, numeric_vec) * well_height
 
   for (i in seq_len(nrow(summary_df))) {
@@ -436,11 +435,25 @@ BarPlotPanel <- function(summary_df,
                          outline_few_reads     = FALSE,
                          few_reads_cutoff      = 20L,
                          well_gap              = if (indicate_homologies || outline_few_reads) 0.4 else 0.25,
-                         binary_cutoff         = 0.5
+                         binary_cutoff         = NULL
                          ) {
 
   stopifnot(all(c("titles_list", "barcode_combos_df") %in% ls(envir = globalenv())))
   stopifnot(identical(summary_df[, "Well_number"], sg_df[, "Well_number"]))
+
+  use_titles_list <- titles_list
+  names(use_titles_list) <- toupper(names(use_titles_list))
+  use_title <- use_titles_list[[toupper(show_column)]]
+
+  if (is.null(binary_cutoff)) {
+    if (grepl("^[0-9]{1,3}%", use_title)) {
+      percentage_used <- strsplit(use_title, "%", fixed = TRUE)[[1]][[1]]
+      binary_cutoff <- as.numeric(percentage_used) / 100
+    } else {
+      binary_cutoff <- 0.5
+    }
+  }
+
 
   if (show_column == "Longest_subsequence") {
     summary_df[["Longest_subsequence"]] <- sg_df[["Longest_subsequence"]]
@@ -517,9 +530,6 @@ BarPlotPanel <- function(summary_df,
   layout(layout_mat, widths = widths_vec, heights = heights_vec)
 
   MakeEmptyPlot()
-  use_titles_list <- titles_list
-  names(use_titles_list) <- toupper(names(use_titles_list))
-  use_title <- use_titles_list[[toupper(show_column)]]
   CenterText(as.expression(bquote(bold(.(use_title)))),
              y_position = 0.35,
              use_cex = 1.1
@@ -586,6 +596,8 @@ BarPlotPanel <- function(summary_df,
 
 DrawAllSchematicsForOnePlate <- function() {
 
+  show_metrics <- setdiff(names(titles_list), "Num_cross_plate_contaminated")
+
   for (filter_category in c("original", "filtered reads", "filtered gRNAs")) {
     for (smrtlink_version in c(7, 9)) {
       for (highlight_homologies in c(FALSE, TRUE)) {
@@ -637,9 +649,9 @@ DrawAllSchematicsForOnePlate <- function() {
               width  = 2 * expansion_factor,
               height = 1 * expansion_factor
               )
-          for (i in seq_along(titles_list)) {
+          for (show_metric in show_metrics) {
             BarPlotPanel(ccs3_df_list[[df_name]],
-                         names(titles_list)[[i]],
+                         show_metric,
                          sg_sequences_df,
                          indicate_homologies = highlight_homologies,
                          number_wells = show_well_numbers
@@ -656,9 +668,9 @@ DrawAllSchematicsForOnePlate <- function() {
               width  = 2 * expansion_factor,
               height = 1 * expansion_factor
               )
-          for (i in seq_along(titles_list)) {
+          for (show_metric in show_metrics) {
             BarPlotPanel(ccs5_df_list[[df_name]],
-                         names(titles_list)[[i]],
+                         show_metric,
                          sg_sequences_df,
                          indicate_homologies = highlight_homologies,
                          number_wells = show_well_numbers
@@ -675,9 +687,9 @@ DrawAllSchematicsForOnePlate <- function() {
               width  = 2 * expansion_factor,
               height = 1 * expansion_factor
               )
-          for (i in seq_along(titles_list)) {
+          for (show_metric in show_metrics) {
             BarPlotPanel(ccs5_df_list[[df_name]],
-                         names(titles_list)[[i]],
+                         show_metric,
                          sg_sequences_df,
                          indicate_homologies = highlight_homologies,
                          number_wells = show_well_numbers
