@@ -6,10 +6,15 @@
 
 library("readxl")
 CRISPR_root_directory <- "~/CRISPR"
+
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))         # For exporting the library as a reference
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))      # For ExportPlates
+
+plate1_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+p1_R_functions_directory <- file.path(plate1_directory, "1) R functions")
+source(file.path(p1_R_functions_directory, "19) Annotating duplicated gRNAs.R"))
 
 
 
@@ -186,14 +191,7 @@ for (i in 1:4) {
 
 # Annotate duplicated sgRNAs ----------------------------------------------
 
-all_sequences <- unlist(library_df[, paste0("Sequence_sg", 1:4)])
-num_occurrences_mat <- do.call(cbind,
-                               lapply(library_df[, paste0("Sequence_sg", 1:4)],
-                                      function(x) vapply(x, function(y) sum(y == all_sequences), integer(1), USE.NAMES = FALSE)
-                               ))
-colnames(num_occurrences_mat) <- paste0("Num_occurrences_sg", 1:4)
-
-library_df <- data.frame(library_df, num_occurrences_mat, stringsAsFactors = FALSE)
+library_df <- AddNumOccurrences(library_df)
 
 
 
@@ -246,7 +244,6 @@ ExportPlates(all_guides_df, sub_folder = "", file_name = "All_guides",
 save(list = "library_df",
      file = file.path(R_objects_directory, "03) Import and process sgRNA sequences.RData")
      )
-
 
 
 
