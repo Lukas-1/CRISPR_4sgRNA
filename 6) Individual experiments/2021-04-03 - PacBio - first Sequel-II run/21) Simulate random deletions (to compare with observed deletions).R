@@ -10,7 +10,7 @@ plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experim
 R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "07) Categorizing subsequences of reads aligned to the reference.R"))
-source(file.path(R_functions_directory, "17) Characterizing deletions.R"))
+source(file.path(R_functions_directory, "18) Characterizing deletions.R"))
 
 
 
@@ -31,8 +31,8 @@ p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p1_R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData"))
 load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
-load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 load(file.path(sql2_R_objects_directory, "10) Identify and characterize deletions.RData"))
+load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
 
