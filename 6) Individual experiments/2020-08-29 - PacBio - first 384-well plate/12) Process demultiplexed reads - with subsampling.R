@@ -46,7 +46,6 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 
 
-
 # Process reads, with subsampling -----------------------------------------
 
 sl7_subsampled_list <- ProcessWithSubsampling(sl7_ccs_df,
