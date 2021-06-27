@@ -362,6 +362,7 @@ GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
                                         ))
 
 
+  query_seq <- toupper(query_seq)
   rev_query_seq <- as.character(reverseComplement(DNAStringSet(query_seq)))
 
   fwd_counts_mat <- OrientationContaminationMat(query_seq, read_sequences)
@@ -374,9 +375,11 @@ GetContaminationMat <- function(query_seq, ccs_df, sg_df) {
 
   ## If the sequence of two wells is exactly the same,
   ## perhaps it shouldn't count as a contamination...
+
   sg_cr <- sg_df[, paste0("sg_cr_", 1:4)]
+
   same_seq_list <- lapply(seq_len(nrow(sg_df)),
-                          function(x) which(query_seq %in% vapply(sg_cr, function(y) y[[x]], ""))
+                          function(x) which(query_seq %in% toupper(vapply(sg_cr, function(y) y[[x]], "")))
                           )
   same_seq_wells_list <- lapply(same_seq_list, function(x) sg_df[["Well_number"]][x])
   are_this_well_list <- lapply(same_seq_wells_list,
@@ -466,16 +469,14 @@ ContaminationsSummaryDf <- function(reads_df, wells_vec, close_well_range = 3L) 
 
 
 CreateSummaryDf <- function(reads_df,
-                            filter_reads = FALSE,
+                            filter_reads        = FALSE,
                             filter_subsequences = FALSE,
-                            close_well_range = 3L,
-                            ID_column = "Well_number",
-                            unique_IDs = seq_len(384)
+                            close_well_range    = 3L,
+                            ID_column           = "Well_number",
+                            unique_IDs          = seq_len(384),
+                            deletions_df        = NULL,
+                            aligned_contam_df   = NULL
                             ) {
-
-  assign("delete_reads_df", reads_df, envir = globalenv())
-  assign("delete_ID_column", ID_column, envir = globalenv())
-  assign("delete_unique_IDs", unique_IDs, envir = globalenv())
 
   if (filter_reads) {
     reads_df <- reads_df[reads_df[["Passes_filters"]] == 1, ]
@@ -505,9 +506,6 @@ CreateSummaryDf <- function(reads_df,
     stats_vec_list[are_empty] <- list(integer(ncol(well_stats_mat)))
   }
 
-  assign("delete_stats_vec_list", stats_vec_list, envir = globalenv())
-
-
   summary_counts_mat <- do.call(rbind, stats_vec_list)
   mode(summary_counts_mat) <- "integer"
 
@@ -526,6 +524,11 @@ CreateSummaryDf <- function(reads_df,
   has_alterations <- "sg1_category" %in% names(reads_df)
   if (has_alterations) {
     alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
+    deletion_columns <- c(paste0("Deletion_sg", 1:4), paste0("Deletion_sg", 1:4, "_cr", 1:4))
+    have_any_deletion <- as.integer(rowSums(alterations_mat[, deletion_columns]) >= 1)
+    alterations_mat <- cbind(alterations_mat,
+                             "Num_reads_with_sgRNA_deletion" = have_any_deletion
+                             )
     alterations_vec_list <- tapply(seq_len(nrow(reads_df)),
                                    wells_fac,
                                    function(x) colSums(alterations_mat[x, , drop = FALSE])
@@ -609,16 +612,166 @@ CreateSummaryDf <- function(reads_df,
                              row.names = NULL
                              )
   }
+
+  if (!(is.null(deletions_df))) {
+    results_df <- data.frame(results_df,
+                             SummarizeDeletions(reads_df,
+                                                deletions_df,
+                                                unique_IDs,
+                                                ID_column
+                                                )
+                             )
+  }
+
+  if (!(is.null(aligned_contam_df))) {
+    results_df <- data.frame(results_df,
+                             SummarizeContaminations(reads_df,
+                                                     aligned_contam_df,
+                                                     unique_IDs,
+                                                     ID_column
+                                                     ),
+                             NoContamCounts(reads_df,
+                                            aligned_contam_df,
+                                            unique_IDs,
+                                            ID_column
+                                            )
+                             )
+
+  }
+
   return(results_df)
 }
 
 
 
-CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec = seq_len(384)) {
+SummarizeDeletions <- function(indiv_df, del_df, unique_IDs, ID_column = "Well_number") {
 
-  assign("delete_contamin_mat_list", contamin_mat_list, envir = globalenv())
-  assign("delete_well_numbers_vec", well_numbers_vec, envir = globalenv())
-  assign("delete_wells_vec", wells_vec, envir = globalenv())
+  are_to_use <- del_df[["ZMW"]] %in% indiv_df[["ZMW"]]
+  del_df  <- del_df[are_to_use, ]
+
+  del_df[, ID_column] <- factor(del_df[, ID_column], levels = unique_IDs)
+
+  del_splits <- split(del_df[, "ZMW"], del_df[, ID_column])
+  del_splits <- lapply(del_splits, unique)
+
+  span_columns <- c("Span_tracrRNAs", "Span_promoters", "Span_sg_cr", "Span_sgRNAs")
+  span_list <- lapply(span_columns, function(x) {
+    are_spanning <- del_df[[x]]
+    span_splits <- split(del_df[are_spanning, "ZMW"],
+                         del_df[are_spanning, ID_column]
+                         )
+    span_splits <- lapply(span_splits, unique)
+    return(lengths(span_splits))
+  })
+  span_mat <- do.call(cbind, span_list)
+  colnames(span_mat) <- sub("Span_", "Num_reads_with_deletions_spanning_", span_columns, fixed = TRUE)
+  results_df <- data.frame("Num_reads_with_deletions_exceeding_20bp" = lengths(del_splits),
+                           span_mat,
+                           stringsAsFactors = FALSE
+                           )
+  return(results_df)
+}
+
+
+
+
+NoContamCounts <- function(indiv_df, contamin_df, unique_IDs, ID_column = "Well_number") {
+
+  are_contaminated <- ((indiv_df[["Num_contaminating_guides"]] >= 1) %in% TRUE)
+
+  if (!(is.null(contamin_df))) {
+    are_contaminated <- are_contaminated | (indiv_df[, "ZMW"] %in% contamin_df[, "ZMW"])
+  }
+
+  no_contam_df <- indiv_df[(!(are_contaminated)), ]
+
+  binary_columns <- c(paste0("sg", 1:4, "_cr", 1:4),
+                      paste0("at_least_", 1:3),
+                      "all_4", "all_4_promoters", "whole_plasmid"
+                      )
+  no_contam_mat <- as.matrix(no_contam_df[, binary_columns])
+
+  wells_fac <- factor(no_contam_df[, ID_column], levels = unique_IDs)
+
+  summary_vec_list <- tapply(seq_len(nrow(no_contam_mat)),
+                             wells_fac,
+                             function(x) colSums(no_contam_mat[x, , drop = FALSE])
+                             )
+  are_empty <- vapply(summary_vec_list, is.null, logical(1))
+  if (any(are_empty)) {
+    summary_vec_list[are_empty] <- list(integer(ncol(no_contam_mat)))
+  }
+
+  summary_counts_mat <- do.call(rbind, summary_vec_list)
+  mode(summary_counts_mat) <- "integer"
+
+  colnames(summary_counts_mat) <- paste0("Count_no_contam_", colnames(summary_counts_mat))
+  results_df <- data.frame("Count_total_no_contam" = as.integer(table(wells_fac)),
+                           summary_counts_mat,
+                           stringsAsFactors = FALSE
+                           )
+  return(results_df)
+}
+
+
+
+
+
+SummarizeContaminations <- function(indiv_df, contamin_df, unique_IDs, ID_column = "Well_number") {
+
+  if ("Reference_ID" %in% names(contamin_df)) {
+    reference_column <- "Reference_ID"
+  } else {
+    reference_column <- "Reference_well_number"
+  }
+
+  are_to_use <- contamin_df[, "ZMW"] %in% indiv_df[, "ZMW"]
+
+  multi_plate <- "Plate_number" %in% names(indiv_df)
+  if (multi_plate) {
+    are_cross_well <- are_to_use & !(contamin_df[["Are_cross_plate"]])
+  } else {
+    are_cross_well <- are_to_use
+  }
+
+  cross_well_contam_df  <- contamin_df[are_cross_well, ]
+  cross_well_contam_df[, reference_column] <- factor(cross_well_contam_df[, reference_column],
+                                                     levels = unique_IDs
+                                                     )
+  well_contam_splits <- split(cross_well_contam_df[, "ZMW"], cross_well_contam_df[, reference_column])
+  well_contam_splits <- lapply(well_contam_splits, unique)
+
+  results_df <- data.frame("Num_contaminated_reads_aligned" = lengths(well_contam_splits))
+
+  if (multi_plate) {
+    cross_plate_contam_df  <- contamin_df[are_to_use & contamin_df[, "Are_cross_plate"], ]
+    cross_plate_contam_df[, reference_column] <- factor(cross_plate_contam_df[, reference_column],
+                                                        levels = unique_IDs
+                                                        )
+    plate_contam_splits <- split(cross_plate_contam_df[, "ZMW"], cross_plate_contam_df[, reference_column])
+    plate_contam_splits <- lapply(plate_contam_splits, unique)
+    results_df <- data.frame(results_df, "Num_cross_plate_contaminated" = lengths(plate_contam_splits))
+  }
+
+  total_counts <- as.integer(table(factor(indiv_df[, ID_column], levels = unique_IDs)))
+  for (i in seq_along(results_df)) {
+    results_df[[i]] <- ifelse(total_counts == 0, NA, results_df[[i]])
+  }
+  return(results_df)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec = seq_len(384)) {
 
   well_numbers_fac <- factor(well_numbers_vec, levels = wells_vec)
 
@@ -753,6 +906,7 @@ AlterationCategoriesToIntegerMat <- function(input_df) {
     colnames(categories_mat) <- paste0(use_categories, "_", all_features[[x]])
     return(categories_mat)
   })
+
   results_mat <- do.call(cbind, results_mat_list)
   mode(results_mat) <- "integer"
   return(results_mat)
@@ -792,8 +946,6 @@ AnalyzeWells <- function(ccs_df,
                               )
 
   contamin_mat <- Reduce(`+`, contamin_mat_list)
-  assign("delete_contamin_mat_list", contamin_mat_list, envir = globalenv())
-  assign("delete_contamin_mat", contamin_mat, envir = globalenv())
 
   have_contamin_mat <- contamin_mat >= 1
   have_well <- !(is.na(ccs_df[["Well_number"]])) &
@@ -1017,10 +1169,12 @@ AnalyzeWells <- function(ccs_df,
 
 
 SummarizeWells <- function(analysis_list,
-                           use_zmws = NULL,
-                           close_well_range = 3L,
-                           ID_column = "Well_number",
-                           unique_IDs = seq_len(384)
+                           use_zmws          = NULL,
+                           close_well_range  = 3L,
+                           ID_column         = "Well_number",
+                           unique_IDs        = seq_len(384),
+                           deletions_df      = NULL,
+                           aligned_contam_df = NULL
                            ) {
 
   reads_df <- analysis_list[["individual_reads_df"]]
@@ -1041,16 +1195,20 @@ SummarizeWells <- function(analysis_list,
   }
 
   unfiltered_summary_df <- CreateSummaryDf(reads_df,
-                                           filter_reads = FALSE,
-                                           close_well_range = close_well_range,
-                                           ID_column = ID_column,
-                                           unique_IDs = unique_IDs
+                                           filter_reads      = FALSE,
+                                           close_well_range  = close_well_range,
+                                           ID_column         = ID_column,
+                                           unique_IDs        = unique_IDs,
+                                           deletions_df      = deletions_df,
+                                           aligned_contam_df = aligned_contam_df
                                            )
   filtered_summary_df   <- CreateSummaryDf(reads_df,
-                                           filter_reads = TRUE,
-                                           close_well_range = close_well_range,
-                                           ID_column = ID_column,
-                                           unique_IDs = unique_IDs
+                                           filter_reads      = TRUE,
+                                           close_well_range  = close_well_range,
+                                           ID_column         = ID_column,
+                                           unique_IDs        = unique_IDs,
+                                           deletions_df      = deletions_df,
+                                           aligned_contam_df = aligned_contam_df
                                            )
 
   results_list <- list(
@@ -1059,11 +1217,13 @@ SummarizeWells <- function(analysis_list,
   )
   if ("Passes_sg_quality" %in% names(reads_df)) {
     filtered_gRNAs_df <- CreateSummaryDf(reads_df,
-                                         filter_reads = TRUE,
+                                         filter_reads        = TRUE,
                                          filter_subsequences = TRUE,
-                                         close_well_range = close_well_range,
-                                         ID_column = ID_column,
-                                         unique_IDs = unique_IDs
+                                         close_well_range    = close_well_range,
+                                         ID_column           = ID_column,
+                                         unique_IDs          = unique_IDs,
+                                         deletions_df        = deletions_df,
+                                         aligned_contam_df   = aligned_contam_df
                                          )
     results_list <- c(results_list, list("filtered_gRNAs_df" = filtered_gRNAs_df))
   }

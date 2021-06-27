@@ -184,7 +184,7 @@ ExportPlates(PD_4sg_by_gene_df, "PD_ordered_by_gene", sub_folder = "PD plate lay
 ExportPlates(PD_4sg_by_well_df, "PD_ordered_by_well", sub_folder = "PD plate layout")
 
 for (i in 1:4) {
-  use_df <- PD_4sg_by_gene_df[PD_4sg_by_gene_df[["Rank"]] %in% i, ]
+  use_df <- PD_4sg_by_well_df[PD_4sg_by_well_df[["Rank"]] %in% i, ]
   ExportPlates(use_df, paste0("PD_sg", i), sub_folder = "PD plate layout")
 }
 
@@ -203,10 +203,6 @@ save(list = c("full_4sg_by_gene_df", "full_4sg_by_well_df",
 save(list = c("PD_4sg_by_gene_df", "PD_4sg_by_well_df"),
      file = file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates - PD genes.RData")
      )
-
-
-
-
 
 
 
