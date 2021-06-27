@@ -24,6 +24,7 @@ source(file.path(sql2_R_functions_directory, "03) Summarizing data across wells.
 
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "Summaries across wells")
+PNGs_output_directory    <- file.path(sql2_directory, "5) Output", "PNGs", "Summaries across wells")
 
 
 
@@ -31,9 +32,7 @@ file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "S
 # Load data ---------------------------------------------------------------
 
 load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
-load(file.path(sql2_R_objects_directory, "09) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
-load(file.path(sql2_R_objects_directory, "17) Check for cross-plate contaminations.RData"))
-load(file.path(sql2_R_objects_directory, "19) Identify and characterize large deletions.RData"))
+load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
 
@@ -41,8 +40,8 @@ load(file.path(sql2_R_objects_directory, "19) Identify and characterize large de
 
 # Define constants --------------------------------------------------------
 
-use_width <- 8
-use_height <- 6
+use_width <- 6.9
+use_height <- 4.7
 
 column_labels_list <- list(
   "Count_at_least_1"                            = expression("" >= "1 correct", "gRNA"),
@@ -55,10 +54,10 @@ column_labels_list <- list(
   "Count_no_contam_at_least_3"                  = expression("" >= "3 correct", "gRNAs"),
   "Count_no_contam_all_4"                       = expression("All 4 gRNAs", "are correct"),
 
-  "Correct_sg1_cr1"                             = expression("sg1 (+" * scriptscriptstyle(" ") * "crRNA)", "is correct"),
-  "Correct_sg2_cr2"                             = expression("sg2 (+" * scriptscriptstyle(" ") * "crRNA)", "is correct"),
-  "Correct_sg3_cr3"                             = expression("sg3 (+" * scriptscriptstyle(" ") * "crRNA)", "is correct"),
-  "Correct_sg4_cr4"                             = expression("sg4 (+" * scriptscriptstyle(" ") * "crRNA)", "is correct"),
+  "Correct_sg1_cr1"                             = expression("sg1 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Correct_sg2_cr2"                             = expression("sg2 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Correct_sg3_cr3"                             = expression("sg3 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Correct_sg4_cr4"                             = expression("sg4 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
 
   "Correct_sg1"                                 = expression("sg1 is", "correct"),
   "Correct_sg2"                                 = expression("sg2 is", "correct"),
@@ -69,11 +68,12 @@ column_labels_list <- list(
   "Num_contaminated_reads_aligned"              = expression("Contamination", "(aligned read)"),
   "Num_cross_plate_contaminated"                = expression("Cross-plate", "contamination"),
 
+  "Num_reads_with_sgRNA_deletion"               = expression("Dels of", "" >= "1 gRNA"),
   "Num_reads_with_deletions_exceeding_20bp"     = expression("Deletions", "" >= "20bp"),
-  "Num_reads_with_deletions_spanning_tracrRNAs" = expression("Deletions that", "span tracRNAs"),
-  "Num_reads_with_deletions_spanning_promoters" = expression("Deletions that", "span promoters"),
-  "Num_reads_with_deletions_spanning_sg_cr"     = expression("Deletions that", "span sg" * scriptstyle(" ") * "+" * scriptstyle(" ") * "cr"),
-  "Num_reads_with_deletions_spanning_sgRNAs"    = expression("Deletions that", "span sgRNAs")
+  "Num_reads_with_deletions_spanning_tracrRNAs" = expression("... span", "tracRNAs"),
+  "Num_reads_with_deletions_spanning_promoters" = expression("... span", "promoters"),
+  "Num_reads_with_deletions_spanning_sg_cr"     = expression("... span", "sg" * scriptstyle(" ") * "+" * scriptstyle(" ") * "cr"),
+  "Num_reads_with_deletions_spanning_sgRNAs"    = expression("... span", "gRNAs")
 )
 
 
@@ -81,7 +81,11 @@ column_groups_list <- list(
   "At_least_num_guides"  = c(paste0("Count_at_least_", 1:3), "Count_all_4"),
   "No_contam_num_guides" = paste0("Count_no_contam_", c(paste0("at_least_", 1:3), "all_4")),
   "Correct_sg_cr"        = paste0("Correct_sg", 1:4, "_cr", 1:4),
-  "Deletions"            = c("Num_reads_with_deletions_exceeding_20bp", "Num_reads_with_deletions_spanning_tracrRNAs", "Num_reads_with_deletions_spanning_promoters"),
+  "Deletions"            = c("Num_reads_with_deletions_exceeding_20bp",
+                             "Num_reads_with_sgRNA_deletion",
+                             "Num_reads_with_deletions_spanning_tracrRNAs",
+                             "Num_reads_with_deletions_spanning_promoters"
+                             ),
   "Contaminations"       = c("Num_contaminated_reads", "Num_contaminated_reads_aligned", "Num_cross_plate_contaminated")
 )
 
@@ -90,7 +94,9 @@ plate_selection_titles_list <- list(
   "All plates"              = "All plates (purified using columns)",
   "Bead-purified"           = "Plates HA-11 and HO-1 (purified using beads)",
   "Matched column-purified" = "Plates HA-11 and HO-1 (purified using columns)",
-  "Library plates"          = "4sg library plates (purified using columns)"
+  "Library plates"          = "4sg library plates (purified using columns)",
+  "Early batch"             = "Early batch (CRISPRa/o plates 1-5)",
+  "Later batch"             = "Plates from later batches"
 )
 
 
@@ -107,6 +113,7 @@ num_columns <- c(
   "Num_contaminated_reads",
   "Num_contaminated_reads_aligned",
   "Num_cross_plate_contaminated",
+  "Num_reads_with_sgRNA_deletion",
   "Num_reads_with_deletions_exceeding_20bp",
   "Num_reads_with_deletions_spanning_tracrRNAs",
   "Num_reads_with_deletions_spanning_promoters",
@@ -136,6 +143,7 @@ alignment_columns <- c(
 StandardizeCounts <- function(input_df) {
   stopifnot(all(c("count_columns", "alignment_columns") %in% ls(envir = globalenv())))
 
+  assign("delete_input_df", input_df, envir = globalenv())
   count_mat <- as.matrix(input_df[, count_columns])
   count_mat <- sweep(count_mat, 1, input_df[["Count_total"]], "/")
 
@@ -176,7 +184,10 @@ SetUpPercentagePlot <- function(use_columns,
                                 draw_grid        = TRUE,
                                 extra_grid_lines = FALSE,
                                 for_embedded_PNG = FALSE,
-                                make_plot        = TRUE
+                                make_plot        = TRUE,
+                                add_mean         = FALSE,
+                                y_axis_label     = "Percentage of reads",
+                                draw_legend      = TRUE
                                 ) {
 
   stopifnot("column_labels_list" %in% ls(envir = globalenv()))
@@ -236,20 +247,18 @@ SetUpPercentagePlot <- function(use_columns,
   contams_excluded <- any(are_no_contam)
   if (contams_excluded) {
     stopifnot(all(are_no_contam))
-    y_axis_label <- "Percentage of reads (excluding contaminations)"
-  } else {
-    y_axis_label <- "Percentage of reads"
+    y_axis_label <- paste0(y_axis_label, " (excluding contaminations)")
   }
   mtext(text = y_axis_label, side = 2, line = 3)
 
 
   ## Draw the title
-  title(main_title, cex.main = 1.1, font.main = 1, line = 2)
+  title(main_title, cex.main = 1.1, font.main = 1, line = 1.9)
 
 
   ## Draw the x axis labels
   large_gap_lines <- 2.5
-  start_line <- 1.25
+  start_line <- 1
 
   for (i in seq_along(group_positions)) {
     mtext(text = VerticalAdjust(column_labels_list[[use_columns[[i]]]][[1]]),
@@ -296,26 +305,28 @@ SetUpPercentagePlot <- function(use_columns,
   start_y <- y_mid + (total_span / 2)
   y_sequence <- start_y - cumsum(gaps_vec)
   y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
-  x_start <- 1 + diff(grconvertX(c(0, 1.5), from = "lines", to = "npc"))
+  x_start <- 1 + diff(grconvertX(c(0, 1.25), from = "lines", to = "npc"))
 
+  if (draw_legend) {
   ## Draw the legend
-  text(x      = grconvertX(x = x_start, from = "npc", to = "user"),
-       y      = y_pos,
-       cex    = 1,
-       labels = sapply(unlist(labels_list), VerticalAdjust),
-       adj    = c(0, 0.5),
-       xpd    = NA
-       )
-
-  colors_mat <- GetColorMat()
-  points(x   = rep(grconvertX(x = x_start - 0.0, from = "npc", to = "user"), 2),
-         y   = y_pos[c(1, 4)],
-         cex = point_cex,
-         pch = legend_pch,
-         bg  = colors_mat[, "opaque_fill"],
-         col = colors_mat[, "opaque_outline"],
-         xpd = NA
+    text(x      = grconvertX(x = x_start, from = "npc", to = "user"),
+         y      = y_pos,
+         cex    = 1,
+         labels = sapply(unlist(labels_list), VerticalAdjust),
+         adj    = c(0, 0.5),
+         xpd    = NA
          )
+
+    colors_mat <- GetColorMat()
+    points(x   = rep(grconvertX(x = x_start - 0.0, from = "npc", to = "user"), 2),
+           y   = y_pos[c(1, 4)],
+           cex = point_cex,
+           pch = legend_pch,
+           bg  = colors_mat[, "opaque_fill"],
+           col = colors_mat[, "opaque_outline"],
+           xpd = NA
+           )
+  }
 
   return(invisible(NULL))
 }
@@ -323,15 +334,15 @@ SetUpPercentagePlot <- function(use_columns,
 
 
 
-GetColorMat <- function() {
+GetColorMat <- function(hue_A = "Purples", hue_B = "Blues") {
 
   points_alpha <- 0.8
   alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
 
-  fill_A    <- brewer.pal(9, "Purples")[[5]]
-  fill_B    <- brewer.pal(9, "Blues")[[5]]
-  outline_A <- brewer.pal(9, "Purples")[[9]]
-  outline_B <- brewer.pal(9, "Blues")[[9]]
+  fill_A    <- brewer.pal(9, hue_A)[[5]]
+  fill_B    <- brewer.pal(9, hue_B)[[5]]
+  outline_A <- brewer.pal(9, hue_A)[[9]]
+  outline_B <- brewer.pal(9, hue_B)[[9]]
 
   original_fills    <- c(fill_A, fill_B)
   opaque_fills      <- vapply(original_fills, Palify, "", fraction_pale = 0.2, USE.NAMES = FALSE)
@@ -356,20 +367,12 @@ LollipopPlot <- function(input_df,
                          use_columns       = c("Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4"),
                          set_mar           = TRUE,
                          label_percentages = TRUE,
-                         use_y_limits      = c(0, 1)
+                         use_y_limits      = c(0, 1),
+                         black_percentages = TRUE
                          ) {
 
-  require_objects <- c("plate_selection_list", "plate_selection_titles_list")
-  stopifnot(all(require_objects %in% ls(envir = globalenv())))
-  if (is.null(plate_names)) {
-    plate_names <- "All plates"
-  }
-  if ((length(plate_names) == 1) && (plate_names %in% names(plate_selection_list))) {
-    main_title <- plate_selection_titles_list[[plate_names]]
-    plate_names <- plate_selection_list[[plate_names]]
-  } else {
-    main_title <- "PacBio sequencing"
-  }
+  plates_list <- GetPlateSelection(plate_names)
+  plate_names <- plates_list[["plate_names"]]
 
   if (set_mar) {
     old_mar <- par("mar" = c(5, 5, 4.5, 8))
@@ -382,7 +385,9 @@ LollipopPlot <- function(input_df,
   selected_metrics <- colMeans(selected_mat[, use_columns, drop = FALSE], na.rm = TRUE)
 
   point_cex <- 1.5
-  SetUpPercentagePlot(use_columns, use_y_limits, main_title, point_cex)
+  SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
+                      y_axis_label = "Mean percentage of reads"
+                      )
 
   spaced_percent <- 2.5
   max_space <- (use_y_limits[[2]] - use_y_limits[[1]]) * (spaced_percent / 100)
@@ -404,40 +409,30 @@ LollipopPlot <- function(input_df,
 
   colors_mat <- GetColorMat()
 
-  points(x   = group_positions,
-         y   = control_metrics,
-         cex = point_cex,
-         pch = 21,
-         col = ifelse(are_spaced, colors_mat[1, "opaque_outline"], colors_mat[1, "transparent_outline"]),
-         bg  = ifelse(are_spaced, colors_mat[1, "opaque_fill"], colors_mat[1, "transparent_fill"]),
-         xpd = NA
-         )
-
-  points(x   = group_positions,
-         y   = selected_metrics,
-         cex = point_cex,
-         pch = 21,
-         col = ifelse(are_spaced, colors_mat[2, "opaque_outline"], colors_mat[2, "transparent_outline"]),
-         bg  = ifelse(are_spaced, colors_mat[2, "opaque_fill"], colors_mat[2, "transparent_fill"]),
-         xpd = NA
-         )
+  for (i in 1:2) {
+    points(x   = group_positions,
+           y   = list(control_metrics, selected_metrics)[[i]],
+           cex = point_cex,
+           pch = 21,
+           col = ifelse(are_spaced, colors_mat[i, "opaque_outline"], colors_mat[i, "transparent_outline"]),
+           bg  = ifelse(are_spaced, colors_mat[i, "opaque_fill"], colors_mat[i, "transparent_fill"]),
+           xpd = NA
+           )
+  }
 
   if (label_percentages) {
+    if (black_percentages) {
+      percentage_color <- "black"
+    } else {
+      percentage_color <- "gray70"
+    }
     perc_x_gap <- diff(grconvertX(c(0, 1.4), from = "lines", to = "user"))
     text(x      = group_positions + perc_x_gap,
-         y      = control_metrics,
-         labels = paste0(format(round(control_metrics * 100, digits = 1)), "%"),
+         y      = c(control_metrics, selected_metrics),
+         labels = paste0(format(round(c(control_metrics, selected_metrics) * 100, digits = 1)), "%"),
          cex    = 0.7,
          pch    = 16,
-         col    = "gray70",
-         xpd    = NA
-         )
-    text(x      = group_positions + perc_x_gap,
-         y      = selected_metrics,
-         labels = paste0(format(round(selected_metrics * 100, digits = 1)), "%"),
-         cex    = 0.7,
-         pch    = 16,
-         col    = "gray70",
+         col    = percentage_color,
          xpd    = NA
          )
   }
@@ -459,18 +454,8 @@ SummaryBoxPlot <- function(input_df,
 
   set.seed(1) # For reproducible jitter
 
-  require_objects <- c("plate_selection_list", "plate_selection_titles_list")
-  stopifnot(all(require_objects %in% ls(envir = globalenv())))
-
-  if (is.null(plate_names)) {
-    plate_names <- "All plates"
-  }
-  if ((length(plate_names) == 1) && (plate_names %in% names(plate_selection_list))) {
-    main_title <- plate_selection_titles_list[[plate_names]]
-    plate_names <- plate_selection_list[[plate_names]]
-  } else {
-    main_title <- "PacBio sequencing"
-  }
+  plates_list <- GetPlateSelection(plate_names)
+  plate_names <- plates_list[["plate_names"]]
 
   use_mar <- c(5, 5, 4.5, 8)
   if (set_mar) {
@@ -482,6 +467,12 @@ SummaryBoxPlot <- function(input_df,
 
   control_list <- lapply(use_columns, function(x) control_mat[, x])
   selected_list <- lapply(use_columns, function(x) selected_mat[, x])
+
+  assign("delete_input_df",  input_df, envir = globalenv())
+  assign("delete_control_list",  control_list, envir = globalenv())
+  assign("delete_selected_list", selected_list, envir = globalenv())
+  assign("delete_control_mat",   control_mat, envir = globalenv())
+  assign("delete_selected_mat",  selected_mat, envir = globalenv())
 
   control_unlisted <- unlist(control_list)
   selected_unlisted <- unlist(selected_list)
@@ -511,7 +502,7 @@ SummaryBoxPlot <- function(input_df,
                         for_embedded_PNG = TRUE, extra_grid_lines = TRUE
                         )
   } else {
-    SetUpPercentagePlot(use_columns, use_y_limits, main_title, point_cex,
+    SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
                         side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE
                         )
   }
@@ -529,7 +520,7 @@ SummaryBoxPlot <- function(input_df,
 
   RemoveAllZeros <- function(input_list) {
     lapply(input_list, function(x) {
-      if (all(x == 0)) {
+      if (all(x == 0, na.rm = TRUE)) {
         0
       } else {
         x
@@ -598,7 +589,7 @@ SummaryBoxPlot <- function(input_df,
                 ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
                 )
 
-    SetUpPercentagePlot(use_columns, use_y_limits, main_title, point_cex,
+    SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
                         legend_pch = 22, draw_grid = FALSE,
                         make_plot = FALSE
                         )
@@ -659,93 +650,54 @@ are_library <- are_columns & (!(plates_df[["Plate_name"]] %in% non_library_plate
 
 column_matched_plates <- sub("-beads", "", plates_df[["Plate_name"]][are_beads], fixed = TRUE)
 
+are_early_batch <- plates_df[["Plate_name"]] %in% c(paste0("HA_", 1:5), paste0("HO_", 1:5))
+are_late_batch <- !(are_early_batch | are_beads | are_controls)
+
 plate_selection_list <- list(
   "All plates"              = plates_df[["Plate_name"]][are_columns],
   "Colony-picked"           = "Intctrl",
   "Bead-purified"           = plates_df[["Plate_name"]][are_beads],
   "Matched column-purified" = column_matched_plates,
-  "Library plates"          = plates_df[["Plate_name"]][are_library]
+  "Library plates"          = plates_df[["Plate_name"]][are_library],
+  "Early batch"             = plates_df[["Plate_name"]][are_early_batch],
+  "Later batch"             = plates_df[["Plate_name"]][are_late_batch]
 )
 
 
 
 
 
-# Export lollipop plots and violin/box plots ------------------------------
+# Create labels for individual plates -------------------------------------
 
-ccs_numbers <- c(3, 5, 7)
-accuracy_percentages <- c(99, 99.9, 99.99)
+plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
+names(plate_labels) <- plates_df[["Plate_name"]]
+plate_labels <- plate_labels[order(plates_df[["Plate_rank"]])]
+plate_labels <- plate_labels[names(plate_labels) != "Intctrl"]
+are_single_plates <- c(rep(FALSE, length(plate_selection_titles_list)),
+                       rep(TRUE, length(plate_labels))
+                       )
+plate_selection_titles_list <- c(plate_selection_titles_list, as.list(plate_labels))
 
 
-for (plot_type in c("Box", "Lollipop")) {
 
-  if (plot_type == "Box") {
-    UseFunction <- function(...) SummaryBoxPlot(..., embed_PNG = TRUE)
-  } else {
-    UseFunction <- LollipopPlot
-  }
 
-  for (i in seq_along(ccs_numbers)) {
 
-    use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-    use_df_list <- AddContaminationSummary(use_df_list, contam_df)
-    use_df_list <- AddDeletionSummary(use_df_list, deletions_df)
-    use_df_list <- AddNoContamCounts(use_df_list, contam_df)
+# Prepare file name strings for plate selections --------------------------
 
-    for (filter_stage in 2) {
-
-      df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
-
-      use_df <- use_df_list[[df_name]]
-
-      folder_name <- paste0("CCS", ccs_numbers[[i]],
-                            " (", accuracy_percentages[[i]], ") - ",
-                            c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
-                            )
-      folder_path <- file.path(file_output_directory, folder_name)
-      dir.create(folder_path, showWarnings = FALSE)
-
-      for (label_percentages in c(TRUE, FALSE)) {
-
-        if (label_percentages && (plot_type == "Box")) {
-          next
-        }
-
-        for (i in seq_along(column_groups_list)) {
-          metric <- names(column_groups_list)[[i]]
-          file_name <- paste0(plot_type, " plot - ", i, ") ", metric, ".pdf")
-          sub_folder_name <- paste0(plot_type, " plots")
-          if (plot_type == "Lollipop") {
-            if (label_percentages) {
-              sub_folder_name <- paste0(sub_folder_name, " - with percentages")
-            } else {
-              sub_folder_name <- paste0(sub_folder_name, " - plain")
-            }
-          }
-          sub_folder_path <- file.path(folder_path, sub_folder_name)
-          dir.create(sub_folder_path, showWarnings = FALSE)
-          pdf(file = file.path(sub_folder_path, file_name),
-              width = use_width, height = use_height
-              )
-          for (plate_selection in names(plate_selection_titles_list)) {
-            print(plate_selection)
-            UseFunction(use_df,
-                        plate_names = plate_selection,
-                        use_columns = column_groups_list[[metric]],
-                        label_percentages = label_percentages
-                        )
-          }
-          dev.off()
-        }
-      }
-    }
-  }
-}
+plate_matches <- match(names(plate_selection_titles_list)[are_single_plates],
+                       plates_df[["Plate_name"]]
+                       )
+plate_numbers <- plates_df[["Plate_number"]][plate_matches]
+plate_selection_prefixes <- c(paste0("0", letters[seq_len(sum(!(are_single_plates)))]),
+                              formatC(plate_numbers, width = 2, flag = "0")
+                              )
 
 
 
 
 # Produce example plots ---------------------------------------------------
+
+use_df <- ccs7_df_list[["filtered_summary_df"]]
 
 SummaryBoxPlot(use_df, "All plates")
 
@@ -780,7 +732,8 @@ LollipopPlot(use_df,
 
 LollipopPlot(use_df,
              "All plates",
-             c("Num_reads_with_deletions_exceeding_20bp",
+             c("Num_reads_with_sgRNA_deletion",
+               "Num_reads_with_deletions_exceeding_20bp",
                "Num_reads_with_deletions_spanning_tracrRNAs",
                "Num_reads_with_deletions_spanning_promoters"
                )
@@ -788,10 +741,253 @@ LollipopPlot(use_df,
 
 
 
+
+TheoreticalAtLeastCounts <- function(black_percentages = TRUE) {
+
+  use_mar <- c(5, 5, 4.5, 8)
+  old_mar <- par("mar" = use_mar)
+
+  SetUpPercentagePlot(c("Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4"),
+                      c(0, 1), "Theoretical probabilities (gRNA error rate = 3.5%)", draw_legend = FALSE
+                      )
+
+  sg_cr_correct_rate <- 0.965
+  error_rate <- (1 - sg_cr_correct_rate)
+  four_probs <- rev(vapply(0:3, function(x) pbinom(x, size = 4, prob = error_rate), numeric(1)))
+  points(x = 1:4, y = four_probs, pch = 16)
+
+
+  colors_mat <- GetColorMat("Greens")
+
+  group_positions <- 1:4
+  point_cex <- 1.5
+
+  points(x   = group_positions,
+         y   = four_probs,
+         cex = point_cex,
+         pch = 21,
+         col = colors_mat[1, "opaque_outline"],
+         bg  = colors_mat[1, "opaque_fill"],
+         xpd = NA
+         )
+
+
+  perc_x_gap <- diff(grconvertX(c(0, 1.8), from = "lines", to = "user"))
+  text(x      = group_positions + perc_x_gap,
+       y      = four_probs,
+       labels = paste0(c(round(four_probs[[1]] * 100, digits = 4),
+                         round(four_probs[[2]] * 100, digits = 2),
+                         round(four_probs[[3]] * 100, digits = 1),
+                         round(four_probs[[4]] * 100, digits = 1)
+                         )
+                       , "%"),
+       cex    = 0.7,
+       pch    = 16,
+       col    = if (black_percentages) "black" else "gray70",
+       xpd    = NA
+  )
+  par(old_mar)
+  old_mar <- par("mar" = use_mar)
+}
+
+
+
+
+# Export plots for theoretical (expected) probabilities -------------------
+
+use_file_name <- "Theoretical_at_least_num_guides"
+pdf(file   = file.path(file_output_directory, "Theoretical", paste0(use_file_name, ".pdf")),
+    width  = use_width,
+    height = use_height
+    )
+TheoreticalAtLeastCounts()
+dev.off()
+
+
+use_file_name <- "Theoretical_at_least_num_guides"
+png(file   = file.path(PNGs_output_directory, "Theoretical", paste0(use_file_name, ".png")),
+    width  = use_width,
+    height = use_height,
+    units  = "in",
+    res    = 600
+)
+TheoreticalAtLeastCounts()
+dev.off()
+
+
+
+
+
+
+# Export lollipop plots and violin/box plots ------------------------------
+
+ccs_numbers <- c(3, 5, 7)
+accuracy_percentages <- c(99, 99.9, 99.99)
+
+for (file_format in c("png", "pdf")) {
+
+  for (plot_type in c("Lollipop", "Box")) {
+
+    if (plot_type == "Box") {
+      UseFunction <- function(...) SummaryBoxPlot(..., embed_PNG = TRUE)
+    } else {
+      UseFunction <- LollipopPlot
+    }
+
+    for (i in seq_along(ccs_numbers)) {
+
+      use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
+
+      for (filter_stage in 2) {
+
+        df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+
+        use_df <- use_df_list[[df_name]]
+
+        folder_name <- paste0("CCS", ccs_numbers[[i]],
+                              " (", accuracy_percentages[[i]], ") - ",
+                              c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                              )
+        if (file_format == "pdf") {
+          folder_path <- file.path(file_output_directory, folder_name)
+        } else if (file_format == "png") {
+          folder_path <- file.path(PNGs_output_directory, folder_name)
+        }
+        dir.create(folder_path, showWarnings = FALSE)
+
+        for (label_percentages in c(TRUE, FALSE)) {
+
+          if (label_percentages && (plot_type == "Box")) {
+            next
+          }
+
+          for (i in seq_along(column_groups_list)) {
+            metric <- names(column_groups_list)[[i]]
+            file_name <- paste0(plot_type, " plot - ", i, ") ", metric, ".pdf")
+            sub_folder_name <- paste0(plot_type, " plots")
+            if (plot_type == "Lollipop") {
+              if (label_percentages) {
+                sub_folder_name <- paste0(sub_folder_name, " - with percentages")
+              } else {
+                sub_folder_name <- paste0(sub_folder_name, " - plain")
+              }
+            }
+            sub_folder_path <- file.path(folder_path, sub_folder_name)
+            dir.create(sub_folder_path, showWarnings = FALSE)
+            if (file_format == "pdf") {
+              pdf(file = file.path(sub_folder_path, file_name),
+                  width = use_width, height = use_height
+                  )
+            } else if (file_format == "png") {
+              metric_path <- file.path(sub_folder_path, paste0(i, ") ", metric))
+              dir.create(metric_path, showWarnings = FALSE)
+            }
+
+            for (j in seq_along(plate_selection_titles_list)) {
+              plate_selection <- names(plate_selection_titles_list)[[j]]
+              print(plate_selection)
+              if (file_format == "png") {
+                file_name <- paste0(plate_selection_prefixes[[j]],
+                                    ") ", plate_selection, ".png"
+                                    )
+                png(file   = file.path(metric_path, file_name),
+                    width  = use_width,
+                    height = use_height,
+                    units  = "in",
+                    res    = 600
+                    )
+              }
+              UseFunction(use_df,
+                          plate_names = plate_selection,
+                          use_columns = column_groups_list[[metric]],
+                          label_percentages = label_percentages
+                          )
+              if (file_format == "png") {
+                dev.off()
+              }
+            }
+            if (file_format == "pdf") {
+              dev.off()
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
 # Save data ---------------------------------------------------------------
 
-save(list = c("plate_selection_list", "plate_selection_titles_list"),
+save(list = c("plate_selection_list",
+              "plate_selection_titles_list",
+              "plate_selection_prefixes"
+              ),
      file = file.path(sql2_R_objects_directory, "23) Summarize data across wells - plate selections.RData")
      )
+
+
+
+
+#
+#
+#
+# # Try stuff ---------------------------------------------------------------
+#
+#
+#
+# ExpectedCorrect <- function(p_mutant, at_least_num_correct = 1) {
+#   exactly_0_mutations <- (1 - p_mutant)^4
+#   exactly_1_mutations <- p_mutant * ((1 - p_mutant)^3) * choose(4, 1)
+#   exactly_2_mutations <- (p_mutant^2) * ((1 - p_mutant)^2) * choose(4, 2)
+#   exactly_3_mutations <- (p_mutant^3) * (1 - p_mutant) * choose(4, 3)
+#   exactly_4_mutations <- (p_mutant^4)
+#   if (at_least_num_correct == 4) {
+#     result <- exactly_0_mutations
+#   } else if (at_least_num_correct == 3) {
+#     result <- exactly_0_mutations + exactly_1_mutations
+#   } else if (at_least_num_correct == 2) {
+#     result <- exactly_0_mutations + exactly_1_mutations + exactly_2_mutations
+#   } else if (at_least_num_correct == 1) {
+#     result <- exactly_0_mutations + exactly_1_mutations + exactly_2_mutations + exactly_3_mutations
+#   } else if (at_least_num_correct == 0) {
+#     result <- exactly_4_mutations
+#   }
+#   return(result)
+# }
+#
+#
+#
+# GeneralExpectedCorrect <- function(use_p, use_n, use_k) {
+#   choose(use_n, use_k) * (use_p^use_k) * ((1 - use_p)^(use_n - use_k))
+# }
+#
+#
+#
+# error_rate <- (1 - 0.965)
+#
+#
+#
+# ExpectedCorrect(error_rate, 4)
+# ExpectedCorrect(error_rate, 3)
+# ExpectedCorrect(error_rate, 2)
+# ExpectedCorrect(error_rate, 1)
+#
+#
+#
+# pbinom(0, size = 4, prob = error_rate)
+# pbinom(1, size = 4, prob = error_rate)
+# pbinom(2, size = 4, prob = error_rate)
+# pbinom(3, size = 4, prob = error_rate)
+#
+#
+#
+# pbinom(0, size = 3, prob = error_rate)
+# pbinom(1, size = 3, prob = error_rate)
+# pbinom(2, size = 3, prob = error_rate)
+#
+
+
 
 
