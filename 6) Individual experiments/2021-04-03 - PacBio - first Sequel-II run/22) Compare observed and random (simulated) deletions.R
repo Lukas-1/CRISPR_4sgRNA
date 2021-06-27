@@ -16,7 +16,7 @@ CRISPR_root_directory    <- "~/CRISPR"
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "Compare simulated and observed deletions")
-
+PNGs_directory           <- file.path(sql2_directory, "5) Output", "PNGs", "Compare simulated and observed deletions")
 
 
 
@@ -229,27 +229,39 @@ SimVsObsDeletions(one_read_simul_mat[, c(1, 2, 4)], one_read_del_df)
 pdf(file = file.path(file_output_directory, "Compare simulated and observed deletions - 4 categories.pdf"),
     width = 7.25, height = 5.5
     )
-
 par(mar = c(5, 5, 4, 3))
-
 SimVsObsDeletions(one_read_simul_mat, one_read_del_df)
-
 dev.off()
-
-
 
 
 
 pdf(file = file.path(file_output_directory, "Compare simulated and observed deletions - 3 categories.pdf"),
     width = 6.5, height = 5.5
     )
-
 par(mar = c(5, 5, 4, 3))
-
 SimVsObsDeletions(one_read_simul_mat[, c(1, 2, 4)], one_read_del_df)
-
 dev.off()
 
+
+
+
+
+
+png(file = file.path(PNGs_directory, "Compare simulated and observed deletions - 4 categories.png"),
+    width = 7.25, height = 5.5, units = "in", res = 600
+    )
+par(mar = c(5, 5, 4, 3))
+SimVsObsDeletions(one_read_simul_mat, one_read_del_df)
+dev.off()
+
+
+
+png(file = file.path(PNGs_directory, "Compare simulated and observed deletions - 3 categories.png"),
+    width = 6.5, height = 5.5, units = "in", res = 600
+    )
+par(mar = c(5, 5, 4, 3))
+SimVsObsDeletions(one_read_simul_mat[, c(1, 2, 4)], one_read_del_df)
+dev.off()
 
 
 

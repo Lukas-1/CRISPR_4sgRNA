@@ -22,6 +22,7 @@ sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual expe
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output")
 plots_output_directory   <- file.path(file_output_directory, "Figures", "Compare plates")
+PNGs_output_directory    <- file.path(file_output_directory, "PNGs", "Compare plates")
 
 
 
@@ -39,7 +40,6 @@ load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads
 titles_list <- c(list("Count_total" = "Number of reads per well"),
                  titles_list
                  )
-
 
 
 
@@ -80,7 +80,7 @@ ComparePlates <- function(summary_df, show_column) {
   num_groups <- nlevels(groups_fac)
   stopifnot(num_groups == nrow(plates_df))
 
-  use_space <- 0.3
+  use_space <- 0.2
   group_limits <- c((1 - use_space) - (num_groups * 0.04),
                     (num_groups + use_space) + (num_groups * 0.04)
                     )
@@ -129,9 +129,9 @@ ComparePlates <- function(summary_df, show_column) {
           )
 
   set.seed(1)
-  use_cex <- 0.15
+  use_cex <- 0.175
   beeswarm_df <- beeswarm(numeric_vec ~ groups_fac,
-                          spacing  = 0.8,
+                          spacing  = 0.7,
                           priority = "random",
                           cex      = use_cex,
                           do.plot  = FALSE
@@ -168,31 +168,53 @@ ccs_numbers <- c(3, 5, 7)
 accuracy_percentages <- c(99, 99.9, 99.99)
 
 use_metrics <- setdiff(names(titles_list), "Longest_subsequence")
+use_metrics <- grep("^Binary_", use_metrics, value = TRUE, invert = TRUE)
 
-for (i in seq_along(ccs_numbers)) {
-  use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-  for (filter_stage in 1:2) {
-    df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+use_width <- 9.75
+use_height <- 6.5
 
-    use_summary_df <- use_df_list[[df_name]]
+for (file_format in c("png", "pdf")) {
+  for (i in seq_along(ccs_numbers)) {
+    use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
+    for (filter_stage in 1:2) {
+      df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
 
-    file_name <- paste0("CCS", ccs_numbers[[i]],
-                        " (", accuracy_percentages[[i]], ") - ",
-                        c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
-                        )
+      use_summary_df <- use_df_list[[df_name]]
 
-    pdf(file   = file.path(plots_output_directory, paste0("Compare plates - ", file_name, ".pdf")),
-        width  = 3.9 * 2.5,
-        height = 2.6 * 2.5
-        )
-    for (use_metric in use_metrics) {
-      ComparePlates(use_summary_df, use_metric)
+      sel_name <- paste0("CCS", ccs_numbers[[i]],
+                         " (", accuracy_percentages[[i]], ") - ",
+                         c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                         )
+      if (file_format == "pdf") {
+        pdf(file   = file.path(plots_output_directory, paste0("Compare plates - ", sel_name, ".pdf")),
+            width  = use_width,
+            height = use_height
+            )
+        for (use_metric in use_metrics) {
+          ComparePlates(use_summary_df, use_metric)
+        }
+        dev.off()
+      } else if (file_format == "png") {
+        sub_folder_path <- file.path(PNGs_output_directory, sel_name)
+        dir.create(sub_folder_path, showWarnings = FALSE)
+        for (j in seq_along(use_metrics)) {
+          file_name <- paste0(formatC(j, width = 2, flag = "0"), ") ",
+                              use_metrics[[j]], ".png"
+                              )
+          png(file   = file.path(sub_folder_path, file_name),
+              width  = use_width,
+              height = use_height,
+              units  = "in",
+              res    = 600
+              )
+          ComparePlates(use_summary_df, use_metrics[[j]])
+          dev.off()
+        }
+
+      }
     }
-    dev.off()
   }
 }
-
-
 
 
 

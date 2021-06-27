@@ -21,6 +21,7 @@ p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output")
 plots_output_directory   <- file.path(file_output_directory, "Figures", "Schematics of a 384-well plate")
+PNGs_output_directory    <- file.path(file_output_directory, "PNGs", "Schematics")
 
 
 
@@ -105,7 +106,14 @@ count_metrics <- c(
 )
 
 percentages_metrics <- c(
-  "Num_contaminated_reads", "Num_under_2kb", count_metrics
+  "Num_contaminated_reads", "Num_under_2kb",
+  count_metrics,
+  "Num_reads_with_deletions_exceeding_20bp",
+  "Num_reads_with_sgRNA_deletion",
+  "Num_reads_with_deletions_spanning_tracrRNAs",
+  "Num_reads_with_deletions_spanning_promoters",
+  "Num_cross_plate_contaminated",
+  "Num_contaminated_reads_aligned"
 )
 
 binarized_metrics <- c(
@@ -113,81 +121,117 @@ binarized_metrics <- c(
   paste0("Binary_", tolower(substr(count_metrics, 1, 1)),
          substr(count_metrics, 2, nchar(count_metrics))
          ),
-  "Binary_num_contaminated_reads"
+  "Binary_num_contaminated_reads",
+  "Binary_num_reads_with_deletions_exceeding_20bp",
+  "Binary_num_reads_with_deletions_spanning_tracrRNAs"
 )
 
+plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
 
-for (i in seq_along(ccs_numbers)) {
-  use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-  for (filter_stage in 1:2) {
-    df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+for (file_format in c("png", "pdf")) {
+  for (i in seq_along(ccs_numbers)) {
+    use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
+    for (filter_stage in 1:2) {
+      df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
 
-    use_summary_df <- use_df_list[[df_name]]
+      use_summary_df <- use_df_list[[df_name]]
 
-    folder_name <- paste0("CCS", ccs_numbers[[i]],
-                          " (", accuracy_percentages[[i]], ") - ",
-                          c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
-                          )
-    folder_path <- file.path(plots_output_directory, folder_name)
-    dir.create(folder_path, showWarnings = FALSE)
+      folder_name <- paste0("CCS", ccs_numbers[[i]],
+                            " (", accuracy_percentages[[i]], ") - ",
+                            c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                            )
+      if (file_format == "png") {
+        folder_path <- file.path(PNGs_output_directory, folder_name)
+      } else {
+        folder_path <- file.path(plots_output_directory, folder_name)
+      }
 
-    file_prefix <- folder_name
+      dir.create(folder_path, showWarnings = FALSE)
 
-    for (number_wells in c(TRUE, FALSE)) {
-      for (binarize in c(TRUE, FALSE)) {
+      file_prefix <- folder_name
 
-        if (binarize) {
-          current_metrics <- binarized_metrics
-        } else {
-          current_metrics <- percentages_metrics
-        }
-
-        for (j in seq_along(current_metrics)) {
+      for (number_wells in c(TRUE, FALSE)) {
+        for (binarize in c(TRUE, FALSE)) {
 
           if (binarize) {
-            sub_folder_path <- file.path(folder_path, "Binarized - ")
+            current_metrics <- binarized_metrics
           } else {
-            sub_folder_path <- file.path(folder_path, "Percentages - ")
+            current_metrics <- percentages_metrics
           }
-          if (number_wells) {
-            sub_folder_path <- paste0(sub_folder_path, "numbered")
-          } else {
-            sub_folder_path <- paste0(sub_folder_path, "plain")
-          }
-          dir.create(sub_folder_path, showWarnings = FALSE)
 
-          expansion_factor <- 5
-          file_name <- paste0(file_prefix, " - ",
-                              formatC(j, width = 2, flag = "0"), ") ",
-                              current_metrics[[j]],
-                              ".pdf"
-                              )
-          pdf(file   = file.path(sub_folder_path, file_name),
-              width  = 2 * expansion_factor,
-              height = 1 * expansion_factor
-              )
+          for (j in seq_along(current_metrics)) {
 
-          plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
-          for (plate_number in use_plate_numbers) {
-            summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
-            sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
-            BarPlotPanel(summary_sub_df,
-                         current_metrics[[j]],
-                         sg_sub_df,
-                         number_wells = number_wells,
-                         top_text = plate_labels[plates_df[["Plate_number"]] == plate_number],
-                         show_low_read_numbers = TRUE,
-                         outline_few_reads = binarize,
-                         binary_cutoff = if (current_metrics[[j]] == "Binary_num_contaminated_reads") 0.2 else 0.5
-                         )
+            if (binarize) {
+              sub_folder_path <- file.path(folder_path, "Binarized - ")
+            } else {
+              sub_folder_path <- file.path(folder_path, "Percentages - ")
+            }
+            if (number_wells) {
+              sub_folder_path <- paste0(sub_folder_path, "numbered")
+            } else {
+              sub_folder_path <- paste0(sub_folder_path, "plain")
+            }
+            dir.create(sub_folder_path, showWarnings = FALSE)
+
+            current_metric_name <- sub("^Num_reads_with_", "", current_metrics[[j]])
+            current_metric_name <- sub("^(Num|Count)_", "", current_metric_name)
+            current_metric_name <- sub("^Binary_num_reads_with_", "Binary_", current_metric_name)
+            current_metric_name <- sub("^Binary_(num|count)_", "Binary_", current_metric_name)
+            current_metric_name <- paste0(formatC(j, width = 2, flag = "0"),
+                                          ") ",  current_metric_name
+                                          )
+
+            expansion_factor <- 5
+            use_width <- 2 * expansion_factor
+            use_height <- 1 * expansion_factor
+
+            if (file_format == "pdf") {
+              pdf_name <- paste0(file_prefix, " - ", current_metric_name, ".pdf")
+              pdf(file   = file.path(sub_folder_path, pdf_name),
+                  width  = use_width,
+                  height = use_height
+                  )
+            } else if (file_format == "png") {
+              metric_path <- file.path(sub_folder_path, current_metric_name)
+              dir.create(metric_path, showWarnings = FALSE)
+            }
+
+            for (plate_number in use_plate_numbers) {
+              if (file_format == "png") {
+                plate_name <- paste0(formatC(plate_number, width = 2, flag = "0"), ") - ",
+                                     plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number]
+                                     )
+                file_name <- paste0(file_prefix, " - ", plate_name, ".png")
+                png(file   = file.path(metric_path, file_name),
+                    width  = use_width,
+                    height = use_height,
+                    units  = "in",
+                    res    = 600
+                    )
+              }
+              summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
+              sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
+              BarPlotPanel(summary_sub_df,
+                           current_metrics[[j]],
+                           sg_sub_df,
+                           number_wells          = number_wells,
+                           top_text              = plate_labels[plates_df[["Plate_number"]] == plate_number],
+                           show_low_read_numbers = TRUE,
+                           outline_few_reads     = binarize
+                           )
+              if (file_format == "png") {
+                dev.off()
+              }
+            }
+            if (file_format == "pdf") {
+              dev.off()
+            }
           }
-          dev.off()
         }
       }
     }
   }
 }
-
 
 
 

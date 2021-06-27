@@ -26,7 +26,7 @@ sanger_excel_path        <- file.path(file_input_directory,
                                       "sanger confirmation of NGS with retransformation and single colony picking.xlsx"
                                       )
 file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "Comparison of Sanger and PacBio sequencing")
-
+PNGs_output_directory    <- file.path(sql2_directory, "5) Output", "PNGs",    "Comparison of Sanger and PacBio sequencing")
 
 
 
@@ -65,6 +65,301 @@ MakeCombinedIDs <- function(plate_numbers, well_numbers) {
          "Well",  formatC(well_numbers,  width = 3, flag = "0")
          )
 }
+
+
+
+
+MakeComparisonPlot <- function(use_combined_df, use_metric) {
+
+  required_objects <- c("mean_contam_delta", "use_control_percentages")
+  stopifnot(all(required_objects %in% ls(envir = globalenv())))
+
+
+  ## Prepare data
+  use_prefixes <- c("Sanger",
+                    "PacBio_columns", "Corrected_PacBio_columns",
+                    "PacBio_beads", "Corrected_PacBio_beads"
+                    )
+  use_columns <- paste0(use_prefixes, "_", tolower(use_metric))
+  numeric_mat <- as.matrix(use_combined_df[, use_columns])
+
+
+
+
+  ## Determine group positions
+  num_groups <- 3
+  group_positions <- seq_len(num_groups)
+  width <- 2/3
+  final_width <- width * ((max(group_positions) - min(group_positions)) / (num_groups - 1))
+  group_limits <- c((min(group_positions) - 0.2) - (num_groups * 0.04),
+                    max(group_positions) + 0.2 + (num_groups * 0.04)
+                    )
+
+  ## Prepare the data axis
+  use_numeric_limits <- c(0, max(numeric_mat, na.rm = TRUE) * 1.00)
+  numeric_axis_pos <- pretty(use_numeric_limits)
+  numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
+  numeric_axis_labels <- paste0(format(numeric_axis_pos * 100), "%")
+
+
+  ## Set up the plot canvas
+  par(mar = c(5, 6, 7, 12))
+  plot(1,
+       xlim = group_limits,
+       ylim = numeric_limits,
+       xaxs = "i",
+       yaxs = "i",
+       type = "n",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+  axis(2,
+       at       = numeric_axis_pos,
+       labels   = numeric_axis_labels,
+       mgp      = c(3, 0.38, 0),
+       gap.axis = 0,
+       tcl      = -0.3,
+       las      = 1,
+       lwd      = par("lwd")
+       )
+
+  mtext(text = "Reads with 4 correct sgRNAs + tracRNAs",
+        side = 2,
+        line = 3.2
+        )
+  box(bty = "l")
+
+
+
+  ## Draw the connecting lines
+  x_positions <- c(1, 1.9, 2.1, 2.9, 3.1)
+
+  lines_alpha <- 0.2
+  alpha_hex <- substr(rgb(1, 1, 1, lines_alpha), 8, 9)
+  use_grey <- brewer.pal(9, "Greys")[[7]]
+  use_color <- paste0(use_grey, alpha_hex)
+  for (row_index in seq_len(nrow(numeric_mat))) {
+    are_NA <- is.na(numeric_mat[row_index, ])
+    lines(x   = x_positions[!(are_NA)],
+          y   = numeric_mat[row_index, ][!(are_NA)],
+          col = use_color,
+          lwd = 1,
+          xpd = NA
+          )
+  }
+
+
+
+  ## Draw the data points
+  points_alpha <- 0.8
+  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+  uncorrected_color <- paste0(brewer.pal(9, "Blues")[[7]], alpha_hex)
+  corrected_color <- paste0(brewer.pal(9, "Purples")[[7]], alpha_hex)
+  column_colors <- ifelse(grepl("^Corrected_", colnames(numeric_mat)),
+                          corrected_color,
+                          uncorrected_color
+                          )
+
+  for (column_index in seq_len(ncol(numeric_mat))) {
+    points(x   = rep(x_positions[[column_index]], nrow(numeric_mat)),
+           y   = numeric_mat[, column_index],
+           pch = 16,
+           cex = 1,
+           col = column_colors[[column_index]],
+           xpd = NA
+           )
+  }
+
+
+
+  ## Draw the x axis legend
+  text(x      = 1:3,
+       y      = grconvertY(y = -0.05, from = "npc", to = "user"),
+       labels = c("Sanger", "PacBio", "PacBio"),
+       adj    = c(0.5, 1),
+       xpd    = NA
+       )
+
+  small_gap <- 0.08
+  text(x      = 1:3,
+       y      = grconvertY(y = -0.05 - small_gap, from = "npc", to = "user"),
+       labels = c("sequencing", "(columns)", "(beads)"),
+       adj    = c(0.5, 1),
+       xpd    = NA
+       )
+
+
+  use_color_text <- 'color1("original") * color2(" / ") * color3("corrected")'
+  text_colors <- c(uncorrected_color, "black", corrected_color)
+  for (i in seq_along(text_colors)) {
+    text(x      = 2:3,
+         y      = grconvertY(y = -0.24, from = "npc", to = "user"),
+         labels = VerticalAdjust(parse(text = MakeInvisible(use_color_text, i))),
+         adj    = c(0.5, 1),
+         col    = text_colors[[i]],
+         cex    = 0.9,
+         xpd    = NA
+         )
+  }
+
+
+
+  ## Draw the p values
+  use_grey <- "gray60"
+  lwd_grey <- "gray80"
+
+  y_start <- 1.16
+  use_lwd <- 0.75
+  segments(x0  = 1,
+           x1  = 1.9,
+           y0  = grconvertY(y = y_start, from = "npc", to = "user"),
+           col = lwd_grey,
+           lwd = use_lwd,
+           xpd = NA
+           )
+
+  y_tick_length <- 0.025
+  segments(x0  = c(1, 1.9),
+           y0  = grconvertY(y = y_start, from = "npc", to = "user"),
+           y1  = grconvertY(y = y_start - y_tick_length, from = "npc", to = "user"),
+           col = lwd_grey,
+           lwd = use_lwd,
+           xpd = NA
+           )
+
+  text(x      = sum(c(1, 1.9)) / 2,
+       y      = grconvertY(y = y_start + 0.035, from = "npc", to = "user"),
+       labels = as.expression(bquote(italic("p") * " = " * .(signif(uncorrected_t_test_results[["p.value"]], digits = 1)))),
+       cex    = 0.8,
+       col    = use_grey,
+       lwd    = use_lwd,
+       xpd    = NA
+       )
+
+  y_gap <- 0.13
+  segments(x0  = c(1, 2.1),
+           y0  = grconvertY(y = y_start + y_gap, from = "npc", to = "user"),
+           y1  = grconvertY(y = y_start + y_gap - y_tick_length, from = "npc", to = "user"),
+           col = lwd_grey,
+           lwd = use_lwd,
+           xpd = NA
+           )
+  segments(x0  = 1,
+           x1  = 2.1,
+           y0  = grconvertY(y = y_start + y_gap, from = "npc", to = "user"),
+           col = lwd_grey,
+           lwd = use_lwd,
+           xpd = NA
+           )
+
+
+  text(x      = sum(c(1, 2.1)) / 2,
+       y      = grconvertY(y = y_start + 0.035 + y_gap, from = "npc", to = "user"),
+       labels = as.expression(bquote(italic("p") * " = " * .(signif(corrected_t_test_results[["p.value"]], digits = 1)))),
+       cex    = 0.8,
+       col    = use_grey,
+       lwd    = use_lwd,
+       xpd    = NA
+       )
+
+
+
+  ## Prepare for drawing the "error rates" legend
+  y_mid <- 0.5
+  large_gap <- 0.13
+
+  labels_list <- list(
+    "Corrections:",
+    c("Excess",
+      "contaminations",
+      "(columns)"
+    ),
+    c("Error rate in",
+      "colony-picked",
+      "controls"
+    )
+  )
+
+  is_large_gap <- lapply(labels_list, function(x) {
+    if (length(x) == 1) {
+      FALSE
+    } else {
+      c(TRUE, rep(FALSE, length(x) - 1))
+    }
+  })
+
+  gaps_vec <- ifelse(unlist(is_large_gap), large_gap, small_gap)
+  gaps_vec[[1]] <- 0
+  total_span <- sum(gaps_vec)
+  start_y <- y_mid + (total_span / 2)
+  y_sequence <- start_y - cumsum(gaps_vec)
+  x_start <- 1.1
+
+
+  ## Show the descriptions of the error rates
+  text(x      = grconvertX(x = x_start,    from = "npc", to = "user"),
+       y      = grconvertY(y = y_sequence, from = "npc", to = "user"),
+       cex    = 1,
+       labels = unlist(labels_list),
+       adj    = c(0, 0),
+       xpd    = NA
+       )
+
+
+
+  ## Show a barplot representation of the error rates
+  use_control_perc <- (1 - use_control_percentages)[[use_metric]]
+  rect_width_npc <- 0.005
+  rect_width <- diff(grconvertX(x = c(0, rect_width_npc), from = "npc", to = "user"))
+  rect_color <- brewer.pal(9, "Blues")[[9]]
+  rect_mid <- x_start + 0.33
+
+
+  rect(xleft   = grconvertX(x = rect_mid - rect_width, from = "npc", to = "user") - rect_width,
+       xright  = grconvertX(x = rect_mid + rect_width, from = "npc", to = "user") + rect_width,
+       ybottom = grconvertY(y = y_sequence[[4]], from = "npc", to = "user"),
+       ytop    = grconvertY(y = y_sequence[[4]], from = "npc", to = "user") + mean_contam_delta,
+       col     = rect_color,
+       border  = NA,
+       xpd     = NA
+       )
+
+  rect(xleft   = grconvertX(x = rect_mid - rect_width, from = "npc", to = "user") - rect_width,
+       xright  = grconvertX(x = rect_mid + rect_width, from = "npc", to = "user") + rect_width,
+       ybottom = grconvertY(y = y_sequence[[7]], from = "npc", to = "user"),
+       ytop    = grconvertY(y = y_sequence[[7]], from = "npc", to = "user") + use_control_perc,
+       col     = rect_color,
+       border  = NA,
+       xpd     = NA
+       )
+
+
+  ## Label the bars with their numerical values
+  y_gap <- 0.03
+  text_cex <- 0.8
+  text(x      = grconvertX(x = rect_mid, from = "npc", to = "user"),
+       y      = grconvertY(y = mean_contam_delta + y_sequence[[4]] + y_gap, from = "npc", to = "user"),
+       cex    = text_cex,
+       labels = paste0(signif(mean_contam_delta * 100, digits = 2), "%"),
+       adj    = c(0.5, 0),
+       font   = 2,
+
+       xpd    = NA
+       )
+
+  text(x      = grconvertX(x = rect_mid, from = "npc", to = "user"),
+       y      = grconvertY(y = use_control_perc + y_sequence[[7]] + y_gap, from = "npc", to = "user"),
+       cex    = text_cex,
+       labels = paste0(signif(use_control_perc * 100, digits = 2), "%"),
+       adj    = c(0.5, 0),
+       font   = 2,
+       xpd    = NA
+       )
+
+}
+
+
 
 
 
@@ -316,302 +611,21 @@ t.test(combined_df[["Sanger_perc_all_4"]],
 
 # Plot the comparison of Sanger vs. PacBio sequencing ---------------------
 
-## Prepare data
-use_metric <- "Perc_all_4"
-use_prefixes <- c("Sanger",
-                  "PacBio_columns", "Corrected_PacBio_columns",
-                  "PacBio_beads", "Corrected_PacBio_beads"
-                  )
-use_columns <- paste0(use_prefixes, "_", tolower(use_metric))
-numeric_mat <- as.matrix(combined_df[, use_columns])
-
-
-
 ## Set up PDF
 pdf(file = file.path(file_output_directory, "Comparison of Sanger and PacBio sequencing.pdf"),
     width = 8, height = 5
     )
-
-par(mar = c(5, 6, 7, 12))
-
-
-
-## Determine group positions
-num_groups <- 3
-group_positions <- seq_len(num_groups)
-width <- 2/3
-final_width <- width * ((max(group_positions) - min(group_positions)) / (num_groups - 1))
-group_limits <- c((min(group_positions) - 0.2) - (num_groups * 0.04),
-                  max(group_positions) + 0.2 + (num_groups * 0.04)
-                  )
-
-## Prepare the data axis
-use_numeric_limits <- c(0, max(numeric_mat, na.rm = TRUE) * 1.00)
-numeric_axis_pos <- pretty(use_numeric_limits)
-numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
-numeric_axis_labels <- paste0(format(numeric_axis_pos * 100), "%")
-
-
-## Set up the plot canvas
-plot(1,
-     xlim = group_limits,
-     ylim = numeric_limits,
-     xaxs = "i",
-     yaxs = "i",
-     type = "n",
-     axes = FALSE,
-     ann  = FALSE
-     )
-
-axis(2,
-     at       = numeric_axis_pos,
-     labels   = numeric_axis_labels,
-     mgp      = c(3, 0.38, 0),
-     gap.axis = 0,
-     tcl      = -0.3,
-     las      = 1,
-     lwd      = par("lwd")
-     )
-
-mtext(text = "Reads with 4 correct sgRNAs + tracRNAs",
-      side = 2,
-      line = 3.2
-      )
-box(bty = "l")
-
-
-
-
-
-## Draw the connecting lines
-x_positions <- c(1, 1.9, 2.1, 2.9, 3.1)
-
-lines_alpha <- 0.2
-alpha_hex <- substr(rgb(1, 1, 1, lines_alpha), 8, 9)
-use_grey <- brewer.pal(9, "Greys")[[7]]
-use_color <- paste0(use_grey, alpha_hex)
-for (row_index in seq_len(nrow(numeric_mat))) {
-  are_NA <- is.na(numeric_mat[row_index, ])
-  lines(x   = x_positions[!(are_NA)],
-        y   = numeric_mat[row_index, ][!(are_NA)],
-        col = use_color,
-        lwd = 1,
-        xpd = NA
-        )
-}
-
-
-
-## Draw the data points
-points_alpha <- 0.8
-alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
-uncorrected_color <- paste0(brewer.pal(9, "Blues")[[7]], alpha_hex)
-corrected_color <- paste0(brewer.pal(9, "Purples")[[7]], alpha_hex)
-column_colors <- ifelse(grepl("^Corrected_", colnames(numeric_mat)),
-                        corrected_color,
-                        uncorrected_color
-                        )
-
-for (column_index in seq_len(ncol(numeric_mat))) {
-  points(x   = rep(x_positions[[column_index]], nrow(numeric_mat)),
-         y   = numeric_mat[, column_index],
-         pch = 16,
-         cex = 1,
-         col = column_colors[[column_index]],
-         xpd = NA
-         )
-}
-
-
-
-
-## Draw the x axis legend
-text(x      = 1:3,
-     y      = grconvertY(y = -0.05, from = "npc", to = "user"),
-     labels = c("Sanger", "PacBio", "PacBio"),
-     adj    = c(0.5, 1),
-     xpd    = NA
-     )
-
-small_gap <- 0.08
-text(x      = 1:3,
-     y      = grconvertY(y = -0.05 - small_gap, from = "npc", to = "user"),
-     labels = c("sequencing", "(columns)", "(beads)"),
-     adj    = c(0.5, 1),
-     xpd    = NA
-     )
-
-
-use_color_text <- 'color1("original") * color2(" / ") * color3("corrected")'
-text_colors <- c(uncorrected_color, "black", corrected_color)
-for (i in seq_along(text_colors)) {
-  text(x      = 2:3,
-       y      = grconvertY(y = -0.24, from = "npc", to = "user"),
-       labels = VerticalAdjust(parse(text = MakeInvisible(use_color_text, i))),
-       adj    = c(0.5, 1),
-       col    = text_colors[[i]],
-       cex    = 0.9,
-       xpd    = NA
-       )
-}
-
-
-
-## Draw the p values
-use_grey <- "gray60"
-lwd_grey <- "gray80"
-
-y_start <- 1.16
-use_lwd <- 0.75
-segments(x0  = 1,
-         x1  = 1.9,
-         y0  = grconvertY(y = y_start, from = "npc", to = "user"),
-         col = lwd_grey,
-         lwd = use_lwd,
-         xpd = NA
-         )
-
-y_tick_length <- 0.025
-segments(x0  = c(1, 1.9),
-         y0  = grconvertY(y = y_start, from = "npc", to = "user"),
-         y1  = grconvertY(y = y_start - y_tick_length, from = "npc", to = "user"),
-         col = lwd_grey,
-         lwd = use_lwd,
-         xpd = NA
-         )
-
-text(x      = sum(c(1, 1.9)) / 2,
-     y      = grconvertY(y = y_start + 0.035, from = "npc", to = "user"),
-     labels = as.expression(bquote(italic("p") * " = " * .(signif(uncorrected_t_test_results[["p.value"]], digits = 1)))),
-     cex    = 0.8,
-     col    = use_grey,
-     lwd    = use_lwd,
-     xpd    = NA
-     )
-
-y_gap <- 0.13
-segments(x0  = c(1, 2.1),
-         y0  = grconvertY(y = y_start + y_gap, from = "npc", to = "user"),
-         y1  = grconvertY(y = y_start + y_gap - y_tick_length, from = "npc", to = "user"),
-         col = lwd_grey,
-         lwd = use_lwd,
-         xpd = NA
-         )
-segments(x0  = 1,
-         x1  = 2.1,
-         y0  = grconvertY(y = y_start + y_gap, from = "npc", to = "user"),
-         col = lwd_grey,
-         lwd = use_lwd,
-         xpd = NA
-         )
-
-
-text(x      = sum(c(1, 2.1)) / 2,
-     y      = grconvertY(y = y_start + 0.035 + y_gap, from = "npc", to = "user"),
-     labels = as.expression(bquote(italic("p") * " = " * .(signif(corrected_t_test_results[["p.value"]], digits = 1)))),
-     cex    = 0.8,
-     col    = use_grey,
-     lwd    = use_lwd,
-     xpd    = NA
-     )
-
-
-
-## Prepare for drawing the "error rates" legend
-y_mid <- 0.5
-large_gap <- 0.13
-
-labels_list <- list(
-  "Corrections:",
-  c("Excess",
-    "contaminations",
-    "(columns)"
-  ),
-  c("Error rate in",
-    "colony-picked",
-    "controls"
-  )
-)
-
-is_large_gap <- lapply(labels_list, function(x) {
-  if (length(x) == 1) {
-    FALSE
-  } else {
-    c(TRUE, rep(FALSE, length(x) - 1))
-  }
-})
-
-gaps_vec <- ifelse(unlist(is_large_gap), large_gap, small_gap)
-gaps_vec[[1]] <- 0
-total_span <- sum(gaps_vec)
-start_y <- y_mid + (total_span / 2)
-y_sequence <- start_y - cumsum(gaps_vec)
-x_start <- 1.1
-
-
-## Show the descriptions of the error rates
-text(x      = grconvertX(x = x_start,    from = "npc", to = "user"),
-     y      = grconvertY(y = y_sequence, from = "npc", to = "user"),
-     cex    = 1,
-     labels = unlist(labels_list),
-     adj    = c(0, 0),
-     xpd    = NA
-     )
-
-
-
-## Show a barplot representation of the error rates
-use_control_perc <- (1 - use_control_percentages)[[use_metric]]
-rect_width_npc <- 0.005
-rect_width <- diff(grconvertX(x = c(0, rect_width_npc), from = "npc", to = "user"))
-rect_color <- brewer.pal(9, "Blues")[[9]]
-rect_mid <- x_start + 0.33
-
-
-rect(xleft   = grconvertX(x = rect_mid - rect_width, from = "npc", to = "user") - rect_width,
-     xright  = grconvertX(x = rect_mid + rect_width, from = "npc", to = "user") + rect_width,
-     ybottom = grconvertY(y = y_sequence[[4]], from = "npc", to = "user"),
-     ytop    = grconvertY(y = y_sequence[[4]], from = "npc", to = "user") + mean_contam_delta,
-     col     = rect_color,
-     border  = NA,
-     xpd     = NA
-     )
-
-rect(xleft   = grconvertX(x = rect_mid - rect_width, from = "npc", to = "user") - rect_width,
-     xright  = grconvertX(x = rect_mid + rect_width, from = "npc", to = "user") + rect_width,
-     ybottom = grconvertY(y = y_sequence[[7]], from = "npc", to = "user"),
-     ytop    = grconvertY(y = y_sequence[[7]], from = "npc", to = "user") + use_control_perc,
-     col     = rect_color,
-     border  = NA,
-     xpd     = NA
-     )
-
-
-## Label the bars with their numerical values
-y_gap <- 0.03
-text_cex <- 0.8
-text(x      = grconvertX(x = rect_mid, from = "npc", to = "user"),
-     y      = grconvertY(y = mean_contam_delta + y_sequence[[4]] + y_gap, from = "npc", to = "user"),
-     cex    = text_cex,
-     labels = paste0(signif(mean_contam_delta * 100, digits = 2), "%"),
-     adj    = c(0.5, 0),
-     font   = 2,
-
-     xpd    = NA
-     )
-
-text(x      = grconvertX(x = rect_mid, from = "npc", to = "user"),
-     y      = grconvertY(y = use_control_perc + y_sequence[[7]] + y_gap, from = "npc", to = "user"),
-     cex    = text_cex,
-     labels = paste0(signif(use_control_perc * 100, digits = 2), "%"),
-     adj    = c(0.5, 0),
-     font   = 2,
-     xpd    = NA
-     )
-
-
+MakeComparisonPlot(combined_df, "Perc_all_4")
 dev.off()
 
+
+
+## Set up PNG
+png(file = file.path(PNGs_output_directory, "Comparison of Sanger and PacBio sequencing.png"),
+    width = 8, height = 5, units = "in", res = 600
+    )
+MakeComparisonPlot(combined_df, "Perc_all_4")
+dev.off()
 
 
 

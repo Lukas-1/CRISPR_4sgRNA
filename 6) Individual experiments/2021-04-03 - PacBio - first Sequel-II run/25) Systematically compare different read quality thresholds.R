@@ -25,7 +25,7 @@ source(file.path(sql2_R_functions_directory, "03) Summarizing data across wells.
 
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "Explore read quality cut-offs")
-
+PNGs_output_directory    <- file.path(sql2_directory, "5) Output", "PNGs", "Explore read quality cut-offs")
 
 
 
@@ -36,7 +36,7 @@ load(file.path(sql2_R_objects_directory, "04) Create reference sequences for eac
 load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads - plates_analysis_list.RData"))
 load(file.path(sql2_R_objects_directory, "09) Characterize contaminations (using aligned reads).RData"))
 load(file.path(sql2_R_objects_directory, "10) Identify and characterize deletions.RData"))
-load(file.path(sql2_R_objects_directory, "22) Summarize data across wells - plate selections.RData"))
+load(file.path(sql2_R_objects_directory, "23) Summarize data across wells - plate selections.RData"))
 
 
 
@@ -122,15 +122,12 @@ CustomSummarizeWells <- function(analysis_list, input_ccs_number) {
                  (reads_df[, "Num_full_passes"] >= input_ccs_number)
   selected_zmws <- reads_df[["ZMW"]][are_passing]
   summary_df_list <- SummarizeWells(plates_analysis_list,
-                                    use_zmws = selected_zmws,
-                                    ID_column = "Combined_ID",
-                                    unique_IDs = sg_sequences_df[["Combined_ID"]]
+                                    use_zmws          = selected_zmws,
+                                    ID_column         = "Combined_ID",
+                                    unique_IDs        = sg_sequences_df[["Combined_ID"]],
+                                    deletions_df      = deletions_df,
+                                    aligned_contam_df = contam_df
                                     )
-  for (df_name in c("original_summary_df", "filtered_summary_df")) {
-    summary_df_list <- AddContaminationSummary(summary_df_list, contam_df,    summary_df_name = df_name)
-    summary_df_list <- AddDeletionSummary(     summary_df_list, deletions_df, summary_df_name = df_name)
-    summary_df_list <- AddNoContamCounts(      summary_df_list, contam_df,    summary_df_name = df_name)
-  }
   return(summary_df_list)
 }
 
@@ -199,24 +196,25 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
 
   set.seed(1) # For reproducible jitter
 
-  require_objects <- c("plate_selection_list", "plate_selection_titles_list")
-  stopifnot(all(require_objects %in% ls(envir = globalenv())))
-  if (is.null(plate_names)) {
-    plate_names <- "All plates"
-  }
-  if ((length(plate_names) == 1) && (plate_names %in% names(plate_selection_list))) {
-    main_title <- plate_selection_titles_list[[plate_names]]
-    plate_names <- plate_selection_list[[plate_names]]
-  } else {
-    main_title <- "PacBio sequencing"
-  }
+  plates_list <- GetPlateSelection(plate_names)
+  plate_names <- plates_list[["plate_names"]]
 
   metric_list <- ExtractMetricForAllCutoffs(all_ccs_list,
                                             use_column,
                                             plate_names,
                                             filter_mean_quality = filter_mean_quality
                                             )
-
+  if (filter_mean_quality) {
+    df_name <- "filtered_summary_df"
+  } else {
+    df_name <- "original_summary_df"
+  }
+  if (grepl("Count_no_contam_", use_column, fixed = TRUE)) {
+    total_column <- "Count_total_no_contam"
+  } else {
+    total_column <- "Count_total"
+  }
+  group_n <- vapply(all_ccs_list, function(x) sum(x[[df_name]][, total_column]), integer(1))
 
   name_splits <- strsplit(names(all_ccs_list), " / ", fixed = TRUE)
   ccs_labels <- sapply(name_splits, "[[", 1)
@@ -313,7 +311,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
     file.remove(temp_path)
     dev.set(PDF_device)
     par(PDF_mar)
-
     plot(1,
        xlim = group_limits,
        ylim = final_y_limits,
@@ -323,12 +320,10 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
        axes = FALSE,
        ann  = FALSE
        )
-
     rasterImage(raster_array,
                 xleft = par("usr")[[1]], xright = par("usr")[[2]],
                 ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
                 )
-
   }
 
 
@@ -366,12 +361,14 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
 
 
   ## Draw the title
-  title(main_title, cex.main = 1.1, font.main = 1, line = 2)
+  title(plates_list[["title"]], cex.main = 1.1, font.main = 1, line = 2)
 
 
   ## Draw the x axis labels
   large_gap_lines <- 2
-  start_line <- 0.75
+  start_line <- 0.7
+
+  group_numbers <- formatC(group_n, big.mark = "'")
 
   for (i in seq_along(group_positions)) {
     x_label_cex <- 0.7
@@ -388,10 +385,17 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
           side = 1,
           cex  = x_label_cex
           )
+
+    mtext(text = VerticalAdjust(group_numbers[[i]]),
+          at   = group_positions[[i]],
+          line = start_line + (large_gap_lines),
+          side = 1,
+          cex  = 0.5,
+          col  = "gray60"
+          )
   }
 
   par(old_mar)
-
   return(invisible(NULL))
 }
 
@@ -420,7 +424,7 @@ plate_selection_titles_list <- c(
   list("Colony-picked" = "Single-colony picked controls"),
   plate_selection_titles_list
 )
-
+plate_selection_prefixes <- c("00", plate_selection_prefixes)
 
 
 
@@ -436,7 +440,6 @@ ViolinBoxAllCutoffs(summary_list_list, "Count_all_4", "All plates",
 
 ViolinBoxAllCutoffs(summary_list_list, "Num_contaminated_reads", "All plates")
 
-
 ViolinBoxAllCutoffs(summary_list_list, "Num_contaminated_reads",
                     "Colony-picked", use_y_limits = c(0, 0.1)
                     )
@@ -445,41 +448,76 @@ ViolinBoxAllCutoffs(summary_list_list, "Num_reads_with_deletions_exceeding_20bp"
 ViolinBoxAllCutoffs(summary_list_list, "Num_reads_with_deletions_spanning_tracrRNAs", "All plates")
 ViolinBoxAllCutoffs(summary_list_list, "Count_no_contam_sg4_cr4", "All plates")
 
-gooo
+
 
 
 # Export violin/box plots -------------------------------------------------
 
-for (filter_stage in 1:2) {
-  sub_folder_name <- c("i) unfiltered", "ii) filtered")[[filter_stage]]
-  folder_path <- file.path(file_output_directory, sub_folder_name)
-  metrics_seq <- seq_along(export_metrics)
-  file_numbers <- formatC(seq_along(export_metrics),
-                          flag = "0",
-                          width = max(nchar(as.character(metrics_seq)))
-                          )
-  for (i in metrics_seq) {
-    metric <- export_metrics[[i]]
-    file_name <- paste0("Quality cut-offs - ", file_numbers[[i]], ") ", metric, ".pdf")
-    pdf(file = file.path(folder_path, file_name),
-        width = use_width, height = use_height
-        )
-    for (plate_selection in names(plate_selection_titles_list)) {
-      if ((metric == "Num_contaminated_reads") && (plate_selection == "Colony-picked")) {
-        custom_y_limits <- c(0, 0.1)
-      } else {
-        custom_y_limits <- c(0, 1)
-      }
-      print(plate_selection)
-      ViolinBoxAllCutoffs(summary_list_list,
-                          use_column          = metric,
-                          plate_names         = plate_selection,
-                          filter_mean_quality = filter_stage == 2,
-                          use_y_limits        = custom_y_limits,
-                          embed_PNG           = TRUE
-                          )
+metrics_seq <- seq_along(export_metrics)
+file_numbers <- formatC(seq_along(export_metrics),
+                        flag = "0",
+                        width = max(nchar(as.character(metrics_seq)))
+                        )
+
+
+for (file_format in c("png", "pdf")) {
+  for (filter_stage in 1:2) {
+    sub_folder_name <- c("i) unfiltered", "ii) filtered")[[filter_stage]]
+    if (file_format == "pdf") {
+      folder_path <- file.path(file_output_directory, sub_folder_name)
+    } else if (file_format == "png") {
+      folder_path <- file.path(PNGs_output_directory, sub_folder_name)
     }
-    dev.off()
+    for (i in metrics_seq) {
+      metric <- export_metrics[[i]]
+      metric_name <- sub("^Num_reads_with_", "", metric)
+      metric_name <- sub("^(Num|Count)_", "", metric_name)
+      metric_name <- paste0(toupper(substr(metric_name, 1, 1)),
+                            substr(metric_name, 2, nchar(metric_name))
+                            )
+      metric_name <- paste0(file_numbers[[i]], ") ", metric_name)
+      if (file_format == "pdf") {
+        pdf(file = file.path(folder_path, paste0("Quality cut-offs - ", metric_name, ".pdf")),
+            width = use_width, height = use_height
+            )
+      } else if (file_format == "png") {
+        sub_folder_path <- file.path(folder_path, metric_name)
+        dir.create(sub_folder_path, showWarnings = FALSE)
+      }
+      for (j in seq_along(plate_selection_titles_list)) {
+        plate_selection <- names(plate_selection_titles_list)[[j]]
+        if ((metric == "Num_contaminated_reads") && (plate_selection == "Colony-picked")) {
+          custom_y_limits <- c(0, 0.1)
+        } else {
+          custom_y_limits <- c(0, 1)
+        }
+        if (file_format == "png") {
+          file_name <- paste0(plate_selection_prefixes[[j]],
+                              ") ", plate_selection, ".png"
+                              )
+          png(file   = file.path(sub_folder_path, file_name),
+              width  = use_width,
+              height = use_height,
+              units  = "in",
+              res    = 600
+              )
+        }
+        print(plate_selection)
+        ViolinBoxAllCutoffs(summary_list_list,
+                            use_column          = metric,
+                            plate_names         = plate_selection,
+                            filter_mean_quality = filter_stage == 2,
+                            use_y_limits        = custom_y_limits,
+                            embed_PNG           = TRUE
+                            )
+        if (file_format == "png") {
+          dev.off()
+        }
+      }
+      if (file_format == "pdf") {
+        dev.off()
+      }
+    }
   }
 }
 
