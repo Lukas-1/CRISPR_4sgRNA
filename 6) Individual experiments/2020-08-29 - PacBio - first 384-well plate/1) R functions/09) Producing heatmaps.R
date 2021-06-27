@@ -1276,6 +1276,76 @@ DrawAccuracyHeatmap <- function(summary_df,
 
 
 
+
+
+SparseAccuracyHeatmap <- function(summary_df,
+                                  main_title   = NULL,
+                                  use_cex      = 0.7,
+                                  use_lwd      = 0.8,
+                                  margin_ratio = 10,
+                                  use_width    = 3.6,
+                                  use_height   = 3.05
+                                  ) {
+
+  layout_mat <- cbind(rep(1, 5), 3:7, rep(2, 5))
+  par(mar = rep(0, 4))
+  layout(layout_mat,
+         heights = c(2.98, margin_ratio, 0.01, margin_ratio, 0.01),
+         widths = c(1, margin_ratio, 1)
+         )
+  MakeEmptyPlot()
+  MakeEmptyPlot()
+  MakeEmptyPlot()
+
+  if (!(is.null(main_title))) {
+    text(x = 0.5,
+         y = 0.4,
+         labels = main_title,
+         cex = use_cex * 1.2,
+         xpd = NA
+         )
+  }
+
+  par(mai = c(0.3, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)
+  MakeEmptyPlot()
+  DrawPercentCorrectBarplot(summary_df,
+                            prefix_text      = "",
+                            postfix_text     = " correct gRNAs",
+                            text_at_bottom   = TRUE,
+                            narrow_lwd       = FALSE,
+                            color_box_legend = TRUE,
+                            aspect_ratio     = (use_width * (margin_ratio / (margin_ratio + 2)) - sum(par("mai")[c(2, 4)])) /
+                                               (use_height * (margin_ratio / (margin_ratio * 2 + 3)) - sum(par("mai")[c(1, 3)]))
+                            )
+  par(mar = rep(0, 4))
+  MakeEmptyPlot()
+
+  par(mai = c(0.3, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)
+  DrawHeatMap(summary_df,
+              trapezoid_on_new_plot = FALSE,
+              trapezoid_start_y     = -0.16,
+              trapezoid_y           = -0.125,
+              trapezoid_end_y       = -0.05,
+              trapezoid_start_x     = 0.75,
+              trapezoid_end_x       = 1,
+              add_percent           = FALSE,
+              accuracy_label        = "Accuracy (%)",
+              accuracy_label_cex    = 1,
+              label_y_factor        = 1.35,
+              use_lwd               = 0.75,
+              bold_percentages      = FALSE
+              )
+  par(mar = rep(0, 4))
+  MakeEmptyPlot()
+
+  return(invisible(NULL))
+}
+
+
+
+
+
+
 ExportFiguresForManuscript <- function(summary_df, use_prefix) {
 
   use_width <- 3.0
