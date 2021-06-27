@@ -19,7 +19,12 @@ pdf_width <- 7.2
 use_mar <- c(4.5, 4, 5.7, 2.5)
 
 exclude_vars <- c("Longest_subsequence",
-                  grep("^Binary_", names(titles_list), value = TRUE)
+                  "Num_cross_plate_contaminated",
+                  grep("^Binary_", names(titles_list), value = TRUE),
+
+                  "Num_reads_with_deletions_spanning_promoters",
+                  "Num_reads_with_deletions_spanning_sg_cr",
+                  "Num_reads_with_deletions_spanning_sgRNAs"
                   )
 
 exclude_vars <- c(
