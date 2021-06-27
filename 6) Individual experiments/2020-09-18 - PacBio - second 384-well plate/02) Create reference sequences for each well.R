@@ -152,7 +152,3 @@ save(list = "plasmid_list",
 
 
 
-
-
-
-
