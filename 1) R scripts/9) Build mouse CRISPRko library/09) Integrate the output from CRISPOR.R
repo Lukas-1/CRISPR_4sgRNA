@@ -32,7 +32,6 @@ load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources t
 
 
 
-
 # Identify files to read in -----------------------------------------------
 
 output_files_list <- IdentifyCRISPOROutputFiles()
@@ -120,9 +119,6 @@ for (column_name in c("GuideScan_efficiency", "GuideScan_specificity")) {
 save(list = "merged_CRISPRko_df",
      file = file.path(CRISPRko_RData_directory, "09) Integrate the output from CRISPOR.RData")
      )
-
-
-
 
 
 
