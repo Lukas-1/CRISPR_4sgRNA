@@ -32,6 +32,17 @@ titles_list <- list(
   "Count_all_4_promoters"         = "Percentage of reads for which all 4 gRNAs (including the promoters) are 100% correct",
   "Count_whole_plasmid"           = "Percentage of reads where the entire plasmid sequence is 100% correct",
 
+
+  "Num_contaminated_reads_aligned"               = "Percentage of (aligned) reads that match gRNAs from other wells",
+  "Num_cross_plate_contaminated"                 = "Percentage of (aligned) reads that match gRNAs from other plates",
+  "Num_reads_with_sgRNA_deletion"                = "Percentage of reads where at least one gRNA/tracrRNA is affected by a deletion",
+  "Num_reads_with_deletions_exceeding_20bp"      = "Percentage of reads with deletions (> 20 bp)",
+  "Num_reads_with_deletions_spanning_tracrRNAs"  = "Percentage of reads with deletions spanning tracrRNAs",
+  "Num_reads_with_deletions_spanning_promoters"  = "Percentage of reads with deletions spanning promoters",
+  "Num_reads_with_deletions_spanning_sg_cr"      = "Percentage of reads with deletions spanning gRNA + tracrRNA regions",
+  "Num_reads_with_deletions_spanning_sgRNAs"     = "Percentage of reads with deletions spanning gRNAs",
+
+
   "Binary_num_contaminated_reads" = "20% or more of the reads match gRNAs from other wells (with 100% accuracy)",
 
   "Binary_all_four_guides"        = "For all 4 gRNAs, the majority of reads contain the correct sequence",
@@ -48,8 +59,10 @@ titles_list <- list(
   "Binary_count_sg1_cr1"          = "In the majority of reads, sg1 (and its tracrRNA) are 100% correct",
   "Binary_count_sg2_cr2"          = "In the majority of reads, sg2 (and its tracrRNA) are 100% correct",
   "Binary_count_sg3_cr3"          = "In the majority of reads, sg3 (and its tracrRNA) are 100% correct",
-  "Binary_count_sg4_cr4"          = "In the majority of reads, sg4 (and its tracrRNA) are 100% correct"
+  "Binary_count_sg4_cr4"          = "In the majority of reads, sg4 (and its tracrRNA) are 100% correct",
 
+  "Binary_num_reads_with_deletions_exceeding_20bp"     = "20% or more of the reads contain deletions (> 20 bp)",
+  "Binary_num_reads_with_deletions_spanning_tracrRNAs" = "20% or more of the reads contain deletions spanning tracrRNAs"
 
 )
 
