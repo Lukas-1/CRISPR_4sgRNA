@@ -11,6 +11,7 @@ general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 
 source(file.path(general_functions_directory, "09) Constants and settings.R"))
 source(file.path(general_functions_directory, "12) Re-ordering sgRNAs based on their genomic location.R"))
+source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
 
 
 
@@ -134,6 +135,7 @@ SeparateByTSS <- function(CRISPR_sub_df, tolerate_divergent_chromosomes = FALSE)
 
 CountNumTSSs <- function(CRISPR_df, TSS_column) {
   IDs_fac <- factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]]))
+  CheckThatFactorIsInOrder(IDs_fac)
   num_transcripts_list <- tapply(
     seq_len(nrow(CRISPR_df)),
     IDs_fac,
@@ -157,6 +159,7 @@ CountNumTSSs <- function(CRISPR_df, TSS_column) {
 
 TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
   IDs_fac <- factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]]))
+  CheckThatFactorIsInOrder(IDs_fac)
   abbr_TSS_list <- tapply(
     seq_len(nrow(CRISPR_df)),
     IDs_fac,
@@ -181,6 +184,33 @@ TSSCombinedIDs <- function(CRISPR_df, TSS_prefix = "T") {
   results_vec <- unlist(abbr_TSS_list, use.names = FALSE)
   return(results_vec)
 }
+
+
+
+AreSuperfluousTSS <- function(CRISPR_df, TSS_prefix = "T") {
+  IDs_fac <- factor(CRISPR_df[["Combined_ID"]], levels = unique(CRISPR_df[["Combined_ID"]]))
+  CheckThatFactorIsInOrder(IDs_fac)
+  abbr_TSS_list <- tapply(
+    seq_len(nrow(CRISPR_df)),
+    IDs_fac,
+    function(x) {
+      results_vec <- rep.int(NA_character_, length(x))
+      num_TSSs <- CRISPR_df[x[[1]], "Num_TSSs"]
+      TSS_numbers <- CRISPR_df[x, "TSS_number"]
+      if (sum(!(is.na(TSS_numbers))) < 4) {
+        return(rep(FALSE, length(x)))
+      } else {
+        return(is.na(TSS_numbers))
+      }
+      return(results_vec)
+    },
+    simplify = FALSE
+  )
+  results_vec <- unlist(abbr_TSS_list, use.names = FALSE)
+  return(results_vec)
+}
+
+
 
 
 
@@ -238,8 +268,10 @@ AllocateTSSforAllGenes <- function(CRISPR_df,
                                       results_df[["Combined_ID"]],
                                       paste0(results_df[["Combined_ID"]], "_", results_df[["TSS_ID"]])
                                       )
+  results_df[["Is_superfluous_TSS"]] <- AreSuperfluousTSS(results_df)
+  results_df[["AltTSS_ID"]]
   if (omit_optional_columns) {
-    results_df <- results_df[, !(names(results_df) %in% c("TSS_number", "Allocated_TSS", "TSS_ID"))]
+    results_df <- results_df[, !(names(results_df) %in% c("TSS_number", "Allocated_TSS", "TSS_ID", "Is_superfluous_TSS"))]
   }
   return(results_df)
 }

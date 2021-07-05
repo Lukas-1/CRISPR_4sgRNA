@@ -30,14 +30,15 @@ OrderControlsVec <- function(CRISPR_df) {
 }
 
 
-AreSuperfluousTSS <- function(CRISPR_df) {
-  (CRISPR_df[["Num_TSSs"]] > 1) & is.na(CRISPR_df[["TSS_ID"]])
-}
 
-
-RankCRISPRDfByTSS <- function(CRISPR_df) {
+RankCRISPRDfByTSS <- function(CRISPR_df, legacy_mode = FALSE) {
+  if (legacy_mode) {
+    are_superfluous_TSS <- (CRISPR_df[["Num_TSSs"]] > 1) & is.na(CRISPR_df[["TSS_ID"]])
+  } else {
+    are_superfluous_TSS <- CRISPR_df[, "Is_superfluous_TSS"]
+  }
   new_order <- order(match(CRISPR_df[["Combined_ID"]], CRISPR_df[["Combined_ID"]]),
-                     AreSuperfluousTSS(CRISPR_df)
+                     are_superfluous_TSS
                      )
   results_df <- CRISPR_df[new_order, ]
   results_df <- RankCRISPRDf(results_df, ID_column = "AltTSS_ID")
