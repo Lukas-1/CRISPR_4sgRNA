@@ -253,16 +253,24 @@ ProcessByPlate <- function(input_df, UseFunction, is_df = TRUE, message_prefix =
 ThreeBasicCategories <- function(extracted_df) {
 
   mean_quality_vec <- GetMeanQualityNoGaps(extracted_df[["Quality"]])
-  sequence_splits <- strsplit(extracted_df[["Aligned_read"]], "", fixed = TRUE)
-  num_bases_lost <- vapply(sequence_splits, function(x) sum(x == "-"), integer(1))
+  aligned_read_chars <- strsplit(extracted_df[["Aligned_read"]], "", fixed = TRUE)
+  aligned_template_chars <- strsplit(extracted_df[["Aligned_template"]], "", fixed = TRUE)
+  num_bases_incorrect <- mapply(function(x, y) sum(x != y),
+                                aligned_read_chars,
+                                aligned_template_chars
+                                )
+  num_bases_lost <- vapply(aligned_read_chars, function(x) sum(x == "-"), integer(1))
   sequence_lengths <- nchar(extracted_df[["Aligned_read"]])
 
   results_df <- data.frame(
     extracted_df,
-    "Is_correct"     = extracted_df[["Template"]] == extracted_df[["Aligned_read"]],
-    "Mean_quality"   = mean_quality_vec,
-    "Num_missing"    = num_bases_lost,
-    "Mostly_deleted" = num_bases_lost >= (sequence_lengths / 2)
+    "Mean_quality"             = mean_quality_vec,
+    "Is_correct"               = extracted_df[["Template"]] == extracted_df[["Aligned_read"]],
+    "Alignment_length"         = sequence_lengths,
+    "Num_incorrect"            = num_bases_incorrect,
+    "Over_5_percent_incorrect" = (num_bases_incorrect / sequence_lengths) > 0.05,
+    "Num_missing"              = num_bases_lost,
+    "Mostly_deleted"           = num_bases_lost >= (sequence_lengths / 2)
   )
 
   category_vec <- ifelse(results_df[["Is_correct"]],
