@@ -45,6 +45,22 @@ PlateFileName <- function(plate_number) {
 }
 
 
+ModifiedAlterationBarplot <- function(summary_df, main_title = NULL, reorder_wells = FALSE) {
+  DrawAlterationBarplot(summary_df,
+                        main_title           = main_title,
+                        reorder_wells        = reorder_wells,
+                        show_color_legend    = TRUE,
+                        show_color_text      = FALSE,
+                        top_space            = 1.75,
+                        bottom_space         = 1.25,
+                        space_height         = 0.75,
+                        sg_label_cex         = 1.1,
+                        horizontal_y_lab_pos = -0.08,
+                        color_legend_x_pos   = 0.15,
+                        title_y_pos          = 0.47,
+                        color_box_y_pos      = 0.4
+                        )
+}
 
 
 
@@ -182,10 +198,7 @@ for (file_format in c("png", "pdf")) {
                   res    = 600
                   )
             }
-
-            SparseAccuracyHeatmap(sub_df,
-                                  main_title = titles_list[[plate_number]]
-                                  )
+            SparseAccuracyHeatmap(sub_df, main_title = titles_list[[plate_number]])
             if (file_format == "png") {
               dev.off()
             }
@@ -218,21 +231,10 @@ for (file_format in c("png", "pdf")) {
                 res    = 600
                 )
           }
-          DrawAlterationBarplot(sub_df,
-                                main_title           = titles_list[[plate_number]],
-                                reorder_wells        = reorder_wells,
-                                show_color_legend    = TRUE,
-                                show_color_text      = FALSE,
-                                top_space            = 1.75,
-                                bottom_space         = 1.25,
-                                space_height         = 0.75,
-                                sg_label_cex         = 1.1,
-                                horizontal_y_lab_pos = -0.08,
-                                color_legend_x_pos   = 0.15,
-                                title_y_pos          = 0.47,
-                                color_box_y_pos      = 0.4
-                                )
-
+          ModifiedAlterationBarplot(sub_df,
+                                    main_title = titles_list[[plate_number]],
+                                    reorder_wells = reorder_wells
+                                    )
           if (file_format == "png") {
             dev.off()
           }
@@ -268,8 +270,8 @@ for (file_format in c("png", "pdf")) {
                          c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
                          )
 
-
       for (make_plot in c("heatmap", "sparse heatmap", "stacked barplot")) {
+
         if (make_plot == "heatmap") {
           folder_name <- "Heatmaps"
           PlotFunction <- DrawAccuracyHeatmap
@@ -282,69 +284,69 @@ for (file_format in c("png", "pdf")) {
           current_height <- sparse_height
         } else if (make_plot == "stacked barplot") {
           folder_name <- "Stacked barplots"
-          PlotFunction <- DrawAlterationBarplot
-          current_width <- use_width
-          current_height <- use_height
+          PlotFunction <- ModifiedAlterationBarplot
+          current_width <- alterations_width
+          current_height <- alterations_height
         }
-      }
 
-      folder_path <- file.path("Sub-sampled", folder_name, sel_name)
-      if (file_format == "pdf") {
-        folder_path <- file.path(plots_output_directory, folder_path)
-      } else if (file_format == "png") {
-        folder_path <- file.path(PNGs_output_directory, folder_path)
-      }
-      dir.create(folder_path, showWarnings = FALSE)
-
-      for (plate_number in use_plate_numbers) {
-        plate_name <- paste0("Plate", formatC(plate_number, width = 2, flag = "0"),
-                             " - ",
-                             plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number]
-                             )
-
-        sg_sequences_df <- library_df[library_df[["Plate_number"]] %in% plate_number, ]
-
+        folder_path <- file.path("Sub-sampled", folder_name, sel_name)
         if (file_format == "pdf") {
-          pdf(file = file.path(folder_path, paste0(plate_name, ".pdf")),
-              width = current_width, height = current_height
-              )
+          folder_path <- file.path(plots_output_directory, folder_path)
         } else if (file_format == "png") {
-          sub_folder_path <- file.path(folder_path, plate_name)
-          dir.create(sub_folder_path, showWarnings = FALSE)
+          folder_path <- file.path(PNGs_output_directory, folder_path)
         }
-        for (j in seq_along(subsampled_list)) {
-          for (rep in seq_len(min(length(subsampled_list[[j]]), use_num_reps))) {
-            title_prefix <- title_prefixes[[j]]
-            is_all <- names(subsampled_list)[[j]] == "100% sampled"
-            if (!(is_all)) {
-              title_prefix <- paste0(title_prefix, " \u2013 repetition #", rep)
-            }
-            if (file_format == "png") {
-              file_prefix <- sub("% of reads", "%%", title_prefixes[[j]], fixed = TRUE)
-              file_prefix <- paste0(letters[[j]], ") ", file_prefix)
+        dir.create(folder_path, showWarnings = FALSE)
+
+        for (plate_number in use_plate_numbers) {
+          plate_name <- paste0("Plate", formatC(plate_number, width = 2, flag = "0"),
+                               " - ",
+                               plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number]
+                               )
+
+          sg_sequences_df <- library_df[library_df[["Plate_number"]] %in% plate_number, ]
+
+          if (file_format == "pdf") {
+            pdf(file = file.path(folder_path, paste0(plate_name, ".pdf")),
+                width = current_width, height = current_height
+                )
+          } else if (file_format == "png") {
+            sub_folder_path <- file.path(folder_path, plate_name)
+            dir.create(sub_folder_path, showWarnings = FALSE)
+          }
+          for (j in seq_along(subsampled_list)) {
+            for (rep in seq_len(min(length(subsampled_list[[j]]), use_num_reps))) {
+              title_prefix <- title_prefixes[[j]]
+              is_all <- names(subsampled_list)[[j]] == "100% sampled"
               if (!(is_all)) {
-                file_prefix <- paste0(file_prefix, " - rep #", rep)
+                title_prefix <- paste0(title_prefix, " \u2013 repetition #", rep)
               }
-              file_name <- paste0(file_prefix, " - ", plate_name, ".png")
-              png(file   = file.path(sub_folder_path, file_name),
-                  width  = sparse_width,
-                  height = sparse_height,
-                  units  = "in",
-                  res    = 600
-                  )
-            }
-            use_title <- paste0(title_prefix, " (", plate_name, ")")
-            use_ccs <- paste0("ccs", ccs_numbers[[i]])
-            use_df <- subsampled_list[[j]][[rep]][[use_ccs]][[df_name]]
-            use_df <- use_df[use_df[["Plate_number"]] %in% plate_number, ]
-            PlotFunction(use_df, main_title = use_title, reorder_wells = reorder_wells)
-            if (file_format == "png") {
-              dev.off()
+              if (file_format == "png") {
+                file_prefix <- sub("% of reads", "%%", title_prefixes[[j]], fixed = TRUE)
+                file_prefix <- paste0(letters[[j]], ") ", file_prefix)
+                if (!(is_all)) {
+                  file_prefix <- paste0(file_prefix, " - rep #", rep)
+                }
+                file_name <- paste0(file_prefix, " - ", plate_name, ".png")
+                png(file   = file.path(sub_folder_path, file_name),
+                    width  = current_width,
+                    height = current_height,
+                    units  = "in",
+                    res    = 600
+                    )
+              }
+              use_title <- paste0(title_prefix, " (", plate_name, ")")
+              use_ccs <- paste0("ccs", ccs_numbers[[i]])
+              use_df <- subsampled_list[[j]][[rep]][[use_ccs]][[df_name]]
+              use_df <- use_df[use_df[["Plate_number"]] %in% plate_number, ]
+              PlotFunction(use_df, main_title = use_title, reorder_wells = FALSE)
+              if (file_format == "png") {
+                dev.off()
+              }
             }
           }
-        }
-        if (file_format == "pdf") {
-          dev.off()
+          if (file_format == "pdf") {
+            dev.off()
+          }
         }
       }
     }

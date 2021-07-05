@@ -102,7 +102,7 @@ DrawAlterationBarplot <- function(summary_df,
                                   draw_outer_box       = FALSE,
                                   exclude_blocks       = NULL,
                                   sparse_ticks         = FALSE,
-                                  horizontal_y_lab_pos = -0.6,
+                                  horizontal_y_lab_pos = -0.06,
                                   color_legend_x_pos   = 0.036,
                                   title_y_pos          = 0.65,
                                   color_box_y_pos      = 0.2
