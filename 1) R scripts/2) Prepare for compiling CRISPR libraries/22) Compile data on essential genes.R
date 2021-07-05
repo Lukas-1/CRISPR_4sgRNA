@@ -607,13 +607,11 @@ DrawHistogram <- function(numeric_vec,
   }
   hist_results <- hist(numeric_vec,
                        breaks = use_breaks,
-                       las    = 1,
-                       mgp    = c(2.5, 0.5, 0),
-                       tcl    = -0.4,
                        col    = use_color,
                        border = NA,
                        main   = "Depmap \u2013 all cell lines",
                        xlab   = "CRISPR knockout fitness effect",
+                       mgp    = c(2.5, 0.5, 0),
                        freq   = TRUE,
                        add    = add,
                        axes   = FALSE,
@@ -622,7 +620,7 @@ DrawHistogram <- function(numeric_vec,
   if (!(add)) {
     box(bty = "l")
     x_axis_pos <- pretty(par("usr")[c(1, 2)], n = 10)
-    axis(1, at = x_axis_pos)
+    axis(1, at = x_axis_pos, mgp = c(2.5, 0.55, 0), tcl = -0.45)
   }
   return(invisible(hist_results))
 }
@@ -663,14 +661,14 @@ for (make_PNG in c(TRUE, FALSE)) {
 
 
   legend("topleft",
-         legend = c("All genes", "Non-essential", "Intermediate", "Essential"),
-         fill    = c(brewer.pal(9, "Greys")[[4]],
-                    brewer.pal(9, "Greens")[[8]],
-                    "#aa6c39",
-                    brewer.pal(9, "Reds")[[8]]
-                    ),
-         border  = NA,
-         bty = "n",
+         legend     = c("All genes", "Non-essential", "Intermediate", "Essential"),
+         fill       = c(brewer.pal(9, "Greys")[[4]],
+                        brewer.pal(9, "Greens")[[8]],
+                        "#aa6c39",
+                        brewer.pal(9, "Reds")[[8]]
+                        ),
+         border    = NA,
+         bty       = "n",
          y.intersp = 1.1
          )
 
