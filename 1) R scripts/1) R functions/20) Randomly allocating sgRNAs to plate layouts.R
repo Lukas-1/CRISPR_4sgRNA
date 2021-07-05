@@ -981,8 +981,13 @@ MergeTFWithRest <- function(sg4_by_well_df, TF_by_well_df) {
 
 
   are_obsolete <- full_4sg_by_gene_df[["Is_obsolete"]] %in% "Yes"
+  assign("delete_full_4sg_by_gene_df", full_4sg_by_gene_df, envir = globalenv())
   if ("TSS_number" %in% names(full_4sg_by_gene_df)) {
-    TSS_vec <- full_4sg_by_gene_df[["TSS_number"]][!(are_obsolete)]
+    TSS_vec <- full_4sg_by_gene_df[["TSS_number"]]
+    are_NA_TSS <- is.na(TSS_vec)
+    stopifnot(all(full_4sg_by_gene_df[["Num_TSSs"]][are_NA_TSS] == 1))
+    TSS_vec[are_NA_TSS] <- 1L
+    TSS_vec <- TSS_vec[!(are_obsolete)]
   } else {
     TSS_vec <- rep(NA, sum(!(are_obsolete)))
   }
