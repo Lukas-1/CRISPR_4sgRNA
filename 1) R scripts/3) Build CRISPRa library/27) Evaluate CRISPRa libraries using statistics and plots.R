@@ -47,6 +47,7 @@ merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
 
 
 
+
 # Show some example plots -------------------------------------------------
 
 BarPlot_Sources(merged_replaced_CRISPRa_df,
@@ -76,6 +77,8 @@ ViolinBox_Sources(merged_replaced_CRISPRa_df,
 # Tabulate data for the manuscript ----------------------------------------
 
 CRISPRa_figure_list <- PrepareManuscriptPlots(merged_replaced_CRISPRa_df)
+
+
 
 
 
@@ -159,6 +162,7 @@ Plot4sgData(sgRNAs_overview_df, merged_replaced_CRISPRa_df)
 
 PlotVennDiagrams(merged_replaced_CRISPRa_df)
 
+CreateAllTSSHistograms(merged_replaced_CRISPRa_df)
 
 
 
@@ -186,6 +190,31 @@ SourcesBarPlots(merged_replaced_CRISPRa_df)
 UniquePointsBoxPlots(merged_replaced_CRISPRa_df)
 
 SourcesBoxPlots(merged_replaced_CRISPRa_df)
+
+
+
+
+
+
+
+
+a <- read.table("Exported Enzyme Set2.txt", fill = TRUE, sep = "\t", header = TRUE, check.names = FALSE,
+                stringsAsFactors = FALSE
+                )
+
+unique_cutters <- unlist(strsplit(a[, 1], ", ?"))
+
+
+enzyme_df <- enzyme.db
+
+
+table(unique_cutters %in% enzyme.db[, 1])
+
+
+setdiff(unique_cutters, enzyme.db[, 1])
+
+
+
 
 
 

@@ -48,13 +48,14 @@ core_numeric_column_labels <- c(
 
 numeric_column_labels <- c(
   core_numeric_column_labels,
-  "GuideScan_Num_2MM"    = "GuideScan \u2013 number of 2MM sites",
-  "GuideScan_Num_3MM"    = "GuideScan \u2013 number of 3MM sites",
-  "GuideScan_Num_2or3MM" = "GuideScan \u2013 number of 2MM or 3MM sites",
-  "CRISPOR_Num_2MM"      = "CRISPOR \u2013 number of 2MM sites",
-  "CRISPOR_Num_3MM"      = "CRISPOR \u2013 number of 3MM sites",
-  "CRISPOR_Num_2or3MM"   = "CRISPOR \u2013 number of 2MM or 3MM sites",
-  "CRISPOR_Num_4MM"      = "CRISPOR \u2013 number of 4MM sites"
+  "Restricted_distance_from_TSS" = "Position relative to the TSS",
+  "GuideScan_Num_2MM"            = "GuideScan \u2013 number of 2MM sites",
+  "GuideScan_Num_3MM"            = "GuideScan \u2013 number of 3MM sites",
+  "GuideScan_Num_2or3MM"         = "GuideScan \u2013 number of 2MM or 3MM sites",
+  "CRISPOR_Num_2MM"              = "CRISPOR \u2013 number of 2MM sites",
+  "CRISPOR_Num_3MM"              = "CRISPOR \u2013 number of 3MM sites",
+  "CRISPOR_Num_2or3MM"           = "CRISPOR \u2013 number of 2MM or 3MM sites",
+  "CRISPOR_Num_4MM"              = "CRISPOR \u2013 number of 4MM sites"
 )
 
 
@@ -103,6 +104,7 @@ categorical_columns <- c(
 
 TSS_columns <- c(
   "Deviation_from_TSS_window",
+  "Restricted_distance_from_TSS",
   "Affects_unintended_main_TSS",
   "Affects_unintended_protein_main_TSS",
   "Affects_main_TSS_at_other_loci",
@@ -381,6 +383,7 @@ GetMainTSS <- function(CRISPR_df) {
 # Helper functions for vertically aligning text on plots ------------------
 
 StripExpression <- function(my_expression) {
+  assign("delete_my_expression", my_expression, envir = globalenv())
   if (is.character(my_expression)) {
     literal_string <- paste0("\"", capture.output(cat(my_expression)), "\"")
   } else {
@@ -393,6 +396,7 @@ StripExpression <- function(my_expression) {
 }
 
 ConcatenateExpressions <- function(expression_list, my_sep = "  \u2013  ") {
+  assign("delete_expression_list", expression_list, envir = globalenv())
   literal_strings <- sapply(expression_list, StripExpression)
   combined_string <- paste0(literal_strings, collapse = paste0(" * \"", my_sep, "\" * "))
   results_expression <- parse(text = combined_string)
@@ -1003,6 +1007,11 @@ FixNumericColumns <- function(CRISPR_df, y_column) {
                             )
     deviation_vec <- ifelse(deviation_vec > 1000, 1000L, deviation_vec)
     CRISPR_df[["Deviation_from_TSS_window"]] <- deviation_vec
+  } else if (y_column == "Restricted_distance_from_TSS") {
+    distance_vec <- CRISPR_df[["Distance_from_TSS"]]
+    distance_vec <- ifelse(distance_vec < (-1000), -1000L, distance_vec)
+    distance_vec <- ifelse(distance_vec > 1000, 1000L, distance_vec)
+    CRISPR_df[["Restricted_distance_from_TSS"]] <- distance_vec
   }
   return(CRISPR_df)
 }
@@ -1078,10 +1087,19 @@ DrawViolinGridAndAxes <- function(y_column,
 
   if (!(no_outside_annotation)) {
     tick_labels <- format(tick_locations)
-    if ((y_column == "Deviation_from_TSS_window") && (tick_labels[[length(tick_labels)]] == "1000")) {
+    if ((y_column == "Deviation_from_TSS_window") &&
+        (tick_labels[[length(tick_labels)]] == "1000")
+        ) {
       tick_labels <- sapply(tick_labels, as.expression)
       tick_labels[[length(tick_labels)]] <- bquote("" >= 1000)
+    } else if ((y_column == "Restricted_distance_from_TSS") &&
+               (tick_labels[[length(tick_labels)]] == " 1000") &&
+               (tick_labels[[1]] == "-1000")) {
+      tick_labels <- sapply(tick_labels, as.expression)
+      tick_labels[[length(tick_labels)]] <- bquote("" >= 1000)
+      tick_labels[[1]] <- bquote("" <= "\u22121000")
     }
+
     if (grepl("SNP", y_column, fixed = TRUE)) {
       tick_labels <- paste0(tick_labels, "%")
     }
@@ -1469,7 +1487,8 @@ ViolinBox_Sources <- function(CRISPR_df,
                               filter_complete_scores = TRUE,
                               collapse_GPP           = filter_top4,
                               no_outside_annotation  = FALSE,
-                              use_raster_array       = NULL
+                              use_raster_array       = NULL,
+                              draw_plot              = FALSE
                               ) {
 
   if (show_sublibraries && show_rest_v_4sg) {
@@ -1513,6 +1532,9 @@ ViolinBox_Sources <- function(CRISPR_df,
   plot_df_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol", "Group", "Subgroup")
   if (!(aggregate_scores)) {
     plot_df_columns <- c(plot_df_columns, "sgRNA_sequence")
+    if (y_column %in% c("Deviation_from_TSS_window", "Restricted_distance_from_TSS")) {
+      plot_df_columns <- c(plot_df_columns, "Distance_from_TSS")
+    }
   }
   plot_df_columns <- c(plot_df_columns, y_column)
   plot_df <- plot_df[, plot_df_columns]
@@ -1543,40 +1565,40 @@ ViolinBox_Sources <- function(CRISPR_df,
   plot_df[["Point_colors"]] <- rep(colors_df[["Dark"]], as.integer(table(plot_df[["Groups_factor"]])))
   plot_df[["Numeric_data"]] <- plot_df[[y_column]]
 
+  if (draw_plot) {
+    ## Determine the spacing and the x positions
+    spaces_vec <- ifelse(colors_df[["Are_new_color"]][-1], 1.15, 0.72)
+    x_positions <- cumsum(c(1, spaces_vec))
 
-  ## Determine the spacing and the x positions
-  spaces_vec <- ifelse(colors_df[["Are_new_color"]][-1], 1.15, 0.72)
-  x_positions <- cumsum(c(1, spaces_vec))
+    num_subgroups <- nlevels(plot_df[["Groups_factor"]])
+    x_limits <- c((x_positions[[1]] - 0.5) - (num_subgroups * 0.04),
+                  x_positions[[length(x_positions)]] + 0.5 + (num_subgroups * 0.04)
+                  )
 
-  num_subgroups <- nlevels(plot_df[["Groups_factor"]])
-  x_limits <- c((x_positions[[1]] - 0.5) - (num_subgroups * 0.04),
-                x_positions[[length(x_positions)]] + 0.5 + (num_subgroups * 0.04)
-                )
+    ## Draw the violins
+    if (no_outside_annotation) {
+      old_mar <- par(mar = rep(0, 4))
+    } else {
+      old_mar <- par(mar = c(4.4, 4, 3.5, 3) + 0.1)
+    }
+    PlotViolin(plot_df, x_positions, x_limits, colors_df, y_column,
+               IsCRISPRa(CRISPR_df),
+               aggregate_scores = aggregate_scores,
+               title_cex = 0.8, title_line = 1.55,
+               no_outside_annotation = no_outside_annotation,
+               use_raster_array = use_raster_array
+               )
 
-  ## Draw the violins
-  if (no_outside_annotation) {
-    old_mar <- par(mar = rep(0, 4))
-  } else {
-    old_mar <- par(mar = c(4.4, 4, 3.5, 3) + 0.1)
+    if (!(no_outside_annotation)) {
+      SourcesSubgroupLabels(plot_df, x_positions, colors_df,
+                            show_sublibraries = show_sublibraries,
+                            show_rest_v_4sg = show_rest_v_4sg,
+                            extra_space = TRUE
+                            )
+    }
+    par(old_mar)
   }
-  PlotViolin(plot_df, x_positions, x_limits, colors_df, y_column,
-             IsCRISPRa(CRISPR_df),
-             aggregate_scores = aggregate_scores,
-             title_cex = 0.8, title_line = 1.55,
-             no_outside_annotation = no_outside_annotation,
-             use_raster_array = use_raster_array
-             )
 
-  if (!(no_outside_annotation)) {
-    SourcesSubgroupLabels(plot_df, x_positions, colors_df,
-                          show_sublibraries = show_sublibraries,
-                          show_rest_v_4sg = show_rest_v_4sg,
-                          extra_space = TRUE
-                          )
-  }
-
-  ## Final steps
-  par(old_mar)
   return(invisible(plot_df))
 }
 
@@ -4928,5 +4950,316 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
     }
   }
 }
+
+
+
+
+
+
+# Functions for plotting the position relative to the TSS -----------------
+
+AreGenesOutsideTSSRange <- function(input_df, x_range = c(-1000, 1000)) {
+  stopifnot(identical(input_df[, "Combined_ID"], input_df[, "Entrez_ID"]))
+  distance_vec <- input_df[["Distance_from_TSS"]]
+  are_too_low <- distance_vec < x_range[[1]]
+  are_too_high <- distance_vec > x_range[[2]]
+  are_outside <- are_too_low | are_too_high
+  outside_genes <- unique(input_df[["Entrez_ID"]][are_outside])
+  are_outside_genes <- input_df[["Entrez_ID"]] %in% outside_genes
+  return(are_outside_genes)
+}
+
+
+
+TSSHistogram <- function(distances_vec,
+                         hist_color           = brewer.pal(9, "Blues")[[8]],
+                         use_breaks           = 1000,
+                         x_range              = c(-1000, 1000),
+                         omit_outside_x_range = FALSE,
+                         highlight_range      = c(-500, 500),
+                         highlight_color      = brewer.pal(9, "Purples")[[2]],
+                         modality_text        = "range for CRISPRoff",
+                         make_plot            = TRUE,
+                         use_y_max            = NULL,
+                         use_title            = NULL
+                         ) {
+
+  are_NA <- is.na(distances_vec)
+  if (any(are_NA)) {
+    message(paste0("Out of ", length(distances_vec), " sgRNAs, ",
+                   sum(are_NA), " had 'NA' values for the distance from the ",
+                   "TSS and were excluded."
+                   ))
+    distances_vec <- distances_vec[!(are_NA)]
+  }
+
+  are_too_low <- distances_vec < x_range[[1]]
+  are_too_high <- distances_vec > x_range[[2]]
+  are_outside <- are_too_low | are_too_high
+  if (any(are_outside)) {
+    if (omit_outside_x_range) {
+      message(paste0("Out of ", length(distances_vec), " sgRNAs, ",
+                     sum(are_outside), " lay outside the range and were excluded."
+                     ))
+      distances_vec <- distances_vec[!(are_outside)]
+    } else {
+      distances_vec[are_too_low] <- x_range[[1]]
+      distances_vec[are_too_high] <- x_range[[2]]
+    }
+  }
+  message(paste0(length(distances_vec), " sgRNAs (corresponding to ",
+                 length(distances_vec) / 4, " genes) are shown in the ",
+                 "histogram.\n"
+                 ))
+
+  are_highlighted <- (distances_vec >= highlight_range[[1]]) &
+                     (distances_vec <= highlight_range[[2]])
+  fraction_highlighted <- sum(are_highlighted) / length(distances_vec)
+  highlight_label <- as.expression(bquote(plain(.(as.character(round(fraction_highlighted * 100, digits = 1))) *
+                                            "% of gRNAs lie within the " * .(modality_text)
+                                          )))
+
+  hist_results <- hist(distances_vec,
+                       breaks = use_breaks,
+                       plot   = FALSE
+                       )
+
+  if (make_plot) {
+
+    if (is.null(use_y_max)) {
+      y_span <- max(hist_results[["counts"]])
+      use_y_max <- max(pretty(c(0, y_span)))
+    }
+
+    plot(1,
+         xlim = range(x_range),
+         ylim = c(-0.02 * use_y_max, use_y_max),
+         xaxs = "i",
+         yaxs = "i",
+         type = "n",
+         axes = FALSE,
+         mgp  = c(2.5, 1, 0),
+         ann  = FALSE
+         )
+
+    if (!(is.null(use_title))) {
+      title(use_title, cex.main = 1, line = 2.5)
+    }
+
+    x_axis_pos <- seq(-1000, 1000, by = 200)
+    x_axis_labels <- sapply(as.character(x_axis_pos), as.expression)
+    if (!(omit_outside_x_range)) {
+      if (x_axis_pos[[1]] == x_range[[1]]) {
+        # x_axis_labels[[1]] <- bquote("" <= "\u2212" * .(as.character(abs(x_range[[1]]))))
+        x_axis_labels[[1]] <- bquote("" <= .(as.character(x_range[[1]])))
+      }
+      if (x_axis_pos[[length(x_axis_pos)]] == x_range[[2]]) {
+        x_axis_labels[[length(x_axis_labels)]] <- bquote("" >= .(as.character(x_range[[2]])))
+      }
+    }
+
+    rect(xleft   = highlight_range[[1]],
+         xright  = highlight_range[[2]],
+         ybottom = par("usr")[[3]],
+         ytop    = par("usr")[[4]],
+         xpd     = NA,
+         col     = highlight_color,
+         border  = NA
+         )
+    text(x      = highlight_range[[1]] + ((highlight_range[[2]] - highlight_range[[1]]) / 2),
+         y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.8), from = "lines", to = "user")),
+         labels = highlight_label,
+         cex    = 0.8,
+         xpd    = NA
+         )
+
+    segments(y0   = par("usr")[[3]],
+             y1   = par("usr")[[4]],
+             x0   = x_axis_pos,
+             col  = "gray85",
+             lend = "butt",
+             xpd  = NA
+             )
+
+    between_distance <- (x_axis_pos[[2]] - x_axis_pos[[1]])
+    between_pos <- seq(from = x_axis_pos[[1]] + (between_distance / 2),
+                       to   = x_axis_pos[[length(x_axis_pos)]] - (between_distance / 2),
+                       by   = between_distance
+                       )
+    segments(y0   = par("usr")[[3]],
+             y1   = par("usr")[[4]],
+             x0   = between_pos,
+             col  = "gray85",
+             lend = "butt",
+             xpd  = NA
+             )
+
+    axis(1, at = x_axis_pos, labels = x_axis_labels, mgp = c(3, 0.7, 0), tcl = -0.45)
+    axis(2, mgp = c(3, 0.6, 0), tcl = -0.45, las = 1)
+    box(bty = "l")
+    mtext("Position relative to the TSS", side = 1, line = 2.4)
+    mtext("Count (gRNAs)", side = 2, line = 3)
+
+    hist(distances_vec,
+         breaks = use_breaks,
+         col    = hist_color,
+         border = NA,
+         freq   = TRUE,
+         add    = TRUE,
+         axes   = FALSE,
+         ylab   = "",
+         xpd    = NA
+         )
+
+  }
+
+  return(invisible(hist_results))
+}
+
+
+
+
+TSS_modalities_list <- list(
+  "CRISPRoff" = list(
+    "title" = "range for CRISPRoff",
+    "range" = c(-500, 500),
+    "color" = brewer.pal(9, "Purples")[[2]]
+  ),
+  "CRISPRoff (narrow)" = list(
+    "title" = "narrow range for CRISPRoff",
+    "range" = c(-200, 250),
+    "color" = brewer.pal(9, "Purples")[[2]]
+  ),
+  "CRISPRa" = list(
+    "title" = "range for CRISPRa",
+    "range" = c(-400, 0),
+    "color" = brewer.pal(9, "Greens")[[2]]
+  ),
+  "CRISPRa (narrow)" = list(
+    "title" = "narrow range for CRISPRa",
+    "range" = c(-150, -75),
+    "color" = brewer.pal(9, "Greens")[[2]]
+  ),
+  "CRISPRi" = list(
+    "title" = "range for CRISPRi",
+    "range" = c(-50, 300),
+    "color" = brewer.pal(9, "Blues")[[2]]
+  ),
+  "CRISPRi (narrow)" = list(
+    "title" = "narrow range for CRISPRi",
+    "range" = c(25, 75),
+    "color" = brewer.pal(9, "Blues")[[2]]
+  )
+)
+
+
+
+FilterDistanceByGroup <- function(input_df, use_library) {
+  input_df[["Distance_from_TSS"]][input_df[["Group"]] %in% use_library]
+}
+
+
+
+TSSHistogramsForModality <- function(CRISPR_df,
+                                     show_modality = "CRISPRoff",
+                                     omit_outside_x_range = TRUE
+                                     ) {
+
+  stopifnot("TSS_modalities_list" %in% ls(envir = globalenv()))
+
+  use_highlight_range <- TSS_modalities_list[[show_modality]][["range"]]
+  title_postfix <- TSS_modalities_list[[show_modality]][["title"]]
+  use_color <- TSS_modalities_list[[show_modality]][["color"]]
+
+  are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list, show_messages = FALSE)
+  are_main_TSS <- (GetMainTSS(CRISPR_df) == CRISPR_df[["AltTSS_ID"]]) %in% TRUE
+  sel_distances <- CRISPR_df[["Distance_from_TSS"]][are_4sg & are_main_TSS]
+  TSSHistogram(sel_distances,
+               use_breaks = 200,
+               use_title = expression(phantom("gh") * bold("4sg library") * phantom("gh")),
+               modality_text = title_postfix,
+               highlight_range = use_highlight_range,
+               highlight_color = use_color,
+               omit_outside_x_range = omit_outside_x_range
+               )
+
+  TSS_dist_df <- ViolinBox_Sources(CRISPR_df,
+                                   "Restricted_distance_from_TSS",
+                                   show_sublibraries = FALSE,
+                                   filter_top4 = TRUE,
+                                   draw_plot = FALSE
+                                   )
+
+  shared_TSS_dist_df <- TSS_dist_df[!(AreGenesOutsideTSSRange(TSS_dist_df)), ]
+  num_shared_genes <- length(unique(shared_TSS_dist_df[["Entrez_ID"]]))
+
+  libraries_vec <- levels(shared_TSS_dist_df[["Group"]])
+  library_titles <- lapply(libraries_vec, function(x) {
+    as.expression(bquote(phantom("gh") * bold(.(x)) * " " * scriptstyle(" ") *
+                        "(" * .(as.character(num_shared_genes)) *
+                        " shared genes)" * phantom("gh")
+    ))})
+
+  for (i in 1:4) {
+    TSSHistogram(distances_vec = FilterDistanceByGroup(shared_TSS_dist_df, libraries_vec[[i]]),
+                 use_breaks = 200,
+                 use_title = library_titles[[i]],
+                 modality_text = title_postfix,
+                 highlight_range = use_highlight_range,
+                 highlight_color = use_color,
+                 omit_outside_x_range = omit_outside_x_range
+                 )
+  }
+
+  return(invisible(NULL))
+}
+
+
+
+
+CreateAllTSSHistograms <- function(CRISPR_df) {
+  stopifnot(all(c("TSS_modalities_list", "output_plots_directory") %in% ls(envir = globalenv())))
+  for (broad_range in c(TRUE, FALSE)) {
+    for (omit_outside_range in c(TRUE, FALSE)) {
+      are_narrow <- grepl("narrow", names(TSS_modalities_list), fixed = TRUE)
+      if (broad_range) {
+        use_modalities <- names(TSS_modalities_list)[!(are_narrow)]
+        folder_prefix <- "Broad ranges"
+      } else {
+        use_modalities <- names(TSS_modalities_list)[are_narrow]
+        folder_prefix <- "Narrow ranges"
+      }
+      if (omit_outside_range) {
+        folder_postfix <- ""
+      } else {
+        folder_postfix <- " - outliers indicated"
+      }
+      folder_name <- paste0(folder_prefix, folder_postfix)
+      for (use_modality in use_modalities) {
+        file_name <- paste0("gRNA positions relative to the TSS - ",
+                            sub(" (narrow)", "", use_modality, fixed = TRUE),
+                            " - ",
+                            if (broad_range) "broad range" else "narrow range"
+                            )
+        use_file_path <- file.path(output_plots_directory,
+                                   "Positions relative to the TSS",
+                                   folder_name,
+                                   paste0(file_name, ".pdf")
+                                   )
+        pdf(file = use_file_path, width = 7, height = 5.5)
+        par("oma" = c(0, 1, 0, 1))
+        TSSHistogramsForModality(CRISPR_df,
+                                 use_modality,
+                                 omit_outside_x_range = omit_outside_range
+                                 )
+        dev.off()
+      }
+    }
+  }
+}
+
+
+
+
 
 

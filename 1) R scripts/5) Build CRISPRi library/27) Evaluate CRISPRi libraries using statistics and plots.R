@@ -87,6 +87,7 @@ Plot4sgData(sgRNAs_overview_df, merged_replaced_CRISPRi_df)
 
 PlotVennDiagrams(merged_replaced_CRISPRi_df)
 
+CreateAllTSSHistograms(merged_replaced_CRISPRi_df)
 
 
 
