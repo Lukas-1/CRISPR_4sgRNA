@@ -40,6 +40,19 @@ load(file.path(CRISPRa_RData_directory, "25) Export libraries to .tsv files - TF
 
 
 
+
+# Ensure that the guide RNAs are ordered by rank --------------------------
+
+new_order <- order(match(merged_replaced_CRISPRa_df[, "AltTSS_ID"], merged_replaced_CRISPRa_df[, "AltTSS_ID"]),
+                   merged_replaced_CRISPRa_df[, "Rank"]
+                   )
+merged_replaced_CRISPRa_df <- merged_replaced_CRISPRa_df[new_order, ]
+row.names(merged_replaced_CRISPRa_df) <- NULL
+
+
+
+
+
 # Add data on other (unintended) targeted TSSs ----------------------------
 
 merged_replaced_CRISPRa_df <- AddOtherTargets(merged_replaced_CRISPRa_df, TSS_targets_df)
@@ -81,8 +94,6 @@ full_sg4_list <- MergeTFWithRest(sg4_by_well_df, TF_v1_CRISPRa_df)
 full_4sg_by_well_df <- full_sg4_list[["full_4sg_by_well_df"]]
 full_4sg_by_gene_df <- full_sg4_list[["full_4sg_by_gene_df"]]
 rm(full_sg4_list)
-
-
 
 
 
