@@ -49,6 +49,11 @@ column_labels_list <- list(
   "Count_at_least_3"                            = expression("" >= "3 correct", "gRNAs"),
   "Count_all_4"                                 = expression("All 4 gRNAs", "are correct"),
 
+  "Count_pr_at_least_1"                         = expression("" >= "1 correct", "gRNA"),
+  "Count_pr_at_least_2"                         = expression("" >= "2 correct", "gRNAs"),
+  "Count_pr_at_least_3"                         = expression("" >= "3 correct", "gRNAs"),
+  "Count_pr_all_4"                              = expression("All 4 gRNAs", "are correct"),
+
   "Count_no_contam_at_least_1"                  = expression("" >= "1 correct", "gRNA"),
   "Count_no_contam_at_least_2"                  = expression("" >= "2 correct", "gRNAs"),
   "Count_no_contam_at_least_3"                  = expression("" >= "3 correct", "gRNAs"),
@@ -63,6 +68,16 @@ column_labels_list <- list(
   "Correct_sg2"                                 = expression("sg2 is", "correct"),
   "Correct_sg3"                                 = expression("sg3 is", "correct"),
   "Correct_sg4"                                 = expression("sg4 is", "correct"),
+
+  "Count_sg1_cr1"                               = expression("sg1 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_sg2_cr2"                               = expression("sg2 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_sg3_cr3"                               = expression("sg3 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_sg4_cr4"                               = expression("sg4 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+
+  "Count_pr1_sg1_cr1"                           = expression("sg1 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_pr2_sg2_cr2"                           = expression("sg2 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_pr3_sg3_cr3"                           = expression("sg3 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_pr4_sg4_cr4"                           = expression("sg4 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
 
   "Num_contaminated_reads"                      = expression("Contamination", "(full read)"),
   "Num_contaminated_reads_aligned"              = expression("Contamination", "(aligned read)"),
@@ -80,7 +95,9 @@ column_labels_list <- list(
 column_groups_list <- list(
   "At_least_num_guides"  = c(paste0("Count_at_least_", 1:3), "Count_all_4"),
   "No_contam_num_guides" = paste0("Count_no_contam_", c(paste0("at_least_", 1:3), "all_4")),
-  "Correct_sg_cr"        = paste0("Correct_sg", 1:4, "_cr", 1:4),
+  "Promoter_num_guides"  = c(paste0("Count_pr_at_least_", 1:3), "Count_pr_all_4"),
+  "Count_sg_cr"          = paste0("Count_sg", 1:4, "_cr", 1:4),
+  "Count_pr_sg_cr"       = paste0("Count_pr", 1:4, "_sg", 1:4, "_cr", 1:4),
   "Deletions"            = c("Num_reads_with_deletions_exceeding_20bp",
                              "Num_reads_with_sgRNA_deletion",
                              "Num_reads_with_deletions_spanning_tracrRNAs",
@@ -88,6 +105,33 @@ column_groups_list <- list(
                              ),
   "Contaminations"       = c("Num_contaminated_reads", "Num_contaminated_reads_aligned", "Num_cross_plate_contaminated")
 )
+
+
+column_group_subtitles_list <- list(
+  "At_least_num_guides"  = expression("The gRNA" * scriptscriptstyle(" ") *
+                                      "+" * scriptscriptstyle(" ") *
+                                      "tracrRNA sequences must be 100% correct."
+                                      ),
+  "No_contam_num_guides" = expression("The gRNA" * scriptscriptstyle(" ") *
+                                      "+" * scriptscriptstyle(" ") *
+                                      "tracrRNA must be 100% correct. Contaminations are excluded."
+                                      ),
+  "Promoter_num_guides"  = expression("The gRNA" * scriptscriptstyle(" ") *
+                                      "+" * scriptscriptstyle(" ") *
+                                      "tracrRNA must be 100% correct, and the promoter 95% correct."
+                                      )
+)
+
+column_group_subtitles_list <- c(
+  column_group_subtitles_list,
+  list(
+    "Count_sg_cr"        = column_group_subtitles_list[["At_least_num_guides"]],
+    "Count_pr_sg_cr"     = column_group_subtitles_list[["Promoter_num_guides"]]
+  )
+)
+
+
+
 
 
 plate_selection_titles_list <- list(
@@ -101,13 +145,19 @@ plate_selection_titles_list <- list(
 
 
 count_columns <- c(
-  paste0("Count_at_least_", 1:3),
-  "Count_all_4", "Count_all_4_promoters", "Count_whole_plasmid",
+  paste0("Count_at_least_", 1:3), "Count_all_4",
+  "Count_all_4_promoters", "Count_whole_plasmid",
   paste0("Count_sg", 1:4, "_cr", 1:4)
 )
 
-
 no_contam_count_columns <- sub("Count_", "Count_no_contam_", count_columns, fixed = TRUE)
+
+count_columns <- c(
+  count_columns,
+  paste0("Count_pr_at_least_", 1:3), "Count_pr_all_4",
+  paste0("Count_pr", 1:4, "_sg", 1:4, "_cr", 1:4)
+)
+
 
 num_columns <- c(
   "Num_contaminated_reads",
@@ -187,6 +237,7 @@ SetUpPercentagePlot <- function(use_columns,
                                 make_plot        = TRUE,
                                 add_mean         = FALSE,
                                 y_axis_label     = "Percentage of reads",
+                                sub_title        = NULL,
                                 draw_legend      = TRUE
                                 ) {
 
@@ -247,7 +298,7 @@ SetUpPercentagePlot <- function(use_columns,
   contams_excluded <- any(are_no_contam)
   if (contams_excluded) {
     stopifnot(all(are_no_contam))
-    y_axis_label <- paste0(y_axis_label, " (excluding contaminations)")
+    # y_axis_label <- paste0(y_axis_label, " (excluding contaminations)")
   }
   mtext(text = y_axis_label, side = 2, line = 3)
 
@@ -258,7 +309,7 @@ SetUpPercentagePlot <- function(use_columns,
 
   ## Draw the x axis labels
   large_gap_lines <- 2.5
-  start_line <- 1
+  start_line <- 0.65
 
   for (i in seq_along(group_positions)) {
     mtext(text = VerticalAdjust(column_labels_list[[use_columns[[i]]]][[1]]),
@@ -274,6 +325,15 @@ SetUpPercentagePlot <- function(use_columns,
           )
   }
 
+  if (!(is.null(sub_title))) {
+    mtext(text = VerticalAdjust(sub_title),
+          at   = mean(group_positions),
+          line = start_line + large_gap_lines * 1.3,
+          side = 1,
+          cex  = 0.9,
+          col  = "gray50"
+          )
+  }
 
   ## Prepare for drawing the legend
   y_mid <- 0.5
@@ -327,7 +387,6 @@ SetUpPercentagePlot <- function(use_columns,
            xpd = NA
            )
   }
-
   return(invisible(NULL))
 }
 
@@ -368,25 +427,32 @@ LollipopPlot <- function(input_df,
                          set_mar           = TRUE,
                          label_percentages = TRUE,
                          use_y_limits      = c(0, 1),
-                         black_percentages = TRUE
+                         black_percentages = TRUE,
+                         sub_title         = NULL
                          ) {
 
   plates_list <- GetPlateSelection(plate_names)
   plate_names <- plates_list[["plate_names"]]
 
   if (set_mar) {
-    old_mar <- par("mar" = c(5, 5, 4.5, 8))
+    old_mar <- par("mar" = c(5.5, 5, 4, 8))
   }
 
   control_mat <- PreparePlates(input_df, "Intctrl")
   selected_mat <- PreparePlates(input_df, plate_names)
+
+  assign("delete_input_df", input_df, envir = globalenv())
+  assign("delete_control_mat", control_mat, envir = globalenv())
+  assign("delete_selected_mat", selected_mat, envir = globalenv())
+  assign("delete_use_columns", use_columns, envir = globalenv())
 
   control_metrics  <- colMeans(control_mat[, use_columns,  drop = FALSE], na.rm = TRUE)
   selected_metrics <- colMeans(selected_mat[, use_columns, drop = FALSE], na.rm = TRUE)
 
   point_cex <- 1.5
   SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
-                      y_axis_label = "Mean percentage of reads"
+                      y_axis_label = "Mean percentage of reads",
+                      sub_title = sub_title
                       )
 
   spaced_percent <- 2.5
@@ -449,7 +515,8 @@ SummaryBoxPlot <- function(input_df,
                            set_mar           = TRUE,
                            label_percentages = TRUE,
                            use_y_limits      = c(0, 1),
-                           embed_PNG         = FALSE
+                           embed_PNG         = FALSE,
+                           sub_title         = NULL
                            ) {
 
   set.seed(1) # For reproducible jitter
@@ -457,7 +524,7 @@ SummaryBoxPlot <- function(input_df,
   plates_list <- GetPlateSelection(plate_names)
   plate_names <- plates_list[["plate_names"]]
 
-  use_mar <- c(5, 5, 4.5, 8)
+  use_mar <- c(5.5, 5, 4, 8)
   if (set_mar) {
     old_mar <- par("mar" = use_mar)
   }
@@ -467,12 +534,6 @@ SummaryBoxPlot <- function(input_df,
 
   control_list <- lapply(use_columns, function(x) control_mat[, x])
   selected_list <- lapply(use_columns, function(x) selected_mat[, x])
-
-  assign("delete_input_df",  input_df, envir = globalenv())
-  assign("delete_control_list",  control_list, envir = globalenv())
-  assign("delete_selected_list", selected_list, envir = globalenv())
-  assign("delete_control_mat",   control_mat, envir = globalenv())
-  assign("delete_selected_mat",  selected_mat, envir = globalenv())
 
   control_unlisted <- unlist(control_list)
   selected_unlisted <- unlist(selected_list)
@@ -503,7 +564,8 @@ SummaryBoxPlot <- function(input_df,
                         )
   } else {
     SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
-                        side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE
+                        side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE,
+                        sub_title = sub_title
                         )
   }
 
@@ -591,7 +653,7 @@ SummaryBoxPlot <- function(input_df,
 
     SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
                         legend_pch = 22, draw_grid = FALSE,
-                        make_plot = FALSE
+                        make_plot = FALSE, sub_title = sub_title
                         )
   }
 
@@ -742,13 +804,14 @@ LollipopPlot(use_df,
 
 
 
-TheoreticalAtLeastCounts <- function(black_percentages = TRUE) {
+TheoreticalAtLeastCounts <- function(black_percentages = TRUE, sub_title = column_group_subtitles_list[["At_least_num_guides"]]) {
 
-  use_mar <- c(5, 5, 4.5, 8)
+  use_mar <- c(5.5, 5, 4, 8)
   old_mar <- par("mar" = use_mar)
 
   SetUpPercentagePlot(c("Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4"),
-                      c(0, 1), "Theoretical probabilities (gRNA error rate = 3.5%)", draw_legend = FALSE
+                      c(0, 1), "Theoretical probabilities (gRNA error rate = 3.5%)",
+                      draw_legend = FALSE, sub_title = sub_title
                       )
 
   sg_cr_correct_rate <- 0.965
@@ -771,7 +834,6 @@ TheoreticalAtLeastCounts <- function(black_percentages = TRUE) {
          xpd = NA
          )
 
-
   perc_x_gap <- diff(grconvertX(c(0, 1.8), from = "lines", to = "user"))
   text(x      = group_positions + perc_x_gap,
        y      = four_probs,
@@ -785,7 +847,7 @@ TheoreticalAtLeastCounts <- function(black_percentages = TRUE) {
        pch    = 16,
        col    = if (black_percentages) "black" else "gray70",
        xpd    = NA
-  )
+       )
   par(old_mar)
   old_mar <- par("mar" = use_mar)
 }
@@ -810,11 +872,9 @@ png(file   = file.path(PNGs_output_directory, "Theoretical", paste0(use_file_nam
     height = use_height,
     units  = "in",
     res    = 600
-)
+    )
 TheoreticalAtLeastCounts()
 dev.off()
-
-
 
 
 
@@ -824,9 +884,15 @@ dev.off()
 ccs_numbers <- c(3, 5, 7)
 accuracy_percentages <- c(99, 99.9, 99.99)
 
-for (file_format in c("png", "pdf")) {
 
-  for (plot_type in c("Lollipop", "Box")) {
+for (file_format in c("pdf")) {
+
+  for (plot_type in c("Lollipop")) {
+
+
+# for (file_format in c("png", "pdf")) {
+#
+#   for (plot_type in c("Lollipop", "Box")) {
 
     if (plot_type == "Box") {
       UseFunction <- function(...) SummaryBoxPlot(..., embed_PNG = TRUE)
@@ -863,7 +929,10 @@ for (file_format in c("png", "pdf")) {
 
           for (i in seq_along(column_groups_list)) {
             metric <- names(column_groups_list)[[i]]
-            file_name <- paste0(plot_type, " plot - ", i, ") ", metric, ".pdf")
+            file_name <- paste0(plot_type, " plot - ", i, ") ",
+                                sub("Count_", "", metric, fixed = TRUE),
+                                ".pdf"
+                                )
             sub_folder_name <- paste0(plot_type, " plots")
             if (plot_type == "Lollipop") {
               if (label_percentages) {
@@ -900,7 +969,8 @@ for (file_format in c("png", "pdf")) {
               UseFunction(use_df,
                           plate_names = plate_selection,
                           use_columns = column_groups_list[[metric]],
-                          label_percentages = label_percentages
+                          label_percentages = label_percentages,
+                          sub_title = column_group_subtitles_list[[metric]]
                           )
               if (file_format == "png") {
                 dev.off()
@@ -930,9 +1000,7 @@ save(list = c("plate_selection_list",
 
 
 
-#
-#
-#
+
 # # Try stuff ---------------------------------------------------------------
 #
 #

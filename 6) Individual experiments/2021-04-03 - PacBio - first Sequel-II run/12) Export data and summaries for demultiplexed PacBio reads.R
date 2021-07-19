@@ -176,3 +176,24 @@ ExportSummaryTable(use_df[order_by_correct, use_columns],
 
 
 
+# Explore different definitions of "correct gRNAs" ------------------------
+
+use_df <- ccs7_df_list[["individual_reads_df"]]
+
+table(use_df[["pr_all_4"]], as.logical(use_df[["all_4"]]))
+
+are_all_4 <- (use_df[["sg1_cr1_category"]] == "Correct") &
+             (use_df[["sg2_cr2_category"]] == "Correct") &
+             (use_df[["sg3_cr3_category"]] == "Correct") &
+             (use_df[["sg4_cr4_category"]] == "Correct")
+
+table(use_df[["pr_all_4"]], are_all_4)
+table(use_df[["pr_all_4"]], as.logical(use_df[["all_4"]]))
+table(use_df[["pr_all_4"]] & are_all_4, as.logical(use_df[["all_4"]]))
+
+
+
+
+
+
+

@@ -91,6 +91,9 @@ PlotBySharedSubsequence <- function(summary_df,
   if (show_column == "Count_mean_sg1to4") {
     count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
     summary_df[["Count_mean_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
+  } else if (show_column == "Count_mean_pr_sg1to4") {
+    count_columns <- paste0("Count_pr", 1:4, "_sg", 1:4, "_cr", 1:4)
+    summary_df[["Count_mean_pr_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
   }
 
   if ("Empty_well" %in% names(sg_sequences_df)) {

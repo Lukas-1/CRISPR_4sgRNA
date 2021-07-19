@@ -460,6 +460,9 @@ BarPlotPanel <- function(summary_df,
   } else if (grepl("[Cc]ount_mean_sg1to4$", show_column)) {
     count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
     summary_df[["Count_mean_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
+  } else if (grepl("[Cc]ount_mean_pr_sg1to4$", show_column)) {
+    count_columns <- paste0("Count_pr", 1:4, "_sg", 1:4, "_cr", 1:4)
+    summary_df[["Count_mean_pr_sg1to4"]] <- rowMeans(as.matrix(summary_df[, count_columns]))
   }
 
   if (grepl("^[Bb]inary_", show_column)) {

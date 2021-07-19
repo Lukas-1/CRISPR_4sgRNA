@@ -88,7 +88,19 @@ BarPlotPanel(summary_sub_df,
              outline_few_reads = TRUE
              )
 
+BarPlotPanel(summary_sub_df,
+             "Count_all_4",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
 
+BarPlotPanel(summary_sub_df,
+             "Count_pr_all_4",
+             sg_sub_df,
+             show_low_read_numbers = TRUE,
+             outline_few_reads = TRUE
+             )
 
 
 # Export all plates -------------------------------------------------------
@@ -102,6 +114,7 @@ count_metrics <- c(
   # "Count_sg1_cr1", "Count_sg2_cr2", "Count_sg3_cr3", "Count_sg4_cr4",
   "Count_mean_sg1to4",
   "Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4",
+  "Count_pr_at_least_1", "Count_pr_at_least_2", "Count_pr_at_least_3", "Count_pr_all_4",
   "Count_all_4_promoters", "Count_whole_plasmid"
 )
 

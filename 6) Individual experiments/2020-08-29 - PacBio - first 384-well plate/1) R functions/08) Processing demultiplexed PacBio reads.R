@@ -492,7 +492,9 @@ CreateSummaryDf <- function(reads_df,
 
   binary_columns <- c(paste0("sg", 1:4, "_cr", 1:4),
                       paste0("at_least_", 1:3),
-                      "all_4", "all_4_promoters", "whole_plasmid"
+                      "all_4", "all_4_promoters", "whole_plasmid",
+                      paste0("pr", 1:4, "_sg", 1:4, "_cr", 1:4),
+                      paste0("pr_at_least_", 1:3), "pr_all_4"
                       )
 
   well_stats_mat <- as.matrix(reads_df[, binary_columns])
@@ -831,7 +833,11 @@ CheckThatFactorIsInOrder <- function(my_factor) {
 
 
 
-GetFeaturesData <- function(extracted_df, use_ZMWs = NULL, get_quality = FALSE) {
+GetFeaturesData <- function(extracted_df,
+                            use_ZMWs = NULL,
+                            extract_column = "Category",
+                            use_features = NULL
+                            ) {
 
   CheckThatFactorIsInOrder(extracted_df[["ZMW"]])
   stopifnot(length(unique(table(extracted_df[["ZMW"]]))) == 1)
@@ -843,17 +849,21 @@ GetFeaturesData <- function(extracted_df, use_ZMWs = NULL, get_quality = FALSE) 
     stopifnot(!(anyNA(zmw_matches)))
   }
 
-  use_features <- c(paste0("sg", 1:4),
-                    paste0("sg", 1:4, "_cr", 1:4)
-                    )
+  if (is.null(use_features)) {
+    use_features <- c(paste0("sg", 1:4),
+                      paste0("sg", 1:4, "_cr", 1:4)
+                      )
+    if (extract_column == "Category") {
+      use_features <- c(use_features, "TpR_DHFR")
+    }
+  }
 
-  if (get_quality) {
-    extract_column <- "Mean_quality"
+  if (extract_column == "Category") {
+    column_suffix <- "category"
+  } else if (extract_column == "Mean_quality") {
     column_suffix <- "quality"
   } else {
-    use_features <- c(use_features, "TpR_DHFR")
-    extract_column <- "Category"
-    column_suffix <- "category"
+    column_suffix <- NULL
   }
 
   categories_vec_list <- sapply(use_features, function(x) {
@@ -866,10 +876,33 @@ GetFeaturesData <- function(extracted_df, use_ZMWs = NULL, get_quality = FALSE) 
   }, simplify = FALSE)
 
   results_mat <- do.call(cbind, categories_vec_list)
-  colnames(results_mat) <- paste0(colnames(results_mat), "_", column_suffix)
+  if (!(is.null(column_suffix))) {
+    colnames(results_mat) <- paste0(colnames(results_mat), "_", column_suffix)
+  }
   return(results_mat)
 }
 
+
+
+TakePromotersIntoAccount <- function(reads_df) {
+
+  correct_sg_mat <- as.matrix(reads_df[, paste0("sg", 1:4, "_cr", 1:4)])
+  stopifnot(all(correct_sg_mat %in% 0:1))
+  mode(correct_sg_mat) <- "logical"
+  pr_mat <- as.matrix(reads_df[, paste0("Promoter", 1:4, "_category")])
+  correct_pr_mat <- apply(pr_mat, 2, function(x) x %in% c("100% correct", ">= 95% correct"))
+
+  are_correct_mat <- correct_sg_mat & correct_pr_mat
+  colnames(are_correct_mat) <- paste0("pr", 1:4, "_sg", 1:4, "_cr", 1:4)
+
+  num_correct_vec <- rowSums(are_correct_mat)
+  contain_num_mat <- do.call(cbind, lapply(1:4, function(x) num_correct_vec >= x))
+  colnames(contain_num_mat) <- c(paste0("pr_at_least_", 1:3), "pr_all_4")
+
+  results_mat <- cbind(are_correct_mat, contain_num_mat)
+  mode(results_mat) <- "integer"
+  return(results_mat)
+}
 
 
 
@@ -877,6 +910,7 @@ GetFeaturesData <- function(extracted_df, use_ZMWs = NULL, get_quality = FALSE) 
 AlterationCategoriesToIntegerMat <- function(input_df) {
   suffix_regex <- "_category$"
   categories_columns <- grep(suffix_regex, names(input_df), value = TRUE)
+  categories_columns <- setdiff(categories_columns, paste0("Promoter", 1:4, "_category"))
   all_features <- sub(suffix_regex, "", categories_columns)
   features_mat <- as.matrix(input_df[, categories_columns])
   features_mat[features_mat == "Flanking insertion"] <- "Correct"
@@ -1027,6 +1061,9 @@ AnalyzeWells <- function(ccs_df,
                          )
     ID_columns <- c("Combined_ID", "Plate_number", "Well_number")
   }
+  sg_cr_columns <- c("sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4",
+                     "at_least_1", "at_least_2", "at_least_3", "all_4"
+                     )
 
   all_columns <- c(
     "ZMW", ID_columns,
@@ -1047,6 +1084,7 @@ AnalyzeWells <- function(ccs_df,
     paste0(c("TpR_DHFR", sg_features), "_category"),
 
     paste0(sg_features, "_quality"),
+    paste0("Promoter", 1:4, "_category"),
 
     barcode_columns,
 
@@ -1055,8 +1093,9 @@ AnalyzeWells <- function(ccs_df,
     "Passes_sg_quality",
     "Num_contaminating_guides", "Num_contaminating_genes", "Contaminating_well",
     "Min_distance", "Random_distance", "Mean_distance", "Distances",
-    "sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4", "at_least_1", "at_least_2",
-    "at_least_3", "all_4", "all_4_promoters", "whole_plasmid",
+    sg_cr_columns, "all_4_promoters", "whole_plasmid",
+    paste0("pr", 1:4, "_", sg_cr_columns[1:4]),
+    paste0("pr_", sg_cr_columns[5:8]),
     "Orientation_fwd"
   )
 
@@ -1134,8 +1173,27 @@ AnalyzeWells <- function(ccs_df,
   }
 
   alterations_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]])
-  subqualities_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]], get_quality = TRUE)
+  subqualities_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]], extract_column = "Mean_quality")
   subqualities_mat <- subqualities_mat / 93 * 100
+
+  assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
+  assign("delete_extracted_df", extracted_df, envir = globalenv())
+
+  all_promoters <- c("promoter1_hU6", "promoter2_mU6", "promoter3_hH1", "promoter4_h7SK")
+  promoters_categories_mat <- GetFeaturesData(extracted_df,
+                                              individual_ZMWs_df[["ZMW"]],
+                                              use_features = all_promoters
+                                              )
+  promoters_5percent_mat   <- GetFeaturesData(extracted_df,
+                                              individual_ZMWs_df[["ZMW"]],
+                                              use_features = all_promoters,
+                                              extract_column = "Over_5_percent_incorrect"
+                                              )
+  promoters_mat <- promoters_categories_mat
+  are_correct_mat <- promoters_categories_mat == "Correct"
+  promoters_mat[are_correct_mat] <- "100% correct"
+  promoters_mat[(!(are_correct_mat)) & (!(promoters_5percent_mat))] <- ">= 95% correct"
+  colnames(promoters_mat) <- paste0("Promoter", 1:4, "_category")
 
   are_poor_quality_mat <- subqualities_mat < min_mean_quality
   are_poor_quality_mat[is.na(are_poor_quality_mat)] <- FALSE
@@ -1146,8 +1204,18 @@ AnalyzeWells <- function(ccs_df,
     individual_ZMWs_df,
     alterations_mat,
     subqualities_mat,
+    promoters_mat,
     stringsAsFactors = FALSE
   )
+
+  pr_sg_cr_mat <- TakePromotersIntoAccount(individual_ZMWs_df)
+  individual_ZMWs_df <- data.frame(individual_ZMWs_df,
+                                   pr_sg_cr_mat,
+                                   stringsAsFactors = FALSE
+                                   )
+
+  assign("delete_all_columns", all_columns, envir = globalenv())
+  assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
 
   individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
 
@@ -1157,6 +1225,7 @@ AnalyzeWells <- function(ccs_df,
   )
   return(results_list)
 }
+
 
 
 

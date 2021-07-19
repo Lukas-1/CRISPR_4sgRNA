@@ -52,6 +52,9 @@ ComparePlates <- function(summary_df, show_column) {
   if (show_column == "Count_mean_sg1to4") {
     count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
     numeric_vec <- rowMeans(as.matrix(summary_df[, count_columns]))
+  } else if (show_column == "Count_mean_pr_sg1to4") {
+    count_columns <- paste0("Count_pr", 1:4, "_sg", 1:4, "_cr", 1:4)
+    numeric_vec <- rowMeans(as.matrix(summary_df[, count_columns]))
   } else {
     numeric_vec <- summary_df[[show_column]]
   }
@@ -210,7 +213,6 @@ for (file_format in c("png", "pdf")) {
           ComparePlates(use_summary_df, use_metrics[[j]])
           dev.off()
         }
-
       }
     }
   }
