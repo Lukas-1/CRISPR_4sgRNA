@@ -148,8 +148,6 @@ FormatForExcel <- function(my_df,
 
   ones_and_zeros_vec <- OnesAndZeros(my_df[["Combined_ID"]])
 
-  assign("delete_my_df", my_df, envir = globalenv())
-  assign("delete_first_ones_and_zeros_vec", ones_and_zeros_vec, envir = globalenv())
   if (convert_excluded_to_3) {
     are_to_be_excluded <- !(MeetCriteria(my_df, allow_curated = allow_curated))
     ones_and_zeros_vec[are_to_be_excluded] <- 2L
@@ -274,9 +272,6 @@ FormatForExcel <- function(my_df,
                          as.character(my_df[[i]])
                          )
   }
-
-  assign("delete_my_df", my_df, envir = globalenv())
-  assign("delete_ones_and_zeros_vec_99", ones_and_zeros_vec, envir = globalenv())
 
   return(my_df)
 }
