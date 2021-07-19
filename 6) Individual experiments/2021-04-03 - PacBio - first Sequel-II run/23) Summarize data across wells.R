@@ -74,10 +74,10 @@ column_labels_list <- list(
   "Count_sg3_cr3"                               = expression("sg3 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
   "Count_sg4_cr4"                               = expression("sg4 (+" * scriptscriptstyle(" ") * "cr)", "is correct"),
 
-  "Count_pr1_sg1_cr1"                           = expression("sg1 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
-  "Count_pr2_sg2_cr2"                           = expression("sg2 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
-  "Count_pr3_sg3_cr3"                           = expression("sg3 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
-  "Count_pr4_sg4_cr4"                           = expression("sg4 (+" * scriptscriptstyle(" ") * "pr" * scriptscriptstyle(" ") * "+" * scriptscriptstyle(" ") * "cr)", "is correct"),
+  "Count_pr1_sg1_cr1"                           = expression("sg1 (+" * scriptscriptstyle(" ") * "pr/cr)", "is correct"),
+  "Count_pr2_sg2_cr2"                           = expression("sg2 (+" * scriptscriptstyle(" ") * "pr/cr)", "is correct"),
+  "Count_pr3_sg3_cr3"                           = expression("sg3 (+" * scriptscriptstyle(" ") * "pr/cr)", "is correct"),
+  "Count_pr4_sg4_cr4"                           = expression("sg4 (+" * scriptscriptstyle(" ") * "pr/cr)", "is correct"),
 
   "Num_contaminated_reads"                      = expression("Contamination", "(full read)"),
   "Num_contaminated_reads_aligned"              = expression("Contamination", "(aligned read)"),
@@ -304,12 +304,24 @@ SetUpPercentagePlot <- function(use_columns,
 
 
   ## Draw the title
-  title(main_title, cex.main = 1.1, font.main = 1, line = 1.9)
+  title(main_title, cex.main = 1.1, font.main = 1, line = 1.8)
 
 
   ## Draw the x axis labels
   large_gap_lines <- 2.5
   start_line <- 0.65
+
+  if (!(is.null(sub_title))) {
+    mtext(text = VerticalAdjust(sub_title),
+          at   = mean(group_positions),
+          line = start_line + large_gap_lines * 1.3,
+          side = 1,
+          cex  = 0.9,
+          col  = "gray50"
+          )
+  } else {
+    start_line <- start_line + 0.3
+  }
 
   for (i in seq_along(group_positions)) {
     mtext(text = VerticalAdjust(column_labels_list[[use_columns[[i]]]][[1]]),
@@ -325,15 +337,7 @@ SetUpPercentagePlot <- function(use_columns,
           )
   }
 
-  if (!(is.null(sub_title))) {
-    mtext(text = VerticalAdjust(sub_title),
-          at   = mean(group_positions),
-          line = start_line + large_gap_lines * 1.3,
-          side = 1,
-          cex  = 0.9,
-          col  = "gray50"
-          )
-  }
+
 
   ## Prepare for drawing the legend
   y_mid <- 0.5
@@ -885,14 +889,9 @@ ccs_numbers <- c(3, 5, 7)
 accuracy_percentages <- c(99, 99.9, 99.99)
 
 
-for (file_format in c("pdf")) {
+for (file_format in c("png", "pdf")) {
 
-  for (plot_type in c("Lollipop")) {
-
-
-# for (file_format in c("png", "pdf")) {
-#
-#   for (plot_type in c("Lollipop", "Box")) {
+  for (plot_type in c("Lollipop", "Box")) {
 
     if (plot_type == "Box") {
       UseFunction <- function(...) SummaryBoxPlot(..., embed_PNG = TRUE)
