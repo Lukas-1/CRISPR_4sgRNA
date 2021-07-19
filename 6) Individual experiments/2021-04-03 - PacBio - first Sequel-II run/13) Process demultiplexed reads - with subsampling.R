@@ -59,7 +59,7 @@ subsampled_list <- ProcessWithSubsampling(ccs_df,
 # Save data ---------------------------------------------------------------
 
 save(list = "subsampled_list",
-     file = file.path(sql2_R_objects_directory, "11) Process demultiplexed reads - with subsampling.RData")
+     file = file.path(sql2_R_objects_directory, "13) Process demultiplexed reads - with subsampling.RData")
      )
 
 
