@@ -43,7 +43,8 @@ merged_replaced_CRISPRa_df <- RankCRISPRDfByTSS(merged_replaced_CRISPRa_df)
 merged_replaced_CRISPRa_df <- PrioritizeNonOverlapping(merged_replaced_CRISPRa_df,
                                                        ID_column = "AltTSS_ID",
                                                        parallel_mode = TRUE,
-                                                       tolerate_divergent_chromosomes = TRUE
+                                                       tolerate_divergent_chromosomes = TRUE,
+                                                       legacy_mode = TRUE
                                                        )
 
 
