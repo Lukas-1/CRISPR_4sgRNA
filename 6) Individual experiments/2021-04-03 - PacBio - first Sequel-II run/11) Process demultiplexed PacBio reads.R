@@ -35,7 +35,6 @@ load(file.path(sql2_R_objects_directory, "10) Identify and characterize deletion
 
 
 
-
 # Create the 384-well-plate "distance list" -------------------------------
 
 manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
@@ -53,7 +52,6 @@ plates_analysis_list <- AnalyzePlates(ccs_df,
                                       barcodes_df,
                                       extracted_df
                                       )
-
 
 
 
