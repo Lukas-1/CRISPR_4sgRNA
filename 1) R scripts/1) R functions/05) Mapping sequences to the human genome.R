@@ -80,8 +80,10 @@ HarmonizeSequenceLengths <- function(sequences_vec, verbose = TRUE) {
   use_length <- min(string_lengths)
   are_longer <- string_lengths > use_length
   if (any(are_longer)) {
-    truncation_string <- paste0(" ", sum(are_longer), " sequence", if (sum(are_longer) > 1) "s" else "",
-                                " were longer than ", use_length, " bp and were truncated."
+    truncation_string <- paste0(" ", sum(are_longer), " sequence",
+                                if (sum(are_longer) > 1) "s" else "",
+                                " were longer than ", use_length,
+                                " bp and were truncated."
                                 )
     sequences_vec <- substr(sequences_vec, 1, use_length)
   } else {
@@ -116,7 +118,7 @@ FindVariableLengthSequences <- function(sequences_vec) {
 
 
 
-FindSequences <- function(sequences_vec) {
+FindSequences <- function(sequences_vec, max.mismatch = 1) {
 
   num_sequences <- length(sequences_vec)
   message(paste0("Looking for matches for ", num_sequences, " sequence",
@@ -128,8 +130,8 @@ FindSequences <- function(sequences_vec) {
   harmonized_sequences <- HarmonizeSequenceLengths(sequences_vec)
   sequences_vec <- toupper(harmonized_sequences[["Truncated_sequences"]])
 
-  my_PDict          <- PDict(sequences_vec, max.mismatch = 1)
-  my_PDict_reversed <- PDict(reverseComplement(DNAStringSet(sequences_vec)), max.mismatch = 1)
+  my_PDict          <- PDict(sequences_vec, max.mismatch = max.mismatch)
+  my_PDict_reversed <- PDict(reverseComplement(DNAStringSet(sequences_vec)), max.mismatch = max.mismatch)
 
   results_list <- vector("list", length(chromosome_names))
   names(results_list) <- chromosome_names
@@ -137,10 +139,10 @@ FindSequences <- function(sequences_vec) {
   for (i in seq_along(chromosome_names)) {
 
     message(paste0("Searching the + strand of chromosome ", substr(chromosome_names[[i]], 4, nchar(chromosome_names[[i]]))), "...")
-    plus_ranges_list <- matchPDict(my_PDict, chromosome_sequences_list[[i]], max.mismatch = 1)
+    plus_ranges_list <- matchPDict(my_PDict, chromosome_sequences_list[[i]], max.mismatch = max.mismatch)
 
     message(paste0("Searching the - strand of chromosome ", substr(chromosome_names[[i]], 4, nchar(chromosome_names[[i]]))), "...")
-    minus_ranges_list <- matchPDict(my_PDict_reversed, chromosome_sequences_list[[i]], max.mismatch = 1)
+    minus_ranges_list <- matchPDict(my_PDict_reversed, chromosome_sequences_list[[i]], max.mismatch = max.mismatch)
 
     plus_matches_df_list <- lapply(seq_along(sequences_vec), function(x) {
       if (length(plus_ranges_list[[x]]) == 0) {
@@ -163,7 +165,11 @@ FindSequences <- function(sequences_vec) {
       }
     })
 
-    results_df <- do.call(rbind.data.frame, c(plus_matches_df_list, minus_matches_df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
+    results_df <- do.call(rbind.data.frame,
+                          c(plus_matches_df_list, minus_matches_df_list,
+                            list(stringsAsFactors = FALSE, make.row.names = FALSE)
+                            )
+                          )
     if (nrow(results_df) > 0) {
       results_list[[i]] <- results_df
     } else {
@@ -173,17 +179,22 @@ FindSequences <- function(sequences_vec) {
 
   combined_results_df <- do.call(rbind.data.frame, c(results_list, list(stringsAsFactors = FALSE, make.row.names = FALSE)))
 
-  new_order <- order(match(combined_results_df[["Reference"]], sequences_vec),
-                     match(combined_results_df[["Chromosome"]], chromosome_names),
-                     combined_results_df[["Start"]],
-                     match(combined_results_df[["Strand"]], c("+", "-")),
-                     combined_results_df[["End"]]
-                     )
+  if (nrow(combined_results_df) == 0) {
+    message("No hits were found!")
+    return(NULL)
+  } else {
+    new_order <- order(match(combined_results_df[["Reference"]], sequences_vec),
+                       match(combined_results_df[["Chromosome"]], chromosome_names),
+                       combined_results_df[["Start"]],
+                       match(combined_results_df[["Strand"]], c("+", "-")),
+                       combined_results_df[["End"]]
+                       )
 
-  combined_results_df <- combined_results_df[new_order, ]
-  row.names(combined_results_df) <- NULL
+    combined_results_df <- combined_results_df[new_order, ]
+    row.names(combined_results_df) <- NULL
 
-  return(combined_results_df)
+    return(combined_results_df)
+  }
 }
 
 
