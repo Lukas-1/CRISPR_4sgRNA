@@ -89,7 +89,7 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 # Save data ---------------------------------------------------------------
 
 save("sgRNAs_overview_df",
-     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData")
+     file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the rat genome - sgRNAs_overview_df.RData")
      )
 
 
