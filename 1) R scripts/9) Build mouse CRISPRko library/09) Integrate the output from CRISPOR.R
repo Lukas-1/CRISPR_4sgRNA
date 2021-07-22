@@ -54,7 +54,7 @@ CRISPOR_offtargets_bed_df   <- ReadCRISPOROutputFiles(output_files_list[["bed_of
 
 # Add the output from CRISPOR to the data frame ---------------------------
 
-merged_CRISPRko_df <- AddCRISPORBedData(extended_CRISPRko_df, CRISPOR_bed_df,   CRISPOR_offtargets_bed_df)
+merged_CRISPRko_df <- AddCRISPORBedData(merged_CRISPRko_df, CRISPOR_bed_df, CRISPOR_offtargets_bed_df)
 # merged_CRISPRko_df <- AddCRISPORFASTAData(merged_CRISPRko_df, CRISPOR_FASTA_df, CRISPOR_offtargets_FASTA_df)
 
 
