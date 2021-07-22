@@ -26,7 +26,7 @@ CRISPOR_files_directory  <- file.path(CRISPR_root_directory, "4) Intermediate fi
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(CRISPRko_RData_directory, "05) Merge data from multiple sources to annotate CRISPRko libraries.RData"))
+load(file.path(CRISPRko_RData_directory, "07) Integrate the output from GuideScan.RData"))
 
 
 
@@ -78,7 +78,6 @@ both_are_available <- !(is.na(merged_CRISPRko_df[["CRISPOR_CFD_specificity"]])) 
 GetProportion(merged_CRISPRko_df[["CRISPOR_CFD_specificity"]][both_are_available] >= 80)
 GetProportion(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]][both_are_available] >= 0.2)
 GetProportion(merged_CRISPRko_df[["CRISPOR_3MM_specificity"]][both_are_available] >= 0.04)
-
 
 
 
