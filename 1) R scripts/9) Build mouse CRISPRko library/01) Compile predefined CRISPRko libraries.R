@@ -46,6 +46,8 @@ GPP_CRISPRko_path            <- file.path(CRISPR_root_directory, "4) Intermediat
 
 load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Mm.eg.db Bioconductor database.RData"))
 load(file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData"))
+load(file.path(CRISPRko_RData_directory, "18) Prepare input for the GPP sgRNA designer - problematic_entrezs.RData"))
+
 
 
 
@@ -71,7 +73,8 @@ GPP_CRISPRko_full_df <- ReadGPPOutputFiles(GPP_CRISPRko_path)
 # Process the data from the Broad Institute's GPP portal ------------------
 
 GPP_CRISPRko_df <- TidyGPPOutputDf(GPP_CRISPRko_full_df, CRISPRko_GPP_output_columns)
-GPP_CRISPRko_df <- FilterGPPOutputDf(GPP_CRISPRko_df, c(), n_unproblematic = 50, n_problematic = 50)
+GPP_CRISPRko_df <- FilterGPPOutputDf(GPP_CRISPRko_df, problematic_entrezs, n_unproblematic = 10, n_problematic = 50)
+# GPP_CRISPRko_df <- FilterGPPOutputDf(GPP_CRISPRko_df, c(), n_unproblematic = 50, n_problematic = 50)
 
 
 
