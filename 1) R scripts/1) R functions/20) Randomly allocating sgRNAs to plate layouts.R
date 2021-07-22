@@ -178,7 +178,7 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat, show_messages =
                      "part of valid 4sg combinations and should be excluded!"
                      )
               )
-      print(problematic_df[, intersect(show_columns, colnames(problematic_df))])
+      print(problematic_df[, intersect(show_columns, names(problematic_df))])
     }
   } else {
     if (show_messages) {
@@ -295,7 +295,7 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL, previo
                    )
             )
   }
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  is_CRISPRko <- "Exon_number_GPP" %in% names(CRISPR_df)
   are_good_controls <- AreGoodControls(CRISPR_df)
   are_duplicated <- duplicated(toupper(CRISPR_df[["sgRNA_sequence"]][are_good_controls]))
   if (any(are_duplicated)) {
@@ -312,8 +312,8 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL, previo
     are_good_controls[are_previously_used] <- FALSE
   }
   if (is_CRISPRko) {
-    are_Brunello <- grepl("Brunello", CRISPR_df[["Source"]], fixed = TRUE)
-    are_selected <- are_good_controls & are_Brunello
+    are_Doench <- grepl("Brunello|Brie", CRISPR_df[["Source"]])
+    are_selected <- are_good_controls & are_Doench
     CheckControlsNumber(are_selected, num_control_wells * 4)
     chosen_sequences <- sample(CRISPR_df[["sgRNA_sequence"]][are_selected], num_control_wells * 4)
   } else {
@@ -368,14 +368,14 @@ AddRandomized4sgControls <- function(CRISPR_df, num_control_wells = NULL, previo
 
 
 RenameControls <- function(CRISPR_df) {
-  stopifnot("Control_group_4sg" %in% colnames(CRISPR_df))
+  stopifnot("Control_group_4sg" %in% names(CRISPR_df))
   are_controls <- CRISPR_df[["Is_control"]] == "Yes"
   are_chosen <- !(is.na(CRISPR_df[["Control_group_4sg"]]))
   CRISPR_df[["Combined_ID"]] <- ifelse(are_controls,
                                        ifelse(are_chosen, paste0("Control_", CRISPR_df[["Control_group_4sg"]]), "Control"),
                                        CRISPR_df[["Combined_ID"]]
                                        )
-  if ("AltTSS_ID" %in% colnames(CRISPR_df)) {
+  if ("AltTSS_ID" %in% names(CRISPR_df)) {
     CRISPR_df[["AltTSS_ID"]] <- ifelse(are_controls,
                                        CRISPR_df[["Combined_ID"]],
                                        CRISPR_df[["AltTSS_ID"]]
@@ -387,7 +387,7 @@ RenameControls <- function(CRISPR_df) {
 
 
 AssignControlsToPlates <- function(CRISPR_df, num_wells_per_plate = 384L) {
-  stopifnot("Control_group_4sg" %in% colnames(CRISPR_df))
+  stopifnot("Control_group_4sg" %in% names(CRISPR_df))
 
   control_IDs_seq <- CRISPR_df[["Control_group_4sg"]]
 
@@ -443,14 +443,14 @@ AssignToPlates <- function(CRISPR_df, randomize_order = TRUE, num_wells_per_plat
   if (randomize_order) {
     set.seed(1)
   }
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  is_CRISPRko <- "Exon_number_GPP" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     ID_column <- "Combined_ID"
   } else {
     ID_column <- "AltTSS_ID"
   }
   stopifnot(all(table(CRISPR_df[[ID_column]]) == 4))
-  use_sublibraries <- "Sublibrary_4sg" %in% colnames(CRISPR_df)
+  use_sublibraries <- "Sublibrary_4sg" %in% names(CRISPR_df)
   if (use_sublibraries) {
     sublibraries <- levels(CRISPR_df[["Sublibrary_4sg"]])
     have_no_sublibrary <- is.na(CRISPR_df[["Sublibrary_4sg"]])
@@ -542,7 +542,7 @@ PlaceCandidateGenesTogether <- function(CRISPR_df, candidate_entrezs) {
       first_well_index <- which(are_well_1)[[1]]
 
       plate_layout_columns <- c("Plate_ID", "Plate_number", "Well_number")
-      other_columns <- setdiff(colnames(CRISPR_df), plate_layout_columns)
+      other_columns <- setdiff(names(CRISPR_df), plate_layout_columns)
       plate_layout_df <- sub_df[, plate_layout_columns]
       data_df <- sub_df[, other_columns]
 
@@ -568,7 +568,7 @@ PlaceCandidateGenesTogether <- function(CRISPR_df, candidate_entrezs) {
                                              make.row.names = FALSE
                                              )
       recombined_df <- data.frame(recombined_data_df, plate_layout_df)
-      recombined_df <- recombined_df[, colnames(sub_df)]
+      recombined_df <- recombined_df[, names(sub_df)]
       return(recombined_df)
     } else {
       return(sub_df)
@@ -697,7 +697,7 @@ AllocateAllGuides_v2 <- function(CRISPR_df,
 
   targeting_df <- CRISPR_df[CRISPR_df[["Entrez_ID"]] %in% unlist(sublibraries_entrezs_list, use.names = FALSE), ]
   message("")
-  is_CRISPRko <- "Entrez_source_Brunello" %in% colnames(CRISPR_df)
+  is_CRISPRko <- "Exon_number_GPP" %in% names(CRISPR_df)
   if (is_CRISPRko) {
     are_top4_mat <- CRISPRkoAreTop4Mat(targeting_df)
   } else {
@@ -1019,7 +1019,7 @@ MergeTFWithRest <- function(sg4_by_well_df, TF_by_well_df) {
 
 GetGeneOrTSSIDs <- function(CRISPR_df) {
   stopifnot(length(unique(table(CRISPR_df[["Rank"]]))) == 1)
-  if ("AltTSS_ID" %in% colnames(CRISPR_df)) {
+  if ("AltTSS_ID" %in% names(CRISPR_df)) {
     gene_or_TSS_IDs <- CRISPR_df[["AltTSS_ID"]]
   } else {
     gene_or_TSS_IDs <- CRISPR_df[["Combined_ID"]]
