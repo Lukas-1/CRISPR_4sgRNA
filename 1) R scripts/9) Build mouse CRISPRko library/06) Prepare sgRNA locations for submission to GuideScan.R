@@ -62,14 +62,6 @@ submit_df <- submit_df[!(duplicated(submit_df[["GuideScan_input_sgRNA"]])), ]
 
 
 
-# Filter for already present data -----------------------------------------
-#
-# previous_guidescan_sgRNAs_df <- GetCRISPRkoGuideScanOutput()
-#
-# are_already_present <- submit_df[["GuideScan_input_sgRNA"]] %in% previous_guidescan_sgRNAs_df[["Region"]]
-
-
-
 
 # Split the input into chunks ---------------------------------------------
 
@@ -107,11 +99,6 @@ write.table(submit_df[["GuideScan_input_sgRNA"]],
             quote = FALSE, row.names = FALSE, col.names = FALSE
             )
 
-# file_name <- "Input_for_GuideScan_CRISPRko_all_guides_filtered.txt"
-# write.table(submit_df[["GuideScan_input_sgRNA"]][!(are_already_present)],
-#             file = file.path(GuideScan_files_directory, file_name),
-#             quote = FALSE, row.names = FALSE, col.names = FALSE
-#             )
 
 
 
