@@ -1002,8 +1002,6 @@ save(list = c("plate_selection_list",
 
 # # Try stuff ---------------------------------------------------------------
 #
-#
-#
 # ExpectedCorrect <- function(p_mutant, at_least_num_correct = 1) {
 #   exactly_0_mutations <- (1 - p_mutant)^4
 #   exactly_1_mutations <- p_mutant * ((1 - p_mutant)^3) * choose(4, 1)
