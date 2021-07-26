@@ -12,9 +12,15 @@ source(file.path(general_functions_directory, "16) Producing per-gene summaries 
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))         # For exporting the library as a reference
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R"))      # For ExportPlates
 
-plate1_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
-p1_R_functions_directory <- file.path(plate1_directory, "1) R functions")
+experiments_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments")
+plate1_directory           <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate")
+s2r1_directory             <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
+p1_R_functions_directory   <- file.path(plate1_directory, "1) R functions")
+s2r1_R_functions_directory <- file.path(s2r1_directory, "1) R functions")
+
 source(file.path(p1_R_functions_directory, "19) Annotating duplicated gRNAs.R"))
+source(file.path(s2r1_R_functions_directory, "04) Tidying CRISPR gRNA data frames.R"))
+
 
 
 
@@ -32,6 +38,7 @@ CRISPRko_RData_directory <- file.path(library_RData_directory, "3) CRISPRko")
 CRISPRi_RData_directory  <- file.path(library_RData_directory, "4) CRISPRi")
 
 controls_file <- file.path(file_input_directory, "Metadata", "Internal Control NGS plate.xlsx")
+
 
 
 
@@ -71,51 +78,41 @@ controls_df <- as.data.frame(read_excel(controls_file, col_names = FALSE),
 
 # Assemble a data frame of sgRNA sequences --------------------------------
 
-TidySequencesDf <- function(CRISPR_df) {
-  results_df <- CRISPR_df[, c("Plate_string", "Well_number", "Rank", "sgRNA_sequence")]
-  results_df[["Plate_string"]] <- sub("_tf", "_", results_df[["Plate_string"]], fixed = TRUE)
-  results_df[["Plate_string"]] <- sub("_sg[1-4]$", "", results_df[["Plate_string"]])
-  results_df[["Plate_string"]] <- toupper(results_df[["Plate_string"]])
-  results_df[["Plate_string"]] <- sub("+", "plus", results_df[["Plate_string"]], fixed = TRUE)
-  names(results_df) <- c("Plate_name", "Well_number", "Sg_number", "Sequence")
-  return(results_df)
+CRISPRa_df[["Modality"]]     <- "CRISPRa"
+CRISPRko_df[["Modality"]]    <- "CRISPRko"
+PD_CRISPRa_df[["Modality"]]  <- "CRISPRa"
+PD_CRISPRko_df[["Modality"]] <- "CRISPRko"
+vac_by_well_df[["Modality"]] <- "CRISPRi"
+
+
+df_names <- c(
+  "vac_by_well_df" = "CRISPRi_seq_df",
+  "PD_CRISPRa_df"  = "PD_CRISPRa_seq_df",
+  "PD_CRISPRko_df" = "PD_CRISPRko_seq_df",
+  "CRISPRa_df"     = "CRISPRa_seq_df",
+  "CRISPRko_df"    = "CRISPRko_seq_df"
+)
+
+for (df_name in names(df_names)) {
+  assign(df_names[[df_name]], TidySequencesDf(get(df_name)))
 }
 
-CRISPRa_seq_df     <- TidySequencesDf(CRISPRa_df)
-CRISPRko_seq_df    <- TidySequencesDf(CRISPRko_df)
-PD_CRISPRa_seq_df  <- TidySequencesDf(PD_CRISPRa_df)
-PD_CRISPRko_seq_df <- TidySequencesDf(PD_CRISPRko_df)
-CRISPRi_seq_df     <- TidySequencesDf(vac_by_well_df)
 CRISPRi_seq_df[["Plate_name"]] <- sub("VACI_", "Vac-", CRISPRi_seq_df[["Plate_name"]], fixed = TRUE)
 
-combined_df <- rbind.data.frame(CRISPRi_seq_df,
-                                PD_CRISPRa_seq_df,
-                                PD_CRISPRko_seq_df,
-                                CRISPRa_seq_df,
-                                CRISPRko_seq_df,
-                                stringsAsFactors = FALSE,
-                                make.row.names = FALSE
-                                )
+combined_df <- do.call(rbind.data.frame,
+                       c(lapply(df_names, get),
+                         list(stringsAsFactors = FALSE, make.row.names = FALSE)
+                         )
+                       )
 
 combined_df <- combined_df[combined_df[["Plate_name"]] %in% plates_df[["Plate_name"]], ]
-combined_df[["Sequence"]] <- toupper(combined_df[["Sequence"]])
 
 
 
 
 # Process colony-picked controls ------------------------------------------
 
-controls_mat <- as.matrix(controls_df[15:(15 + 16 - 1), 3:25])
-controls_mat <- cbind(controls_mat, rep(NA, 16))
-colnames(controls_mat) <- NULL
-wells_mat <- matrix(seq_len(384), nrow = 16, ncol = 24, byrow = TRUE)
-are_present <- !(is.na(controls_mat))
-control_wells <- wells_mat[are_present]
-
-are_controls <- (CRISPRko_seq_df[["Plate_name"]] %in% "HO_38") &
-                (CRISPRko_seq_df[["Well_number"]] %in% control_wells)
-control_plate_df <- CRISPRko_seq_df[are_controls, ]
-control_plate_df[["Plate_name"]] <- "Intctrl"
+control_plate_df <- CreateControlsDf(controls_df, CRISPRko_seq_df)
 
 
 
@@ -135,27 +132,7 @@ combined_df <- rbind.data.frame(combined_df,
 
 # Re-format the data frame ------------------------------------------------
 
-sequences_list <- lapply(1:4, function(x) combined_df[["Sequence"]][combined_df[["Sg_number"]] %in% x])
-sequences_mat <- do.call(cbind, sequences_list)
-colnames(sequences_mat) <- paste0("Sequence_sg", 1:4)
-
-use_columns <- setdiff(names(combined_df), c("Sequence", "Sg_number"))
-
-library_df <- data.frame("Combined_ID" = NA,
-                         "Plate_number" = NA,
-                         combined_df[combined_df[["Sg_number"]] %in% 1, use_columns],
-                         sequences_mat,
-                         stringsAsFactors = FALSE,
-                         row.names = NULL
-                         )
-
-plate_matches <- match(library_df[["Plate_name"]], plates_df[["Plate_name"]])
-plate_numbers <- plates_df[["Plate_number"]][plate_matches]
-well_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"), "_",
-                     "Well", formatC(library_df[["Well_number"]], width = 3, flag = "0")
-                     )
-library_df[["Combined_ID"]] <- well_names
-library_df[["Plate_number"]] <- plate_numbers
+library_df <- MakeLibraryDf(plates_df, combined_df)
 
 
 
@@ -210,25 +187,20 @@ library_df[["Empty_well"]] <- library_df[["Combined_ID"]] %in% empty_wells
 
 # Create a large combined data frame, for reference purposes --------------
 
-df_names <- c("vac_by_well_df", "PD_CRISPRa_df", "PD_CRISPRko_df",
-              "CRISPRa_df", "CRISPRko_df"
-              )
-
-CRISPRa_df[["Modality"]]     <- "CRISPRa"
-CRISPRko_df[["Modality"]]    <- "CRISPRko"
-PD_CRISPRa_df[["Modality"]]  <- "CRISPRa"
-PD_CRISPRko_df[["Modality"]] <- "CRISPRko"
-vac_by_well_df[["Modality"]] <- "CRISPRi"
-
 PD_CRISPRa_df[["Sublibrary_4sg"]]  <- "PD-a"
 PD_CRISPRko_df[["Sublibrary_4sg"]] <- "PD-o"
 vac_by_well_df[["Sublibrary_4sg"]] <- "Vacuolation"
 
-common_columns <- Reduce(intersect, lapply(df_names, function(x) names(get(x))))
+common_columns <- Reduce(intersect, lapply(names(df_names), function(x) names(get(x))))
 
-df_list <- lapply(df_names, function(x) get(x)[, common_columns])
+df_list <- lapply(names(df_names), function(x) get(x)[, common_columns])
 
 all_guides_df <- do.call(rbind.data.frame, c(df_list, stringsAsFactors = FALSE, make.row.names = FALSE))
+
+
+
+
+# Export the combined data frame ------------------------------------------
 
 export_columns <- c("Modality", export_columns)
 
