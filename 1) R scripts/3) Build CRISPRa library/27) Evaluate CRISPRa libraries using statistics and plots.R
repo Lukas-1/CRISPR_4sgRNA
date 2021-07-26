@@ -198,25 +198,6 @@ SourcesBoxPlots(merged_replaced_CRISPRa_df)
 
 
 
-a <- read.table("Exported Enzyme Set2.txt", fill = TRUE, sep = "\t", header = TRUE, check.names = FALSE,
-                stringsAsFactors = FALSE
-                )
-
-unique_cutters <- unlist(strsplit(a[, 1], ", ?"))
-
-
-enzyme_df <- enzyme.db
-
-
-table(unique_cutters %in% enzyme.db[, 1])
-
-
-setdiff(unique_cutters, enzyme.db[, 1])
-
-
-
-
-
 
 
 
