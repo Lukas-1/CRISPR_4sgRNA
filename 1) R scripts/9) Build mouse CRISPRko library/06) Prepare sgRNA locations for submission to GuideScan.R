@@ -40,7 +40,8 @@ submit_df <- extended_CRISPRko_df[!(is.na(extended_CRISPRko_df[["Start"]])), ]
 
 
 # Check for duplicated chromosomal positions ------------------------------
-# (Some of these duplications are not actually duplications, instead, one sgRNA is on the + strand, and the other is on the - strand.)
+# (Some of these duplications are not actually duplications, instead, one sgRNA
+# is on the + strand, and the other is on the - strand.)
 
 submit_df[["GuideScan_input_sgRNA"]] <- sgRNAStringForGuideScan(submit_df)
 
