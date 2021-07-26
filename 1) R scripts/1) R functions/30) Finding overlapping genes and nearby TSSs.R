@@ -1156,7 +1156,7 @@ SummarizeSummaryDf <- function(summary_df) {
   assign("delete_category_mat", category_mat, envir = globalenv())
   assign("delete_summary_df", summary_df, envir = globalenv())
 
-  stopifnot(rowSums(category_mat) == 1)
+  stopifnot(all(rowSums(category_mat) == 1))
 
   index_vec <- rep(0L, nrow(summary_df))
   for (i in seq_len(ncol(category_mat))) {
