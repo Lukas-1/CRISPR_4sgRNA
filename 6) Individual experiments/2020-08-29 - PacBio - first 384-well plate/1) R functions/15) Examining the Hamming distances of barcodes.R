@@ -38,17 +38,22 @@ GetDistances <- function(sequence_vec) {
 
 
 
-PlotDistances <- function(distances_df, title_unit = "") {
-  beeswarm(split(distances_df[["Physical_distance"]],
-                 distances_df[["Sequence_distance"]]
+PlotDistances <- function(distances_df, title_unit = "", point_cex = 0.45, use_spacing = 1) {
+  beeswarm(split(distances_df[, "Physical_distance"],
+                 distances_df[, "Sequence_distance"]
                  ),
-           las    = 1, cex = 0.45, pch = 16, mgp = c(2.4, 0.6, 0), tcl = -0.4,
-           ylab   = "Physical distance",
-           xlab   = "Hamming distance of the sequences (number of differing bases)",
-           ylim   = c(0, max(distances_df[["Physical_distance"]]) + 1),
-           yaxs   = "i",
-           method = "center",
-           col    = toupper("#3056db")
+           las     = 1,
+           cex     = point_cex,
+           spacing = use_spacing,
+           pch     = 16,
+           mgp     = c(2.4, 0.6, 0),
+           tcl     = -0.4,
+           ylab    = "Physical distance",
+           xlab    = "Hamming distance of the sequences (number of differing bases)",
+           ylim    = c(0, max(distances_df[["Physical_distance"]]) + 1),
+           yaxs    = "i",
+           method  = "center",
+           col     = toupper("#3056db")
            )
   cor_results <- suppressWarnings(cor.test(distances_df[["Physical_distance"]],
                                            distances_df[["Sequence_distance"]],
