@@ -16,17 +16,17 @@ source(file.path(R_functions_directory, "15) Examining the Hamming distances of 
 
 # Define folder paths -----------------------------------------------------
 
-sql2_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
-p2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
-file_output_directory  <- file.path(sql2_directory, "5) Output")
-plots_output_directory <- file.path(file_output_directory, "Figures")
+sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
+sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
+file_output_directory    <- file.path(sql2_directory, "5) Output")
+plots_output_directory   <- file.path(file_output_directory, "Figures")
 
 
 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(p2_R_objects_directory, "01) Process and export plate barcodes.RData"))
+load(file.path(sql2_R_objects_directory, "01) Process and export plate barcodes.RData"))
 
 
 
