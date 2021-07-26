@@ -342,13 +342,13 @@ PrioritizeNonOverlapping <- function(CRISPR_df,
                           )
                         )
 
-  if ("AltTSS_ID" %in% colnames(results_df)) {
+  if ("AltTSS_ID" %in% names(results_df)) {
     if (legacy_mode) {
       are_superfluous_TSS <- (CRISPR_df[["Num_TSSs"]] > 1) & is.na(CRISPR_df[["TSS_ID"]])
     } else {
       are_superfluous_TSS <- results_df[, "Is_superfluous_TSS"]
     }
-    for (column_name in c("Rank", names(colnames(results_df), names(CRISPR_df)))) {
+    for (column_name in c("Rank", setdiff(names(results_df), names(CRISPR_df)))) {
       results_df[[column_name]][are_superfluous_TSS] <- NA
     }
   }
