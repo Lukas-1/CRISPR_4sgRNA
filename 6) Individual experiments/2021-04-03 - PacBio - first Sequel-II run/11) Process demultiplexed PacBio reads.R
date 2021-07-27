@@ -17,7 +17,6 @@ source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio rea
 # Define folder paths -----------------------------------------------------
 
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
-p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 
 
