@@ -51,12 +51,10 @@ IntegrateSingleReportDf <- function(sam_df, tidied_report_df, check_zmws = TRUE)
 
 
 
-IntegrateReportDfs <- function(sam_df, plates_report_df, wells_report_df) {
+IntegrateReportDfs <- function(sam_df, plates_report_df, wells_report_df, use_plates_df) {
 
-  stopifnot("plates_df" %in% ls(envir = globalenv()))
-
-  plate_combos <- paste0(plates_df[["Barcode_ID"]], "--", plates_df[["Barcode_ID"]])
-  barcodes_to_plates_map <- plates_df[["Plate_number"]]
+  plate_combos <- paste0(use_plates_df[["Barcode_ID"]], "--", use_plates_df[["Barcode_ID"]])
+  barcodes_to_plates_map <- use_plates_df[["Plate_number"]]
   names(barcodes_to_plates_map) <- plate_combos
   tidied_plates_df <- TidyReportDf(plates_report_df, barcodes_to_plates_map)
   tidied_wells_df <- TidyReportDf(wells_report_df, barcodes_to_wells_map)
@@ -92,8 +90,9 @@ IntegrateReportDfs <- function(sam_df, plates_report_df, wells_report_df) {
     stringsAsFactors = FALSE
   )
 
-  combined_IDs <- paste0("Plate", formatC(results_df[["Plate_number"]], width = 2, flag = "0"), "_",
-                         "Well",  formatC(results_df[["Well_number"]],  width = 3, flag = "0")
+  plate_number_width <- max(nchar(as.character(use_plates_df[["Plate_number"]])))
+  combined_IDs <- paste0("Plate", formatC(results_df[["Plate_number"]], width = plate_number_width, flag = "0"),
+                         "_Well",  formatC(results_df[["Well_number"]],  width = 3, flag = "0")
                          )
   combined_IDs <- ifelse(is.na(results_df[["Plate_number"]]) |
                          is.na(results_df[["Well_number"]]),
@@ -135,6 +134,23 @@ IntegrateReportDfs <- function(sam_df, plates_report_df, wells_report_df) {
   return(results_df)
 }
 
+
+
+
+AddWellExistsColumn <- function(use_ccs_df, use_library_df) {
+  use_ccs_df[["Well_exists"]] <- ifelse(is.na(use_ccs_df[["Combined_ID"]]),
+                                        NA,
+                                        use_ccs_df[["Combined_ID"]] %in% use_library_df[["Combined_ID"]]
+                                        )
+
+  are_preceding <- seq_len(ncol(use_ccs_df)) < which(names(use_ccs_df) == "Well_number")
+  new_columns <- c(names(ccs_df)[are_preceding],
+                   "Well_exists",
+                   setdiff(names(use_ccs_df)[!(are_preceding)], "Well_exists")
+                   )
+  use_ccs_df <- use_ccs_df[, new_columns]
+  return(use_ccs_df)
+}
 
 
 

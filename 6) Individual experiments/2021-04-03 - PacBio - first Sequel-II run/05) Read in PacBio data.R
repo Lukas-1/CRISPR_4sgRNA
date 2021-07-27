@@ -26,8 +26,6 @@ raw_data_directory       <- file.path(file_input_directory, "Raw data")
 
 sam_directory    <- file.path(raw_data_directory, "lima", "SAM")
 ccs_sam_file     <- file.path(sam_directory, "m64141e_210227_112845.sam")
-plates_lima_file <- file.path(sam_directory, "FirstSQ2_plates_demuxed.sam")
-wells_lima_file  <- file.path(sam_directory, "FirstSQ2_wells_demuxed.sam")
 
 plates_lima_report_file <- file.path(raw_data_directory, "lima", "demuxed_plates",
                                      "FirstSQ2_plates_demuxed.lima.report"
@@ -60,24 +58,19 @@ wells_lima_report_df <- ReadLimaReport(wells_lima_report_file)
 
 # Process data ------------------------------------------------------------
 
-ccs_df <- IntegrateReportDfs(ccs_sam_df, plates_lima_report_df, wells_lima_report_df)
+ccs_df <- IntegrateReportDfs(ccs_sam_df,
+                             plates_lima_report_df,
+                             wells_lima_report_df,
+                             plates_df
+                             )
+
 
 
 
 
 # Add a 'Well_exists' column ----------------------------------------------
 
-ccs_df[["Well_exists"]] <- ifelse(is.na(ccs_df[["Combined_ID"]]),
-                                  NA,
-                                  ccs_df[["Combined_ID"]] %in% library_df[["Combined_ID"]]
-                                  )
-
-are_preceding <- seq_len(ncol(ccs_df)) < which(names(ccs_df) == "Well_number")
-new_columns <- c(names(ccs_df)[are_preceding],
-                 "Well_exists",
-                 setdiff(names(ccs_df)[!(are_preceding)], "Well_exists")
-                 )
-ccs_df <- ccs_df[, new_columns]
+ccs_df <- AddWellExistsColumn(ccs_df, library_df)
 
 
 
