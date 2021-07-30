@@ -90,14 +90,16 @@ df_are_HO_53 <- combined_df[["Plate_name"]] %in% "HO_53"
 HO_53_wells <- combined_df[["Well_number"]][df_are_HO_53]
 
 are_HO_53_mat <- apply(plate384_rot180_mat, 2, function(x) x %in% HO_53_wells)
+
 HO_53_map_mat <- cbind("old" = seq_len(sum(are_HO_53_mat)),
-                       "new" = t(plate384_rot180_mat)[t(are_HO_53_mat)]
+                       "new" = rev(t(plate384_mat)[t(are_HO_53_mat)])
                        )
 HO_53_matches <- match(combined_df[["Well_number"]][df_are_HO_53],
                        HO_53_map_mat[, "old"]
                        )
 
 combined_df[["Well_number"]][df_are_HO_53] <- HO_53_map_mat[HO_53_matches, "new"]
+
 combined_df[["Plate_name"]][combined_df[["Plate_name"]] %in% c("HO_5", "HO_53")] <- "HO_5 and HO_53"
 
 plate_matches <- match(combined_df[["Plate_name"]], plates_df[["Plate_name"]])
@@ -131,11 +133,9 @@ combined_df <- rbind.data.frame(combined_df,
 
 
 
-
 # Re-format the data frame ------------------------------------------------
 
 library_df <- MakeLibraryDf(plates_df, combined_df)
-
 
 
 
