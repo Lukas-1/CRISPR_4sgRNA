@@ -1415,3 +1415,33 @@ ExportFiguresForManuscript <- function(summary_df, use_prefix) {
 
 
 
+
+PlateFileName <- function(plate_number) {
+  plate_number_width <- max(nchar(as.character(plates_df[["Plate_number"]])))
+  paste0(formatC(plate_number, width = plate_number_width, flag = "0"), ") - ",
+         plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number]
+         )
+}
+
+
+
+
+ModifiedAlterationBarplot <- function(summary_df, main_title = NULL, reorder_wells = FALSE) {
+  DrawAlterationBarplot(summary_df,
+                        main_title           = main_title,
+                        reorder_wells        = reorder_wells,
+                        show_color_legend    = TRUE,
+                        show_color_text      = FALSE,
+                        top_space            = 1.75,
+                        bottom_space         = 1.25,
+                        space_height         = 0.75,
+                        sg_label_cex         = 1.1,
+                        horizontal_y_lab_pos = -0.08,
+                        color_legend_x_pos   = 0.15,
+                        title_y_pos          = 0.47,
+                        color_box_y_pos      = 0.4
+                        )
+}
+
+
+
