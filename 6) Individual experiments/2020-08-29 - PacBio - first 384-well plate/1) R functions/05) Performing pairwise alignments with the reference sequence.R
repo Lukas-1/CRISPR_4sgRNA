@@ -22,6 +22,12 @@ ProcessWell <- function(ccs_df,
   message(paste0("Processing the well: ", current_ID, "..."))
 
   are_this_ID <- ccs_df[[ID_column]] %in% current_ID
+
+  if (!(any(are_this_ID))) {
+    message("No reads are available for this well ID! It was skipped.")
+    return(NULL)
+  }
+
   ccs_seq <- DNAStringSet(ccs_df[["Sequence"]][are_this_ID])
   plasmid <- DNAStringSet(sg_df[ID_index, "Barcoded_plasmid"])
 
