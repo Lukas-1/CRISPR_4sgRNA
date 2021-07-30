@@ -35,9 +35,6 @@ load(file.path(sql2_R_objects_directory, "06) Perform pairwise alignments with t
 
 # Extract barcodes --------------------------------------------------------
 
-are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
-                (ccs_df[["Read_quality"]] > 0)
-
 barcodes_df <- GetBarcodes(ccs_df, alignments_df)
 
 
