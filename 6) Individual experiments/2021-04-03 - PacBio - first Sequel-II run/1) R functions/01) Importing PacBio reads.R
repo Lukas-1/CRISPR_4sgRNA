@@ -131,6 +131,7 @@ IntegrateReportDfs <- function(sam_df, plates_report_df, wells_report_df, use_pl
   results_df <- results_df[new_order, ]
   row.names(results_df) <- NULL
 
+  stopifnot(!(any(duplicated(results_df[["ZMW"]]))))
   return(results_df)
 }
 
