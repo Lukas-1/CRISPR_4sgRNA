@@ -492,11 +492,12 @@ CreateSummaryDf <- function(reads_df,
 
   binary_columns <- c(paste0("sg", 1:4, "_cr", 1:4),
                       paste0("at_least_", 1:3),
-                      "all_4", "all_4_promoters", "whole_plasmid",
-                      paste0("pr", 1:4, "_sg", 1:4, "_cr", 1:4),
-                      paste0("pr_at_least_", 1:3), "pr_all_4"
+                      "all_4", "all_4_promoters", "whole_plasmid"
                       )
-
+  pr_binary_columns <- c(paste0("pr", 1:4, "_sg", 1:4, "_cr", 1:4),
+                         paste0("pr_at_least_", 1:3), "pr_all_4"
+                         )
+  binary_columns <- c(binary_columns, intersect(pr_binary_columns, names(reads_df))) # If extracted_df was NULL, the promoter-based columns won't exist
   well_stats_mat <- as.matrix(reads_df[, binary_columns])
 
   stats_vec_list <- tapply(seq_len(nrow(reads_df)),
@@ -546,7 +547,7 @@ CreateSummaryDf <- function(reads_df,
   ## Process contaminations / wrong barcodes
 
   if ("Plate_number" %in% names(reads_df)) {
-    all_plates <- setdiff(reads_df[, "Plate_number"], NA)
+    all_plates <- unique(sg_sequences_df[, "Plate_number"])
     contam_list <- lapply(all_plates, function(x) {
       wells_sub_vec <- sg_sequences_df[["Well_number"]][sg_sequences_df[["Plate_number"]] %in% x]
       sub_df <- reads_df[reads_df[, "Plate_number"] %in% x, ]
@@ -567,7 +568,6 @@ CreateSummaryDf <- function(reads_df,
                                          close_well_range = close_well_range
                                          )
   }
-
 
   num_under_2kb <- tapply(reads_df[, "Clipped_read_length"],
                           wells_fac,
@@ -603,8 +603,9 @@ CreateSummaryDf <- function(reads_df,
     results_df[["Well_number"]] <- results_df[["Combined_ID"]]
     results_df <- results_df[, !(names(results_df) %in% c("Combined_ID", "Plate_number"))]
   } else {
-    results_df[["Plate_number"]] <- as.integer(substr(results_df[["Combined_ID"]], 6, 7))
-    results_df[["Well_number"]]  <- as.integer(substr(results_df[["Combined_ID"]], 13, 15))
+    ID_splits <- strsplit(results_df[["Combined_ID"]], "_", fixed = TRUE)
+    results_df[["Plate_number"]] <- as.integer(sub("Plate", "", sapply(ID_splits, "[[", 1), fixed = TRUE))
+    results_df[["Well_number"]]  <- as.integer(sub("Well",  "", sapply(ID_splits, "[[", 2), fixed = TRUE))
   }
 
   if (has_alterations) {
@@ -979,7 +980,6 @@ AnalyzeWells <- function(ccs_df,
                ccs_df[["Passed_filters"]]
   have_valid_well <- have_well & ccs_df[["Well_number"]] %in% sg_df[, "Well_number"]
   well_numbers_vec <- ifelse(have_well, ccs_df[["Well_number"]], NA_integer_)
-  assign("delete_well_numbers_vec", well_numbers_vec, envir = globalenv())
   distance_mat <- DistanceForContam(contamin_mat,
                                     well_numbers_vec,
                                     wells_vec = sg_df[, "Well_number"]
@@ -1119,14 +1119,6 @@ AnalyzeWells <- function(ccs_df,
 
   contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
 
-  if (is.null(barcodes_df) && is.null(extracted_df)) {
-    results_list <- list(
-      "individual_reads_df" = individual_ZMWs_df[, intersect(all_columns, names(individual_ZMWs_df))],
-      "contamin_mat_list"   = contamin_mat_list
-    )
-    return(results_list)
-  }
-
   matches_vec <- match(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]])
   stopifnot(!(anyNA(matches_vec)))
   barcodes_df <- barcodes_df[matches_vec, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
@@ -1176,9 +1168,6 @@ AnalyzeWells <- function(ccs_df,
   subqualities_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]], extract_column = "Mean_quality")
   subqualities_mat <- subqualities_mat / 93 * 100
 
-  assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
-  assign("delete_extracted_df", extracted_df, envir = globalenv())
-
   all_promoters <- c("promoter1_hU6", "promoter2_mU6", "promoter3_hH1", "promoter4_h7SK")
   promoters_categories_mat <- GetFeaturesData(extracted_df,
                                               individual_ZMWs_df[["ZMW"]],
@@ -1213,9 +1202,6 @@ AnalyzeWells <- function(ccs_df,
                                    pr_sg_cr_mat,
                                    stringsAsFactors = FALSE
                                    )
-
-  assign("delete_all_columns", all_columns, envir = globalenv())
-  assign("delete_individual_ZMWs_df", individual_ZMWs_df, envir = globalenv())
 
   individual_ZMWs_df <- individual_ZMWs_df[, all_columns]
 
@@ -1363,17 +1349,23 @@ AnalyzePlates <- function(use_ccs_df,
     if (verbose) {
       message("")
     }
-    ccs_sub_df <- use_ccs_df[are_eligible & (use_ccs_df[["Plate_number"]] %in% x), ]
-    are_this_plate <- sg_sequences_df[["Plate_number"]] == x
-    sg_sub_df <- use_sg_df[are_this_plate, ]
-    row.names(sg_sub_df) <- NULL
-    sub_list <- AnalyzeWells(ccs_sub_df,
-                             sg_sub_df,
-                             use_barcodes_df,
-                             use_extracted_df,
-                             set_seed = set_seed,
-                             verbose = verbose
-                             )
+    are_selected <- are_eligible & (use_ccs_df[["Plate_number"]] %in% x)
+    if (!(any(are_selected))) {
+      message(paste0("No eligible reads were found for plate #", x, "! It was skipped!"))
+      sub_list <- NULL
+    } else {
+      ccs_sub_df <- use_ccs_df[are_selected, ]
+      are_this_plate <- sg_sequences_df[["Plate_number"]] == x
+      sg_sub_df <- use_sg_df[are_this_plate, ]
+      row.names(sg_sub_df) <- NULL
+      sub_list <- AnalyzeWells(ccs_sub_df,
+                               sg_sub_df,
+                               use_barcodes_df,
+                               use_extracted_df,
+                               set_seed = set_seed,
+                               verbose = verbose
+                               )
+    }
     if (verbose) {
       message("\n\n")
     }
