@@ -88,7 +88,7 @@ BeeBarSubPlot <- function(summary_df,
          )
   }
 
-  if (!(is_binary)) {
+  if (!(is_binary) && (!(all(is.na(numeric_vec))))) {
     beeswarm_df <- beeswarm(split_list,
                             priority = "random",
                             cex      = 0.3,
@@ -140,11 +140,6 @@ WellLayoutBarplot <- function(summary_df,
                               few_reads_cutoff      = 20L
                               ) {
 
-
-  assign("delete_summary_df",  summary_df,  envir = globalenv())
-  assign("delete_show_column", show_column, envir = globalenv())
-  assign("delete_sg_df",       sg_df,       envir = globalenv())
-
   MakeEmptyPlot()
 
   numeric_vec <- summary_df[, show_column]
@@ -152,7 +147,7 @@ WellLayoutBarplot <- function(summary_df,
     numeric_vec <- numeric_vec / 20
   } else if (grepl("^(Count|Num)_", show_column)) {
     numeric_vec <- numeric_vec / summary_df[["Count_total"]]
-  } else {
+  } else if (!(all(is.na(numeric_vec)))) { # Avoid a warning message
     numeric_vec <- numeric_vec / max(numeric_vec, na.rm = TRUE)
   }
 
@@ -223,14 +218,11 @@ WellLayoutBarplot <- function(summary_df,
   } else {
     low_read_number_colors <- "#FFFFFF"
   }
-  assign("delete_summary_df", summary_df, envir = globalenv())
 
   empty_colors <- ifelse(sg_df[["Empty_well"]],
                          brewer.pal(9, "Pastel1")[[6]],
                          low_read_number_colors
                          )
-  assign("delete_empty_colors", empty_colors, envir = globalenv())
-
 
   draw_outlines <- indicate_homologies || outline_few_reads
 
@@ -351,7 +343,6 @@ WellLayoutBarplot <- function(summary_df,
 
     }
   }
-
 
   bar_heights <- ifelse(is.na(numeric_vec), 0, numeric_vec) * well_height
 
