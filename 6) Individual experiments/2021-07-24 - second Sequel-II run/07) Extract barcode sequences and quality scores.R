@@ -30,24 +30,14 @@ s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(s2r2_R_objects_directory, "05) Read in PacBio data.RData"))
-# load(file.path(s2r2_R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
+load(file.path(s2r2_R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
 
 # Extract barcodes --------------------------------------------------------
 
-are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
-                (ccs_df[["Read_quality"]] > 0)
-
-dummy_columns <-  c("ZMW", "Combined_ID", "Plate_number", "Well_number",
-                    "Well_barcodes_orientation_fwd"
-                    )
-dummy_alignments_df <- ccs_df[are_eligible, dummy_columns]
-row.names(dummy_alignments_df) <- NULL
-names(dummy_alignments_df)[names(dummy_alignments_df) == "Well_barcodes_orientation_fwd"] <- "Orientation_fwd"
-
-barcodes_df <- GetBarcodes(ccs_df, dummy_alignments_df)
+barcodes_df <- GetBarcodes(ccs_df, alignments_df)
 
 
 
