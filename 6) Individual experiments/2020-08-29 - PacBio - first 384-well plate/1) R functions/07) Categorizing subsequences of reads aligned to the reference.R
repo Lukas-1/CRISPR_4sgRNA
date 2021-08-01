@@ -100,6 +100,11 @@ ExtractAlignedSequences <- function(ccs_df,
 
     are_this_ID <- alignments_df[[ID_column]] == current_ID
 
+    if (!(any(are_this_ID))) {
+      message("No reads are available for this well ID! It was skipped.")
+      return(NULL)
+    }
+
     aligned_plasmid_vec <- alignments_df[["Aligned_plasmid"]][are_this_ID]
     aligned_read_vec <- alignments_df[["Aligned_read"]][are_this_ID]
 
