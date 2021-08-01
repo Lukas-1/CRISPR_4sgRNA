@@ -19,7 +19,7 @@ p1_R_functions_directory   <- file.path(plate1_directory, "1) R functions")
 s2r1_R_functions_directory <- file.path(s2r1_directory, "1) R functions")
 
 source(file.path(p1_R_functions_directory, "19) Annotating duplicated gRNAs.R"))
-source(file.path(s2r1_R_functions_directory, "04) Tidying CRISPR gRNA data frames.R"))
+source(file.path(s2r1_R_functions_directory, "03) Tidying CRISPR gRNA data frames.R"))
 
 
 

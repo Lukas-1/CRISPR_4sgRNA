@@ -19,7 +19,8 @@ p1_R_functions_directory   <- file.path(plate1_directory, "1) R functions")
 s2r1_R_functions_directory <- file.path(s2r1_directory, "1) R functions")
 
 source(file.path(p1_R_functions_directory, "19) Annotating duplicated gRNAs.R"))
-source(file.path(s2r1_R_functions_directory, "04) Tidying CRISPR gRNA data frames.R"))
+source(file.path(s2r1_R_functions_directory, "03) Tidying CRISPR gRNA data frames.R"))
+
 
 
 
@@ -34,6 +35,7 @@ CRISPRa_RData_directory  <- file.path(library_RData_directory, "2) CRISPRa")
 CRISPRko_RData_directory <- file.path(library_RData_directory, "3) CRISPRko")
 
 controls_file <- file.path(s2r1_directory, "2) Input", "Metadata", "Internal Control NGS plate.xlsx")
+
 
 
 
@@ -53,11 +55,13 @@ load(file.path(R_objects_directory, "01) Process and export plate barcodes.RData
 
 
 
+
 # Read in data ------------------------------------------------------------
 
 controls_df <- as.data.frame(read_excel(controls_file, col_names = FALSE),
                              stringsAsFactors = FALSE, check.names = FALSE
                              )
+
 
 
 
@@ -78,6 +82,7 @@ combined_df <- rbind.data.frame(CRISPRa_seq_df,
 all_plate_names <- unlist(strsplit(plates_df[["Plate_name"]], " and ", fixed = TRUE), use.names = FALSE)
 
 combined_df <- combined_df[combined_df[["Plate_name"]] %in% all_plate_names, ]
+
 
 
 
@@ -111,6 +116,7 @@ row.names(combined_df) <- NULL
 
 
 
+
 # Process colony-picked controls ------------------------------------------
 
 control_plate_df <- CreateControlsDf(controls_df, CRISPRko_seq_df)
@@ -119,6 +125,7 @@ pool2_controls_df <- control_plate_df
 
 pool1_controls_df[["Plate_name"]] <- "IntCtl_pool1"
 pool2_controls_df[["Plate_name"]] <- "IntCtl_pool2"
+
 
 
 
@@ -164,6 +171,7 @@ all_guides_df <- do.call(rbind.data.frame, c(df_list, stringsAsFactors = FALSE, 
 
 
 
+
 # Export the combined data frame ------------------------------------------
 
 export_columns <- c("Modality", export_columns)
@@ -171,6 +179,7 @@ export_columns <- c("Modality", export_columns)
 ExportPlates(all_guides_df, sub_folder = "", file_name = "All_guides",
              no_modality = TRUE, add_primers = FALSE
              )
+
 
 
 
