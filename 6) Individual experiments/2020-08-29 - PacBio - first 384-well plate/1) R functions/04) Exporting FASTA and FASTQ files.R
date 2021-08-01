@@ -152,7 +152,7 @@ ExportSequences <- function(ccs_df,
   ccs_matches_vec <- match(lima_zmws, ccs_df[["ZMW"]])
 
   lima_well_IDs <- ccs_df[ccs_matches_vec, ID_column]
-  category_strings <- ccs_df[ccs_matches_vec, "Category_string"]
+  ZMW_strings <- ccs_df[ccs_matches_vec, "ZMW_string"]
 
   for (i in seq_along(unique_IDs)) {
 
@@ -176,7 +176,7 @@ ExportSequences <- function(ccs_df,
                               ccs_df[["Clip_end"]][ccs_matches]
                               )
       }
-      names(export_seq) <- paste0(this_well_zmws, "_", category_strings[are_this_well])
+      names(export_seq) <- ZMW_strings[are_this_well]
       export_seq <- DNAStringSet(export_seq)
       export_fastq <- QualityScaledBStringSet(export_seq, PhredQuality(export_qual))
       message(paste0("Exporting reads for well ", wells_formatted[[i]], "..."))

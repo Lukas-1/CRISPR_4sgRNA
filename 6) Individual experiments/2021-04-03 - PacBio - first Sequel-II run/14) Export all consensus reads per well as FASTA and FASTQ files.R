@@ -43,7 +43,7 @@ load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 # Prepare for exporting sequences -----------------------------------------
 
-ccs_df[["Category_string"]] <- MakeCategoryString(ccs_df, extracted_df)
+ccs_df[["ZMW_string"]] <- paste0(ccs_df[["ZMW"]], "_", MakeCategoryString(ccs_df, extracted_df))
 
 ccs_df[["Passed_filters"]] <- ccs_df[["Plate_passed_filters"]] &
                               (ccs_df[["Well_passed_filters"]] %in% TRUE)
