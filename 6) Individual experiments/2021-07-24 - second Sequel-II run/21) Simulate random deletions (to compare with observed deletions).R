@@ -18,7 +18,7 @@ source(file.path(R_functions_directory, "21) Simulating random deletions (for co
 
 # Define folder paths -----------------------------------------------------
 
-s2r2_directory           <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
+s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
 s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
 p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 
