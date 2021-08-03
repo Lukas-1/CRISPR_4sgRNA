@@ -6,7 +6,6 @@
 
 CRISPR_root_directory      <- "~/CRISPR"
 plate1_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
-sql2_directory             <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 R_functions_directory      <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "09) Producing heatmaps.R")) # For VerticalAdjust and related functions
@@ -17,6 +16,7 @@ source(file.path(R_functions_directory, "20) Summarizing data across wells.R"))
 
 # Define folder paths -----------------------------------------------------
 
+sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 file_output_directory    <- file.path(sql2_directory, "5) Output", "Figures", "Summaries across wells")
 PNGs_output_directory    <- file.path(sql2_directory, "5) Output", "PNGs", "Summaries across wells")
