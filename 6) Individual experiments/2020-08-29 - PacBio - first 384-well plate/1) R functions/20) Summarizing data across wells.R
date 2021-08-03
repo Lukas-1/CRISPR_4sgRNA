@@ -462,7 +462,7 @@ LollipopPlot <- function(input_df,
     old_mar <- par("mar" = c(5.5, 5, 4, 8))
   }
 
-  control_mat <- PreparePlates(input_df, "Intctrl")
+  control_mat <- PreparePlates(input_df, plates_df[["Plate_name"]][plates_df[["Colony_picked"]]])
   selected_mat <- PreparePlates(input_df, plate_names)
 
   assign("delete_input_df", input_df, envir = globalenv())
@@ -553,7 +553,7 @@ SummaryBoxPlot <- function(input_df,
     old_mar <- par("mar" = use_mar)
   }
 
-  control_mat <- PreparePlates(input_df, "Intctrl")
+  control_mat <- PreparePlates(input_df, plates_df[["Plate_name"]][plates_df[["Colony_picked"]]])
   selected_mat <- PreparePlates(input_df, plate_names)
 
   control_list <- lapply(use_columns, function(x) control_mat[, x])
@@ -784,6 +784,28 @@ TheoreticalAtLeastCounts <- function(black_percentages = TRUE,
 
 DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
+
+  message("Exporting plots for theoretical (expected) probabilities...")
+  use_file_name <- "Theoretical_at_least_num_guides"
+  pdf(file   = file.path(file_output_directory, "Theoretical", paste0(use_file_name, ".pdf")),
+      width  = use_width,
+      height = use_height
+      )
+  TheoreticalAtLeastCounts()
+  dev.off()
+
+  if (export_PNGs) {
+    use_file_name <- "Theoretical_at_least_num_guides"
+    png(file   = file.path(PNGs_output_directory, "Theoretical", paste0(use_file_name, ".png")),
+        width  = use_width,
+        height = use_height,
+        units  = "in",
+        res    = 600
+        )
+    TheoreticalAtLeastCounts()
+    dev.off()
+  }
+
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
 
@@ -817,6 +839,13 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
                                 " (", accuracy_percentages[[i]], ") - ",
                                 c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
                                 )
+
+          message(paste0("Exporting ", file_format, " images of ",
+                         tolower(plot_type), " plots for the following data: ",
+                         folder_name, "..."
+                         )
+                  )
+
           if (file_format == "pdf") {
             folder_path <- file.path(file_output_directory, folder_name)
           } else if (file_format == "png") {
@@ -826,12 +855,21 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
           for (label_percentages in c(TRUE, FALSE)) {
 
-            if (label_percentages && (plot_type == "Box")) {
-              next
+            if (plot_type == "Box") {
+              if (label_percentages) {
+                next
+              }
+            } else {
+              if (label_percentages) {
+                message(paste0("  ... with labelled percentages..."))
+              } else {
+                message(paste0("  ... without labelled percentages..."))
+              }
             }
 
             for (i in seq_along(column_groups_list)) {
               metric <- names(column_groups_list)[[i]]
+              message(paste0("    ... for the metric: '", metric, "'"))
               file_name <- paste0(plot_type, " plot - ", i, ") ",
                                   sub("Count_", "", metric, fixed = TRUE),
                                   ".pdf"
@@ -857,7 +895,7 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
               for (j in seq_along(plate_selection_titles_list)) {
                 plate_selection <- names(plate_selection_titles_list)[[j]]
-                print(plate_selection)
+                # message(paste0("          for the plates: ", plate_selection))
                 if (file_format == "png") {
                   file_name <- paste0(plate_selection_prefixes[[j]],
                                       ") ", plate_selection, ".png"

@@ -33,11 +33,10 @@ load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 
 
-
 # Define plate selections -------------------------------------------------
 
 are_beads <- grepl("-beads", plates_df[["Plate_name"]], fixed = TRUE)
-are_controls <- plates_df[["Plate_name"]] == "Intctrl"
+are_controls <- plates_df[["Colony_picked"]]
 
 non_library_plates <- c("Vac-1", "PD_A", "PD_O")
 are_columns <- !(are_beads | are_controls)
@@ -146,33 +145,11 @@ LollipopPlot(use_df,
 
 
 
-# Export plots for theoretical (expected) probabilities -------------------
-
-use_file_name <- "Theoretical_at_least_num_guides"
-pdf(file   = file.path(file_output_directory, "Theoretical", paste0(use_file_name, ".pdf")),
-    width  = use_width,
-    height = use_height
-    )
-TheoreticalAtLeastCounts()
-dev.off()
-
-
-use_file_name <- "Theoretical_at_least_num_guides"
-png(file   = file.path(PNGs_output_directory, "Theoretical", paste0(use_file_name, ".png")),
-    width  = use_width,
-    height = use_height,
-    units  = "in",
-    res    = 600
-    )
-TheoreticalAtLeastCounts()
-dev.off()
-
-
-
 
 # Export lollipop plots and violin/box plots ------------------------------
 
 DrawAllLollipopsAndViolins()
+
 
 
 
