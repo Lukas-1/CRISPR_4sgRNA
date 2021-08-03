@@ -172,7 +172,7 @@ dev.off()
 
 # Export lollipop plots and violin/box plots ------------------------------
 
-MakeAllLollipopsAndViolins()
+DrawAllLollipopsAndViolins()
 
 
 

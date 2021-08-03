@@ -782,7 +782,7 @@ TheoreticalAtLeastCounts <- function(black_percentages = TRUE,
 
 # Functions for writing all plots to disk ---------------------------------
 
-MakeAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
+DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
@@ -888,6 +888,7 @@ MakeAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
       }
     }
   }
+  return(invisible(NULL))
 }
 
 
