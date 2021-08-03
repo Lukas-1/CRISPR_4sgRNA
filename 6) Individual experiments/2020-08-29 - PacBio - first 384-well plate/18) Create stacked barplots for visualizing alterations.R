@@ -59,15 +59,15 @@ dev.off()
 
 # Set up loop -------------------------------------------------------------
 
-DrawAllSmrtLinkPlots(DrawAlterationBarplot,
-                     "Stacked barplots",
-                     "Alteration barplots"
-                     )
+AllSmrtLinkVersionsForOnePlate(DrawAlterationBarplot,
+                               "Stacked barplots",
+                               "Alteration barplots"
+                               )
 
-DrawAllSubsampledPlots(DrawAlterationBarplot,
-                       "Stacked barplots",
-                       "Alteration barplots"
-                       )
+DrawAllSubsampledPlotsForOnePlate(DrawAlterationBarplot,
+                                  "Stacked barplots",
+                                  "Alteration barplots"
+                                  )
 
 
 
