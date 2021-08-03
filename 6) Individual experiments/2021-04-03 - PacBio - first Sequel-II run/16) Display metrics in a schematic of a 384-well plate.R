@@ -103,148 +103,20 @@ BarPlotPanel(summary_sub_df,
              )
 
 
+
+
 # Export all plates -------------------------------------------------------
 
 use_plate_numbers <- plates_df[["Plate_number"]][order(plates_df[["Plate_rank"]])]
 
-ccs_numbers <- c(3, 5, 7)
-accuracy_percentages <- c(99, 99.9, 99.99)
+DrawSchematicsForAllPlates()
 
-count_metrics <- c(
-  # "Count_sg1_cr1", "Count_sg2_cr2", "Count_sg3_cr3", "Count_sg4_cr4",
-  "Count_mean_sg1to4",
-  "Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4",
-  "Count_pr_at_least_1", "Count_pr_at_least_2", "Count_pr_at_least_3", "Count_pr_all_4",
-  "Count_all_4_promoters", "Count_whole_plasmid"
-)
 
-percentages_metrics <- c(
-  "Num_contaminated_reads", "Num_under_2kb",
-  count_metrics,
-  "Num_reads_with_deletions_exceeding_20bp",
-  "Num_reads_with_sgRNA_deletion",
-  "Num_reads_with_deletions_spanning_tracrRNAs",
-  "Num_reads_with_deletions_spanning_promoters",
-  "Num_cross_plate_contaminated",
-  "Num_contaminated_reads_aligned"
-)
 
-binarized_metrics <- c(
-  "Binary_all_four_guides",
-  paste0("Binary_", tolower(substr(count_metrics, 1, 1)),
-         substr(count_metrics, 2, nchar(count_metrics))
-         ),
-  "Binary_num_contaminated_reads",
-  "Binary_num_reads_with_deletions_exceeding_20bp",
-  "Binary_num_reads_with_deletions_spanning_tracrRNAs"
-)
 
-plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
 
-for (file_format in c("png", "pdf")) {
-  for (i in seq_along(ccs_numbers)) {
-    use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-    for (filter_stage in 1:2) {
-      df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
 
-      use_summary_df <- use_df_list[[df_name]]
 
-      folder_name <- paste0("CCS", ccs_numbers[[i]],
-                            " (", accuracy_percentages[[i]], ") - ",
-                            c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
-                            )
-      if (file_format == "png") {
-        folder_path <- file.path(PNGs_output_directory, folder_name)
-      } else {
-        folder_path <- file.path(plots_output_directory, folder_name)
-      }
-
-      dir.create(folder_path, showWarnings = FALSE)
-
-      file_prefix <- folder_name
-
-      for (number_wells in c(TRUE, FALSE)) {
-        for (binarize in c(TRUE, FALSE)) {
-
-          if (binarize) {
-            current_metrics <- binarized_metrics
-          } else {
-            current_metrics <- percentages_metrics
-          }
-
-          for (j in seq_along(current_metrics)) {
-
-            if (binarize) {
-              sub_folder_path <- file.path(folder_path, "Binarized - ")
-            } else {
-              sub_folder_path <- file.path(folder_path, "Percentages - ")
-            }
-            if (number_wells) {
-              sub_folder_path <- paste0(sub_folder_path, "numbered")
-            } else {
-              sub_folder_path <- paste0(sub_folder_path, "plain")
-            }
-            dir.create(sub_folder_path, showWarnings = FALSE)
-
-            current_metric_name <- sub("^Num_reads_with_", "", current_metrics[[j]])
-            current_metric_name <- sub("^(Num|Count)_", "", current_metric_name)
-            current_metric_name <- sub("^Binary_num_reads_with_", "Binary_", current_metric_name)
-            current_metric_name <- sub("^Binary_(num|count)_", "Binary_", current_metric_name)
-            current_metric_name <- paste0(formatC(j, width = 2, flag = "0"),
-                                          ") ",  current_metric_name
-                                          )
-
-            expansion_factor <- 5
-            use_width <- 2 * expansion_factor
-            use_height <- 1 * expansion_factor
-
-            if (file_format == "pdf") {
-              pdf_name <- paste0(file_prefix, " - ", current_metric_name, ".pdf")
-              pdf(file   = file.path(sub_folder_path, pdf_name),
-                  width  = use_width,
-                  height = use_height
-                  )
-            } else if (file_format == "png") {
-              metric_path <- file.path(sub_folder_path, current_metric_name)
-              dir.create(metric_path, showWarnings = FALSE)
-            }
-
-            for (plate_number in use_plate_numbers) {
-              if (file_format == "png") {
-                plate_name <- paste0(formatC(plate_number, width = 2, flag = "0"), ") - ",
-                                     plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number]
-                                     )
-                file_name <- paste0(file_prefix, " - ", plate_name, ".png")
-                png(file   = file.path(metric_path, file_name),
-                    width  = use_width,
-                    height = use_height,
-                    units  = "in",
-                    res    = 600
-                    )
-              }
-              summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
-              sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
-              BarPlotPanel(summary_sub_df,
-                           current_metrics[[j]],
-                           sg_sub_df,
-                           number_wells          = number_wells,
-                           top_text              = plate_labels[plates_df[["Plate_number"]] == plate_number],
-                           show_low_read_numbers = TRUE,
-                           outline_few_reads     = binarize
-                           )
-              if (file_format == "png") {
-                dev.off()
-              }
-            }
-            if (file_format == "pdf") {
-              dev.off()
-            }
-          }
-        }
-      }
-    }
-  }
-}
 
 
 
