@@ -76,6 +76,8 @@ plate_rank <- order(order(match(sub("-beads", "", plates_df[["Plate_name"]]),
                                  )))
 plates_df[["Plate_rank"]] <- plate_rank
 
+plates_df[["Colony_picked"]] <- plates_df[["Plate_name"]] == "Intctrl"
+
 
 
 

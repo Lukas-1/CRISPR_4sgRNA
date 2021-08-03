@@ -128,6 +128,8 @@ new_order <- order(sapply(plate_name_splits, "[[", 1), plate_numbers_vec)
 plates_df <- plates_df[new_order, ]
 row.names(plates_df) <- NULL
 
+plates_df[["Colony_picked"]] <- grepl("IntCtl", plates_df[["Plate_name"]], fixed = TRUE)
+
 
 
 
