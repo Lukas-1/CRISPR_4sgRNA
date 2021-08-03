@@ -51,6 +51,24 @@ FilterMutations <- function(extract_df, use_zmws, min_length = 19, max_length = 
 
 
 
+AddPrefixToLast3 <- function(input_df, use_prefix) {
+  column_names <- names(input_df)[(ncol(input_df) - 2):ncol(input_df)]
+  column_names <- paste0(use_prefix, "_",
+                         ifelse(substr(column_names, 2, 2) == toupper(substr(column_names, 2, 2)),
+                                column_names,
+                                paste0(tolower(substr(column_names, 1, 1)),
+                                       substr(column_names, 2, nchar(column_names))
+                                       )
+
+                                )
+                         )
+  names(input_df)[(ncol(input_df) - 2):ncol(input_df)] <- column_names
+  return(input_df)
+}
+
+
+
+
 
 # Filter reads ------------------------------------------------------------
 
@@ -69,8 +87,11 @@ mutations_df <- FilterMutations(extracted_df, ccs7_filtered_zmws)
 
 # Annotate mutated sequences with 0MM off-target sites --------------------
 
-groooo
 mutations_df <- Add0MMHits(mutations_df, "Read_without_gaps")
+mutations_df <- AddPrefixToLast3(mutations_df, "Mutated")
+
+mutations_df <- Add0MMHits(mutations_df, "Template")
+mutations_df <- AddPrefixToLast3(mutations_df, "Template")
 
 
 
