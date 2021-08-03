@@ -10,9 +10,9 @@ source(file.path(general_functions_directory, "30) Finding overlapping genes and
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 
