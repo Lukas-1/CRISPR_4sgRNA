@@ -110,7 +110,7 @@ write.table(export_contam_df,
 # Save data ---------------------------------------------------------------
 
 save(list = "contam_df",
-     file = file.path(sql2_R_objects_directory, "19) Check for cross-plate contaminations.RData")
+     file = file.path(sql2_R_objects_directory, "19) Examine cross-plate contaminations.RData")
      )
 
 
