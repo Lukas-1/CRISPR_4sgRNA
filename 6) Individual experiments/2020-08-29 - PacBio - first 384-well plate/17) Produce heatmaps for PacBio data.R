@@ -43,15 +43,15 @@ ExportFiguresForManuscript(use_summary_df, "First 384-well plate")
 
 # Set up loop -------------------------------------------------------------
 
-DrawAllSmrtLinkPlots(DrawAccuracyHeatmap,
-                     "Heatmaps",
-                     "Accuracy heatmap"
-                     )
+AllSmrtLinkVersionsForOnePlate(DrawAccuracyHeatmap,
+                               "Heatmaps",
+                               "Accuracy heatmap"
+                               )
 
-DrawAllSubsampledPlots(DrawAccuracyHeatmap,
-                       "Heatmaps",
-                       "Accuracy heatmaps"
-                       )
+DrawAllSubsampledPlotsForOnePlate(DrawAccuracyHeatmap,
+                                  "Heatmaps",
+                                  "Accuracy heatmaps"
+                                  )
 
 
 

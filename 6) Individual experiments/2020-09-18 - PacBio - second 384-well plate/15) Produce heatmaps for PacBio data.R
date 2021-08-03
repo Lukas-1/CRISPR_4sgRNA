@@ -59,15 +59,15 @@ ExportFiguresForManuscript(use_summary_df, "Colony-picked controls")
 
 # Set up loop -------------------------------------------------------------
 
-DrawAllSmrtLinkPlots(DrawAccuracyHeatmap,
-                     "Heatmaps",
-                     "Accuracy heatmap"
-                     )
+AllSmrtLinkVersionsForOnePlate(DrawAccuracyHeatmap,
+                               "Heatmaps",
+                               "Accuracy heatmap"
+                               )
 
-DrawAllSubsampledPlots(DrawAccuracyHeatmap,
-                       "Heatmaps",
-                       "Accuracy heatmaps"
-                       )
+DrawAllSubsampledPlotsForOnePlate(DrawAccuracyHeatmap,
+                                  "Heatmaps",
+                                  "Accuracy heatmaps"
+                                  )
 
 
 
