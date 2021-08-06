@@ -380,8 +380,7 @@ DrawAllCutoffComparisons <- function(export_PNGs = TRUE) {
     file_formats <- "pdf"
   }
 
-
-  for (file_format in c("png", "pdf")) {
+  for (file_format in file_formats) {
     for (filter_stage in 1:2) {
       sub_folder_name <- c("i) unfiltered", "ii) filtered")[[filter_stage]]
 
