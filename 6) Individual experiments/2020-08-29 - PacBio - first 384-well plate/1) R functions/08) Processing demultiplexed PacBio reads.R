@@ -1060,6 +1060,9 @@ AnalyzeWells <- function(ccs_df,
                          "Well_barcode_combined_score", "Well_barcode_score_lead"
                          )
     ID_columns <- c("Combined_ID", "Plate_number", "Well_number")
+    if ("Original_ZMW" %in% names(ccs_df)) {
+      ID_columns <- c("Original_ZMW", "SmrtCell", ID_columns)
+    }
   }
   sg_cr_columns <- c("sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4",
                      "at_least_1", "at_least_2", "at_least_3", "all_4"
@@ -1404,7 +1407,6 @@ ExportTable <- function(export_df,
                              export_df[[i]]
                              )
   }
-  print(file_directory)
   write.table(export_df,
               file      = file.path(file_directory, paste0(file_name_only, ".tsv")),
               sep       = "\t",
