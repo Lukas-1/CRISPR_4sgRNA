@@ -64,7 +64,8 @@ CharacterizeContaminations <- function(extract_df, sg_df) {
                              )
 
   redundant_columns <- c("Num_missing", "Mostly_deleted", "Is_correct",
-                         "Category", "Is_contamination", "Aligned_template"
+                         "Category", "Is_contamination", "Aligned_template",
+                         "Alignment_length", "Over_5_percent_incorrect"
                          )
   contam_df <- data.frame(extract_df[are_sg_contam, !(names(extract_df) %in% redundant_columns)],
                           "Are_cross_plate" = if (multi_plate) are_cross_plate[are_sg_contam] else NA,
@@ -80,6 +81,8 @@ CharacterizeContaminations <- function(extract_df, sg_df) {
 
   rename_vec <- c(
                                       "ZMW",
+                                      "Original_ZMW",
+                                      "SmrtCell",
                                       "Are_cross_plate",
     "Combined_ID"                   = "Reference_ID",
     "Contaminating_combined_ID"     = "Contaminating_ID",
@@ -91,6 +94,7 @@ CharacterizeContaminations <- function(extract_df, sg_df) {
                                       "Contaminating_sg_number",
     "Template"                      = "Reference_sequence",
     "Aligned_read"                  = "Contaminating_sequence",
+    "Num_incorrect"                 = "Num_mismatched_bases",
                                       "Quality",
                                       "Mean_quality",
     "Contaminating_num_occurrences" = "Contaminating_sequence_occurrences_in_library"
@@ -101,6 +105,9 @@ CharacterizeContaminations <- function(extract_df, sg_df) {
       "Reference_plate_number", "Contaminating_plate_number"
     )
     rename_vec <- rename_vec[!(rename_vec %in% multi_plate_columns)]
+  }
+  if (!("Original_ZMW" %in% names(contam_df))) {
+    rename_vec <- rename_vec[!(rename_vec %in% c("Original_ZMW", "SmrtCell"))]
   }
 
   for (column_name in setdiff(names(rename_vec), "")) {
@@ -115,6 +122,11 @@ CharacterizeContaminations <- function(extract_df, sg_df) {
 
   return(contam_df)
 }
+
+
+
+
+
 
 
 
