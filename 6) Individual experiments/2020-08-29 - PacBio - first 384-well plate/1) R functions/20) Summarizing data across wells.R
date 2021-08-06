@@ -80,6 +80,7 @@ column_groups_list <- list(
 )
 
 
+
 column_group_subtitles_list <- list(
   "At_least_num_guides"  = expression("The gRNA" * scriptscriptstyle(" ") *
                                       "+" * scriptscriptstyle(" ") *
@@ -94,6 +95,7 @@ column_group_subtitles_list <- list(
                                       "tracrRNA must be 100% correct, and the promoter 95% correct."
                                       )
 )
+
 
 column_group_subtitles_list <- c(
   column_group_subtitles_list,
@@ -481,7 +483,7 @@ LollipopPlot <- function(input_df,
 
   spaced_percent <- 2.5
   max_space <- (use_y_limits[[2]] - use_y_limits[[1]]) * (spaced_percent / 100)
-  are_spaced <- abs(control_metrics - selected_metrics) > max_space
+  are_spaced <- (abs(control_metrics - selected_metrics) > max_space) %in% c(TRUE, NA)
 
   num_groups <- length(use_columns)
   group_positions <- seq_len(num_groups)
