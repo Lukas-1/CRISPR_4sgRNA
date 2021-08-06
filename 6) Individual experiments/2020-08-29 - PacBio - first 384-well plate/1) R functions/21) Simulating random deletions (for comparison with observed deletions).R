@@ -57,7 +57,7 @@ GetSimulatedMat <- function(deletion_sizes,
 FilterDeletionsDf <- function(del_df, use_df_list) {
 
   pass_filters <- use_df_list[["individual_reads_df"]][["Passes_filters"]] == 1
-  use_zmws <- ccs7_df_list[["individual_reads_df"]][["ZMW"]][pass_filters]
+  use_zmws <- use_df_list[["individual_reads_df"]][["ZMW"]][pass_filters]
   are_selected <- del_df[["ZMW"]] %in% use_zmws
 
   results_df <- del_df[are_selected, ]
