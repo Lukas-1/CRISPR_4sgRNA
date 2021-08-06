@@ -1478,7 +1478,7 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
 
         titles_list <- lapply(plates_df[["Plate_number"]], function(x) {
           bquote({"Plate #" * .(as.character(x)) * " \u2013 " *
-              bold(.(plates_df[x, "Plate_name"])) *
+              bold(.(plates_df[plates_df[["Plate_number"]] == x, "Plate_name"])) *
                    " (" >= .(as.character(ccs_numbers[[i]])) * " consensus reads "} *
                    "and " >= .(as.character(accuracy_percentages[[i]])) * "% accuracy)"
                    )
@@ -1496,7 +1496,6 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                              )
 
           message(paste0("Exporting ", file_format, " images for the following data: ", sel_name, "..."))
-
 
           if (file_format == "pdf") {
             pdf(file = file.path(plots_output_directory, heatmaps_folder, paste0("Heatmaps - ", sel_name, ".pdf")),
@@ -1543,6 +1542,7 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
             for (plate_number in use_plate_numbers) {
               sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
               sg_sequences_df <- library_df[library_df[["Plate_number"]] %in% plate_number, ]
+              assign("sg_sequences_df", sg_sequences_df, envir = globalenv())
               if (file_format == "png") {
                 file_name <- paste0(sel_name, " - ", PlateFileName(plate_number), ".png")
                 png(file   = file.path(sub_folder_path, file_name),
@@ -1552,7 +1552,9 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                     res    = 600
                     )
               }
-              DrawReorderedSandPlots(sub_df, main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]])
+              DrawReorderedSandPlots(sub_df,
+                                     main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]]
+                                     )
               if (file_format == "png") {
                 dev.off()
               }
@@ -1573,6 +1575,7 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
             for (plate_number in use_plate_numbers) {
               sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
               sg_sequences_df <- library_df[library_df[["Plate_number"]] %in% plate_number, ]
+              assign("sg_sequences_df", sg_sequences_df, envir = globalenv())
               if (file_format == "png") {
                 file_name <- paste0(sel_name, " - ", PlateFileName(plate_number), ".png")
                 png(file   = file.path(sub_folder_path, file_name),
@@ -1582,7 +1585,9 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                     res    = 600
                     )
               }
-              SparseAccuracyHeatmap(sub_df, main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]])
+              SparseAccuracyHeatmap(sub_df,
+                                    main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]]
+                                    )
               if (file_format == "png") {
                 dev.off()
               }
@@ -1606,6 +1611,7 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
           for (plate_number in use_plate_numbers) {
             sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
             sg_sequences_df <- library_df[library_df[["Plate_number"]] %in% plate_number, ]
+            assign("sg_sequences_df", sg_sequences_df, envir = globalenv())
             if (file_format == "png") {
               file_name <- paste0(sel_name, " - ", PlateFileName(plate_number), ".png")
               png(file   = file.path(sub_folder_path, file_name),
@@ -1632,17 +1638,6 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
   }
   return(invisible(NULL))
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
