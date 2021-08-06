@@ -89,10 +89,11 @@ ccs_folders <- c("CCS3_99", "CCS5_999", "CCS7_9999")
 for (i in seq_along(ccs_numbers)) {
   this_df <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))[["individual_reads_df"]]
   plate_numbers <- setdiff(this_df[, "Plate_number"], NA)
-  plate_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"))
+  plate_names <- paste0("Plate", formatC(plate_numbers, width = 3, flag = "0"))
   this_dir <- file.path(tables_output_directory, "Individual reads", ccs_folders[[i]])
   for (j in seq_along(plate_numbers)) {
-    sub_df <- this_df[this_df[, "Plate_number"] %in% j, ]
+    plate_number <- plate_numbers[[j]]
+    sub_df <- this_df[this_df[, "Plate_number"] %in% plate_number, ]
     row.names(sub_df) <- NULL
     ExportIndivTable(sub_df,
                      paste0(ccs_folders[[i]], "_individual_reads_", plate_names[[j]]),
