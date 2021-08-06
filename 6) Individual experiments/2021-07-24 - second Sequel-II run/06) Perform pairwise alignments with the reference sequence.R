@@ -40,7 +40,6 @@ are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
 
 sg_sequences_df[!(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][are_eligible]), 1:9]
 
-
 # stopifnot(all(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][are_eligible]))
 # are_ccs3 <- are_eligible & (ccs_df[["Read_quality"]] > 0.99) & (ccs_df[["Num_full_passes"]] > 3)
 
@@ -101,9 +100,6 @@ data.table::setDF(alignments_df)
 save(list = "alignments_df",
      file = file.path(s2r2_R_objects_directory, paste0(RData_prefix, ".RData"))
      )
-
-
-
 
 
 

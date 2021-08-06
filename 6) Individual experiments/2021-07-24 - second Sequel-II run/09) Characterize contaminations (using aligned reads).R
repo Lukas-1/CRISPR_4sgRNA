@@ -15,7 +15,6 @@ source(file.path(R_functions_directory, "17) Characterizing contaminations (usin
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
@@ -25,12 +24,10 @@ output_directory         <- file.path(s2r2_directory, "5) Output", "Tables", "Al
 
 
 
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(s2r2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(s2r2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
-
 
 
 

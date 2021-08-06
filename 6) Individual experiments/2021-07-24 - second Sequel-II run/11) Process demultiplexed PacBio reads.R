@@ -43,7 +43,6 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 
 
-
 # Process the data on the level of individual reads -----------------------
 
 # stopifnot(all(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]]))

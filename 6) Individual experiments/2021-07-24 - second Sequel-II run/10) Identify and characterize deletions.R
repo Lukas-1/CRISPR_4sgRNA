@@ -30,14 +30,12 @@ load(file.path(s2r2_R_objects_directory, "06) Perform pairwise alignments with t
 
 
 
-
 # Identify and characterize large deletions -------------------------------
 
 deletions_df <- CompileDeletions(alignments_df,
                                  "Combined_ID",
                                  sg_sequences_df[["Combined_ID"]]
                                  )
-
 
 
 

@@ -14,7 +14,6 @@ source(file.path(R_functions_directory, "07) Categorizing subsequences of reads 
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
