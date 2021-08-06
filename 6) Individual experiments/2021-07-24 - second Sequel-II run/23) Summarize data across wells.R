@@ -4,11 +4,11 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory      <- "~/CRISPR"
-experiments_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments")
-plate1_directory           <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate")
-s2r1_directory             <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
-R_functions_directory      <- file.path(plate1_directory, "1) R functions")
+CRISPR_root_directory <- "~/CRISPR"
+experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
+plate1_directory      <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate")
+s2r1_directory        <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
+R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "09) Producing heatmaps.R")) # For VerticalAdjust and related functions
 source(file.path(R_functions_directory, "20) Summarizing data across wells.R"))
@@ -51,7 +51,6 @@ plate_selection_list <- list(
 
 plate_selection_titles_list <- list(
   "All plates (second run)"    = "All plates (2nd PacBio run)",
-  "Colony-picked (second run)" = "Colony-picked controls",
   "CRISPRa (second run)"       = "CRISPRa plates (2nd PacBio run)",
   "CRISPRko (second run)"      = "CRISPRko plates (2nd PacBio run)"
 )
@@ -63,7 +62,7 @@ plate_selection_titles_list <- list(
 
 plate_labels <- paste0("Plate #", plates_df[["Plate_number"]], " \u2013 ", plates_df[["Plate_name"]])
 names(plate_labels) <- plates_df[["Plate_name"]]
-plate_labels <- plate_labels[plates_df[["Colony_picked"]]]
+plate_labels <- plate_labels[!(plates_df[["Colony_picked"]])]
 are_single_plates <- c(rep(FALSE, length(plate_selection_titles_list)),
                        rep(TRUE, length(plate_labels))
                        )
@@ -82,7 +81,6 @@ plate_numbers <- plates_df[["Plate_number"]][plate_matches]
 plate_selection_prefixes <- c(paste0("0", letters[seq_len(sum(!(are_single_plates)))]),
                               formatC(plate_numbers, width = 2, flag = "0")
                               )
-
 
 
 

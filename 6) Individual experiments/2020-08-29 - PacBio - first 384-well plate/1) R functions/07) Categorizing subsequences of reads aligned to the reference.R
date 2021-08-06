@@ -194,6 +194,19 @@ ExtractAlignedSequences <- function(ccs_df,
   }
   results_df[["Template"]] <- toupper(results_df[["Template"]])
 
+  if ("Original_ZMW" %in% names(ccs_df)) {
+    zmw_matches <- match(results_df[["ZMW"]], ccs_df[["ZMW"]])
+    results_df[["Original_ZMW"]] <- ccs_df[zmw_matches, "Original_ZMW"]
+    results_df[["SmrtCell"]] <- ccs_df[zmw_matches, "SmrtCell"]
+  }
+
+  first_columns <- c("Combined_ID", "Plate_number", "Well_number",
+                     "ZMW", "Original_ZMW", "SmrtCell"
+                     )
+  first_columns <- intersect(first_columns, names(results_df))
+  all_columns <- c(first_columns, setdiff(names(results_df), first_columns))
+  results_df <- results_df[, all_columns]
+
   message("Processing the final data frame...")
   results_df <- ProcessExtractedDf(results_df, unique_IDs)
   return(results_df)
