@@ -60,7 +60,7 @@ summary_list_list <- SummarizeWellsForAllCutoffs(plates_analysis_list)
 # Modify plate selections -------------------------------------------------
 
 plate_selection_titles_list <- c(
-  list("Colony-picked" = "Single-colony picked controls"),
+  list("Colony-picked (second run)" = "Single-colony picked controls"),
   plate_selection_titles_list
 )
 plate_selection_prefixes <- c("00", plate_selection_prefixes)
