@@ -683,7 +683,7 @@ SummaryBoxPlot <- function(input_df,
                         )
   }
 
-  ## Draw the superimposed boxplots
+  ## Draw the superimposed box plots
   boxplot(control_list,
           at         = control_pos,
           boxwex     = use_wex * 0.4,
@@ -701,22 +701,24 @@ SummaryBoxPlot <- function(input_df,
           lwd        = 1
           )
 
-  boxplot(selected_list,
-          at         = selected_pos,
-          boxwex     = use_wex * 0.4,
-          outline    = FALSE,
-          names      = rep.int("", length(group_positions)),
-          whisklty   = "blank",
-          staplewex  = 0,
-          whisklwd   = 0,
-          staplelty  = 0,
-          medlwd     = par("lwd") * 3,
-          col        = brewer.pal(9, "Blues")[[2]],
-          border     = brewer.pal(9, "Blues")[[9]],
-          add        = TRUE,
-          axes       = FALSE,
-          lwd        = 1
-          )
+  if (!(all(is.na(selected_mat)))) {
+    boxplot(selected_list,
+            at         = selected_pos,
+            boxwex     = use_wex * 0.4,
+            outline    = FALSE,
+            names      = rep.int("", length(group_positions)),
+            whisklty   = "blank",
+            staplewex  = 0,
+            whisklwd   = 0,
+            staplelty  = 0,
+            medlwd     = par("lwd") * 3,
+            col        = brewer.pal(9, "Blues")[[2]],
+            border     = brewer.pal(9, "Blues")[[9]],
+            add        = TRUE,
+            axes       = FALSE,
+            lwd        = 1
+            )
+  }
 
   par(old_mar)
   return(invisible(NULL))
