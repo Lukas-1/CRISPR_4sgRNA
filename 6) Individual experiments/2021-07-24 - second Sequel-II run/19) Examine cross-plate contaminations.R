@@ -64,6 +64,11 @@ length(unique(contam_df[["ZMW"]][contam_df[["Are_cross_plate"]] & (contam_df[["F
 
 export_contam_df <- MakeExportContamDf(contam_df)
 
+names(export_contam_df)[names(export_contam_df) == "SmrtCell"] <- "Pool"
+export_contam_df[["Pool"]] <- match(export_contam_df[["Pool"]],
+                                    c("Sequel2_run1_pool1", "Sequel2_run1_pool2")
+                                    )
+
 
 
 
