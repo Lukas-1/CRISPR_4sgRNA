@@ -164,6 +164,9 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
                                             plate_names,
                                             filter_mean_quality = filter_mean_quality
                                             )
+  metric_unlisted <- unlist(metric_list, use.names = FALSE)
+  are_all_NA <- all(is.na(metric_unlisted))
+
   if (filter_mean_quality) {
     df_name <- "filtered_summary_df"
   } else {
@@ -237,22 +240,25 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
        )
   DrawGridlines(use_y_limits)
 
+
   ## Draw the violin
   use_wex <- 0.8
-  vioplot(metric_list,
-          at       = group_positions,
-          pchMed   = NA,
-          drawRect = FALSE,
-          col      = brewer.pal(9, "Blues")[[4]],
-          border   = NA,
-          wex      = use_wex,
-          add      = TRUE,
-          axes     = FALSE
-          )
+  if (!(are_all_NA)) {
+    vioplot(metric_list,
+            at       = group_positions,
+            pchMed   = NA,
+            drawRect = FALSE,
+            col      = brewer.pal(9, "Blues")[[4]],
+            border   = NA,
+            wex      = use_wex,
+            add      = TRUE,
+            axes     = FALSE
+            )
+  }
 
 
   ## Draw the jittered points
-  metric_unlisted <- unlist(metric_list, use.names = FALSE)
+
   jittered_vec  <- group_positions[rep(seq_along(metric_list), lengths(metric_list))] +
                    rnorm(n = length(metric_unlisted), mean = 0, sd = 0.05)
   points_alpha <- 0.2
@@ -287,23 +293,25 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
   }
 
 
-  ## Draw the superimposed boxplots
-  boxplot(metric_list,
-          at         = group_positions,
-          boxwex     = use_wex * 0.4,
-          outline    = FALSE,
-          names      = rep.int("", length(group_positions)),
-          whisklty   = "blank",
-          staplewex  = 0,
-          whisklwd   = 0,
-          staplelty  = 0,
-          medlwd     = par("lwd") * 3,
-          col        = brewer.pal(9, "Blues")[[2]],
-          border     = brewer.pal(9, "Blues")[[9]],
-          add        = TRUE,
-          axes       = FALSE,
-          lwd        = 1
-          )
+  ## Draw the superimposed box plots
+  if (!(are_all_NA)) {
+    boxplot(metric_list,
+            at         = group_positions,
+            boxwex     = use_wex * 0.4,
+            outline    = FALSE,
+            names      = rep.int("", length(group_positions)),
+            whisklty   = "blank",
+            staplewex  = 0,
+            whisklwd   = 0,
+            staplelty  = 0,
+            medlwd     = par("lwd") * 3,
+            col        = brewer.pal(9, "Blues")[[2]],
+            border     = brewer.pal(9, "Blues")[[9]],
+            add        = TRUE,
+            axes       = FALSE,
+            lwd        = 1
+            )
+  }
 
 
   ## Draw the axis and axis label
