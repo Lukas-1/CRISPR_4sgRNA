@@ -45,8 +45,6 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Process the data on the level of individual reads -----------------------
 
-# stopifnot(all(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]]))
-
 sg_sequences_df[!(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]]), 1:9]
 
 plates_analysis_list <- AnalyzePlates(ccs_df,
