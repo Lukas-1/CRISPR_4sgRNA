@@ -121,6 +121,21 @@ GetNumUnintended <- function(input_df) {
 }
 
 
+RemoveIntendedGene <- function(char_vec) {
+  assign("delete_char_vec", char_vec, envir = globalenv())
+  are_present <- (char_vec != "") & !(is.na(char_vec))
+  target_intended <- are_present & !(grepl(" is not ", char_vec, fixed = TRUE))
+  only_unintended <- are_present & !(target_intended) & !(grepl("!$", char_vec))
+  char_splits <- strsplit(char_vec[only_unintended], ": ", fixed = TRUE)
+  results_vec <- character(length = length(char_vec))
+  results_vec[target_intended] <- char_vec[are_present & target_intended]
+  stopifnot(all(lengths(char_splits) == 2))
+  results_vec[only_unintended] <- sapply(char_splits, "[[", 2)
+  return(results_vec)
+}
+
+
+
 AnnotateMutations <- function(all_mut_df,
                               modalities_vec,
                               GeneLociFunction,
@@ -243,6 +258,15 @@ AnnotateMutations <- function(all_mut_df,
                             )
   }
 
+  unintended_columns <- c("New_unintended_gene_symbols",
+                          "New_unintended_gene_symbols_truncated",
+                          gene_ID_columns[[2]],
+                          gene_IDs_truncated[[2]]
+                          )
+  for (column_name in unintended_columns) {
+    results_df[, column_name] <- RemoveIntendedGene(results_df[, column_name])
+  }
+
   columns_in_order <- c(
     "Combined_ID",  "ZMW", "sg_number", "Modality",
     "Gene_symbol", "Entrez_ID", "TSS_number",
@@ -298,15 +322,19 @@ ExportMutatedDf <- function(input_df, file_name) {
   export_df[["Location_available_for_Entrez_ID"]] <- ifelse(export_df[["Location_available_for_Entrez_ID"]],
                                                             "Yes", "No"
                                                             )
-  export_df[["Aligned_template"]] <- paste0("'", export_df[["Aligned_template"]], "'")
-  export_df[["Aligned_read"]] <- paste0("'", export_df[["Aligned_read"]], "'")
+  # export_df[["Aligned_template"]] <- paste0("'", export_df[["Aligned_template"]])
+  # export_df[["Aligned_read"]] <- paste0("'", export_df[["Aligned_read"]])
   new_order <- order((export_df[["Num_new_unintended_genes"]] >= 1) %in% TRUE,
                      decreasing = TRUE
                      )
   export_df <- export_df[new_order, ]
+  for (i in seq_along(export_df)) {
+    export_df[[i]] <- ifelse(is.na(export_df[[i]]), "", export_df[[i]])
+  }
   for (i in which(sapply(export_df, is.character))) {
     export_df[[i]] <- ifelse(export_df[[i]] == "", " ", export_df[[i]])
   }
+
   write.table(export_df,
               file      = file.path(output_directory, paste0(file_name, ".tsv")),
               sep       = "\t",
