@@ -6,13 +6,16 @@
 
 FilterMutations <- function(extract_df, use_zmws, min_length = 19, max_length = 42) {
 
-  are_sg <- extract_df[["Feature"]] %in% paste0("sg", 1:4)
-  are_mutated <- extract_df[["Category"]] %in% "Mutation"
-  are_eligible <- extract_df[["ZMW"]] %in% use_zmws
+  are_sg <- extract_df[, "Feature"] %in% paste0("sg", 1:4)
+  are_mutated <- extract_df[, "Category"] %in% "Mutation"
+  are_eligible <- extract_df[, "ZMW"] %in% use_zmws
 
   mutations_df <- extract_df[are_sg & are_mutated & are_eligible, ]
 
   mutations_df[["Read_without_gaps"]] <- gsub("-", "", mutations_df[["Aligned_read"]], fixed = TRUE)
+
+  names(mutations_df)[[which(names(mutations_df) == "Feature")]] <- "sg_number"
+  mutations_df[["sg_number"]] <- as.integer(substr(mutations_df[["sg_number"]], 3, 3))
 
   sequence_lengths <- nchar(mutations_df[["Read_without_gaps"]])
   are_too_short <- sequence_lengths < min_length
@@ -241,7 +244,7 @@ AnnotateMutations <- function(all_mut_df,
   }
 
   columns_in_order <- c(
-    "Combined_ID",  "ZMW", "Feature", "Modality",
+    "Combined_ID",  "ZMW", "sg_number", "Modality",
     "Gene_symbol", "Entrez_ID", "TSS_number",
 
     "Mutated_num_0MM", "Mutated_loci_0MM",
