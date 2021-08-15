@@ -19,7 +19,8 @@ ComparePlates <- function(summary_df,
                           use_cex          = 0.175,
                           beeswarm_spacing = 0.7,
                           beeswarm_corral  = "none",
-                          side_space       = 0.2
+                          side_space       = 0.2,
+                          order_by_rank    = TRUE
                           ) {
 
   stopifnot("plates_df" %in% ls(envir = globalenv()))
@@ -33,14 +34,12 @@ ComparePlates <- function(summary_df,
   } else {
     numeric_vec <- summary_df[[show_column]]
   }
-
   is_percentage <- grepl("^(Count|Num)_", show_column) &&
                    (!(show_column == "Count_total"))
   if (is_percentage) {
     numeric_vec <- numeric_vec / summary_df[["Count_total"]]
     y_limits <- c(0, 1)
   } else {
-    numeric_vec <- numeric_vec
     y_max <-  max(numeric_vec, na.rm = TRUE)
     if (show_column == "Mean_read_quality") {
       y_min <- min(numeric_vec, na.rm = TRUE)
@@ -52,8 +51,8 @@ ComparePlates <- function(summary_df,
     }
   }
 
-  if ("Plate_rank" %in% names(plates_df)) {
-    plates_order <- order(plates_df[["Plate_rank"]])
+  if (order_by_rank && ("Plate_rank" %in% names(plates_df))) {
+    plates_order <- order(plates_df[, "Plate_rank"])
   } else {
     plates_order <- seq_len(nrow(plates_df))
   }
@@ -95,21 +94,21 @@ ComparePlates <- function(summary_df,
        )
   box(bty = "l")
 
-  boxplot(numeric_vec ~ groups_fac,
-          boxwex    = 0.7,
-          outline   = FALSE,
-          names     = rep("", nlevels(groups_fac)),
-          whisklty  = "blank",
-          staplewex = 0,
-          axes      = FALSE,
-          whisklwd  = 0,
-          staplelty = 0,
-          col       = brewer.pal(9, "Blues")[[2]],
-          boxlwd    = 0.75,
-          medlwd    = par("lwd") * 2,
-          add       = TRUE,
-          xpd       = NA
-          )
+  suppressWarnings(boxplot(numeric_vec ~ groups_fac, # Suppress the warning: no non-missing arguments to min / max
+                           boxwex    = 0.7,
+                           outline   = FALSE,
+                           names     = rep("", nlevels(groups_fac)),
+                           whisklty  = "blank",
+                           staplewex = 0,
+                           axes      = FALSE,
+                           whisklwd  = 0,
+                           staplelty = 0,
+                           col       = brewer.pal(9, "Blues")[[2]],
+                           boxlwd    = 0.75,
+                           medlwd    = par("lwd") * 2,
+                           add       = TRUE,
+                           xpd       = NA
+                           ))
 
   set.seed(1)
   beeswarm_df <- beeswarm(numeric_vec ~ groups_fac,
@@ -150,7 +149,8 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
                                     use_width        = 9.75,
                                     use_height       = 6.5,
                                     beeswarm_spacing = 0.7,
-                                    beeswarm_corral  = "none"
+                                    beeswarm_corral  = "none",
+                                    order_by_rank    = TRUE
                                     ) {
 
   stopifnot("titles_list" %in% ls(envir = globalenv()))
@@ -171,36 +171,44 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
   for (file_format in file_formats) {
     for (i in seq_along(ccs_numbers)) {
       use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-      for (filter_stage in 1:2) {
-        df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+      filter_stages <- c("original_summary_df", "filtered_summary_df")
+      filter_labels <- c("i) unfiltered", "ii) filtered")
+      if ("filtered_cross_plate_df" %in% names(use_df_list)) {
+        filter_stages <- c(filter_stages, "filtered_cross_plate_df")
+        filter_labels <- c(filter_labels, "iii) filtered cross-plate")
+      }
+      for (filter_stage in seq_along(filter_stages)) {
+        df_name <- filter_stages[[filter_stage]] # "filtered_gRNAs_df"
 
         use_summary_df <- use_df_list[[df_name]]
 
         sel_name <- paste0("CCS", ccs_numbers[[i]],
                            " (", accuracy_percentages[[i]], ") - ",
-                           c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                           c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")[[filter_stage]]
                            )
         message(paste0("Exporting ", file_format, " images into the folder: ", sel_name, "..."))
         if (file_format == "pdf") {
-          pdf(file   = file.path(plots_output_directory, paste0("Compare plates - ", sel_name, ".pdf")),
+          pdf(file   = file.path(plots_output_directory, paste0(sel_name, ".pdf")),
               width  = use_width,
               height = use_height
               )
           for (use_metric in use_metrics) {
+            message(paste0("   metric: '", use_metric, "'"))
             ComparePlates(use_summary_df,
                           use_metric,
                           use_cex          = use_cex,
                           beeswarm_spacing = beeswarm_spacing,
                           beeswarm_corral  = beeswarm_corral,
-                          side_space       = side_space
+                          side_space       = side_space,
+                          order_by_rank    = order_by_rank
                           )
-            message(paste0("   metric: '", use_metric, "'"))
           }
           dev.off()
         } else if (file_format == "png") {
           sub_folder_path <- file.path(PNGs_output_directory, sel_name)
           dir.create(sub_folder_path, showWarnings = FALSE)
           for (j in seq_along(use_metrics)) {
+            message(paste0("   metric: '", use_metrics[[j]], "'"))
             file_name <- paste0(formatC(j, width = 2, flag = "0"), ") ",
                                 use_metrics[[j]], ".png"
                                 )
@@ -215,7 +223,8 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
                           use_cex          = use_cex,
                           beeswarm_spacing = beeswarm_spacing,
                           beeswarm_corral  = beeswarm_corral,
-                          side_space       = side_space
+                          side_space       = side_space,
+                          order_by_rank    = order_by_rank
                           )
             dev.off()
           }
