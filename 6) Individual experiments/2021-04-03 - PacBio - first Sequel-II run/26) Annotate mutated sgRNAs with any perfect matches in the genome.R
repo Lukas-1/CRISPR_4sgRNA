@@ -4,17 +4,22 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory       <- "~/CRISPR"
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts/1) R functions")
+plate1_directory            <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
+R_functions_directory       <- file.path(plate1_directory, "1) R functions")
+
 source(file.path(general_functions_directory, "05) Mapping sequences to the human genome.R"))
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))
 source(file.path(general_functions_directory, "31) Finding 0MM hits for variable-length sgRNAs.R"))
+
+source(file.path(R_functions_directory, "24) Finding unintended targets of mutated gRNAs.R"))
+
 
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 
@@ -25,46 +30,6 @@ sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
 
 load(file.path(sql2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
 load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
-
-
-
-
-# Define functions --------------------------------------------------------
-
-FilterMutations <- function(extract_df, use_zmws, min_length = 19, max_length = 42) {
-
-  are_sg <- extract_df[["Feature"]] %in% paste0("sg", 1:4)
-  are_mutated <- extract_df[["Category"]] %in% "Mutation"
-  are_eligible <- extract_df[["ZMW"]] %in% use_zmws
-
-  mutations_df <- extract_df[are_sg & are_mutated & are_eligible, ]
-
-  mutations_df[["Read_without_gaps"]] <- gsub("-", "", mutations_df[["Aligned_read"]], fixed = TRUE)
-
-  sequence_lengths <- nchar(mutations_df[["Read_without_gaps"]])
-  are_too_short <- sequence_lengths < min_length
-  are_too_long <- sequence_lengths > max_length
-  mutations_df <- mutations_df[!(are_too_short | are_too_long), ]
-  row.names(mutations_df) <- NULL
-  return(mutations_df)
-}
-
-
-
-AddPrefixToLast3 <- function(input_df, use_prefix) {
-  column_names <- names(input_df)[(ncol(input_df) - 2):ncol(input_df)]
-  column_names <- paste0(use_prefix, "_",
-                         ifelse(substr(column_names, 2, 2) == toupper(substr(column_names, 2, 2)),
-                                column_names,
-                                paste0(tolower(substr(column_names, 1, 1)),
-                                       substr(column_names, 2, nchar(column_names))
-                                       )
-
-                                )
-                         )
-  names(input_df)[(ncol(input_df) - 2):ncol(input_df)] <- column_names
-  return(input_df)
-}
 
 
 
@@ -87,11 +52,7 @@ mutations_df <- FilterMutations(extracted_df, ccs7_filtered_zmws)
 
 # Annotate mutated sequences with 0MM off-target sites --------------------
 
-mutations_df <- Add0MMHits(mutations_df, "Read_without_gaps")
-mutations_df <- AddPrefixToLast3(mutations_df, "Mutated")
-
-mutations_df <- Add0MMHits(mutations_df, "Template")
-mutations_df <- AddPrefixToLast3(mutations_df, "Template")
+mutations_df <- FindHitsMutatedAndTemplate(mutations_df)
 
 
 
