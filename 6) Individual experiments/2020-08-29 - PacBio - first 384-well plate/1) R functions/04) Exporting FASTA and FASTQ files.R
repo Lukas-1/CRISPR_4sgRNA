@@ -127,6 +127,12 @@ ExportSequences <- function(ccs_df,
                             export_fasta        = TRUE
                             ) {
 
+  # Ignore wells with zero reads
+  ID_matches <- match(unique_IDs, ccs_df[[ID_column]])
+  are_present <- !(is.na(ID_matches))
+  unique_IDs <- unique_IDs[are_present]
+  ID_matches <- ID_matches[are_present]
+
   if (ID_column == "Well_number") {
     wells_formatted <- formatC(unique_IDs, flag = "0", width = 3)
     well_names <- paste0("well", wells_formatted)
@@ -135,8 +141,7 @@ ExportSequences <- function(ccs_df,
     well_names <- unique_IDs
     has_plate_number <- "Plate_number" %in% names(ccs_df)
     if (has_plate_number) {
-      matches_vec <- match(unique_IDs, ccs_df[["Combined_ID"]])
-      plate_numbers <- ccs_df[["Plate_number"]][matches_vec]
+      plate_numbers <- ccs_df[["Plate_number"]][ID_matches]
       plate_names <- paste0("Plate", formatC(plate_numbers, width = 2, flag = "0"))
     }
   }
