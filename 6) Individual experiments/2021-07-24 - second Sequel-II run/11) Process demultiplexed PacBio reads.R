@@ -27,10 +27,10 @@ s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
 # Load data ---------------------------------------------------------------
 
 load(file.path(s2r2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
-load(file.path(s2r2_R_objects_directory, "05) Read in PacBio data.RData"))
-load(file.path(s2r2_R_objects_directory, "07) Extract barcode sequences and quality scores.RData"))
-load(file.path(s2r2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
-load(file.path(s2r2_R_objects_directory, "09) Characterize contaminations (using aligned reads).RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - barcodes_df.RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - barcodes_df.RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - extracted_df.RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - contam_df.RData"))
 load(file.path(s2r2_R_objects_directory, "10) Identify and characterize deletions.RData"))
 
 
@@ -55,6 +55,7 @@ plates_analysis_list <- AnalyzePlates(ccs_df,
 
 
 
+
 # Create the summary data frames ------------------------------------------
 
 ccs_df[["Passed_filters"]] <- ccs_df[["Plate_passed_filters"]] &
@@ -65,27 +66,30 @@ ccs5_zmws <- GetCCS5_ZMWs(ccs_df)
 ccs7_zmws <- GetCCS7_ZMWs(ccs_df)
 
 ccs3_df_list <- SummarizeWells(plates_analysis_list,
-                               use_zmws          = ccs3_zmws,
-                               ID_column         = "Combined_ID",
-                               unique_IDs        = sg_sequences_df[["Combined_ID"]],
-                               deletions_df      = deletions_df,
-                               aligned_contam_df = contam_df
+                               use_zmws           = ccs3_zmws,
+                               ID_column          = "Combined_ID",
+                               unique_IDs         = sg_sequences_df[["Combined_ID"]],
+                               deletions_df       = deletions_df,
+                               aligned_contam_df  = contam_df,
+                               filter_cross_plate = TRUE
                                )
 
 ccs5_df_list <- SummarizeWells(plates_analysis_list,
-                               use_zmws          = ccs5_zmws,
-                               ID_column         = "Combined_ID",
-                               unique_IDs        = sg_sequences_df[["Combined_ID"]],
-                               deletions_df      = deletions_df,
-                               aligned_contam_df = contam_df
+                               use_zmws           = ccs5_zmws,
+                               ID_column          = "Combined_ID",
+                               unique_IDs         = sg_sequences_df[["Combined_ID"]],
+                               deletions_df       = deletions_df,
+                               aligned_contam_df  = contam_df,
+                               filter_cross_plate = TRUE
                                )
 
 ccs7_df_list <- SummarizeWells(plates_analysis_list,
-                               use_zmws          = ccs7_zmws,
-                               ID_column         = "Combined_ID",
-                               unique_IDs        = sg_sequences_df[["Combined_ID"]],
-                               deletions_df      = deletions_df,
-                               aligned_contam_df = contam_df
+                               use_zmws           = ccs7_zmws,
+                               ID_column          = "Combined_ID",
+                               unique_IDs         = sg_sequences_df[["Combined_ID"]],
+                               deletions_df       = deletions_df,
+                               aligned_contam_df  = contam_df,
+                               filter_cross_plate = TRUE
                                )
 
 
