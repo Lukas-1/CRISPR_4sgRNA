@@ -32,8 +32,8 @@ fastq_output_directory   <- file.path(file_output_directory, "Fastq")
 # Load data ---------------------------------------------------------------
 
 load(file.path(s2r2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(s2r2_R_objects_directory, "05) Read in PacBio data.RData"))
-load(file.path(s2r2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - ccs_df.RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - extracted_df.RData"))
 load(file.path(s2r2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
@@ -73,7 +73,7 @@ passing_read_zmws <- reads_df[["ZMW"]][pass_bc & pass_read]
 
 # Export sequences --------------------------------------------------------
 
-for (filter_reads in c("Unfiltered", "Filtered reads")) { #, "Filtered reads" # "Filtered gRNAs"
+for (filter_reads in c("Unfiltered", "Filtered reads", "Filtered cross-plate contaminations")) { #, "Filtered reads" # "Filtered gRNAs"
   for (split_reads in c(FALSE, TRUE)) {
 
     if (filter_reads == "Unfiltered") {
@@ -83,6 +83,11 @@ for (filter_reads in c("Unfiltered", "Filtered reads")) { #, "Filtered reads" # 
       use_ccs7_zmws <- ccs7_zmws
     } else if (filter_reads == "Filtered reads") {
       first_half <- "b) Filtered reads"
+      use_ccs3_zmws <- passing_read_zmws
+      use_ccs5_zmws <- intersect(ccs5_zmws, passing_read_zmws)
+      use_ccs7_zmws <- intersect(ccs7_zmws, passing_read_zmws)
+    } else if (filter_reads == "Filtered cross-plate contaminations") {
+      first_half <- "c) Filtered cross-plate"
       use_ccs3_zmws <- passing_read_zmws
       use_ccs5_zmws <- intersect(ccs5_zmws, passing_read_zmws)
       use_ccs7_zmws <- intersect(ccs7_zmws, passing_read_zmws)
