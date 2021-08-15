@@ -44,6 +44,10 @@ ExportSummaryTable(ccs3_df_list[["filtered_summary_df"]],
                    "CCS3_99_summary_per_well_filtered",
                    file_directory = file.path(tables_output_directory, "Summary tables")
                    )
+ExportSummaryTable(ccs3_df_list[["filtered_cross_plate_df"]],
+                   "CCS3_99_summary_per_well_filtered_cross_plate",
+                   file_directory = file.path(tables_output_directory, "Summary tables")
+                   )
 ExportSummaryTable(ccs3_df_list[["filtered_gRNAs_df"]],
                    "CCS3_99_summary_per_well_filtered_gRNAs",
                    file_directory = file.path(tables_output_directory, "Summary tables")
@@ -58,6 +62,10 @@ ExportSummaryTable(ccs5_df_list[["filtered_summary_df"]],
                    "CCS5_999_summary_per_well_filtered",
                    file_directory = file.path(tables_output_directory, "Summary tables")
                    )
+ExportSummaryTable(ccs5_df_list[["filtered_cross_plate_df"]],
+                   "CCS5_999_summary_per_well_filtered_cross_plate",
+                   file_directory = file.path(tables_output_directory, "Summary tables")
+                   )
 ExportSummaryTable(ccs5_df_list[["filtered_gRNAs_df"]],
                    "CCS5_999_summary_per_well_filtered_gRNAs",
                    file_directory = file.path(tables_output_directory, "Summary tables")
@@ -70,6 +78,10 @@ ExportSummaryTable(ccs7_df_list[["original_summary_df"]],
                    )
 ExportSummaryTable(ccs7_df_list[["filtered_summary_df"]],
                    "CCS7_9999_summary_per_well_filtered",
+                   file_directory = file.path(tables_output_directory, "Summary tables")
+                   )
+ExportSummaryTable(ccs7_df_list[["filtered_cross_plate_df"]],
+                   "CCS7_999_summary_per_well_filtered_cross_plate",
                    file_directory = file.path(tables_output_directory, "Summary tables")
                    )
 ExportSummaryTable(ccs7_df_list[["filtered_gRNAs_df"]],
