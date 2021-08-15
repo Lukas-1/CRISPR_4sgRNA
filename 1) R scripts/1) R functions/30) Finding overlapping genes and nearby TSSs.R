@@ -145,7 +145,6 @@ FindNearbyTSSs <- function(CRISPR_df,
 
   stopifnot(nrow(summary_df) == nrow(CRISPR_df))
 
-
   summary_df <- SummarizeSummaryDf(summary_df)
 
   results_list <- list(
@@ -531,7 +530,6 @@ AlignSummaryDf <- function(UseFunction, CRISPR_df, genes_df, ...) {
   row.names(results_list[["summary_df"]]) <- NULL
   return(results_list)
 }
-
 
 
 
