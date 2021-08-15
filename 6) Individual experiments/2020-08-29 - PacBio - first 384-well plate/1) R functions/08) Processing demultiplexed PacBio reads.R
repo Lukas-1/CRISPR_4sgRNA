@@ -1220,12 +1220,13 @@ AnalyzeWells <- function(ccs_df,
 
 
 SummarizeWells <- function(analysis_list,
-                           use_zmws          = NULL,
-                           close_well_range  = 3L,
-                           ID_column         = "Well_number",
-                           unique_IDs        = seq_len(384),
-                           deletions_df      = NULL,
-                           aligned_contam_df = NULL
+                           use_zmws           = NULL,
+                           close_well_range   = 3L,
+                           ID_column          = "Well_number",
+                           unique_IDs         = seq_len(384),
+                           deletions_df       = NULL,
+                           aligned_contam_df  = NULL,
+                           filter_cross_plate = FALSE
                            ) {
 
   reads_df <- analysis_list[["individual_reads_df"]]
@@ -1278,6 +1279,33 @@ SummarizeWells <- function(analysis_list,
                                          )
     results_list <- c(results_list, list("filtered_gRNAs_df" = filtered_gRNAs_df))
   }
+
+  if (filter_cross_plate) {
+
+    ## Identify reads that represent cross-plate contaminations
+    sg_mat <- as.matrix(reads_df[, paste0("sg", 1:4, "_category")])
+    have_correct <- rowSums(sg_mat == "Correct") >= 1
+    correct_zmws <- reads_df[["ZMW"]][have_correct]
+    within_plate_zmws <- unique(aligned_contam_df[["ZMW"]][!(aligned_contam_df[["Are_cross_plate"]])])
+    cross_plate_zmws <- unique(aligned_contam_df[["ZMW"]][aligned_contam_df[["Are_cross_plate"]]])
+    only_cross_plate <- !(cross_plate_zmws %in% c(correct_zmws, within_plate_zmws))
+    cross_plate_zmws <- cross_plate_zmws[only_cross_plate]
+
+    ## Summarize reads_df
+    no_cross_reads_df <- reads_df[!(reads_df[["ZMW"]] %in% cross_plate_zmws), ]
+    row.names(no_cross_reads_df) <- NULL
+    filtered_cross_plate_df   <- CreateSummaryDf(no_cross_reads_df,
+                                                 filter_reads      = TRUE,
+                                                 close_well_range  = close_well_range,
+                                                 ID_column         = ID_column,
+                                                 unique_IDs        = unique_IDs,
+                                                 deletions_df      = deletions_df,
+                                                 aligned_contam_df = aligned_contam_df
+                                                 )
+    results_list <- c(results_list, list("filtered_cross_plate_df" = filtered_cross_plate_df))
+  }
+
+
   results_list <- c(results_list, list("individual_reads_df" = reads_df))
 
   if (has_contam) {
