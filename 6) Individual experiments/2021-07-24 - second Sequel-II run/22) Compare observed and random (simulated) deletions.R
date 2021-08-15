@@ -51,10 +51,7 @@ SimVsObsDeletions(all_reads_simul_mat, all_reads_del_df)
 SimVsObsDeletions(one_read_simul_mat[, c(1, 2, 4)], one_read_del_df)
 
 
-
 DrawAllSimVsObsPlots(export_PNGs = FALSE)
-
-
 
 
 
