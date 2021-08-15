@@ -73,7 +73,9 @@ extracted_df <- ExtractAlignedSequences(ccs_df,
 
 # Save data ---------------------------------------------------------------
 
-save(list = "extracted_df",
+save(list = c("extracted_df",
+              "features_df", "features_indices_list", "features_templates_list"
+              ),
      file = file.path(s2r2_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData")
      )
 
