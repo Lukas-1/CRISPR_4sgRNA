@@ -33,7 +33,7 @@ PNGs_output_directory    <- file.path(s2r2_directory, "5) Output", "PNGs", "Expl
 load(file.path(s2r2_R_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(s2r2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
 load(file.path(s2r2_R_objects_directory, "11) Process demultiplexed PacBio reads - plates_analysis_list.RData"))
-load(file.path(s2r2_R_objects_directory, "09) Characterize contaminations (using aligned reads).RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - contam_df.RData"))
 load(file.path(s2r2_R_objects_directory, "10) Identify and characterize deletions.RData"))
 load(file.path(s2r2_R_objects_directory, "23) Summarize data across wells - plate selections.RData"))
 
@@ -51,7 +51,9 @@ manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
 
 # Summarize wells for different read quality cut-offs ---------------------
 
-summary_list_list <- SummarizeWellsForAllCutoffs(plates_analysis_list)
+summary_list_list <- SummarizeWellsForAllCutoffs(plates_analysis_list,
+                                                 filter_cross_plate = TRUE
+                                                 )
 
 
 
