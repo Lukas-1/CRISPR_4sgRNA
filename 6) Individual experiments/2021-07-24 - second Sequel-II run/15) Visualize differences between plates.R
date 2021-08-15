@@ -19,11 +19,11 @@ source(file.path(s2r1_R_functions_directory, "04) Visualizing differences betwee
 
 # Define folder paths -----------------------------------------------------
 
-s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
-s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
-file_output_directory    <- file.path(s2r2_directory, "5) Output")
-plots_output_directory   <- file.path(file_output_directory, "Figures", "Compare plates")
-PNGs_output_directory    <- file.path(file_output_directory, "PNGs", "Compare plates")
+s2r2_directory                <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
+s2r2_R_objects_directory      <- file.path(s2r2_directory, "3) R objects")
+file_output_directory         <- file.path(s2r2_directory, "5) Output")
+compare_PDFs_output_directory <- file.path(file_output_directory, "Figures", "Compare plates")
+compare_PNGs_output_directory <- file.path(file_output_directory, "PNGs", "Compare plates")
 
 
 
@@ -36,11 +36,15 @@ load(file.path(s2r2_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 
 
-# Prepare titles ----------------------------------------------------------
+# Make preparations -------------------------------------------------------
 
 titles_list <- c(list("Count_total" = "Number of reads per well"),
                  titles_list
                  )
+plates_df[["Plate_rank"]] <- order(order(plates_df[["Run2_pool"]],
+                                         seq_len(nrow(plates_df))
+                                         )
+                                   )
 
 
 
@@ -54,16 +58,42 @@ ComparePlates(ccs7_df_list[["filtered_summary_df"]], "Count_total",
 
 
 
+
 # Export graphics ---------------------------------------------------------
 
-DrawAllPlateComparisons(export_PNGs = FALSE,
-                        use_cex = 0.175,
+plots_output_directory <- file.path(compare_PDFs_output_directory,
+                                    "By pool"
+                                    )
+PNGs_output_directory <- file.path(compare_PNGs_output_directory,
+                                   "By pool"
+                                   )
+
+DrawAllPlateComparisons(use_cex          = 0.175,
                         beeswarm_spacing = 0.3,
-                        beeswarm_corral = "omit",
-                        side_space = -3,
-                        use_width = 20,
-                        use_height = 6.5
+                        beeswarm_corral  = "omit",
+                        side_space       = -3,
+                        use_width        = 20,
+                        use_height       = 6.5
                         )
+
+
+plots_output_directory <- file.path(compare_PDFs_output_directory,
+                                    "By plate"
+                                    )
+PNGs_output_directory <- file.path(compare_PNGs_output_directory,
+                                   "By plate"
+                                   )
+
+DrawAllPlateComparisons(use_cex          = 0.175,
+                        beeswarm_spacing = 0.3,
+                        beeswarm_corral  = "omit",
+                        side_space       = -3,
+                        use_width        = 20,
+                        use_height       = 6.5,
+                        order_by_rank    = FALSE
+                        )
+
+
 
 
 
