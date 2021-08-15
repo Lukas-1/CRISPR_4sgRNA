@@ -26,7 +26,7 @@ output_directory         <- file.path(s2r2_directory, "5) Output", "Tables", "Al
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(s2r2_R_objects_directory, "09) Characterize contaminations (using aligned reads).RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - contam_df.RData"))
 load(file.path(s2r2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
