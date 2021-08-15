@@ -752,14 +752,20 @@ DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
   for (file_format in file_formats) {
     for (i in seq_along(ccs_numbers)) {
       use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-      for (filter_stage in 1:2) {
-        df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+      filter_stages <- c("original_summary_df", "filtered_summary_df")
+      filter_labels <- c("i) unfiltered", "ii) filtered")
+      if ("filtered_cross_plate_df" %in% names(use_df_list)) {
+        filter_stages <- c(filter_stages, "filtered_cross_plate_df")
+        filter_labels <- c(filter_labels, "iii) cross-plate")
+      }
+      for (filter_stage in seq_along(filter_stages)) {
+        df_name <- filter_stages[[filter_stage]] # "filtered_gRNAs_df"
 
         use_summary_df <- use_df_list[[df_name]]
 
         folder_name <- paste0("CCS", ccs_numbers[[i]],
                               " (", accuracy_percentages[[i]], ") - ",
-                              c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                              filter_labels[[filter_stage]]
                               )
         if (file_format == "png") {
           folder_path <- file.path(PNGs_output_directory, folder_name)
@@ -857,15 +863,6 @@ DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
   }
   return(invisible(NULL))
 }
-
-
-
-
-
-
-
-
-
 
 
 

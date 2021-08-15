@@ -72,7 +72,7 @@ GetMinQuality <- function(input_integer) {
 
 
 
-CustomSummarizeWells <- function(analysis_list, input_ccs_number) {
+CustomSummarizeWells <- function(analysis_list, input_ccs_number, filter_cross_plate = FALSE) {
   required_objects <- c("sg_sequences_df", "contam_df", "deletions_df")
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
   min_quality <- GetMinQuality(input_ccs_number)
@@ -82,24 +82,25 @@ CustomSummarizeWells <- function(analysis_list, input_ccs_number) {
                  (reads_df[, "Num_full_passes"] >= input_ccs_number)
   selected_zmws <- reads_df[["ZMW"]][are_passing]
   summary_df_list <- SummarizeWells(plates_analysis_list,
-                                    use_zmws          = selected_zmws,
-                                    ID_column         = "Combined_ID",
-                                    unique_IDs        = sg_sequences_df[["Combined_ID"]],
-                                    deletions_df      = deletions_df,
-                                    aligned_contam_df = contam_df
+                                    use_zmws           = selected_zmws,
+                                    ID_column          = "Combined_ID",
+                                    unique_IDs         = sg_sequences_df[["Combined_ID"]],
+                                    deletions_df       = deletions_df,
+                                    aligned_contam_df  = contam_df,
+                                    filter_cross_plate = filter_cross_plate
                                     )
   return(summary_df_list)
 }
 
 
 
-SummarizeWellsForAllCutoffs <- function(analysis_list) {
+SummarizeWellsForAllCutoffs <- function(analysis_list, filter_cross_plate = FALSE) {
   num_passes <- seq_len(11)
   min_qualities <- vapply(num_passes, GetMinQuality, numeric(1))
   full_names <- paste0("CCS", num_passes, " / ", min_qualities * 100, "%")
   results_list_list <- lapply(seq_along(num_passes), function(x) {
     message(paste0("Calculating per-well summaries for ", full_names[[x]], "..."))
-    return(CustomSummarizeWells(analysis_list, num_passes[[x]]))
+    return(CustomSummarizeWells(analysis_list, num_passes[[x]], filter_cross_plate = filter_cross_plate))
   })
   names(results_list_list) <- full_names
   return(results_list_list)
@@ -110,7 +111,8 @@ SummarizeWellsForAllCutoffs <- function(analysis_list) {
 ExtractMetricForAllCutoffs <- function(all_ccs_list,
                                        use_column,
                                        plate_names,
-                                       filter_mean_quality = FALSE
+                                       filter_mean_quality = FALSE,
+                                       filter_cross_plate = FALSE
                                        ) {
 
   stopifnot("plates_df" %in% ls(envir = globalenv()))
@@ -118,7 +120,9 @@ ExtractMetricForAllCutoffs <- function(all_ccs_list,
   plate_matches <- match(plate_names, plates_df[, "Plate_name"])
   plate_numbers <- plates_df[["Plate_number"]][plate_matches]
 
-  if (filter_mean_quality) {
+  if (filter_cross_plate) {
+    use_df_name <- "filtered_cross_plate_df"
+  } else if (filter_mean_quality) {
     use_df_name <- "filtered_summary_df"
   } else {
     use_df_name <- "original_summary_df"
@@ -149,6 +153,7 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
                                 use_column,
                                 plate_names,
                                 filter_mean_quality = FALSE,
+                                filter_cross_plate  = FALSE,
                                 use_y_limits        = c(0, 1),
                                 set_mar             = TRUE,
                                 embed_PNG           = FALSE
@@ -162,12 +167,15 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
   metric_list <- ExtractMetricForAllCutoffs(all_ccs_list,
                                             use_column,
                                             plate_names,
-                                            filter_mean_quality = filter_mean_quality
+                                            filter_mean_quality = filter_mean_quality,
+                                            filter_cross_plate = filter_cross_plate
                                             )
   metric_unlisted <- unlist(metric_list, use.names = FALSE)
   are_all_NA <- all(is.na(metric_unlisted))
 
-  if (filter_mean_quality) {
+  if (filter_cross_plate) {
+    df_name <- "filtered_cross_plate_df"
+  } else if (filter_mean_quality) {
     df_name <- "filtered_summary_df"
   } else {
     df_name <- "original_summary_df"
@@ -372,8 +380,7 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
 
 DrawAllCutoffComparisons <- function(export_PNGs = TRUE) {
 
-  stopifnot("export_metrics" %in% ls(envir = globalenv()))
-
+  stopifnot(all(c("summary_list_list", "export_metrics") %in% ls(envir = globalenv())))
 
   metrics_seq <- seq_along(export_metrics)
   file_numbers <- formatC(seq_along(export_metrics),
@@ -381,16 +388,22 @@ DrawAllCutoffComparisons <- function(export_PNGs = TRUE) {
                           width = max(nchar(as.character(metrics_seq)))
                           )
 
-
   if (export_PNGs) {
     file_formats <- c("png", "pdf")
   } else {
     file_formats <- "pdf"
   }
 
+  filter_stages <- c("original_summary_df", "filtered_summary_df")
+  filter_labels <- c("i) unfiltered", "ii) filtered")
+  if ("filtered_cross_plate_df" %in% names(summary_list_list[[1]])) {
+    filter_stages <- c(filter_stages, "filtered_cross_plate_df")
+    filter_labels <- c(filter_labels, "iii) filtered cross-plate")
+  }
+
   for (file_format in file_formats) {
-    for (filter_stage in 1:2) {
-      sub_folder_name <- c("i) unfiltered", "ii) filtered")[[filter_stage]]
+    for (filter_stage in seq_along(filter_stages)) {
+      sub_folder_name <- filter_labels[[filter_stage]]
 
       message(paste0("Exporting ", file_format, " images into the following folder: ", sub_folder_name, "..."))
 
@@ -443,6 +456,7 @@ DrawAllCutoffComparisons <- function(export_PNGs = TRUE) {
                               use_column          = metric,
                               plate_names         = plate_selection,
                               filter_mean_quality = filter_stage == 2,
+                              filter_cross_plate  = filter_stage == 3,
                               use_y_limits        = custom_y_limits,
                               embed_PNG           = TRUE
                               )

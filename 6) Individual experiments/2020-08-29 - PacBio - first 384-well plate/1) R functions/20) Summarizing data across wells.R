@@ -149,10 +149,6 @@ alignment_columns <- c(
 
 
 
-
-
-
-
 # Helper functions for creating plots -------------------------------------
 
 GetPlateSelection <- function(plate_names) {
@@ -200,10 +196,6 @@ DrawGridlines <- function(y_limits, extra_grid_lines = TRUE) {
   }
   return(invisible(NULL))
 }
-
-
-
-
 
 
 
@@ -833,15 +825,22 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
         use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
 
-        for (filter_stage in 2) {
+        filter_stages <- "filtered_summary_df"
+        filter_labels <- "ii) filtered"
+        if ("filtered_cross_plate_df" %in% names(use_df_list)) {
+          filter_stages <- c(filter_stages, "filtered_cross_plate_df")
+          filter_labels <- c(filter_labels, "iii) filtered cross-plate")
+        }
 
-          df_name <- c("original_summary_df", "filtered_summary_df")[[filter_stage]] # "filtered_gRNAs_df"
+        for (filter_stage in seq_along(filter_stages)) {
+
+          df_name <- filter_stages[[filter_stage]] # "filtered_gRNAs_df"
 
           use_df <- use_df_list[[df_name]]
 
           folder_name <- paste0("CCS", ccs_numbers[[i]],
                                 " (", accuracy_percentages[[i]], ") - ",
-                                c("i) unfiltered", "ii) filtered", "iii) filtered gRNAs")[[filter_stage]]
+                                filter_labels[[filter_stage]]
                                 )
 
           message(paste0("Exporting ", file_format, " images of ",
@@ -871,8 +870,8 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
               }
             }
 
-            for (i in seq_along(column_groups_list)) {
-              metric <- names(column_groups_list)[[i]]
+            for (j in seq_along(column_groups_list)) {
+              metric <- names(column_groups_list)[[j]]
               message(paste0("    ... for the metric: '", metric, "'"))
               file_name <- paste0(plot_type, " plot - ", i, ") ",
                                   sub("Count_", "", metric, fixed = TRUE),
@@ -893,15 +892,15 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
                     width = use_width, height = use_height
                     )
               } else if (file_format == "png") {
-                metric_path <- file.path(sub_folder_path, paste0(i, ") ", metric))
+                metric_path <- file.path(sub_folder_path, paste0(j, ") ", metric))
                 dir.create(metric_path, showWarnings = FALSE)
               }
 
-              for (j in seq_along(plate_selection_titles_list)) {
-                plate_selection <- names(plate_selection_titles_list)[[j]]
+              for (k in seq_along(plate_selection_titles_list)) {
+                plate_selection <- names(plate_selection_titles_list)[[k]]
                 # message(paste0("          for the plates: ", plate_selection))
                 if (file_format == "png") {
-                  file_name <- paste0(plate_selection_prefixes[[j]],
+                  file_name <- paste0(plate_selection_prefixes[[k]],
                                       ") ", plate_selection, ".png"
                                       )
                   png(file   = file.path(metric_path, file_name),
