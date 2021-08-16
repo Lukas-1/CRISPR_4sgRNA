@@ -6,6 +6,7 @@
 
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "10) Ranking sgRNAs.R"))
+source(file.path(general_functions_directory, "13) Separating sgRNAs that target distinct TSSs.R"))
 source(file.path(general_functions_directory, "15) Finding non-overlapping sgRNAs.R"))
 
 
