@@ -31,8 +31,8 @@ output_directory         <- file.path(s2r2_directory, "5) Output", "Tables", "Ta
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(sql2_R_objects_directory, "26) Annotate mutated sgRNAs with any perfect matches in the genome.RData"))
+load(file.path(s2r2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
+load(file.path(s2r2_R_objects_directory, "26) Annotate mutated sgRNAs with any perfect matches in the genome.RData"))
 
 load(file.path(general_RData_directory, "20) Compile all relevant TSSs for each gene.RData"))
 load(file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData"))
