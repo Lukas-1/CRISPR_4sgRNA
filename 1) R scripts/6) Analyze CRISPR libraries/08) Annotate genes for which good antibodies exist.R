@@ -3,7 +3,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("readxl")
@@ -11,7 +10,6 @@ library("readxl")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
-
 
 
 
@@ -33,7 +31,7 @@ gene_lists_directory     <- file.path(CRISPR_root_directory, "2) Input data", "G
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
-load(file.path(general_RData_directory, "22) Compile data on essential genes.RData"))
+load(file.path(general_RData_directory, "22) Compile data on essential genes - essential_df.RData"))
 load(file.path(general_RData_directory, "23) Compile data on protein localization.RData"))
 load(file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData"))
 CRISPRa_by_gene_df <- full_4sg_by_gene_df
@@ -49,7 +47,6 @@ rm(full_4sg_by_gene_df)
 original_4i_df <- data.frame(read_excel(file.path(gene_lists_directory, "4i_Antibodies_PelkmansLab.xlsx")),
                              stringsAsFactors = FALSE, check.names = FALSE
                              )
-
 
 
 

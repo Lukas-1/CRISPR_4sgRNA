@@ -22,7 +22,7 @@ file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISP
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(general_RData_directory, "22) Compile data on essential genes.RData"))
+load(file.path(general_RData_directory, "22) Compile data on essential genes - essential_df.RData"))
 load(file.path(general_RData_directory, "23) Compile data on protein localization.RData"))
 load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome.RData"))
 load(file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData"))
