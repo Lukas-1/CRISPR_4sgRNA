@@ -35,17 +35,9 @@ load(file.path(s2r2_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 
 
-# Filter reads ------------------------------------------------------------
-
-pass_filters <- ccs7_df_list[["individual_reads_df"]][["Passes_filters"]] == 1
-ccs7_filtered_zmws <- ccs7_df_list[["individual_reads_df"]][["ZMW"]][pass_filters]
-
-
-
-
 # Define all "mutated" sequences to be considered -------------------------
 
-mutations_df <- FilterMutations(extracted_df, ccs7_filtered_zmws)
+mutations_df <- FilterMutations(extracted_df, ccs7_df_list)
 
 
 
