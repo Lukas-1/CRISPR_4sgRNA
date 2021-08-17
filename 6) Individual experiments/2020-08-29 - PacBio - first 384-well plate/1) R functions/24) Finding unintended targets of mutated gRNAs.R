@@ -4,7 +4,11 @@
 
 # Functions for preparing mutations_df ------------------------------------
 
-FilterMutations <- function(extract_df, use_zmws, min_length = 19, max_length = 42) {
+FilterMutations <- function(extract_df, use_df_list, min_length = 19, max_length = 42) {
+
+  use_df <- use_df_list[["individual_reads_df"]]
+  pass_filters <- use_df[["Passes_filters"]] == 1
+  use_zmws <- use_df[["ZMW"]][pass_filters]
 
   are_sg <- extract_df[, "Feature"] %in% paste0("sg", 1:4)
   are_mutated <- extract_df[, "Category"] %in% "Mutation"
@@ -22,6 +26,9 @@ FilterMutations <- function(extract_df, use_zmws, min_length = 19, max_length = 
   are_too_long <- sequence_lengths > max_length
   mutations_df <- mutations_df[!(are_too_short | are_too_long), ]
   row.names(mutations_df) <- NULL
+
+  mutations_df <- AddContamZMW(mutations_df, use_df_list)
+
   return(mutations_df)
 }
 
@@ -62,6 +69,21 @@ FindHitsMutatedAndTemplate <- function(mut_df) {
 
 
 # Functions for annotating mutations_df -----------------------------------
+
+AddContamZMW <- function(mut_df, use_df_list) {
+  assign("delete_mut_df", mut_df, envir = globalenv())
+  assign("delete_use_df_list", use_df_list, envir = globalenv())
+  use_df <- use_df_list[["individual_reads_df"]]
+  any_aligned_contam <- apply(as.matrix(use_df[, paste0("sg", 1:4, "_category")]) == "Contamination",
+                              1,
+                              any
+                              )
+  any_search_contam <- use_df[, "Num_contaminating_guides"] > 0
+  are_contam_zmws <- use_df[["ZMW"]][any_search_contam | any_aligned_contam]
+  mut_df[["Is_contaminated_read"]] <- mut_df[, "ZMW"] %in% are_contam_zmws
+  return(mut_df)
+}
+
 
 GetEntrezsList <- function(full_df) {
   entrezs_splits <- strsplit(full_df[["Affected_Entrez_IDs"]], ", ", fixed = TRUE)
@@ -150,20 +172,26 @@ AnnotateMutations <- function(all_mut_df,
   }
 
   are_correct_modality <- all_mut_df[["Modality"]] %in% modalities_vec
+  are_eligible <- !(all_mut_df[["Is_contaminated_read"]]) & are_correct_modality
   have_0MM <- all_mut_df[["Mutated_num_0MM"]] >= 1
 
-  message(paste0("Out of a total of ", sum(are_correct_modality),
+  metrics_vec <- c(
+    "Total_mutated" = sum(are_eligible),
+    "0MM_hits"      = sum(have_0MM & are_eligible)
+  )
+
+  message(paste0("Out of a total of ", metrics_vec[["Total_mutated"]],
                  " mutated gRNAs (for ",
                  paste0(modalities_vec, collapse = " and "),
-                 "), \n", sum(have_0MM & are_correct_modality),
-                 " contained one or more perfect-match binding sites in the genome.\n",
+                 "), \n", metrics_vec[["0MM_hits"]], " contained one or more ",
+                 "perfect-match binding sites in the genome.\n",
                  "(Note: Incorrect gRNAs with >50% deleted base pairs or that",
                  " matched the guide RNA sequences\nof other wells perfectly",
                  " (i.e. contaminations) were excluded.)\n"
                  )
           )
 
-  use_mut_df <- all_mut_df[are_correct_modality & have_0MM, ]
+  use_mut_df <- all_mut_df[are_eligible & have_0MM, ]
   row.names(use_mut_df) <- NULL
 
 
@@ -268,7 +296,7 @@ AnnotateMutations <- function(all_mut_df,
   }
 
   columns_in_order <- c(
-    "Combined_ID",  "ZMW", "sg_number", "Modality",
+    "Combined_ID",  "ZMW", "sg_number", "Modality", #"Is_contaminated_read"
     "Gene_symbol", "Entrez_ID", "TSS_number",
 
     "Mutated_num_0MM", "Mutated_loci_0MM",
@@ -299,16 +327,25 @@ AnnotateMutations <- function(all_mut_df,
 
   ## Report on the results
 
+  metrics_vec <- c(
+    metrics_vec,
+    "All_unintended_targets" = sum((results_df[["Num_all_unintended_genes"]] >= 1) %in% TRUE),
+    "New_unintended_targets" = sum((results_df[["Num_new_unintended_genes"]] >= 1) %in% TRUE)
+  )
+
   message(paste0("\nOut these, ",
-                 sum((results_df[["Num_all_unintended_genes"]] >= 1) %in% TRUE),
+                 metrics_vec[["All_unintended_targets"]],
                  " mutated single guide RNAs targeted at least one gene.",
-                 "\nHowever, only ",
-                 sum((results_df[["Num_new_unintended_genes"]] >= 1) %in% TRUE),
+                 "\nHowever, only ",  metrics_vec[["New_unintended_targets"]],
                  " of these targeted any genes in addition\nto those already",
                  " targeted by the template (unmutated) guide RNA."
                  )
           )
-  return(results_df)
+  results_list <- list(
+    "annotated_df" = results_df,
+    "gRNA_numbers" = metrics_vec
+  )
+  return(results_list)
 }
 
 
@@ -346,6 +383,43 @@ ExportMutatedDf <- function(input_df, file_name) {
 
 
 
+
+
+# Functions for generating doughnut/bar plots -----------------------------
+
+SubtractFollowing <- function(numeric_vec) {
+  stopifnot(length(numeric_vec) >= 2)
+  for (i in seq_len(length(numeric_vec) - 1)) {
+    numeric_vec[[i]] <- numeric_vec[[i]] - numeric_vec[[i + 1]]
+  }
+  return(numeric_vec)
+}
+
+
+MutationsDonutBar <- function(gRNA_numbers, main_title) {
+  labels_vec <- c(
+    "Mutated gRNAs that lack a perfect-\nmatch site in the human genome",
+    "Mutated gRNAs whose target sites\nare not expected to affect any gene",
+    "Mutated gRNAs that share its target\ngenes with the unmutated gRNA",
+    "Mutated gRNAs that affect\na new off-target gene"
+  )
+  colors_vec <- c("#DDDDDD", "#88CCEE", "#332288", "#AA4499")
+  DonutBars(counts_vec      = SubtractFollowing(gRNA_numbers),
+            use_colors      = colors_vec,
+            use_labels      = labels_vec,
+            use_title       = main_title,
+            title_line      = 0.4,
+            donut_label     = "Mutated\ngRNAs",
+            donut_text_size = 0.7,
+            donut_radius    = 0.26,
+            donut_y_mid     = 0.25,
+            space           = 0.8,
+            use_mai         = c(0.01, 2.5, 0.1, 0.3),
+            side_text_size  = 0.8,
+            use_line_height = 1.25
+            )
+  return(invisible(NULL))
+}
 
 
 
