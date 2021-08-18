@@ -50,8 +50,6 @@ matches_vec <- match(mutations_df[, "Combined_ID"], library_df[, "Combined_ID"])
 
 stopifnot(!(anyNA(matches_vec)))
 
-mutations_df <- AddContamZMW(ccs7_df_list, mutations_df)
-
 mutations_df <- data.frame(
   mutations_df,
   library_df[matches_vec, c("Modality", "Target_ID" ,"TSS_number", "Entrez_ID", "Gene_symbol")],
