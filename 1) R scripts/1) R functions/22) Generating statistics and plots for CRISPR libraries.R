@@ -3452,6 +3452,7 @@ DonutBars <- function(use_factor         = NULL,
                       use_colors,
                       space              = 0.5,
                       use_title          = NULL,
+                      title_line         = 0,
                       title_font         = 2,
                       bar_labels         = NULL,
                       donut_radius       = 0.15,
@@ -3542,8 +3543,8 @@ DonutBars <- function(use_factor         = NULL,
 
 
   if (!(is.null(use_title))) {
-    title(use_title, outer = TRUE, cex.main = par("cex") * 0.8, line = 0,
-          font.main = title_font
+    title(use_title, outer = TRUE, cex.main = par("cex") * 0.8,
+          line = title_line, font.main = title_font
           )
   }
 
