@@ -1,4 +1,4 @@
-### 7th March 2021 ###
+### 16th August 2021 ###
 
 
 
@@ -30,8 +30,8 @@ CRISPRko_Brie_path        <- file.path(CRISPR_input_directory,
 
 file_directory            <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-08-16 - annotate the Brie library with data on essential genes")
 file_input_directory      <- file.path(file_directory, "1) Input")
-file_output_directory     <- file.path(file_directory, "3) Output")
 R_objects_directory       <- file.path(file_directory, "2) R objects")
+file_output_directory     <- file.path(file_directory, "3) Output")
 
 
 
