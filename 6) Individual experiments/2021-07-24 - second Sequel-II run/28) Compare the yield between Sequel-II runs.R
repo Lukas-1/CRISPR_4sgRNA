@@ -24,8 +24,8 @@ s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - secon
 s2r1_R_objects_directory <- file.path(s2r1_directory, "3) R objects")
 s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
 
-file_output_directory    <- file.path(s2r2_directory, "5) Output", "Figures", "Compare the yield of different runs")
-PNGs_output_directory    <- file.path(s2r2_directory, "5) Output", "PNGs", "Compare the yield of different runs")
+file_output_directory    <- file.path(s2r2_directory, "5) Output", "Figures", "Troubleshooting")
+PNGs_output_directory    <- file.path(s2r2_directory, "5) Output", "PNGs", "Troubleshooting")
 
 
 
