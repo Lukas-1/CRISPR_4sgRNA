@@ -42,9 +42,10 @@ mutations_df <- FilterMutations(extracted_df, ccs7_df_list)
 
 
 
+
 # Annotate mutated sequences with 0MM off-target sites --------------------
 
-mutations_df <- FindHitsMutatedAndTemplate(mutations_df)
+mutations_df <- Find19or20MutatedAndTemplate(mutations_df)
 
 
 
