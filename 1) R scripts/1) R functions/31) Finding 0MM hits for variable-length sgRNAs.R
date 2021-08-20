@@ -43,7 +43,10 @@ GetAllSubSequences <- function(sequences_vec, min_length = 18L) {
   sequence_lengths <- nchar(sequences_vec)
   unique_lengths <- sort(unique(sequence_lengths))
   if (any(unique_lengths < min_length)) {
-    stop("Some of the sequences were shorter than 'min_length'!")
+    stop(paste0("Some of the sequences were shorter than 'min_length'",
+                "(i.e. ", min_length, ")!"
+                )
+         )
   }
   unique_lengths_list <- lapply(unique_lengths, function(x) {
     sub_range_mat <- FindAllSubRanges(x, min_length)
@@ -62,14 +65,12 @@ GetAllSubSequences <- function(sequences_vec, min_length = 18L) {
     })
     ranges_df <- RowBindToDf(ranges_list)
   })
-  assign("delete_unique_lengths_list", unique_lengths_list, envir = globalenv())
   unique_lengths_df <- RowBindToDf(unique_lengths_list)
   new_order <- order(match(unique_lengths_df[["Original"]], sequences_vec))
   unique_lengths_df <- unique_lengths_df[new_order, ]
   row.names(unique_lengths_df) <- NULL
   return(unique_lengths_df)
 }
-
 
 
 
@@ -189,10 +190,10 @@ FindPerfectHits <- function(input_sequences,
 
 
 
-Add0MMHits <- function(input_df, sequence_column) {
+Add0MMHits <- function(input_df, sequence_column, min_length = 19L) {
 
   unique_sequences <- unique(input_df[, sequence_column])
-  loci_0MM_df <- FindPerfectHits(unique_sequences)
+  loci_0MM_df <- FindPerfectHits(unique_sequences, min_length = min_length)
 
   matches_vec <- match(input_df[[sequence_column]],
                        loci_0MM_df[["Sequence"]]
