@@ -33,26 +33,9 @@ output_directory         <- file.path(sql2_directory, "5) Output", "Tables", "Ta
 
 load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(sql2_R_objects_directory, "26) Annotate mutated sgRNAs with any perfect matches in the genome.RData"))
-load(file.path(sql2_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
-
 
 load(file.path(general_RData_directory, "20) Compile all relevant TSSs for each gene.RData"))
 load(file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData"))
-
-
-
-
-
-# Identify contaminated ZMWs ----------------------------------------------
-
-use_df <- ccs7_df_list[["individual_reads_df"]]
-any_aligned_contam <- apply(as.matrix(use_df[, paste0("sg", 1:4, "_category")]) == "Contamination",
-                            1,
-                            any
-                            )
-any_search_contam <- use_df[, "Num_contaminating_guides"] > 0
-are_contam_zmws <- use_df[["ZMW"]][any_search_contam | any_aligned_contam]
-
 
 
 
@@ -77,56 +60,80 @@ mutations_df <- data.frame(
 
 # Prepare the mutations data frames ---------------------------------------
 
-TSS_mut_list <- AnnotateMutations(mutations_df, c("CRISPRa", "CRISPRi"),
-                                  FindNearbyTSSs, all_TSS_df
-                                  )
-
-
-CRISPRko_mut_list <- AnnotateMutations(mutations_df, "CRISPRko",
-                                       FindOverlappingGenes,
-                                       CDS_or_exon_locations_df
+TSS_19bp_mut_list <- AnnotateMutations(mutations_df, c("CRISPRa", "CRISPRi"),
+                                       FindNearbyTSSs, all_TSS_df
+                                       )
+TSS_20bp_mut_list <- AnnotateMutations(mutations_df, c("CRISPRa", "CRISPRi"),
+                                       FindNearbyTSSs, all_TSS_df,
+                                       use_20bp = TRUE
                                        )
 
+
+CRISPRko_19bp_mut_list <- AnnotateMutations(mutations_df, "CRISPRko",
+                                            FindOverlappingGenes,
+                                            CDS_or_exon_locations_df
+                                            )
+CRISPRko_20bp_mut_list <- AnnotateMutations(mutations_df, "CRISPRko",
+                                            FindOverlappingGenes,
+                                            CDS_or_exon_locations_df,
+                                            use_20bp = TRUE
+                                            )
 
 
 
 # Export data on individual reads -----------------------------------------
 
-ExportMutatedDf(TSS_mut_list[["annotated_df"]],
-                "Targets_of_mutated_gRNAs__CRISPRa_and_CRISPRi"
+ExportMutatedDf(TSS_19bp_mut_list[["annotated_df"]],
+                "Targets_of_mutated_gRNAs__19bp__CRISPRa_and_CRISPRi"
                 )
-ExportMutatedDf(CRISPRko_mut_list[["annotated_df"]],
-                "Targets_of_mutated_gRNAs__CRISPRko"
+ExportMutatedDf(CRISPRko_19bp_mut_list[["annotated_df"]],
+                "Targets_of_mutated_gRNAs__19bp__CRISPRko"
                 )
 
+ExportMutatedDf(TSS_20bp_mut_list[["annotated_df"]],
+                "Targets_of_mutated_gRNAs__20bp__CRISPRa_and_CRISPRi"
+                )
+ExportMutatedDf(CRISPRko_20bp_mut_list[["annotated_df"]],
+                "Targets_of_mutated_gRNAs__20bp__CRISPRko"
+                )
 
 
 
 
 # Draw doughnut/bar plots -------------------------------------------------
 
-pdf(file = file.path(output_directory, "Donut charts - targets of mutated gRNAs.pdf"),
+pdf(file = file.path(output_directory, "Donut charts - 19bp - targets of mutated gRNAs.pdf"),
     width = 6, height = 4
     )
-
-MutationsDonutBar(CRISPRko_mut_list[["gRNA_numbers"]],
+MutationsDonutBar(CRISPRko_19bp_mut_list[["gRNA_numbers"]],
                   "First run \u2013 CRISPRko (target: CDS or exon)"
                   )
-
-MutationsDonutBar(TSS_mut_list[["gRNA_numbers"]],
+MutationsDonutBar(TSS_19bp_mut_list[["gRNA_numbers"]],
                   "First run \u2013 CRISPRa/i (target: within 1000 bp of the TSS)"
                   )
-
 dev.off()
 
 
+
+pdf(file = file.path(output_directory, "Donut charts - 20bp - targets of mutated gRNAs.pdf"),
+    width = 6, height = 4
+    )
+MutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]],
+                  "First run \u2013 CRISPRko (target: CDS or exon)"
+                  )
+MutationsDonutBar(TSS_20bp_mut_list[["gRNA_numbers"]],
+                  "First run \u2013 CRISPRa/i (target: within 1000 bp of the TSS)"
+                  )
+dev.off()
 
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("TSS_mut_list", "CRISPRko_mut_list"),
+save(list = c("TSS_19bp_mut_list", "TSS_20bp_mut_list",
+              "CRISPRko_19bp_mut_list", "CRISPRko_20bp_mut_list"
+              ),
      file = file.path(sql2_R_objects_directory, "27) Annotate mutated sgRNAs with the genes they target.RData")
      )
 
