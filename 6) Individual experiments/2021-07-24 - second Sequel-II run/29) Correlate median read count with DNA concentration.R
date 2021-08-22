@@ -321,26 +321,20 @@ ccs7_df_list <- SummarizeWells(new_analysis_list,
 
 use_df <- ccs7_df_list[["filtered_summary_df"]]
 
-median_counts <- tapply(use_df[["Count_total"]],
-                        use_df[["Plate_number"]],
-                        median
-                        )
+plates_fac <- factor(use_df[["Plate_number"]])
 
-sum_counts <- tapply(use_df[["Count_total"]],
-                     use_df[["Plate_number"]],
-                     sum
-                     )
+median_counts <- tapply(use_df[["Count_total"]], plates_fac, median)
+sum_counts <- tapply(use_df[["Count_total"]], plates_fac, sum)
 
 num_wells_with_few_reads <- tapply(use_df[["Count_total"]],
-                                   use_df[["Plate_number"]],
-                                   function(x) sum(x < 9)
+                                   plates_fac,
+                                   function(x) sum(x < 10)
                                    )
 num_wells_with_no_reads  <- tapply(use_df[["Count_total"]],
-                                   use_df[["Plate_number"]],
+                                   plates_fac,
                                    function(x) sum(x == 0)
                                    )
 
-plates_fac <- factor(use_df[["Plate_number"]])
 matches_vec <- match(levels(plates_fac), plates_df[["Plate_number"]])
 number_of_wells <- tabulate(plates_fac)
 
