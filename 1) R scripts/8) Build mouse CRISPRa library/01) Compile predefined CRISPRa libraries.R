@@ -299,7 +299,6 @@ table(lengths(transcripts_list))
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "CRISPRa_df",
