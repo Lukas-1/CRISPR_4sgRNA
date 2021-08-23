@@ -76,7 +76,107 @@ RemoveRedundantColumns <- function(input_df) {
 
 
 
-ScatterPlot <- function(input_df, x_column, y_column) {
+PoolScatter <- function(input_df, x_column, y_column) {
+
+  ## Define the point colors
+
+  pool1_color  <- brewer.pal(9, "Greens")[[7]]
+  pool2_color  <- brewer.pal(9, "Blues")[[7]]
+  no_DNA_color <- brewer.pal(9, "Reds")[[3]]
+  hi_DNA_color <- brewer.pal(9, "Reds")[[8]]
+
+  colors_vec <- ifelse(input_df[, "Run2_pool"] == 1, pool1_color, pool2_color)
+  colors_vec[input_df[, "No_DNA"]] <- no_DNA_color
+  colors_vec[input_df[, "Was_corrected"]] <- hi_DNA_color
+
+  input_df[["Point_colors"]] <- colors_vec
+  point_cex = 1.1
+
+  use_mai <- c(0.9, 0.9, 0.4, 1.5)
+
+
+  ## Draw the scatter plot
+
+  RegressionScatter(input_df,
+                    x_column,
+                    y_column,
+                    colors_column = "Point_colors",
+                    x_label       = axis_labels_list[[x_column]],
+                    y_label       = axis_labels_list[[y_column]],
+                    use_mai       = use_mai,
+                    point_cex     = point_cex
+                    )
+
+
+  ## Draw the legend
+
+  legend_colors <- c(pool1_color, pool2_color, no_DNA_color, hi_DNA_color)
+  border_alpha_hex <- substr(rgb(1, 1, 1, 0.75), 8, 9)
+  fill_alpha_hex <- substr(rgb(1, 1, 1, 0.5), 8, 9)
+
+  old_mai <- par("mai" = use_mai)
+
+  legend("right",
+         inset     = -0.27,
+         legend    = c("Pool 1",
+                       "Pool 2",
+                       "No DNA",
+                       "Half amount"
+                       ),
+         y.intersp = 1.4,
+         pch       = 21,
+         pt.cex    = point_cex,
+         col       = paste0(legend_colors, border_alpha_hex),
+         pt.bg     = paste0(legend_colors, fill_alpha_hex),
+         bty       = "n",
+         xpd       = NA
+         )
+
+  par(old_mai)
+
+  return(invisible(NULL))
+}
+
+
+
+
+BarcodeScatter <- function(input_df, use_var) {
+
+  x_column <- paste0("Pool1_", tolower(use_var))
+  y_column <- paste0("Pool2_", tolower(use_var))
+
+  use_mai <- c(0.8, 0.9, 0.8, 1)
+
+  RegressionScatter(input_df,
+                    x_column,
+                    y_column,
+                    x_label    = "Pool 1",
+                    y_label    = "Pool 2",
+                    use_mai    = c(0.8, 0.9, 0.8, 1),
+                    label_line = 2.4
+                    )
+  old_mai <- par(mai = use_mai)
+
+  mtext(axis_labels_list[[use_var]], line = 0.9)
+
+  par(old_mai)
+
+  return(invisible(NULL))
+}
+
+
+
+
+RegressionScatter <- function(input_df,
+                              x_column,
+                              y_column,
+                              colors_column = NULL,
+                              x_label       = "",
+                              y_label       = "",
+                              use_mai       = rep(1, 4),
+                              point_cex     = 1.1,
+                              label_line    = 2.7
+                              ) {
 
   ## Make sure the x values are in order (for the lm model below)
 
@@ -87,16 +187,11 @@ ScatterPlot <- function(input_df, x_column, y_column) {
 
   ## Define the point colors
 
-  pool1_color  <- brewer.pal(9, "Greens")[[7]]
-  pool2_color  <- brewer.pal(9, "Blues")[[7]]
-  no_DNA_color <- brewer.pal(9, "Reds")[[3]]
-  hi_DNA_color <- brewer.pal(9, "Reds")[[8]]
-
-  colors_vec <- ifelse(input_df[, "Run2_pool"] == 1, pool1_color, pool2_color)
-  colors_vec[input_df[["No_DNA"]]] <- no_DNA_color
-  colors_vec[input_df[["Was_corrected"]]] <- hi_DNA_color
-
-  fill_colors_vec <- colors_vec
+  if (is.null(colors_column)) {
+    colors_vec <- brewer.pal(9, "Purples")[[8]]
+  } else {
+    colors_vec <- input_df[, colors_column]
+  }
   border_alpha_hex <- substr(rgb(1, 1, 1, 0.75), 8, 9)
   fill_alpha_hex <- substr(rgb(1, 1, 1, 0.5), 8, 9)
 
@@ -127,36 +222,19 @@ ScatterPlot <- function(input_df, x_column, y_column) {
 
 
   ## Prepare the plot region
-  old_mai <- par("mai" = c(0.9, 0.9, 0.4, 1.5))
+  old_mai <- par("mai" = use_mai)
   plot(1,
        type = "n",
        las  = 1,
-       mgp  = c(2.7, 0.55, 0),
+       mgp  = c(label_line, 0.55, 0),
        tcl  = -0.35,
        xaxs = "i",
        yaxs = "i",
        xlim = x_limits,
        ylim = y_limits,
-       xlab = axis_labels_list[[x_column]],
-       ylab = axis_labels_list[[y_column]]
+       xlab = x_label,
+       ylab = y_label
        )
-  point_cex <- 1.1
-  legend_colors <- c(pool1_color, pool2_color, no_DNA_color, hi_DNA_color)
-  legend("right",
-         inset     = -0.27,
-         legend    = c("Pool 1",
-                       "Pool 2",
-                       "No DNA",
-                       "Half amount"
-                      ),
-         y.intersp = 1.4,
-         pch       = 21,
-         pt.cex    = point_cex,
-         col       = paste0(legend_colors, border_alpha_hex),
-         pt.bg     = paste0(legend_colors, fill_alpha_hex),
-         bty       = "n",
-         xpd       = NA
-         )
 
 
   ## Add the R^2
@@ -180,20 +258,13 @@ ScatterPlot <- function(input_df, x_column, y_column) {
   lines(new_df[, 1], conf_int_mat[, 1], col = "gray70", lwd = 2)
 
 
-
   ## Draw the points
   points(input_df[[x_column]],
          input_df[[y_column]],
          cex  = point_cex,
          pch  = 21,
          col  = paste0(colors_vec, border_alpha_hex),
-         bg   = paste0(fill_colors_vec, fill_alpha_hex),
-         mgp  = c(2.8, 0.45, 0),
-         tcl  = -0.4,
-         xlab = axis_labels_list[[x_column]],
-         ylab = axis_labels_list[[y_column]],
-         xlim = c(0, max(input_df[[x_column]], na.rm = TRUE)),
-         ylim = c(0, max(input_df[[y_column]], na.rm = TRUE))
+         bg   = paste0(colors_vec, fill_alpha_hex)
          )
 
 
@@ -261,7 +332,7 @@ conc_df[["Was_corrected"]] <- conc_df[[2]] > 25
 
 conc_df[["No_DNA"]] <- conc_df[, "b-fabric number"] == missing_plate_number
 
-conc_df[["Corrected_concentration"]] <- ifelse(conc_df[["Was_corrected"]] ,
+conc_df[["Corrected_concentration"]] <- ifelse(conc_df[["Was_corrected"]],
                                                conc_df[[2]] / 2,
                                                conc_df[[2]]
                                                )
@@ -339,13 +410,13 @@ matches_vec <- match(levels(plates_fac), plates_df[["Plate_number"]])
 number_of_wells <- tabulate(plates_fac)
 
 summaries_df <- data.frame(
-  plates_df[matches_vec, 1:5],
-  "Plate_number"                  = levels(plates_fac),
+  plates_df[matches_vec, c(1:6, 8)],
   "Number_of_wells"               = number_of_wells,
   "Median_count"                  = median_counts,
   "Median_count_per_well"         = median_counts / 384 * number_of_wells,
   "Fraction_wells_with_few_reads" = num_wells_with_few_reads / number_of_wells,
   "Fraction_wells_with_no_reads"  = num_wells_with_no_reads / number_of_wells,
+  "Sum_counts"                    = sum_counts,
   "Sum_counts_in_k"               = sum_counts / 1000,
   stringsAsFactors                = FALSE,
   row.names                       = NULL
@@ -357,21 +428,56 @@ summaries_df <- data.frame(
 # Merge the two data frames -----------------------------------------------
 
 matches_vec <- match(summaries_df[["Number_96wp"]], conc_df[["b-fabric number"]])
+setdiff(seq_len(96), matches_vec)
+matches_vec[duplicated(matches_vec)] <- 96L
 
-use_columns <- c("no of PacBio reads (kbp)",
+use_columns <- c("position on the FGCZ plate",
+                 "no of PacBio reads (kbp)",
                  names(conc_df)[[2]],
                  "Corrected_concentration",
                  "No_DNA",
                  "Was_corrected"
                  )
 matched_df <- conc_df[matches_vec, use_columns]
-names(matched_df)[1:2] <- c("Thousands_of_reads", "Original_concentration")
+names(matched_df)[1:3] <- c("Position_FGCZ_plate", "Thousands_of_reads", "Original_concentration")
 
 merged_df <- data.frame(summaries_df,
                         matched_df,
                         stringsAsFactors = FALSE,
                         check.names = FALSE
                         )
+
+
+
+
+
+# Look for adapter-specific effects ---------------------------------------
+
+eligible_barcodes <- merged_df[["Barcode_ID"]][!(merged_df[["Colony_picked"]])]
+eligible_barcodes <- eligible_barcodes[duplicated(eligible_barcodes)]
+
+pool1_df <- merged_df[merged_df[["Run2_pool"]] %in% 1, ]
+pool2_df <- merged_df[merged_df[["Run2_pool"]] %in% 2, ]
+
+use_columns <- c(
+  "Number_of_wells", "Median_count", "Median_count_per_well",
+  "Fraction_wells_with_few_reads", "Fraction_wells_with_no_reads",
+  "Sum_counts_in_k", "Thousands_of_reads"
+)
+
+pool1_df <- pool1_df[match(eligible_barcodes, pool1_df[["Barcode_ID"]]), use_columns]
+pool2_df <- pool2_df[match(eligible_barcodes, pool2_df[["Barcode_ID"]]), use_columns]
+
+names(pool1_df) <- paste0("Pool1_", tolower(names(pool1_df)))
+names(pool2_df) <- paste0("Pool2_", tolower(names(pool2_df)))
+
+barcodes_df <- data.frame(
+  "Barcode_ID" = eligible_barcodes,
+  pool1_df,
+  pool2_df,
+  stringsAsFactors = FALSE,
+  row.names = NULL
+)
 
 
 
@@ -386,12 +492,9 @@ cor.test(merged_df[["Corrected_concentration"]], merged_df[["Sum_counts_in_k"]])
 
 
 
+# Plot the sequencing yield vs. the DNA concentration ---------------------
 
-
-# Create plots ------------------------------------------------------------
-
-ScatterPlot(merged_df, "Corrected_concentration", "Sum_counts_in_k")
-
+PoolScatter(merged_df, "Corrected_concentration", "Sum_counts_in_k")
 
 for (make_PDF in c(FALSE, TRUE)) {
 
@@ -404,15 +507,53 @@ for (make_PDF in c(FALSE, TRUE)) {
 
   for (x_var in c("Corrected_concentration", "Original_concentration")) {
     for (y_var in names(axis_labels_list)[3:(length(axis_labels_list) - 1)]) {
-      ScatterPlot(merged_df, x_var, y_var)
+      PoolScatter(merged_df, x_var, y_var)
     }
   }
 
   if (make_PDF) {
     dev.off()
   }
-
 }
+
+
+
+
+# Correlate the sequencing yields for pairs of barcodes -------------------
+
+BarcodeScatter(barcodes_df, "Sum_counts_in_k")
+
+for (make_PDF in c(FALSE, TRUE)) {
+
+  if (make_PDF) {
+    pdf(file.path(file_output_directory, "Sequencing yields for pairs of barcodes.pdf"),
+        width  = 5.9,
+        height = 5.6
+        )
+  }
+
+  for (plot_var in names(axis_labels_list)[3:(length(axis_labels_list) - 1)]) {
+    print(plot_var)
+    BarcodeScatter(barcodes_df, plot_var)
+  }
+
+  if (make_PDF) {
+    dev.off()
+  }
+}
+
+
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+merged_plates_df <- merged_df
+
+save(list = "merged_plates_df",
+     file = file.path(R_objects_directory, "29) Correlate median read count with DNA concentration.RData")
+     )
 
 
 
