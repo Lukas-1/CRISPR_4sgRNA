@@ -71,7 +71,6 @@ plate_selection_titles_list <- c(plate_selection_titles_list, as.list(plate_labe
 
 
 
-
 # Prepare file name strings for plate selections --------------------------
 
 plate_matches <- match(names(plate_selection_titles_list)[are_single_plates],
@@ -119,7 +118,7 @@ LollipopPlot(use_df,
 
 # Export lollipop plots and violin/box plots ------------------------------
 
-DrawAllLollipopsAndViolins(export_PNGs = FALSE)
+DrawAllLollipopsAndViolins()
 
 
 
