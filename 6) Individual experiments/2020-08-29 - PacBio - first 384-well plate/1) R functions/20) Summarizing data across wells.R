@@ -873,7 +873,7 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
             for (j in seq_along(column_groups_list)) {
               metric <- names(column_groups_list)[[j]]
               message(paste0("    ... for the metric: '", metric, "'"))
-              file_name <- paste0(plot_type, " plot - ", i, ") ",
+              file_name <- paste0(plot_type, " plot - ", j, ") ",
                                   sub("Count_", "", metric, fixed = TRUE),
                                   ".pdf"
                                   )
