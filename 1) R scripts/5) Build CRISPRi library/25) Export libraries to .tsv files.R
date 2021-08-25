@@ -24,7 +24,6 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 
 
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
@@ -37,10 +36,10 @@ load(file.path(CRISPRi_RData_directory, "24) Find all TSSs targeted by each sgRN
 
 
 
-
 # Add data on other (unintended) targeted TSSs ----------------------------
 
 merged_replaced_CRISPRi_df <- AddOtherTargets(merged_replaced_CRISPRi_df, TSS_targets_df)
+
 
 
 
@@ -110,7 +109,6 @@ merged_replaced_CRISPRi_df <- merged_replaced_CRISPRi_df[, selected_columns]
 
 
 
-
 # Make adjustments to the 5' G-substituted library ------------------------
 
 merged_replaced_CRISPRi_df[["Num_1MM"]] <- as.integer(rowSums(merged_replaced_CRISPRi_df[, c("Num_5G_MM", "Num_1MM")]))
@@ -129,8 +127,6 @@ show_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol",
                   )
 
 head(merged_replaced_CRISPRi_df[(merged_replaced_CRISPRi_df[["Off_target_stringency"]] > 0) %in% TRUE, show_columns])
-
-
 
 
 
@@ -170,7 +166,6 @@ table(top_4_TF_df[["GuideScan_specificity"]] < 0.2, useNA = "ifany")
 
 
 
-
 # Check for identical sub-sequences ---------------------------------------
 
 top_4_df <- merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Rank"]] %in% 1:4, ]
@@ -191,7 +186,6 @@ for (num_bases in 8:9) {
   print(unique_homologous_TF_df)
   message("")
 }
-
 
 
 
@@ -247,7 +241,6 @@ duplicated_sgRNA_IDs_df[num_occurrences_strict_short > 1, show_columns_TSS]
 
 
 
-
 # Check for duplicated sgRNAs among the transcription factors -------------
 
 duplicated_df <- FindSharedsgRNAs(replaced_TF_CRISPRi_df)
@@ -267,7 +260,6 @@ write.table(duplicated_df_for_export,
             file = file.path(file_output_directory, "CRISPRi_duplicated_sgRNAs_transcription_factors.tsv"),
             quote = FALSE, row.names = FALSE, col.names = TRUE, sep = "\t"
             )
-
 
 
 
@@ -301,7 +293,6 @@ omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRi_v2_ID", "Original_PAM",
 omit_SNP_columns <- grep("SNP", names(merged_replaced_CRISPRi_df), value = TRUE)
 omit_SNP_columns <- setdiff(omit_SNP_columns, c(preferred_rsID_column, preferred_AF_max_column))
 full_omit_columns <- c(omit_columns, omit_SNP_columns)
-
 
 
 
