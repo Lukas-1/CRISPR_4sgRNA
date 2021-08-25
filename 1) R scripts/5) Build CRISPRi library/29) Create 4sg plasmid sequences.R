@@ -51,19 +51,12 @@ export_genes <- c(
 export_genes %in% sg4_df[["Gene_symbol"]]
 
 for (gene_symbol in export_genes) {
-  ExportVectorsForGene(gene_symbol, sg4_df)
+  ExportVectorsForGene(gene_symbol, sg4_by_well_df)
 }
 
-ExportVectorsForGene("Control_1", vac_4sg_reordered_df)
-ExportVectorsForGene("Control_2", vac_4sg_reordered_df)
-ExportVectorsForGene("Control_3", vac_4sg_reordered_df)
-
-
-
-
-
-
-
+ExportVectorsForGene("Control_1", sg4_by_well_df)
+ExportVectorsForGene("Control_2", sg4_by_well_df)
+ExportVectorsForGene("Control_3", sg4_by_well_df)
 
 
 
