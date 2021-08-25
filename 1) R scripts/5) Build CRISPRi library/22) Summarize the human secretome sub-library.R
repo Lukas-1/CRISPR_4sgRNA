@@ -25,6 +25,7 @@ file_output_directory   <- file.path(CRISPR_root_directory, "5) Output", "CRISPR
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "10) Compile genes that constitute the secretome - secretome_df.RData"))
+load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 
 
@@ -35,7 +36,9 @@ load(file.path(CRISPRi_RData_directory, "19) For problematic genes, pick 4 guide
 
 CRISPRi_secretome_sgRNAs_df <- merged_replaced_CRISPRi_df[merged_replaced_CRISPRi_df[["Combined_ID"]] %in% secretome_df[["Combined_ID"]], ]
 
-secretome_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRi_secretome_sgRNAs_df)
+secretome_sgRNAs_summary_df <- SummarizeCRISPRDf(CRISPRi_secretome_sgRNAs_df,
+                                                 sublibraries_all_entrezs_list
+                                                 )
 
 secretome_df <- secretome_df[!(secretome_df[["Ensembl_gene_ID"]] %in% "ENSG00000284779"), ]
 
