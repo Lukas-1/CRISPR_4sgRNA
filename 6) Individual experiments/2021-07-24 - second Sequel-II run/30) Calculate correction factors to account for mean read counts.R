@@ -94,15 +94,18 @@ are_good_plates <- extended_df[, "Plate_name"] %in% good_plates
 are_pool1 <- extended_df[, "Run2_pool"] %in% 1
 are_pool2 <- extended_df[, "Run2_pool"] %in% 2
 
-leave_plates <- c("HA_40", "HA_38")
+leave_plates <- "HA_40"
 are_exceptions <- extended_df[, "Plate_name"] %in% leave_plates
 to_switch_pool1 <- are_good_plates & are_pool1 & !(are_exceptions)
 
 good_barcodes_pool1 <- extended_df[["Barcode_ID"]][to_switch_pool1]
 good_barcodes_pool2 <- extended_df[["Barcode_ID"]][are_good_plates & are_pool2]
-exchange_barcodes <- setdiff(good_barcodes_pool1, good_barcodes_pool2)
+replace_barcodes <- extended_df[["Barcode_ID"]][extended_df[["Is_to_replace"]]]
+exchange_barcodes <- setdiff(good_barcodes_pool1,
+                             c(good_barcodes_pool2, replace_barcodes)
+                             )
 
-extended_df[["Switch_pools"]]  <- (extended_df[, "Barcode_ID"] %in% exchange_barcodes) &
+extended_df[["Switch_pools"]] <- (extended_df[, "Barcode_ID"] %in% exchange_barcodes) &
                                   are_pool2
 
 extended_df[["Run3_pool"]] <- ifelse(extended_df[["Switch_pools"]],
@@ -112,15 +115,6 @@ extended_df[["Run3_pool"]] <- ifelse(extended_df[["Switch_pools"]],
                                             extended_df[, "Run2_pool"] + 2L
                                             )
                                      )
-
-
-
-
-# Check if any barcodes for the plates that need replacing... -------------
-# ... are free in pool 1. The answer is no.
-
-replace_barcodes <- extended_df[["Barcode_ID"]][extended_df[["Is_to_replace"]]]
-table(replace_barcodes %in% good_barcodes_pool1)
 
 
 
