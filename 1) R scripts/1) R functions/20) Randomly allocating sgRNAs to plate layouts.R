@@ -900,11 +900,14 @@ ExportPlates <- function(export_df,
                          sub_folder,
                          add_padding_between_plates = FALSE,
                          add_primers = TRUE,
-                         no_modality = FALSE
+                         add_colors  = TRUE,
+                         no_modality = FALSE,
+                         add_remove_columns = c()
                          ) {
   export_df[["Source"]] <- sub("Curated, ", "", export_df[["Source"]], fixed = TRUE)
   use_columns <- intersect(export_columns, names(export_df))
   remove_columns <- setdiff(names(export_df), use_columns)
+  remove_columns <- union(remove_columns, add_remove_columns)
   is_CRISPRko <- "Exon_number_GPP" %in% names(export_df)
   if (!(is_CRISPRko)) {
     remove_columns <- c(remove_columns, "CRISPOR_Graf_status")
@@ -913,10 +916,12 @@ ExportPlates <- function(export_df,
     remove_columns <- c(remove_columns, "Rank")
   }
   DfToTSV(export_df[, union(use_columns, names(export_df))],
-          file_name = file.path(sub_folder, file_name),
-          add_primers = add_primers, remove_columns = remove_columns,
+          file_name                  = file.path(sub_folder, file_name),
+          add_primers                = add_primers,
+          add_colors                 = add_colors,
+          remove_columns             = remove_columns,
           add_padding_between_plates = add_padding_between_plates,
-          no_modality = no_modality
+          no_modality                = no_modality
           )
 }
 

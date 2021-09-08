@@ -49,13 +49,12 @@ MoveAfterColumn <- function(my_df, after_this_column, column_to_move) {
 
 
 RoundNumericColumns <- function(my_df, num_digits = 7) {
-  are_floats <- vapply(seq_along(my_df), function(x) is.double(my_df[[x]]) , logical(1))
+  are_floats <- vapply(seq_along(my_df), function(x) is.double(my_df[[x]]), logical(1))
   for (i in which(are_floats)) {
     my_df[[i]] <- round(my_df[[i]], digits = num_digits)
   }
   return(my_df)
 }
-
 
 
 
@@ -65,6 +64,7 @@ MakeIDs <- function(CRISPR_df) {
          )
 
 }
+
 
 
 AddOtherTargets <- function(CRISPR_df, targets_sgRNA_df, targets_4sg_df = NULL) {
@@ -112,6 +112,7 @@ FormatForExcel <- function(my_df,
                            convert_excluded_to_3      = TRUE,
                            convert_controls_to_4      = TRUE,
                            add_primers                = FALSE,
+                           add_colors                 = TRUE,
                            allow_curated              = FALSE,
                            add_padding_between_plates = FALSE,
                            no_modality                = FALSE
@@ -246,11 +247,15 @@ FormatForExcel <- function(my_df,
                                 )
   }
 
-  my_df[["Color"]] <- ones_and_zeros_vec + 1L
+  if (add_colors) {
+    my_df[["Color"]] <- ones_and_zeros_vec + 1L
+  }
 
   if (add_padding_between_plates) {
     my_df <- AddPaddingToPlates(my_df)
-    my_df[["Color"]][is.na(my_df[["Color"]])] <- 5L
+    if (add_colors) {
+      my_df[["Color"]][is.na(my_df[["Color"]])] <- 5L
+    }
   }
 
   if (!(is.null(remove_columns))) {
@@ -285,6 +290,7 @@ DfToTSV <- function(CRISPR_df,
                     remove_columns             = full_omit_columns,
                     probability_to_percentage  = FALSE,
                     add_primers                = FALSE,
+                    add_colors                 = TRUE,
                     allow_curated              = FALSE,
                     add_padding_between_plates = FALSE,
                     no_modality                = FALSE
@@ -293,6 +299,7 @@ DfToTSV <- function(CRISPR_df,
                                  remove_columns             = remove_columns,
                                  probability_to_percentage  = probability_to_percentage,
                                  add_primers                = add_primers,
+                                 add_colors                 = add_colors,
                                  allow_curated              = allow_curated,
                                  add_padding_between_plates = add_padding_between_plates,
                                  no_modality                = no_modality

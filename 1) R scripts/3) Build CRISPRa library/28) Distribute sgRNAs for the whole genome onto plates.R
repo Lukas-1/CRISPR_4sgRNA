@@ -202,6 +202,25 @@ for (i in 1:4) {
 
 
 
+
+# Export sparse data / only the most important columns --------------------
+
+export_columns <- c("Sublibrary_4sg", "Plate_number", "Well_number",
+                    "Entrez_ID", "Gene_symbol", "TSS_ID",
+                    "sgRNA_sequence"
+                    )
+
+ExportPlates(full_4sg_by_well_df,
+             "CRISPRa_4sg_by_well",
+             sub_folder  = "4sg plate layout (complete)/Sparse",
+             add_colors  = FALSE,
+             add_primers = FALSE
+             )
+
+
+
+
+
 # Save data ---------------------------------------------------------------
 
 save(list = c("full_4sg_by_gene_df", "full_4sg_by_well_df",

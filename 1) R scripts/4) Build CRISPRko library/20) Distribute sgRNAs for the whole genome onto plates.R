@@ -15,7 +15,6 @@ source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory       <- "~/CRISPR"
@@ -24,7 +23,6 @@ general_RData_directory     <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory    <- file.path(RData_directory, "3) CRISPRko")
 file_output_directory       <- file.path(CRISPR_root_directory, "5) Output", "CRISPRko")
 previous_versions_directory <- file.path(RData_directory, "5) Previous versions of the library")
-
 
 
 
@@ -42,14 +40,12 @@ load(file.path(CRISPRko_RData_directory, "17) Export libraries to .tsv files - T
 
 
 
-
 # Add data on other (unintended) targeted genes ---------------------------
 
 merged_CRISPRko_df <- AddOtherTargets(merged_CRISPRko_df,
                                       guides_CDS_df,
                                       deletions_CDS_df
                                       )
-
 
 
 
@@ -137,7 +133,6 @@ candidates_df <- (full_4sg_by_gene_df[full_4sg_by_gene_df[["Entrez_ID"]] %in% ca
 
 
 
-
 # Assign just the PD genes to plates --------------------------------------
 
 are_PD <- (merged_CRISPRko_df[["Combined_ID"]] %in% PD_all_entrezs) #|
@@ -156,7 +151,6 @@ PD_4sg_by_well_df <- ReorderPlates(PD_4sg_by_gene_df)
 
 PD_4sg_by_gene_df[["Sublibrary_4sg"]] <- NULL
 PD_4sg_by_well_df[["Sublibrary_4sg"]] <- NULL
-
 
 
 
@@ -207,8 +201,6 @@ for (i in 1:4) {
 
 
 
-
-
 # Export the PD plate layout ----------------------------------------------
 
 ExportPlates(PD_4sg_by_gene_df, "PD_ordered_by_gene", sub_folder = "PD plate layout")
@@ -220,6 +212,21 @@ for (i in 1:4) {
 }
 
 
+
+# Export sparse data / only the most important columns --------------------
+
+export_columns <- c("Sublibrary_4sg", "Plate_number", "Well_number",
+                    "Entrez_ID", "Gene_symbol",
+                    "sgRNA_sequence"
+                    )
+
+ExportPlates(full_4sg_by_well_df,
+             "CRISPRko_4sg_by_well",
+             sub_folder         = "4sg plate layout (complete)/Sparse",
+             add_colors         = FALSE,
+             add_primers        = FALSE,
+             add_remove_columns = "Exon_number"
+             )
 
 
 

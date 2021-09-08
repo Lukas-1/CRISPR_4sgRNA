@@ -238,6 +238,22 @@ DfToTSV(old_TF_sgRNA_plates_df[are_obsolete, ],
 
 
 
+# Export sparse data / only the most important columns --------------------
+
+export_columns <- c("Sublibrary_4sg", "Plate_number", "Well_number",
+                    "Entrez_ID", "Gene_symbol", "TSS_ID",
+                    "sgRNA_sequence"
+                    )
+
+ExportPlates(full_4sg_by_well_df,
+             "CRISPRa_4sg_by_well",
+             sub_folder  = "4sg plate layout (complete)/Sparse",
+             add_colors  = FALSE,
+             add_primers = FALSE
+             )
+
+
+
 # Save data ---------------------------------------------------------------
 
 save(list = "TF_v1_CRISPRko_df",
