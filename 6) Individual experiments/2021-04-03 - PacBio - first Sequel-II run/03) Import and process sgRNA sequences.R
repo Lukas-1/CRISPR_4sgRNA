@@ -147,22 +147,36 @@ full_scheme_mat <- do.call(rbind, lapply(1:8, function(x) scheme_mat))
 
 scheme_vec <- unlist(lapply(1:16, function(x) full_scheme_mat[x, ]))
 
-original_13_mat <- as.matrix(library_df[are_plate_13, paste0("Sequence_sg", 1:4)])
-rownames(original_13_mat) <- NULL
+original_13_mat <- matrix(seq_len(384), nrow = 16, ncol = 24, byrow = TRUE)
 
-new_13_mat <- matrix(nrow = 384, ncol = 4)
+new_13_mat <- matrix(nrow = 16, ncol = 24)
 for (i in 1:4) {
-  new_13_mat[scheme_vec == "B", ] <- original_13_mat[scheme_vec == "D", ]
-  new_13_mat[scheme_vec == "D", ] <- original_13_mat[scheme_vec == "B", ]
-  new_13_mat[scheme_vec == "A", ] <- original_13_mat[scheme_vec == "A", ]
-  new_13_mat[scheme_vec == "C", ] <- original_13_mat[scheme_vec == "C", ]
-}
-
-for (i in 1:4) {
-  library_df[[paste0("Sequence_sg", i)]][are_plate_13] <- new_13_mat[, i]
+  new_13_mat[full_scheme_mat == "B"] <- original_13_mat[full_scheme_mat == "D"]
+  new_13_mat[full_scheme_mat == "D"] <- original_13_mat[full_scheme_mat == "B"]
+  new_13_mat[full_scheme_mat == "A"] <- original_13_mat[full_scheme_mat == "A"]
+  new_13_mat[full_scheme_mat == "C"] <- original_13_mat[full_scheme_mat == "C"]
 }
 
 
+are_preceding <- library_df[["Plate_number"]] < 13
+are_following <- library_df[["Plate_number"]] > 13
+
+new_13_df <- library_df[are_plate_13, ]
+new_13_indices <- unlist(lapply(1:16, function(x) new_13_mat[x, ]))
+new_13_df <- new_13_df[new_13_indices, ]
+
+new_13_df[["Well_number"]] <- seq_len(384)
+new_13_df[["Combined_ID"]] <- paste0("Plate13_Well",
+                                     formatC(seq_len(384), width = 3, flag = "0")
+                                     )
+
+library_df <- rbind.data.frame(
+  library_df[are_preceding, ],
+  new_13_df,
+  library_df[are_following, ],
+  stringsAsFactors = FALSE,
+  make.row.names = FALSE
+)
 
 
 
@@ -179,7 +193,6 @@ library_df <- AddNumOccurrences(library_df)
 empty_wells <- c("Plate08_Well024", "Plate10_Well024")
 
 library_df[["Empty_well"]] <- library_df[["Combined_ID"]] %in% empty_wells
-
 
 
 
