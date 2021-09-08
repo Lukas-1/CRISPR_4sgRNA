@@ -55,9 +55,23 @@ CharacterizeContaminations <- function(extract_df, sg_df) {
 
 
   ## Integrate data on the contaminating well
-  contam_matches <- match(extract_df[["Aligned_read"]][are_sg_contam], toupper(long_df[["Sequence"]]))
-  contam_df <- long_df[contam_matches, ]
-  row.names(contam_df) <- NULL
+  contam_df_list <- lapply(unique(sg_df[["Plate_number"]]), function(x) {
+    sub_order <- order(long_df[["Plate_number"]] == x,
+                       decreasing = TRUE
+                       )
+    reordered_df <- long_df[sub_order, ]
+    are_this_plate <- extract_df[["Plate_number"]][are_sg_contam] == x
+    this_plate_vec <- extract_df[["Aligned_read"]][are_sg_contam][are_this_plate]
+    matches_vec <- match(this_plate_vec, toupper(reordered_df[["Sequence"]]))
+    results_df <- reordered_df[matches_vec, ]
+    return(results_df)
+  })
+  contam_df <- do.call(rbind.data.frame,
+                       c(contam_df_list,
+                         stringsAsFactors = FALSE,
+                         make.row.names = FALSE
+                         )
+                       )
   names(contam_df) <- paste0("Contaminating_",
                              tolower(substr(names(contam_df), 1, 1)),
                              substr(names(contam_df), 2, nchar(names(contam_df)))
