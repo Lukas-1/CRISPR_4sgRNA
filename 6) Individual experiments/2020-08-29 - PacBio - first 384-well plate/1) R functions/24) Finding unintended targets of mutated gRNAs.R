@@ -237,6 +237,23 @@ RemoveIntendedGene <- function(char_vec) {
 }
 
 
+AddGeneInfo <- function(mut_df, use_library_df) {
+  matches_vec <- match(mut_df[, "Combined_ID"], use_library_df[, "Combined_ID"])
+  stopifnot(!(anyNA(matches_vec)))
+  library_columns <- c(
+    "Modality", "Target_ID", "Plate_4sg", "Well_4sg",
+    "TSS_number", "Entrez_ID", "Gene_symbol"
+  )
+  results_df <- data.frame(
+    mut_df,
+    library_df[matches_vec, library_columns],
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+  return(results_df)
+}
+
+
 
 AnnotateMutations <- function(all_mut_df,
                               modalities_vec,
@@ -399,7 +416,10 @@ AnnotateMutations <- function(all_mut_df,
   }
 
   columns_in_order <- c(
-    "Combined_ID",  "ZMW", "sg_number", "Modality", #"Is_contaminated_read"
+    "Combined_ID",  "ZMW",
+    if ("Original_ZMW" %in% names(results_df)) "Original_ZMW" else c(),
+    "sg_number", "Modality", #"Is_contaminated_read"
+    "Plate_4sg", "Well_4sg",
     "Gene_symbol", "Entrez_ID", "TSS_number",
 
     num_column, loci_column,
@@ -417,6 +437,7 @@ AnnotateMutations <- function(all_mut_df,
     "Template_affected_gene_symbols_truncated",
     gene_IDs_truncated
   )
+
 
   results_df <- results_df[, columns_in_order]
 
@@ -454,9 +475,16 @@ AnnotateMutations <- function(all_mut_df,
 
 
 ExportMutatedDf <- function(input_df, file_name) {
+
   truncated_columns <- grep("_truncated$", names(input_df), value = TRUE)
   untruncated_columns <- sub("_truncated$", "", truncated_columns)
   export_df <- input_df[, !(names(input_df) %in% untruncated_columns)]
+
+  if (all(is.na(export_df[, "TSS_number"])) &&
+      all(export_df[, "Modality"] == "CRISPRko")
+  ) {
+    export_df <- export_df[, names(export_df) != "TSS_number"]
+  }
   if ("Mutated_20bp_loci_0MM" %in% names(input_df)) {
     use_column <- "Mutated_20bp_loci_0MM"
   } else {
@@ -467,8 +495,8 @@ ExportMutatedDf <- function(input_df, file_name) {
   export_df[["Location_available_for_Entrez_ID"]] <- ifelse(export_df[["Location_available_for_Entrez_ID"]],
                                                             "Yes", "No"
                                                             )
-  # export_df[["Aligned_template"]] <- paste0("'", export_df[["Aligned_template"]])
-  # export_df[["Aligned_read"]] <- paste0("'", export_df[["Aligned_read"]])
+  export_df[["Aligned_template"]] <- sub("^-", "\u0009-", export_df[["Aligned_template"]])
+  export_df[["Aligned_read"]] <- sub("^-", "\u0009-", export_df[["Aligned_read"]])
   new_order <- order((export_df[["Num_new_unintended_genes"]] >= 1) %in% TRUE,
                      decreasing = TRUE
                      )

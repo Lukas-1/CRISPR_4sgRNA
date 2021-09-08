@@ -43,20 +43,9 @@ load(file.path(general_RData_directory, "21) Assemble data frames of gene, trans
 
 
 
-
 # Add gene information to the mutations_df data frame ---------------------
 
-matches_vec <- match(mutations_df[, "Combined_ID"], library_df[, "Combined_ID"])
-
-stopifnot(!(anyNA(matches_vec)))
-
-mutations_df <- data.frame(
-  mutations_df,
-  library_df[matches_vec, c("Modality", "Target_ID" ,"TSS_number", "Entrez_ID", "Gene_symbol")],
-  stringsAsFactors = FALSE,
-  row.names = NULL
-)
-
+mutations_df <- AddGeneInfo(mutations_df, library_df)
 
 
 
@@ -89,14 +78,14 @@ CRISPRko_20bp_mut_list <- AnnotateMutations(mutations_df, "CRISPRko",
 # Export data on individual reads -----------------------------------------
 
 ExportMutatedDf(TSS_19bp_mut_list[["annotated_df"]],
-                "Targets_of_mutated_gRNAs__19bp__CRISPRa_and_CRISPRi"
+                "Targets_of_mutated_gRNAs__19bp__CRISPRa"
                 )
 ExportMutatedDf(CRISPRko_19bp_mut_list[["annotated_df"]],
                 "Targets_of_mutated_gRNAs__19bp__CRISPRko"
                 )
 
 ExportMutatedDf(TSS_20bp_mut_list[["annotated_df"]],
-                "Targets_of_mutated_gRNAs__20bp__CRISPRa_and_CRISPRi"
+                "Targets_of_mutated_gRNAs__20bp__CRISPRa"
                 )
 ExportMutatedDf(CRISPRko_20bp_mut_list[["annotated_df"]],
                 "Targets_of_mutated_gRNAs__20bp__CRISPRko"
@@ -116,7 +105,7 @@ MutationsDonutBar(CRISPRko_19bp_mut_list[["gRNA_numbers"]],
                   )
 
 MutationsDonutBar(TSS_19bp_mut_list[["gRNA_numbers"]],
-                  "First run \u2013 CRISPRa/i (target: within 1000 bp of the TSS)"
+                  "First run \u2013 CRISPRa (target: within 1000 bp of the TSS)"
                   )
 dev.off()
 
@@ -130,7 +119,7 @@ MutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]],
                   )
 
 MutationsDonutBar(TSS_20bp_mut_list[["gRNA_numbers"]],
-                  "First run \u2013 CRISPRa/i (target: within 1000 bp of the TSS)"
+                  "First run \u2013 CRISPRa (target: within 1000 bp of the TSS)"
                   )
 dev.off()
 

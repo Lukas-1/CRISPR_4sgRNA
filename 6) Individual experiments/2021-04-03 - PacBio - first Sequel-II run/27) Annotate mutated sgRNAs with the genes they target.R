@@ -17,6 +17,7 @@ source(file.path(R_functions_directory, "24) Finding unintended targets of mutat
 
 
 
+
 # Define folder paths -----------------------------------------------------
 
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
@@ -43,16 +44,7 @@ load(file.path(general_RData_directory, "21) Assemble data frames of gene, trans
 
 # Add gene information to the mutations_df data frame ---------------------
 
-matches_vec <- match(mutations_df[, "Combined_ID"], library_df[, "Combined_ID"])
-
-stopifnot(!(anyNA(matches_vec)))
-
-mutations_df <- data.frame(
-  mutations_df,
-  library_df[matches_vec, c("Modality", "Target_ID" ,"TSS_number", "Entrez_ID", "Gene_symbol")],
-  stringsAsFactors = FALSE,
-  row.names = NULL
-)
+mutations_df <- AddGeneInfo(mutations_df, library_df)
 
 
 
