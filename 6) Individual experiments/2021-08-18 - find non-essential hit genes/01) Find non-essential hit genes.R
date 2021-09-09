@@ -10,22 +10,22 @@ library("readxl")
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
-experiments_directory     <- file.path(CRISPR_root_directory, "6) Individual experiments")
+CRISPR_root_directory <- "~/CRISPR"
+experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 
-essential_genes_path      <- file.path(experiments_directory,
-                                       "2021-08-16 - annotate the Brie library with data on essential genes",
-                                       "2) R objects",
-                                       "Annotate the Brie library with data on essential genes.RData"
-                                       )
+essential_genes_path  <- file.path(experiments_directory,
+                                   "2021-08-16 - annotate the Brie library with data on essential genes",
+                                   "2) R objects",
+                                   "Annotate the Brie library with data on essential genes.RData"
+                                   )
 
-file_directory            <- file.path(experiments_directory, "2021-08-18 - find non-essential hit genes")
-file_input_directory      <- file.path(file_directory, "1) Input")
-R_objects_directory       <- file.path(file_directory, "2) R objects")
-file_output_directory     <- file.path(file_directory, "3) Output")
+file_directory        <- file.path(experiments_directory, "2021-08-18 - find non-essential hit genes")
+file_input_directory  <- file.path(file_directory, "1) Input")
+top_genes_directory   <- file.path(file_input_directory, "Pooled screen", "Top genes")
+R_objects_directory   <- file.path(file_directory, "2) R objects")
+file_output_directory <- file.path(file_directory, "3) Output")
 
 
 
@@ -40,12 +40,22 @@ load(essential_genes_path)
 
 # Read in data ------------------------------------------------------------
 
-up_genes_df <- data.frame(read_excel(file.path(file_input_directory, "inters_Genelist_up.xlsx")),
+gt_df <- read.delim(file.path(file_input_directory, "Other", "scGT vs NGT.txt"),
+                    stringsAsFactors = FALSE,
+                    check.names = FALSE
+                    )
+
+
+
+
+# Read in data ------------------------------------------------------------
+
+up_genes_df <- data.frame(read_excel(file.path(top_genes_directory, "inters_Genelist_up.xlsx")),
                           stringsAsFactors = FALSE, check.names = FALSE
                           )
 
 
-up_FDR_df <- read.csv(file.path(file_input_directory, "inters_UP_FDR0.05.csv"),
+up_FDR_df <- read.csv(file.path(top_genes_directory, "inters_UP_FDR0.05.csv"),
                       stringsAsFactors = FALSE, check.names = FALSE
                       )
 
@@ -226,6 +236,19 @@ table(combined_df[["Category"]], useNA = "ifany")
 
 
 
+# Add data on expression in the GT1-7 cell line ---------------------------
+
+matches_vec <- match(combined_df[, "Mouse_symbol"], gt_df[, "gene_name"])
+combined_df[["Expressed_in_GT17"]] <- gt_df[matches_vec, "isPresent"]
+
+column_indices <- c(1:7, ncol(combined_df), 8:(ncol(combined_df) - 1))
+combined_df <- combined_df[, column_indices]
+
+combined_df[["Expressed_in_GT17"]] <- ifelse(combined_df[["Expressed_in_GT17"]],
+                                             "Yes", "No"
+                                             )
+
+
 
 # Prepare for export ------------------------------------------------------
 
@@ -235,7 +258,8 @@ NA_empty_columns <- c("CRISPR_mean_probability",   "CRISPR_num_essential",   "CR
                       "Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines",
                       "DEMETER2_mean_probability", "DEMETER2_num_essential", "DEMETER2_num_cell_lines",
                       "Human_Entrez_ID", "Human_symbol",
-                      "Mouse_symbol", "Mouse_Entrez_ID", "Mapping"
+                      "Mouse_symbol", "Mouse_Entrez_ID", "Mapping",
+                      "Expressed_in_GT17"
                       )
 for (column_name in NA_empty_columns) {
   export_df[, column_name] <- ifelse(is.na(export_df[, column_name]),
@@ -267,6 +291,11 @@ write.csv(export_df,
 
 
 
+# Save data ---------------------------------------------------------------
+
+save(combined_df,
+     file = file.path(R_objects_directory, "01) Find non-essential hit genes.RData")
+     )
 
 
 
