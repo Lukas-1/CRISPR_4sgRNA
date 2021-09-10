@@ -253,8 +253,8 @@ combined_df[["Expressed_in_GT17"]] <- ifelse(combined_df[["Expressed_in_GT17"]],
 # Prepare for export ------------------------------------------------------
 
 export_df <- combined_df
-NA_empty_columns <- c("CRISPR_mean_probability",   "CRISPR_num_essential",   "CRISPR_num_cell_lines",
-                      "CRISPR_mean_effect",
+NA_empty_columns <- c("CRISPR_mean_probability", "CRISPR_num_essential",
+                      "CRISPR_num_cell_lines", "CRISPR_mean_effect",
                       "Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines",
                       "DEMETER2_mean_probability", "DEMETER2_num_essential", "DEMETER2_num_cell_lines",
                       "Human_Entrez_ID", "Human_symbol",
