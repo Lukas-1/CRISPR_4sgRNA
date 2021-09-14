@@ -26,9 +26,7 @@ file_output_directory  <- file.path(s2r2_directory, "5) Output", "Tables", "Corr
 
 # Load data ---------------------------------------------------------------
 
-# load(file.path(s2r2_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(s2r2_objects_directory, "29) Correlate median read count with DNA concentration.RData"))
-# load(file.path(s2r2_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
 
@@ -180,5 +178,13 @@ write.table(export_df,
             na        = ""
             )
 
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "extended_df",
+     file = file.path(s2r2_objects_directory, "30) Calculate correction factors to account for mean read counts.RData")
+     )
 
 
