@@ -1,12 +1,10 @@
-### 18th August 2021 ###
-
+### 18 August 2021 ###
 
 
 
 # Import packages and source code -----------------------------------------
 
 library("readxl")
-
 
 
 
@@ -34,6 +32,7 @@ file_output_directory <- file.path(file_directory, "3) Output")
 
 load(essential_genes_path)
 
+load(file.path(R_objects_directory, "01) Identify and rank hit genes.RData"))
 
 
 
@@ -48,41 +47,10 @@ gt_df <- read.delim(file.path(file_input_directory, "Other", "scGT vs NGT.txt"),
 
 
 
-# Read in data ------------------------------------------------------------
-
-up_genes_df <- data.frame(read_excel(file.path(top_genes_directory, "inters_Genelist_up.xlsx")),
-                          stringsAsFactors = FALSE, check.names = FALSE
-                          )
-
-
-up_FDR_df <- read.csv(file.path(top_genes_directory, "inters_UP_FDR0.05.csv"),
-                      stringsAsFactors = FALSE, check.names = FALSE
-                      )
-
-
-
-
-
-
-# Perform checks ----------------------------------------------------------
-
-up_FDR_genes_vec <- unique(up_genes_df[, "Gene_symbol"])
-
-stopifnot(identical(sort(up_genes_df[, "Gene_symbol"]), sort(up_FDR_genes_vec)))
-
-
-
-
-# Tidy data ---------------------------------------------------------------
-
-names(up_genes_df)[[2]] <- "Number_of_sgs"
-
-
-
-
 # Explore data ------------------------------------------------------------
 
 table(mouse_essential_df[["CRISPR_common"]], useNA = "ifany")
+
 
 
 
@@ -165,7 +133,6 @@ mouse_essential_df[["Category"]] <- factor(mouse_essential_df[["Category"]],
 
 
 
-
 # Combine the data frame --------------------------------------------------
 
 df_list <- lapply(up_genes_df[, "Gene_symbol"], function(x) {
@@ -215,7 +182,6 @@ combined_df <- combined_df[, column_indices]
 
 
 
-
 # Re-order the data frame -------------------------------------------------
 
 combined_categories <- c("Non-essential",
@@ -231,7 +197,6 @@ combined_df <- combined_df[new_order, ]
 row.names(combined_df) <- NULL
 
 table(combined_df[["Category"]], useNA = "ifany")
-
 
 
 
@@ -253,15 +218,13 @@ combined_df[["Expressed_in_GT17"]] <- ifelse(combined_df[["Expressed_in_GT17"]],
 # Prepare for export ------------------------------------------------------
 
 export_df <- combined_df
-NA_empty_columns <- c("CRISPR_mean_probability", "CRISPR_num_essential",
-                      "CRISPR_num_cell_lines", "CRISPR_mean_effect",
-                      "Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines",
-                      "DEMETER2_mean_probability", "DEMETER2_num_essential", "DEMETER2_num_cell_lines",
-                      "Human_Entrez_ID", "Human_symbol",
-                      "Mouse_symbol", "Mouse_Entrez_ID", "Mapping",
-                      "Expressed_in_GT17"
+export_df[["Category"]] <- as.character(export_df[["Category"]])
+keep_NA_columns <- c("CRISPR_common", "Achilles_common", "BlomenHart_intersect",
+                     "BlomenHart_intersect_DepMap",  "Hart_3_or_more_lines",
+                     "Hart_HeLa", "Blomen_HAP1_KBM7_intersect",
+                     "Category"
                       )
-for (column_name in NA_empty_columns) {
+for (column_name in setdiff(names(export_df), keep_NA_columns)) {
   export_df[, column_name] <- ifelse(is.na(export_df[, column_name]),
                                      "",
                                      export_df[, column_name]
@@ -279,7 +242,6 @@ export_df <- export_df[, !(names(export_df) %in% omit_columns)]
 
 
 
-
 # Export data -------------------------------------------------------------
 
 write.csv(export_df,
@@ -290,11 +252,10 @@ write.csv(export_df,
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(combined_df,
-     file = file.path(R_objects_directory, "01) Find non-essential hit genes.RData")
+     file = file.path(R_objects_directory, "02) Find non-essential hit genes.RData")
      )
 
 
