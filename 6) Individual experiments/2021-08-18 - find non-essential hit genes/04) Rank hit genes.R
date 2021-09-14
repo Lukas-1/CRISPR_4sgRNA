@@ -86,10 +86,7 @@ top_10_ES <- unique(inters_ES_df[, "Gene_symbol"])[seq_len(number_of_genes)]
 
 intersect(top_10_ES, inters_NE_df[seq_len(number_of_genes), "Gene_symbol"])
 
-
 unique(inters_NE_df[["Gene_symbol"]][inters_NE_df[["Is_not_essential"]]])
-
-
 
 top_10_NE <- setdiff(unique(inters_NE_df[["Gene_symbol"]][inters_NE_df[["Is_not_essential"]]]),
                      top_10_ES
