@@ -1,5 +1,4 @@
-### 9 September 2021 2021 ###
-
+### 9 September 2021 ###
 
 
 # Define folder paths -----------------------------------------------------
@@ -14,13 +13,10 @@ file_output_directory <- file.path(file_directory, "3) Output")
 
 
 
-
-
 # Load data ---------------------------------------------------------------
 
-load(file.path(R_objects_directory, "01) Find non-essential hit genes.RData"))
-
-
+load(file.path(R_objects_directory, "01) Identify and rank hit genes.RData"))
+load(file.path(R_objects_directory, "02) Find non-essential hit genes.RData"))
 
 
 
@@ -33,6 +29,33 @@ baseline_df <- read.csv(file.path(screen_data_directory,
                         check.names = FALSE
                         )
 
+
+# Define functions --------------------------------------------------------
+
+MakeSummaryDf <- function(input_df, use_suffix = NULL) {
+  genes_fac <- factor(input_df[, "Gene_symbol"])
+  genes_df <- data.frame(
+    "Gene_symbol"           = levels(genes_fac),
+    "Category"              = NA,
+    "Mean_log2FC_essential" = tapply(input_df[["log2 Ratio"]], genes_fac, mean),
+    "Num_essential_gRNAs"   = tapply(input_df[["Is_fitness_relevant"]], genes_fac, sum),
+    "Min_log2FC_essential"  = tapply(input_df[["log2 Ratio"]], genes_fac, min),
+    "Min_FDR_essential"     = tapply(input_df[["fdr"]], genes_fac, min),
+    stringsAsFactors        = FALSE,
+    row.names               = NULL
+  )
+  genes_df[["Category"]] <- ifelse(genes_df[["Min_log2FC_essential"]] < log2(0.5),
+                                   "Essential",
+                                   ifelse(genes_df[["Min_log2FC_essential"]] < log2(0.8),
+                                          "Intermediate",
+                                          "Non-essential"
+                                          )
+                                   )
+  if (!(is.null(use_suffix))) {
+    names(genes_df)[2:6] <- paste0(names(genes_df)[2:6], use_suffix)
+  }
+  return(genes_df)
+}
 
 
 
@@ -47,57 +70,57 @@ baseline_df <- baseline_df[, !(are_empty_columns)]
 
 
 
+# Add data on "hit" status ------------------------------------------------
 
-# Set a threshold ---------------------------------------------------------
+hit_gRNAs <- YM5_v_DMSO5_df[["Gene_Name"]][YM5_v_DMSO5_df[["Is_hit"]]]
+baseline_df[["Is_hit"]] <- baseline_df[["Gene_Name"]] %in% hit_gRNAs
 
-baseline_df[["Pass_threshold"]] <- (baseline_df[, "log2 Ratio"] < -1) &
-                                   (baseline_df[, "fdr"] < 0.01)
 
-genes_fac <- factor(baseline_df[["Gene_symbol"]])
 
-baseline_genes_df <- data.frame(
-  "Gene_symbol"           = levels(genes_fac),
-  "Mean_log2FC_essential" = tapply(baseline_df[["log2 Ratio"]], genes_fac, mean),
-  "Num_essential_gRNAs"   = tapply(baseline_df[["Pass_threshold"]], genes_fac, sum),
-  "Min_log2FC_essential"  = tapply(baseline_df[["log2 Ratio"]], genes_fac, min),
-  "Min_FDR_essential"     = tapply(baseline_df[["fdr"]], genes_fac, min),
-  stringsAsFactors        = FALSE,
-  row.names               = NULL
-)
 
-matches_vec <- match(combined_df[, "Mouse_symbol"],
-                     baseline_genes_df[, "Gene_symbol"]
-                     )
+# Create gene-level summary data frames -----------------------------------
 
-combined_df <- data.frame(combined_df,
-                          baseline_genes_df[matches_vec, 2:5],
+baseline_df[["Is_fitness_relevant"]] <- (baseline_df[, "log2 Ratio"] < -1) &
+                                        (baseline_df[, "fdr"] < 0.01)
+
+hits_baseline_df <- baseline_df[baseline_df[["Is_hit"]], ]
+
+all_df <- MakeSummaryDf(baseline_df, use_suffix = "_all_gRNAs")
+
+hits_df <- MakeSummaryDf(hits_baseline_df, use_suffix = "_hit_gRNAs")
+
+
+
+# Combine the data --------------------------------------------------------
+
+all_matches_vec <- match(combined_df[, "Mouse_symbol"],
+                         all_df[, "Gene_symbol"]
+                         )
+
+hits_matches_vec <- match(combined_df[, "Mouse_symbol"],
+                          hits_df[, "Gene_symbol"]
+                          )
+
+combined_df <- data.frame(combined_df[, 1:7],
+                          all_df[all_matches_vec, 2:6],
+                          hits_df[hits_matches_vec, 2:6],
+                          combined_df[, 8:ncol(combined_df)],
                           stringsAsFactors = FALSE,
                           row.names = NULL
                           )
-
-column_indices <- c(1:7,
-                    (ncol(combined_df) - 4):ncol(combined_df),
-                    8:(ncol(combined_df) - 5)
-                    )
-combined_df <- combined_df[, column_indices]
-
 
 
 
 # Prepare for export ------------------------------------------------------
 
 export_df <- combined_df
-NA_empty_columns <- c("CRISPR_mean_probability", "CRISPR_num_essential",
-                      "CRISPR_num_cell_lines", "CRISPR_mean_effect",
-                      "Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines",
-                      "DEMETER2_mean_probability", "DEMETER2_num_essential", "DEMETER2_num_cell_lines",
-                      "Human_Entrez_ID", "Human_symbol",
-                      "Mouse_symbol", "Mouse_Entrez_ID", "Mapping",
-                      "Expressed_in_GT17",
-                      "Num_essential_gRNAs", "Mean_log2FC_essential",
-                      "Min_log2FC_essential", "Min_FDR_essential"
+export_df[["Category"]] <- as.character(export_df[["Category"]])
+keep_NA_columns <- c("CRISPR_common", "Achilles_common", "BlomenHart_intersect",
+                     "BlomenHart_intersect_DepMap",  "Hart_3_or_more_lines",
+                     "Hart_HeLa", "Blomen_HAP1_KBM7_intersect",
+                     "Category", "Category_all_gRNAs", "Category_hit_gRNAs"
                       )
-for (column_name in NA_empty_columns) {
+for (column_name in setdiff(names(export_df), keep_NA_columns)) {
   export_df[, column_name] <- ifelse(is.na(export_df[, column_name]),
                                      "",
                                      export_df[, column_name]
@@ -122,6 +145,14 @@ write.csv(export_df,
           row.names = FALSE,
           na = "N/A"
           )
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "baseline_df",
+     file = file.path(R_objects_directory, "03) Add data on the fitness effect with control treatment.RData")
+     )
 
 
 
