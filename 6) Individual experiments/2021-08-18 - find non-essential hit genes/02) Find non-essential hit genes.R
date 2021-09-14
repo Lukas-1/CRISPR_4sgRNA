@@ -254,7 +254,7 @@ write.csv(export_df,
 
 # Save data ---------------------------------------------------------------
 
-save(combined_df,
+save(list = c("combined_df", "mouse_essential_df"),
      file = file.path(R_objects_directory, "02) Find non-essential hit genes.RData")
      )
 
