@@ -9,7 +9,6 @@ library("Biostrings") # For taking the reverse complement
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory  <- "~/CRISPR"
@@ -32,7 +31,6 @@ barcodes_pb <- readDNAStringSet(barcodes_pb_file)
 samples_df <- read.csv(samples_file, stringsAsFactors = FALSE,
                        check.names = FALSE
                        )
-
 
 
 
@@ -88,7 +86,6 @@ barcode_fasta_titles <- paste0(">", plates_df[["Barcode_ID"]])
 barcodes_fastas <- lapply(seq_len(nrow(plates_df)), function(x) {
   c(barcode_fasta_titles[[x]], paste0(plates_df[["Barcode_sequence"]][[x]], "T"))
 })
-
 
 
 
