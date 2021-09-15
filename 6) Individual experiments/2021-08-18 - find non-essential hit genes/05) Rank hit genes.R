@@ -60,8 +60,7 @@ table(integrated_df[["Is_intersect_hit"]])
 
 use_columns <- c("Mouse_symbol",
                  "Human_symbol", "Human_Entrez_ID",
-                 "Sublibrary_4sg", "Plate_ID", "Well_number",
-                 "TSS_number", "TSS_ID", "Is_main_TSS"
+                 "Sublibrary_4sg", "Plate_ID", "Well_number"
                  )
 
 df_list <- lapply(integrated_df[, "Gene_symbol"], function(x) {

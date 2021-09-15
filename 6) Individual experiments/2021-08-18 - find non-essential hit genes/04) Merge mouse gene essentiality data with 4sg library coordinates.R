@@ -3,25 +3,25 @@
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
-experiments_directory   <- file.path(CRISPR_root_directory, "6) Individual experiments")
-file_directory          <- file.path(experiments_directory, "2021-08-18 - find non-essential hit genes")
-R_objects_directory     <- file.path(file_directory, "2) R objects")
+CRISPR_root_directory    <- "~/CRISPR"
+experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
+file_directory           <- file.path(experiments_directory, "2021-08-18 - find non-essential hit genes")
+R_objects_directory      <- file.path(file_directory, "2) R objects")
 
-library_RData_directory <- file.path(CRISPR_root_directory, "3) RData files")
-CRISPRa_RData_directory <- file.path(library_RData_directory, "2) CRISPRa")
+library_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files")
+CRISPRko_RData_directory <- file.path(library_RData_directory, "3) CRISPRko")
 
 
 
 # Load data ---------------------------------------------------------------
 
 load(file.path(R_objects_directory, "02) Find non-essential hit genes.RData"))
-load(file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData"))
+load(file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData"))
 
 
 
 
-# Try stuff ---------------------------------------------------------------
+# Add plate coordinates ---------------------------------------------------
 
 plate_IDs <- sapply(strsplit(full_4sg_by_well_df[["Plate_string"]], "_", fixed = TRUE), "[[", 2)
 
@@ -32,22 +32,22 @@ full_4sg_by_well_df <- full_4sg_by_well_df[!(are_obsolete), ]
 row.names(full_4sg_by_well_df) <- NULL
 
 use_columns <- c("Sublibrary_4sg", "Plate_ID", "Well_number", "Gene_symbol",
-                 "Entrez_ID", "TSS_number", "TSS_ID", "Is_main_TSS"
+                 "Entrez_ID"#, "TSS_number", "TSS_ID", "Is_main_TSS"
                  )
 coordinates_df <- unique(full_4sg_by_well_df[, use_columns])
 
-num_TSSs <- as.integer(table(coordinates_df[["Entrez_ID"]])[coordinates_df[["Entrez_ID"]]])
-coordinates_df[["Is_main_TSS"]] <- ifelse(num_TSSs == 1,
-                                          "Single",
-                                          coordinates_df[["Is_main_TSS"]]
-                                          )
-
-for (column_name in c("TSS_ID", "TSS_number")) {
-  coordinates_df[[column_name]] <- ifelse(num_TSSs == 1,
-                                          NA,
-                                          coordinates_df[[column_name]]
-                                          )
-}
+# num_TSSs <- as.integer(table(coordinates_df[["Entrez_ID"]])[coordinates_df[["Entrez_ID"]]])
+# coordinates_df[["Is_main_TSS"]] <- ifelse(num_TSSs == 1,
+#                                           "Single",
+#                                           coordinates_df[["Is_main_TSS"]]
+#                                           )
+#
+# for (column_name in c("TSS_ID", "TSS_number")) {
+#   coordinates_df[[column_name]] <- ifelse(num_TSSs == 1,
+#                                           NA,
+#                                           coordinates_df[[column_name]]
+#                                           )
+# }
 
 
 df_list <- lapply(mouse_essential_df[, "Human_Entrez_ID"], function(x) {
