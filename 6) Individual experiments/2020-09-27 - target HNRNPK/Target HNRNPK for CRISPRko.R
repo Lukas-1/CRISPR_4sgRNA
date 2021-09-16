@@ -520,8 +520,6 @@ RetrieveSequence <- function(chromosome, strand, start, end) {
 
 
 
-
-
 # Create data frames using TxDb.Hsapiens.UCSC.hg38.knownGene --------------
 
 TxDb_genes_df       <- MakeTxDbDf(genes(TxDb.Hsapiens.UCSC.hg38.knownGene,
@@ -530,7 +528,6 @@ TxDb_genes_df       <- MakeTxDbDf(genes(TxDb.Hsapiens.UCSC.hg38.knownGene,
 TxDb_transcripts_df <- MakeTxDbDf(transcriptsBy(TxDb.Hsapiens.UCSC.hg38.knownGene))
 TxDb_exons_df       <- MakeTxDbDf(exonsBy(TxDb.Hsapiens.UCSC.hg38.knownGene, by = "gene"))
 TxDb_CDS_df         <- MakeTxDbDf(cdsBy(TxDb.Hsapiens.UCSC.hg38.knownGene, by = "gene"))
-
 
 
 
@@ -709,9 +706,6 @@ write.table(paste0("NC_000009.12:", submit_df[["Strand"]], ":", submit_df[["Star
 
 
 
-
-
-
 # Read in data from external tools ----------------------------------------
 
 ReadOutput <- function(sub_path, fill = FALSE) {
@@ -742,7 +736,6 @@ GuideScan_guides_df   <- read.csv(file = file.path(intermediate_files_directory,
 
 
 
-
 # Tidy output from external tools -----------------------------------------
 
 GuideScan_guides_df <- TidyGuideScanColumns(GuideScan_guides_df)
@@ -761,11 +754,7 @@ CRISPOR_df <- data.frame(CRISPOR_guides_df,
                          )
 CRISPOR_df <- ResolveMissingOffTargets(CRISPOR_df)
 
-
-
 GPP_guides_df <- TidyGPPDf(GPP_guides_df)
-
-
 
 
 
@@ -840,7 +829,6 @@ HNRNPK_supercategories_vec <- vapply(HNRNPK_categories_vec, function(x) {
     "Intron or UTR"
   }
 }, "")
-
 
 
 guides_df <- data.frame(
@@ -929,7 +917,6 @@ select_indices <- c(2, 4, 8, 12)
 
 
 
-
 # Check for additional highly specific guides -----------------------------
 
 are_selected <- are_eligible &
@@ -950,14 +937,12 @@ are_far_downstream <- !(downstream_guides_df[["Target_region"]] %in% selected_gu
 
 
 
-
 # Add two more guides to four already selected ----------------------------
 
 selected_guides_df <- rbind.data.frame(selected_guides_df[select_indices, ],
                                        downstream_guides_df[which(are_far_downstream)[c(3, 1)], ],
                                        stringsAsFactors = FALSE
                                        )
-
 
 
 
