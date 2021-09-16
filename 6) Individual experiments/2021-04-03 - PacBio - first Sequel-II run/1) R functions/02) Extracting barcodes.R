@@ -12,7 +12,7 @@ library("Biostrings")
 
 # Define functions --------------------------------------------------------
 
-GetBarcodes <- function(ccs_df, alignments_df) {
+GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FALSE) {
 
   stopifnot(all(c("row_bc_vec", "column_bc_vec", "row_constant_region", "column_constant_region") %in% ls(envir = globalenv())))
 
@@ -104,7 +104,7 @@ GetBarcodes <- function(ccs_df, alignments_df) {
   } else {
     results_df <- results_df[, names(results_df) != "Plate_number"]
   }
-  results_df <- ProcessBarcodesDf(results_df)
+  results_df <- ProcessBarcodesDf(results_df, tolerate_unexpected_barcodes = tolerate_unexpected_barcodes)
   return(results_df)
 }
 
@@ -112,7 +112,7 @@ GetBarcodes <- function(ccs_df, alignments_df) {
 
 
 
-ProcessBarcodesDf <- function(barcodes_df) {
+ProcessBarcodesDf <- function(barcodes_df, tolerate_unexpected_barcodes = FALSE) {
 
   stopifnot(all(c("row_bc_vec", "column_bc_vec") %in% ls(envir = globalenv())))
 
@@ -146,11 +146,16 @@ ProcessBarcodesDf <- function(barcodes_df) {
                         contains_mat[, "Contains_row_barcode"]) &
                        !(contains_mat[, "Starts_with_row_barcode"])
 
+  if (tolerate_unexpected_barcodes) {
+    StopFunction <- message
+  } else {
+    StopFunction <- stop
+  }
   if (any(unexpected_col_bc)) {
-    stop("Unexpected column barcode!")
+    StopFunction("Unexpected column barcode!")
   }
   if (any(unexpected_row_bc)) {
-    stop("Unexpected row barcode!")
+    StopFunction("Unexpected row barcode!")
   }
   redundant_columns <- c("Starts_with_column_barcode", "Ends_with_row_barcode",
                          "Contains_column_barcode", "Contains_row_barcode"
