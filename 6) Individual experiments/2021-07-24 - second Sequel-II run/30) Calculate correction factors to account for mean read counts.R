@@ -146,7 +146,7 @@ selected_columns <- union(selected_columns, names(extended_df))
 new_order <- order(extended_df[["Run3_pool"]], extended_df[["Run2_pool"]])
 
 extended_df <- extended_df[new_order, selected_columns]
-
+row.names(extended_df) <- NULL
 
 
 
