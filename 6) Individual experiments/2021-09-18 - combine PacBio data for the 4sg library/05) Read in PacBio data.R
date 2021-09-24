@@ -82,7 +82,7 @@ run2_ccs_df[["ZMW"]] <- ifelse(run2_ccs_df[["Pool"]] == 2,
 
 
 
-# Assign variables --------------------------------------------------------
+# Combine the data frames -------------------------------------------------
 
 use_columns <- union(c("Run", "Pool", "ZMW", "Original_ZMW"),
                      names(run1_ccs_df)
@@ -95,6 +95,19 @@ ccs_df <- rbind.data.frame(
   stringsAsFactors = FALSE,
   make.row.names = FALSE
 )
+
+
+
+# Filter out unneeded reads -----------------------------------------------
+
+table(ccs_df[["Well_exists"]], useNA = "ifany")
+table(ccs_df[["Read_quality"]] > 0)
+
+are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
+                (ccs_df[["Read_quality"]] > 0)
+
+ccs_df <- ccs_df[are_eligible, ]
+row.names(ccs_df) <- NULL
 
 
 
