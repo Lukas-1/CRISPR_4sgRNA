@@ -43,7 +43,7 @@ stopifnot(all(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][are_
 
 
 
-# Extract barcodes --------------------------------------------------------
+# Perform alignments ------------------------------------------------------
 
 plate_numbers <- unique(sg_sequences_df[["Plate_number"]])
 chunk_size <- 3
