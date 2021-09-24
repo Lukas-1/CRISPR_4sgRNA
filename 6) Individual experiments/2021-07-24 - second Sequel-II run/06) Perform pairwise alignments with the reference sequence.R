@@ -46,7 +46,7 @@ sg_sequences_df[!(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][
 
 
 
-# Extract barcodes --------------------------------------------------------
+# Perform alignments ------------------------------------------------------
 
 plate_numbers <- unique(sg_sequences_df[["Plate_number"]])
 chunk_size <- 3

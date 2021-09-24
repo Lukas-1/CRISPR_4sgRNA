@@ -31,7 +31,6 @@ load(file.path(s2r3_R_objects_directory, "05) Read in PacBio data.RData"))
 
 
 
-
 # Filter reads ------------------------------------------------------------
 
 are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
@@ -42,8 +41,7 @@ sg_sequences_df[!(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]][
 
 
 
-
-# Extract barcodes --------------------------------------------------------
+# Perform alignments ------------------------------------------------------
 
 plate_numbers <- unique(sg_sequences_df[["Plate_number"]])
 chunk_size <- 3
