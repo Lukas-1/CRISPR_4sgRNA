@@ -97,8 +97,8 @@ pool2_ccs_df <- IntegrateReportDfs(pool2_ccs_sam_df,
 
 # Merge SMRT cells --------------------------------------------------------
 
-pool1_ccs_df[["SmrtCell"]] <- "Sequel2_run1_pool1"
-pool2_ccs_df[["SmrtCell"]] <- "Sequel2_run1_pool2"
+pool1_ccs_df[["SmrtCell"]] <- "Sequel2_run2_pool1"
+pool2_ccs_df[["SmrtCell"]] <- "Sequel2_run2_pool2"
 
 pool1_ccs_df[["Original_ZMW"]] <- pool1_ccs_df[["ZMW"]]
 pool2_ccs_df[["Original_ZMW"]] <- pool2_ccs_df[["ZMW"]]
@@ -136,9 +136,6 @@ ccs_df <- AddWellExistsColumn(ccs_df, library_df)
 save(list = "ccs_df",
      file = file.path(s2r2_R_objects_directory, "05) Read in PacBio data.RData")
      )
-
-
-
 
 
 
