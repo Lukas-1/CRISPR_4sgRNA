@@ -27,7 +27,7 @@ s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
 # Load data ---------------------------------------------------------------
 
 load(file.path(s2r2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
-load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - barcodes_df.RData"))
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - ccs_df.RData"))
 load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - barcodes_df.RData"))
 load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - extracted_df.RData"))
 load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - contam_df.RData"))
