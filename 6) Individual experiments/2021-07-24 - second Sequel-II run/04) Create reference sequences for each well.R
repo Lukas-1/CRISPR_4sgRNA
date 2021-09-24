@@ -21,7 +21,7 @@ experiments_directory       <- file.path(CRISPR_root_directory, "6) Individual e
 s2r1_directory              <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
 s2r2_directory              <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
 p1_R_objects_directory      <- file.path(plate1_directory, "3) R objects")
-annotated_plasmid_directory <- file.path(s2r1_directory, "2) Input", "Annotated plasmid")
+s2r1_R_objects_directory    <- file.path(s2r1_directory, "3) R objects")
 s2r2_R_objects_directory    <- file.path(s2r2_directory, "3) R objects")
 file_output_directory       <- file.path(s2r2_directory, "5) Output")
 
@@ -32,18 +32,9 @@ file_output_directory       <- file.path(s2r2_directory, "5) Output")
 
 load(file.path(p1_R_objects_directory, "01) Process and export barcodes.RData"))
 load(file.path(p1_R_objects_directory, "04) Create reference sequences for each well - constant sequences.RData"))
+load(file.path(s2r1_R_objects_directory, "04) Create reference sequences for each well - annotated plasmid.RData"))
 load(file.path(s2r2_R_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(s2r2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-
-
-
-
-# Read in annotated plasmid sequences -------------------------------------
-
-plasmid_gbk <- ReadInPlasmid_gbk(file.path(annotated_plasmid_directory,
-                                           "pYJA5_4sg_nested_barcodes.gbk"
-                                           ))
-
 
 
 
@@ -54,7 +45,6 @@ sg_sequences_df <- AddReferenceSequences(library_df,
                                          promoters_vec,
                                          plasmid_string
                                          )
-
 
 
 # Insert barcodes and guides into the annotated plasmids ------------------
@@ -123,7 +113,6 @@ for (plate_number in plates_df[["Plate_number"]]) {
 
 
 
-
 # Export the annotated plasmids -------------------------------------------
 
 for (plate_number in plates_df[["Plate_number"]]) {
@@ -150,17 +139,11 @@ for (plate_number in plates_df[["Plate_number"]]) {
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "sg_sequences_df",
      file = file.path(s2r2_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData")
      )
-
-save(list = "plasmid_gbk",
-     file = file.path(s2r2_R_objects_directory, "04) Create reference sequences for each well - annotated plasmid.RData")
-     )
-
 
 
 
