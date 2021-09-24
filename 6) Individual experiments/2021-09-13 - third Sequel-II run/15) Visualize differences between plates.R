@@ -47,7 +47,6 @@ plates_df[["Plate_rank"]] <- order(order(plates_df[["Run2_pool"]],
 
 
 
-
 # Draw example plots ------------------------------------------------------
 
 ComparePlates(ccs7_df_list[["filtered_summary_df"]], "Count_total",
@@ -60,14 +59,11 @@ ComparePlates(ccs7_df_list[["filtered_summary_df"]], "Count_total",
 
 # Export graphics ---------------------------------------------------------
 
-DrawAllPlateComparisons(use_cex          = 0.175,
-                        beeswarm_spacing = 0.3,
-                        beeswarm_corral  = "omit",
-                        side_space       = -3,
-                        use_width        = 20,
-                        use_height       = 6.5,
-                        export_PNGs      = FALSE
+DrawAllPlateComparisons(export_PNGs = FALSE,
+                        side_space = -1,
+                        use_width = 13
                         )
+
 
 
 
