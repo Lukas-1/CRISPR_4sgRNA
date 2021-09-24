@@ -40,8 +40,8 @@ load(file.path(s2r3_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 ccs_df[["Category_string"]] <- MakeCategoryString(ccs_df, extracted_df)
 
-ccs_df[["ZMW_string"]] <- paste0("S2R2P", ccs_df[["Run2_pool"]], "_",
-                                 ccs_df[["Original_ZMW"]], "_",
+ccs_df[["ZMW_string"]] <- paste0("S2R3P3_",
+                                 ccs_df[["ZMW"]], "_",
                                  ccs_df[["Category_string"]]
                                  )
 
