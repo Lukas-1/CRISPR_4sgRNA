@@ -232,7 +232,6 @@ new_extracted_df <- ExtractAlignedSequences(new_ccs_df,
                                             unique_IDs = sg_sequences_df[["Combined_ID"]]
                                             )
 
-
 new_contam_df <- CharacterizeContaminations(new_extracted_df, sg_sequences_df)
 
 
