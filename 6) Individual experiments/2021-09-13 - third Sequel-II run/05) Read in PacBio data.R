@@ -62,7 +62,6 @@ ccs_df <- IntegrateReportDfs(pool3_ccs_sam_df,
                              )
 
 
-
 # Merge SMRT cells --------------------------------------------------------
 
 ccs_df[["SmrtCell"]] <- "Sequel2_run3_pool3"
