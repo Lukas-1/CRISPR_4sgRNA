@@ -33,6 +33,7 @@ run3_ccs_df <- ccs_df
 rm(ccs_df)
 
 
+
 # Assign run and pool numbers ---------------------------------------------
 
 run1_ccs_df[["Run"]]  <- 1L
@@ -97,7 +98,6 @@ ccs_df <- rbind.data.frame(
 )
 
 
-
 # Filter out unneeded reads -----------------------------------------------
 
 table(ccs_df[["Well_exists"]], useNA = "ifany")
@@ -108,6 +108,19 @@ are_eligible <- (ccs_df[["Well_exists"]] %in% TRUE) &
 
 ccs_df <- ccs_df[are_eligible, ]
 row.names(ccs_df) <- NULL
+
+
+
+
+# Standardize the "Combined_ID" column ------------------------------------
+
+IDs_vec <- paste0("Plate",
+                  formatC(ccs_df[["Plate_number"]], width = 3, flag = "0"),
+                  "_Well",
+                  formatC(ccs_df[["Well_number"]], width = 3, flag = "0")
+                  )
+ccs_df[["Combined_ID"]] <- IDs_vec
+
 
 
 
