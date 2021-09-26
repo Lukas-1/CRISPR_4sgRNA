@@ -1,0 +1,157 @@
+### 24th September 2021 ###
+
+
+
+
+# Define folder paths -----------------------------------------------------
+
+CRISPR_root_directory    <- "~/CRISPR"
+experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
+
+s2r1_directory           <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
+s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
+s2r3_directory           <- file.path(experiments_directory, "2021-09-13 - third Sequel-II run")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+
+s2r1_R_objects_directory <- file.path(s2r1_directory, "3) R objects")
+s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
+s2r3_R_objects_directory <- file.path(s2r3_directory, "3) R objects")
+s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
+
+
+
+# Load data ---------------------------------------------------------------
+
+load(file.path(s2r1_R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
+run1_alignments_df <- alignments_df
+
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - alignments_df.RData"))
+run2_alignments_df <- alignments_df
+
+load(file.path(s2r3_R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
+run3_alignments_df <- alignments_df
+
+rm(alignments_df)
+
+load(file.path(s2r2_R_objects_directory, "09.5) Deconvolve the plates with a barcoding error - ccs_df.RData"))
+run2_ccs_df <- ccs_df
+
+load(file.path(s2rC_R_objects_directory, "05) Read in PacBio data.RData"))
+
+
+
+# Define functions --------------------------------------------------------
+
+AddNewZMWs <- function(use_ccs_df, use_align_df, pool_number) {
+
+  are_this_pool <- use_ccs_df[["Pool"]] %in% pool_number
+
+  align_read_IDs <- paste0(use_align_df[["Combined_ID"]], "__",
+                           use_align_df[["Original_ZMW"]]
+                           )
+  ccs_read_IDs <- paste0(use_ccs_df[["Combined_ID"]][are_this_pool], "__",
+                         use_ccs_df[["Original_ZMW"]][are_this_pool]
+                         )
+
+  matches_vec <- match(align_read_IDs, ccs_read_IDs)
+
+  ccs_columns <- c("Run", "Pool", "ZMW", "Original_ZMW")
+
+  # use_indices <- seq_len(nrow(use_ccs_df))[are_this_pool]
+  # use_indices <- use_indices[matches_vec]
+
+  results_df <- data.frame(
+    use_ccs_df[are_this_pool, ][matches_vec, ccs_columns],
+    use_align_df[, !(names(use_align_df) %in% ccs_columns)],
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+
+  return(results_df)
+}
+
+
+
+# Standardize the "Combined_ID" column ------------------------------------
+
+run1_alignments_df[["Combined_ID"]] <- sub("Plate", "Plate0", run1_alignments_df[["Combined_ID"]], fixed = TRUE)
+
+
+
+
+# Assign original ZMWs ----------------------------------------------------
+
+run1_alignments_df[["Original_ZMW"]] <- run1_alignments_df[["ZMW"]]
+run3_alignments_df[["Original_ZMW"]] <- run3_alignments_df[["ZMW"]]
+
+matches_vec <- match(run2_alignments_df[["ZMW"]], run2_ccs_df[["ZMW"]])
+run2_alignments_df[["Original_ZMW"]] <- run2_ccs_df[["Original_ZMW"]][matches_vec]
+
+
+
+
+# Split up the reads from run 2 into the two pools ------------------------
+
+run2_alignments_df[["Pool"]] <- match(run2_ccs_df[matches_vec, "SmrtCell"],
+                                      c("Sequel2_run2_pool1", "Sequel2_run2_pool2")
+                                      )
+
+R2P1_align_df <- run2_alignments_df[run2_alignments_df[["Pool"]] %in% 1, ]
+R2P2_align_df <- run2_alignments_df[run2_alignments_df[["Pool"]] %in% 2, ]
+row.names(R2P2_align_df) <- NULL
+rm(run2_alignments_df)
+
+
+
+
+# Assign the new ZMWs to the alignment data frames ------------------------
+
+run1_new_align_df <- AddNewZMWs(ccs_df,
+                                run1_alignments_df,
+                                pool_number = 0L
+                                )
+
+R2P1_new_align_df <- AddNewZMWs(ccs_df,
+                                R2P1_align_df,
+                                pool_number = 1L
+                                )
+
+R2P2_new_align_df <- AddNewZMWs(ccs_df,
+                                R2P2_align_df,
+                                pool_number = 2L
+                                )
+
+run3_new_align_df <- AddNewZMWs(ccs_df,
+                                run3_alignments_df,
+                                pool_number = 3L
+                                )
+
+
+
+# Combine the alignment data frames ---------------------------------------
+
+alignments_df <- rbind.data.frame(
+  run1_new_align_df,
+  R2P1_new_align_df,
+  R2P2_new_align_df,
+  run3_new_align_df,
+  stringsAsFactors = FALSE,
+  make.row.names = FALSE
+)
+
+stopifnot(!(any(duplicated(alignments_df[, "ZMW"]))))
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "alignments_df",
+     file = file.path(s2rC_R_objects_directory,
+                      "06) Perform pairwise alignments with the reference sequence.RData"
+                      )
+     )
+
+
+
+
