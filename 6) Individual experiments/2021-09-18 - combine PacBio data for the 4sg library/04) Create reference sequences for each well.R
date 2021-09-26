@@ -103,7 +103,7 @@ fasta_list <- lapply(library_seq,
 
 plain_path <- file.path(file_output_directory, "Plasmid sequences (plain)")
 
-for (plate_number in plates_df[["Plate_number"]]) {
+for (plate_number in unique(sg_sequences_df[["Plate_number"]])) {
   are_this_plate <- library_df[["Plate_number"]] == plate_number
   file_name <- paste0(plate_number_strings[[which(plates_df[["Plate_number"]] == plate_number)]], "_reference_sequences.fa")
   write.table(unlist(fasta_list[are_this_plate]),
@@ -116,7 +116,7 @@ for (plate_number in plates_df[["Plate_number"]]) {
 
 # Export the annotated plasmids -------------------------------------------
 
-for (plate_number in plates_df[["Plate_number"]]) {
+for (plate_number in unique(sg_sequences_df[["Plate_number"]])) {
   are_this_plate <- library_df[["Plate_number"]] == plate_number
   folder_path <- file.path(file_output_directory,
                            "Reference plasmid sequences (annotated)",
