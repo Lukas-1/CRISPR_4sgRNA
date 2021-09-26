@@ -18,7 +18,6 @@ source(file.path(R_functions_directory, "17) Characterizing contaminations (usin
 
 s2r3_directory           <- file.path(experiments_directory, "2021-09-13 - third Sequel-II run")
 s2r3_R_objects_directory <- file.path(s2r3_directory, "3) R objects")
-output_directory         <- file.path(s2r3_directory, "5) Output", "Tables", "Aligned contaminations")
 
 
 
