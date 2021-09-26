@@ -60,6 +60,19 @@ library_df <- AddNumOccurrences(library_df)
 
 
 
+
+# Standardize the "Combined_ID" column ------------------------------------
+
+IDs_vec <- paste0("Plate",
+                  formatC(library_df[["Plate_number"]], width = 3, flag = "0"),
+                  "_Well",
+                  formatC(library_df[["Well_number"]], width = 3, flag = "0")
+                  )
+library_df[["Combined_ID"]] <- IDs_vec
+
+
+
+
 # Save data ---------------------------------------------------------------
 
 save(list = "library_df",
