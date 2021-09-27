@@ -84,7 +84,8 @@ FeaturesListToDf <- function(features_list) {
 ExtractAlignedSequences <- function(ccs_df,
                                     alignments_df,
                                     ID_column = "Well_number",
-                                    unique_IDs = seq_len(384)
+                                    unique_IDs = seq_len(384),
+                                    process_results = TRUE
                                     ) {
 
   stopifnot(all(c("features_df", "features_templates_list", "features_indices_list") %in% ls(envir = globalenv())))
@@ -207,8 +208,10 @@ ExtractAlignedSequences <- function(ccs_df,
   all_columns <- c(first_columns, setdiff(names(results_df), first_columns))
   results_df <- results_df[, all_columns]
 
-  message("Processing the final data frame...")
-  results_df <- ProcessExtractedDf(results_df, unique_IDs)
+  if (process_results) {
+    message("Processing the final data frame...")
+    results_df <- ProcessExtractedDf(results_df, unique_IDs)
+  }
   return(results_df)
 }
 
