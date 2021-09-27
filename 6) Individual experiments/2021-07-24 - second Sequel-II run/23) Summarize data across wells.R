@@ -115,6 +115,25 @@ LollipopPlot(use_df,
 
 
 
+# # Manually create figures -------------------------------------------------
+#
+# manual_dir <- file.path(s2r2_directory, "5) Output", "PNGs", "Manually generated")
+#
+# png(file   = file.path(manual_dir, "Sg1-4.png"),
+#     width  = 6,
+#     height = use_height * 0.9,
+#     units  = "in",
+#     res    = 600
+#     )
+# LollipopPlot(use_df,
+#              plate_names = plate_selection_list[["CRISPRa (second run)"]],
+#              use_columns = column_groups_list[["Count_sg_cr"]]
+#              )
+# dev.off()
+
+
+
+
 
 # Export lollipop plots and violin/box plots ------------------------------
 
