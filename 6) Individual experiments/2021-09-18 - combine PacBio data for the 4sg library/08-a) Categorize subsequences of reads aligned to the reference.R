@@ -64,7 +64,8 @@ features_templates_list <- lapply(all_indices, function(x) {
 extracted_df <- ExtractAlignedSequences(ccs_df,
                                         alignments_df,
                                         ID_column = "Combined_ID",
-                                        unique_IDs = sg_sequences_df[["Combined_ID"]]
+                                        unique_IDs = sg_sequences_df[["Combined_ID"]],
+                                        process_results = FALSE
                                         )
 
 
@@ -74,7 +75,7 @@ extracted_df <- ExtractAlignedSequences(ccs_df,
 save(list = c("extracted_df",
               "features_df", "features_indices_list", "features_templates_list"
               ),
-     file = file.path(s2rC_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData")
+     file = file.path(s2rC_R_objects_directory, "08-a) Categorize subsequences of reads aligned to the reference.RData")
      )
 
 
