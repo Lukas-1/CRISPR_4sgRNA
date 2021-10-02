@@ -11,7 +11,7 @@ experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual expe
 s2r1_directory           <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
 s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
 s2r3_directory           <- file.path(experiments_directory, "2021-09-13 - third Sequel-II run")
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 
 s2r1_R_objects_directory <- file.path(s2r1_directory, "3) R objects")
 s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
@@ -21,6 +21,8 @@ s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 
 
 # Load data ---------------------------------------------------------------
+
+load(file.path(s2rC_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 
 load(file.path(s2r1_R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 run1_alignments_df <- alignments_df
@@ -44,25 +46,25 @@ load(file.path(s2rC_R_objects_directory, "05) Read in PacBio data.RData"))
 
 AddNewZMWs <- function(use_ccs_df, use_align_df, pool_number) {
 
-  are_this_pool <- use_ccs_df[["Pool"]] %in% pool_number
-
-  align_read_IDs <- paste0(use_align_df[["Combined_ID"]], "__",
-                           use_align_df[["Original_ZMW"]]
-                           )
+  are_this_pool <- use_ccs_df[, "Pool"] %in% pool_number
   ccs_read_IDs <- paste0(use_ccs_df[["Combined_ID"]][are_this_pool], "__",
                          use_ccs_df[["Original_ZMW"]][are_this_pool]
                          )
 
-  matches_vec <- match(align_read_IDs, ccs_read_IDs)
+  align_read_IDs <- paste0(use_align_df[["Combined_ID"]], "__",
+                           use_align_df[["Original_ZMW"]]
+                           )
+
+  are_included <- align_read_IDs %in% ccs_read_IDs
+
+  matches_vec <- match(align_read_IDs[are_included], ccs_read_IDs)
+  stopifnot(!(anyNA(matches_vec)))
 
   ccs_columns <- c("Run", "Pool", "ZMW", "Original_ZMW")
 
-  # use_indices <- seq_len(nrow(use_ccs_df))[are_this_pool]
-  # use_indices <- use_indices[matches_vec]
-
   results_df <- data.frame(
     use_ccs_df[are_this_pool, ][matches_vec, ccs_columns],
-    use_align_df[, !(names(use_align_df) %in% ccs_columns)],
+    use_align_df[are_included, !(names(use_align_df) %in% ccs_columns)],
     stringsAsFactors = FALSE,
     row.names = NULL
   )
@@ -75,6 +77,10 @@ AddNewZMWs <- function(use_ccs_df, use_align_df, pool_number) {
 # Standardize the "Combined_ID" column ------------------------------------
 
 run1_alignments_df[["Combined_ID"]] <- sub("Plate", "Plate0", run1_alignments_df[["Combined_ID"]], fixed = TRUE)
+
+are_included <- run1_alignments_df[, "Combined_ID"] %in% library_df[, "Combined_ID"]
+run1_alignments_df <- run1_alignments_df[are_included, ]
+row.names(run1_alignments_df) <- NULL
 
 
 

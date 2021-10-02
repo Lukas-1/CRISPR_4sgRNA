@@ -10,13 +10,14 @@ plate1_directory      <- file.path(experiments_directory, "2020-08-29 - PacBio -
 R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
 source(file.path(R_functions_directory, "07) Categorizing subsequences of reads aligned to the reference.R"))
+source(file.path(R_functions_directory, "18) Characterizing deletions.R"))
 
 
 
 
 # Define folder paths -----------------------------------------------------
 
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 
 
@@ -25,23 +26,24 @@ s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 # Load data ---------------------------------------------------------------
 
 load(file.path(s2rC_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
-load(file.path(s2rC_R_objects_directory, "08-a) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(s2rC_R_objects_directory, "06) Perform pairwise alignments with the reference sequence.RData"))
 
 
 
 
+# Identify and characterize large deletions -------------------------------
 
-# Extract sequences -------------------------------------------------------
-
-extracted_df <- ProcessExtractedDf(extracted_df, unique_IDs = sg_sequences_df[["Combined_ID"]])
-
+deletions_df <- CompileDeletions(alignments_df,
+                                 "Combined_ID",
+                                 sg_sequences_df[["Combined_ID"]]
+                                 )
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("extracted_df"),
-     file = file.path(s2rC_R_objects_directory, "08-b) Categorize subsequences of reads aligned to the reference.RData")
+save(list = "deletions_df",
+     file = file.path(s2rC_R_objects_directory, "10) Identify and characterize deletions.RData")
      )
 
 

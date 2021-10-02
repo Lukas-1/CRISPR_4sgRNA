@@ -1,4 +1,4 @@
-### 27th September 2021 ###
+### 30th September 2021 ###
 
 
 
@@ -17,7 +17,7 @@ source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio rea
 
 # Define folder paths -----------------------------------------------------
 
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 file_output_directory    <- file.path(s2rC_directory, "5) Output")
 fastq_output_directory   <- file.path(file_output_directory, "Fastq")

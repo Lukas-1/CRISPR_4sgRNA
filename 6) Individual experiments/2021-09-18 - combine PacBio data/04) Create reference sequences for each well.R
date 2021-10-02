@@ -16,7 +16,7 @@ source(file.path(R_functions_directory, "03) Creating reference plasmid sequence
 # Define folder paths -----------------------------------------------------
 
 s2r1_directory           <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 
 p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 s2r1_R_objects_directory <- file.path(s2r1_directory, "3) R objects")

@@ -17,7 +17,7 @@ source(file.path(p1_R_functions_directory, "19) Annotating duplicated gRNAs.R"))
 s2r1_directory           <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
 s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
 s2r3_directory           <- file.path(experiments_directory, "2021-09-13 - third Sequel-II run")
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 
 s2r1_R_objects_directory <- file.path(s2r1_directory, "3) R objects")
 s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")

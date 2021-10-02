@@ -16,7 +16,7 @@ source(file.path(R_functions_directory, "07) Categorizing subsequences of reads 
 
 # Define folder paths -----------------------------------------------------
 
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 
 

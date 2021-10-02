@@ -1,4 +1,4 @@
-### 27th September 2021 ###
+### 30äth September 2021 ###
 
 
 
@@ -16,7 +16,7 @@ source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio rea
 
 # Define folder paths -----------------------------------------------------
 
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 file_output_directory    <- file.path(s2rC_directory, "5) Output")
 tables_output_directory  <- file.path(file_output_directory, "Tables")
@@ -33,24 +33,6 @@ load(file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 
 # Export summary tables ---------------------------------------------------
-
-ExportSummaryTable(ccs3_df_list[["original_summary_df"]],
-                   "CCS3_99_summary_per_well_unfiltered",
-                   file_directory = file.path(tables_output_directory, "Summary tables")
-                   )
-ExportSummaryTable(ccs3_df_list[["filtered_summary_df"]],
-                   "CCS3_99_summary_per_well_filtered",
-                   file_directory = file.path(tables_output_directory, "Summary tables")
-                   )
-ExportSummaryTable(ccs3_df_list[["filtered_cross_plate_df"]],
-                   "CCS3_99_summary_per_well_filtered_cross_plate",
-                   file_directory = file.path(tables_output_directory, "Summary tables")
-                   )
-ExportSummaryTable(ccs3_df_list[["filtered_gRNAs_df"]],
-                   "CCS3_99_summary_per_well_filtered_gRNAs",
-                   file_directory = file.path(tables_output_directory, "Summary tables")
-                   )
-
 
 ExportSummaryTable(ccs5_df_list[["original_summary_df"]],
                    "CCS5_999_summary_per_well_unfiltered",
@@ -92,8 +74,8 @@ ExportSummaryTable(ccs7_df_list[["filtered_gRNAs_df"]],
 
 # Export individual reads -------------------------------------------------
 
-ccs_numbers <- c(3, 5, 7)
-ccs_folders <- c("CCS3_99", "CCS5_999", "CCS7_9999")
+ccs_numbers <- c(5, 7)
+ccs_folders <- c("CCS5_999", "CCS7_9999")
 
 for (i in seq_along(ccs_numbers)) {
   this_df <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))[["individual_reads_df"]]

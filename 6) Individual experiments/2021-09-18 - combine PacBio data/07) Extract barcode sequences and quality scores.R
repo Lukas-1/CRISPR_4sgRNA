@@ -19,7 +19,7 @@ source(file.path(s2r1_R_functions_directory, "02) Extracting barcodes.R"))
 
 # Define folder paths -----------------------------------------------------
 
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 

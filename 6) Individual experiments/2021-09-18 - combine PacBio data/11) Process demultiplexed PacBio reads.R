@@ -17,7 +17,7 @@ source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio rea
 
 # Define folder paths -----------------------------------------------------
 
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data for the 4sg library")
+s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 s2rC_R_objects_directory <- file.path(s2rC_directory, "3) R objects")
 
@@ -50,6 +50,7 @@ sg_sequences_df[!(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]])
 
 
 
+
 # Process the data on the level of individual reads -----------------------
 
 plates_analysis_list <- AnalyzePlates(ccs_df,
@@ -60,23 +61,14 @@ plates_analysis_list <- AnalyzePlates(ccs_df,
 
 
 
+
 # Create the summary data frames ------------------------------------------
 
 ccs_df[["Passed_filters"]] <- ccs_df[["Plate_passed_filters"]] &
                               (ccs_df[["Well_passed_filters"]] %in% TRUE)
 
-ccs3_zmws <- GetCCS3_ZMWs(ccs_df)
 ccs5_zmws <- GetCCS5_ZMWs(ccs_df)
 ccs7_zmws <- GetCCS7_ZMWs(ccs_df)
-
-ccs3_df_list <- SummarizeWells(plates_analysis_list,
-                               use_zmws           = ccs3_zmws,
-                               ID_column          = "Combined_ID",
-                               unique_IDs         = sg_sequences_df[["Combined_ID"]],
-                               deletions_df       = deletions_df,
-                               aligned_contam_df  = contam_df,
-                               filter_cross_plate = TRUE
-                               )
 
 ccs5_df_list <- SummarizeWells(plates_analysis_list,
                                use_zmws           = ccs5_zmws,
@@ -104,7 +96,7 @@ save(list = "plates_analysis_list",
      file = file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads - plates_analysis_list.RData")
      )
 
-save(list = c("ccs3_df_list", "ccs5_df_list", "ccs7_df_list"),
+save(list = c("ccs5_df_list", "ccs7_df_list"),
      file = file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData")
      )
 
