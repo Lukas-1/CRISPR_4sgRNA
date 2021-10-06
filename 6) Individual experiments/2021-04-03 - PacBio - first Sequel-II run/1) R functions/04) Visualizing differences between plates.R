@@ -20,10 +20,17 @@ ComparePlates <- function(summary_df,
                           beeswarm_spacing = 0.7,
                           beeswarm_corral  = "none",
                           side_space       = 0.2,
-                          order_by_rank    = TRUE
+                          order_by_rank    = TRUE,
+                          exclude_controls = FALSE
                           ) {
 
   stopifnot("plates_df" %in% ls(envir = globalenv()))
+
+  if (exclude_controls) {
+    control_plates <- plates_df[plates_df[, "Colony_picked"], "Plate_number"]
+    summary_df <- summary_df[!(summary_df[, "Plate_number"]) %in% control_plates, ]
+    plates_df <- plates_df[!(plates_df[, "Plate_number"]) %in% control_plates, ]
+  }
 
   if (show_column == "Count_mean_sg1to4") {
     count_columns <- paste0("Count_sg", 1:4, "_cr", 1:4)
@@ -122,11 +129,17 @@ ComparePlates <- function(summary_df,
          beeswarm_df[["y"]],
          pch = 16,
          cex = use_cex,
-         col = brewer.pal(9, "Blues")[[8]],
+         col = brewer.pal(9, "Blues")[[7]],
          xpd = NA
          )
 
   plate_labels <- paste0("#", plates_df[["Plate_number"]], " ", plates_df[["Plate_name"]])
+
+  if ("Highlight_color" %in% names(plates_df)) {
+    label_colors <- plates_df[, "Highlight_color"]
+  } else {
+    label_colors <- "black"
+  }
 
   text(x      = seq_len(num_groups),
        y      = par("usr")[[3]] - diff(grconvertY(c(0, 0.4), from = "lines", to = "user")),
@@ -134,7 +147,8 @@ ComparePlates <- function(summary_df,
        srt    = 45,
        adj    = c(1, 0.5),
        cex    = 0.6,
-       xpd    = NA
+       xpd    = NA,
+       col    = label_colors
        )
   return(invisible(NULL))
 }
@@ -150,7 +164,9 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
                                     use_height       = 6.5,
                                     beeswarm_spacing = 0.7,
                                     beeswarm_corral  = "none",
-                                    order_by_rank    = TRUE
+                                    order_by_rank    = TRUE,
+                                    exclude_CCS3     = FALSE,
+                                    exclude_controls = FALSE
                                     ) {
 
   stopifnot("titles_list" %in% ls(envir = globalenv()))
@@ -163,6 +179,11 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
 
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
+
+  if (exclude_CCS3) {
+    ccs_numbers <- ccs_numbers[-1]
+    accuracy_percentages <- accuracy_percentages[-1]
+  }
 
   use_metrics <- setdiff(names(titles_list), "Longest_subsequence")
   use_metrics <- grep("^Binary_", use_metrics, value = TRUE, invert = TRUE)
@@ -184,9 +205,9 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
 
         sel_name <- paste0("CCS", ccs_numbers[[i]],
                            " (", accuracy_percentages[[i]], ") - ",
-                           c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")[[filter_stage]]
+                           filter_labels[[filter_stage]]
                            )
-        message(paste0("Exporting ", file_format, " images into the folder: ", sel_name, "..."))
+        message(paste0("Exporting ", file_format, " images for the following data: ", sel_name, "..."))
         if (file_format == "pdf") {
           pdf(file   = file.path(plots_output_directory, paste0(sel_name, ".pdf")),
               width  = use_width,
@@ -200,7 +221,8 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
                           beeswarm_spacing = beeswarm_spacing,
                           beeswarm_corral  = beeswarm_corral,
                           side_space       = side_space,
-                          order_by_rank    = order_by_rank
+                          order_by_rank    = order_by_rank,
+                          exclude_controls = exclude_controls
                           )
           }
           dev.off()
@@ -224,7 +246,8 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
                           beeswarm_spacing = beeswarm_spacing,
                           beeswarm_corral  = beeswarm_corral,
                           side_space       = side_space,
-                          order_by_rank    = order_by_rank
+                          order_by_rank    = order_by_rank,
+                          exclude_controls = exclude_controls
                           )
             dev.off()
           }
