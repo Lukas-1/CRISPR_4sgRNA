@@ -85,6 +85,7 @@ SideTextAndAxes <- function(side_text,
 
 DrawAlterationBarplot <- function(summary_df,
                                   main_title           = NULL,
+                                  title_color          = "black",
                                   reorder_wells        = FALSE,
                                   gap_weight           = 2L,
                                   space_height         = 1.2,
@@ -175,6 +176,7 @@ DrawAlterationBarplot <- function(summary_df,
     text(x      = 0.5,
          y      = title_y_pos,
          labels = main_title,
+         col    = title_color,
          cex    = 1.1,
          xpd    = NA
          )
@@ -359,6 +361,7 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
 
 DrawReorderedSandPlots <- function(summary_df,
                                    main_title         = NULL,
+                                   title_color        = "black",
                                    space_height       = 1.2,
                                    top_space          = 1.8,
                                    bottom_space       = 2,
@@ -428,11 +431,12 @@ DrawReorderedSandPlots <- function(summary_df,
     MakeEmptyPlot()
   }
   if (!(is.null(main_title))) {
-    text(x = 0.5,
-         y = 0.5,
+    text(x      = 0.5,
+         y      = 0.5,
          labels = main_title,
-         cex = 1,
-         xpd = NA
+         col    = title_color,
+         cex    = 1,
+         xpd    = NA
          )
 
   }
