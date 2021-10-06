@@ -29,7 +29,7 @@ fastq_output_directory   <- file.path(file_output_directory, "Fastq")
 
 load(file.path(s2rC_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
 load(file.path(s2rC_R_objects_directory, "05) Read in PacBio data.RData"))
-load(file.path(s2rC_R_objects_directory, "08) Categorize subsequences of reads aligned to the reference.RData"))
+load(file.path(s2rC_R_objects_directory, "08-b) Categorize subsequences of reads aligned to the reference.RData"))
 load(file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
 
 
@@ -40,19 +40,17 @@ load(file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 ccs_df[["Category_string"]] <- MakeCategoryString(ccs_df, extracted_df)
 
-ccs_df[["ZMW_string"]] <- paste0("S2R3P3_",
-                                 ccs_df[["ZMW"]], "_",
-                                 ccs_df[["Category_string"]]
+ccs_df[["ZMW_string"]] <- paste0("R", ccs_df[["Run"]], "P", ccs_df[["Pool"]],
+                                 "_", ccs_df[["Original_ZMW"]]
                                  )
 
 ccs_df[["Passed_filters"]] <- ccs_df[["Plate_passed_filters"]] &
                               (ccs_df[["Well_passed_filters"]] %in% TRUE)
 
-ccs3_zmws <- GetCCS3_ZMWs(ccs_df)
 ccs5_zmws <- GetCCS5_ZMWs(ccs_df)
 ccs7_zmws <- GetCCS7_ZMWs(ccs_df)
 
-reads_df <- ccs3_df_list[["individual_reads_df"]]
+reads_df <- ccs5_df_list[["individual_reads_df"]]
 
 pass_bc   <- reads_df[["Passes_barcode_filters"]] == 1
 pass_read <- reads_df[["Passes_read_quality"]] == 1
@@ -66,23 +64,20 @@ passing_read_zmws <- reads_df[["ZMW"]][pass_bc & pass_read]
 
 # Export sequences --------------------------------------------------------
 
-for (filter_reads in c("Unfiltered", "Filtered reads", "Filtered cross-plate contaminations")) { #, "Filtered reads" # "Filtered gRNAs"
-  for (split_reads in c(FALSE, TRUE)) {
+for (filter_reads in c("Filtered reads", "Filtered cross-plate contaminations")) { #, "Filtered reads" # "Filtered gRNAs", "Unfiltered"
+  for (split_reads in TRUE) { # c(FALSE, TRUE)
 
     if (filter_reads == "Unfiltered") {
       first_half <- "a) Unfiltered"
-      use_ccs3_zmws <- ccs3_zmws
       use_ccs5_zmws <- ccs5_zmws
       use_ccs7_zmws <- ccs7_zmws
     } else if (filter_reads == "Filtered reads") {
       first_half <- "b) Filtered reads"
-      use_ccs3_zmws <- passing_read_zmws
-      use_ccs5_zmws <- intersect(ccs5_zmws, passing_read_zmws)
+      use_ccs5_zmws <- passing_read_zmws
       use_ccs7_zmws <- intersect(ccs7_zmws, passing_read_zmws)
     } else if (filter_reads == "Filtered cross-plate contaminations") {
       first_half <- "c) Filtered cross-plate"
-      use_ccs3_zmws <- passing_read_zmws
-      use_ccs5_zmws <- intersect(ccs5_zmws, passing_read_zmws)
+      use_ccs5_zmws <- passing_read_zmws
       use_ccs7_zmws <- intersect(ccs7_zmws, passing_read_zmws)
     }
 
@@ -93,12 +88,12 @@ for (filter_reads in c("Unfiltered", "Filtered reads", "Filtered cross-plate con
     }
 
     message(paste0("Exporting reads into the '", sub_folder, "' folders..."))
-    message("Exporting reads for CCS3...")
+    message("Exporting reads for CCS5...")
     ExportSequences(ccs_df,
                     fasta_output_dir    = NULL,
-                    fastq_output_dir    = file.path(fastq_output_directory, sub_folder, "CCS3"),
-                    append_to_file_name = "_ccs3",
-                    use_zmws            = use_ccs3_zmws,
+                    fastq_output_dir    = file.path(fastq_output_directory, sub_folder, "CCS5"),
+                    append_to_file_name = "_ccs5",
+                    use_zmws            = use_ccs5_zmws,
                     split_into_chunks   = split_reads,
                     ID_column           = "Combined_ID",
                     unique_IDs          = library_df[["Combined_ID"]],
