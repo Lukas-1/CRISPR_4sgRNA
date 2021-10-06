@@ -1061,7 +1061,12 @@ AnalyzeWells <- function(ccs_df,
                          )
     ID_columns <- c("Combined_ID", "Plate_number", "Well_number")
     if ("Original_ZMW" %in% names(ccs_df)) {
-      ID_columns <- c("Original_ZMW", "SmrtCell", ID_columns)
+      if ("SmrtCell" %in% names(ccs_df)) {
+        pool_columns <- "SmrtCell"
+      } else {
+        pool_columns <- c("Run", "Pool")
+      }
+      ID_columns <- c("Original_ZMW", pool_columns, ID_columns)
     }
   }
   sg_cr_columns <- c("sg1_cr1", "sg2_cr2", "sg3_cr3", "sg4_cr4",
