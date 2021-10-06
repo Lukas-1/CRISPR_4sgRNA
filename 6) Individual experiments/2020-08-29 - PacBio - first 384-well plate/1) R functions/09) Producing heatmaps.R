@@ -595,6 +595,7 @@ DrawHeatMap <- function(summary_df,
   }
 
   MakeEmptyPlot()
+  assign("delete_my_color_mat_3", my_color_mat, envir = globalenv())
   Do_cimage(my_color_mat)
   x_range <- par("usr")[[2]] - par("usr")[[1]]
 
@@ -713,6 +714,7 @@ PrepareSummaryDf <- function(summary_df, reorder_wells = FALSE) {
 
 DrawAccuracyHeatmap <- function(summary_df,
                                 main_title             = NULL,
+                                title_color            = "black",
                                 ColorFunction          = DefaultColFun, # colorRampPalette(brewer.pal(9, "YlGnBu")),
                                 reorder_wells          = TRUE,
                                 show_zero_in_legend    = TRUE,
@@ -722,6 +724,8 @@ DrawAccuracyHeatmap <- function(summary_df,
                                 ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
+
+  assign("delete_summary_df_3", summary_df, envir = globalenv())
 
   if (reorder_wells) {
     add_gap <- FALSE
@@ -761,11 +765,12 @@ DrawAccuracyHeatmap <- function(summary_df,
     MakeEmptyPlot()
   }
   if (!(is.null(main_title))) {
-    text(x = 0.5,
-         y = 0.65,
+    text(x      = 0.5,
+         y      = 0.65,
          labels = main_title,
-         cex = 1.1,
-         xpd = NA
+         col    = title_color,
+         cex    = 1.1,
+         xpd    = NA
          )
 
   }
@@ -943,7 +948,8 @@ SparseAccuracyHeatmap <- function(summary_df,
                                   use_lwd      = 0.8,
                                   margin_ratio = 10,
                                   use_width    = 3.6,
-                                  use_height   = 3.05
+                                  use_height   = 3.05,
+                                  title_color  = "black"
                                   ) {
 
   layout_mat <- cbind(rep(1, 5), 3:7, rep(2, 5))
@@ -957,11 +963,12 @@ SparseAccuracyHeatmap <- function(summary_df,
   MakeEmptyPlot()
 
   if (!(is.null(main_title))) {
-    text(x = 0.5,
-         y = 0.4,
+    text(x      = 0.5,
+         y      = 0.4,
          labels = main_title,
-         cex = use_cex * 1.2,
-         xpd = NA
+         col    = title_color,
+         cex    = use_cex * 1.2,
+         xpd    = NA
          )
   }
 
@@ -1078,10 +1085,16 @@ PlateFileName <- function(plate_number) {
 }
 
 
-ModifiedAlterationBarplot <- function(summary_df, main_title = NULL, reorder_wells = FALSE) {
+ModifiedAlterationBarplot <- function(summary_df,
+                                      reorder_wells = FALSE,
+                                      main_title = NULL,
+                                      title_color = "black"
+                                      ) {
+
   DrawAlterationBarplot(summary_df,
-                        main_title           = main_title,
                         reorder_wells        = reorder_wells,
+                        main_title           = main_title,
+                        title_color          = title_color,
                         show_color_legend    = TRUE,
                         show_color_text      = FALSE,
                         top_space            = 1.75,
@@ -1450,7 +1463,7 @@ sparse_height <- 1.5 * (2 + (3 / margin_ratio)) - (0.2 * 2)
 
 
 
-DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
+DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE, exclude_CCS3 = FALSE) {
 
   required_objects <- c("use_plate_numbers", "plates_df", "library_df")
 
@@ -1463,8 +1476,25 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
 
+  if (exclude_CCS3) {
+    ccs_numbers <- ccs_numbers[-1]
+    accuracy_percentages <- accuracy_percentages[-1]
+  }
+
+  if ("Highlight_color" %in% names(plates_df)) {
+    title_colors <- plates_df[, "Highlight_color"]
+  } else {
+    title_colors <- rep("black", nrow(plates_df))
+  }
+
   for (file_format in file_formats) {
     for (reorder_wells in c(FALSE, TRUE)) {
+
+      if (reorder_wells) {
+        message("Showing re-ordered wells...")
+      } else {
+        message("Showing wells in their original order...")
+      }
 
       order_folder <- c("original order", "re-ordered")[[as.integer(reorder_wells) + 1]]
       heatmaps_folder   <- paste0("Heatmaps - ", order_folder)
@@ -1490,8 +1520,6 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                    "and " >= .(as.character(accuracy_percentages[[i]])) * "% accuracy)"
                    )
         })
-
-
 
         for (filter_stage in seq_along(filter_stages)) {
 
@@ -1526,9 +1554,11 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                   res    = 600
                   )
             }
+            plate_index <- which(plates_df[["Plate_number"]] == plate_number)
             DrawAccuracyHeatmap(sub_df,
-                                main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]],
-                                reorder_wells = reorder_wells
+                                reorder_wells = reorder_wells,
+                                main_title    = titles_list[[plate_index]],
+                                title_color   = title_colors[[plate_index]]
                                 )
             if (file_format == "png") {
               dev.off()
@@ -1560,8 +1590,10 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                     res    = 600
                     )
               }
+              plate_index <- which(plates_df[["Plate_number"]] == plate_number)
               DrawReorderedSandPlots(sub_df,
-                                     main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]]
+                                     main_title  = titles_list[[plate_index]],
+                                     title_color = title_colors[[plate_index]]
                                      )
               if (file_format == "png") {
                 dev.off()
@@ -1593,8 +1625,10 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                     res    = 600
                     )
               }
+              plate_index <- which(plates_df[["Plate_number"]] == plate_number)
               SparseAccuracyHeatmap(sub_df,
-                                    main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]]
+                                    main_title  = titles_list[[plate_index]],
+                                    title_color = title_colors[[plate_index]]
                                     )
               if (file_format == "png") {
                 dev.off()
@@ -1629,9 +1663,11 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
                   res    = 600
                   )
             }
+            plate_index <- which(plates_df[["Plate_number"]] == plate_number)
             ModifiedAlterationBarplot(sub_df,
-                                      main_title = titles_list[[which(plates_df[["Plate_number"]] == plate_number)]],
-                                      reorder_wells = reorder_wells
+                                      reorder_wells = reorder_wells,
+                                      main_title    = titles_list[[plate_index]],
+                                      title_color   = title_colors[[plate_index]]
                                       )
             if (file_format == "png") {
               dev.off()
@@ -1642,6 +1678,7 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
           }
         }
       }
+      message("")
     }
   }
   return(invisible(NULL))

@@ -404,10 +404,11 @@ WellLayoutBarplot <- function(summary_df,
 
 
 
-CenterText <- function(show_text, y_position = 0.3, use_cex = 1) {
+CenterText <- function(show_text, y_position = 0.3, use_cex = 1, text_color = "black") {
   text(x      = 0.5,
        y      = y_position,
        labels = show_text,
+       col    = text_color,
        adj    = c(0.5, 0.5),
        cex    = use_cex,
        xpd    = NA
@@ -422,6 +423,7 @@ BarPlotPanel <- function(summary_df,
                          width_to_height_ratio = 2,
                          number_wells          = FALSE,
                          top_text              = "Original 384-well plate",
+                         top_text_color        = "black",
                          indicate_homologies   = FALSE,
                          show_low_read_numbers = FALSE,
                          outline_few_reads     = FALSE,
@@ -535,8 +537,11 @@ BarPlotPanel <- function(summary_df,
   }
 
   text_y <- 0.4
+  CenterText(top_text,
+             y_position = text_y * (1 / space_1),
+             text_color = top_text_color
+             )
 
-  CenterText(top_text, y_position = text_y * (1 / space_1))
   WellLayoutBarplot(summary_df,
                     show_column,
                     sg_df,
@@ -702,7 +707,7 @@ DrawAllSchematicsForOnePlate <- function() {
 
 # Functions used for multi-plate experiments ------------------------------
 
-DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
+DrawSchematicsForAllPlates <- function(export_PNGs = TRUE, exclude_CCS3 = FALSE) {
 
   required_objects <- c("use_plate_numbers", "plates_df", "sg_sequences_df")
   stopifnot(all(required_objects %in% ls(envir = globalenv())))
@@ -715,6 +720,17 @@ DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
 
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
+
+  if (exclude_CCS3) {
+    ccs_numbers <- ccs_numbers[-1]
+    accuracy_percentages <- accuracy_percentages[-1]
+  }
+
+  if ("Highlight_color" %in% names(plates_df)) {
+    top_text_colors <- plates_df[, "Highlight_color"]
+  } else {
+    top_text_colors <- rep("black", nrow(plates_df))
+  }
 
   count_metrics <- c(
     # "Count_sg1_cr1", "Count_sg2_cr2", "Count_sg3_cr3", "Count_sg4_cr4",
@@ -840,11 +856,13 @@ DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
                 }
                 summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
                 sg_sub_df <- sg_sequences_df[sg_sequences_df[["Plate_number"]] %in% plate_number, ]
+                plate_index <- which(plates_df[["Plate_number"]] == plate_number)
                 BarPlotPanel(summary_sub_df,
                              current_metrics[[j]],
                              sg_sub_df,
                              number_wells          = number_wells,
-                             top_text              = plate_labels[plates_df[["Plate_number"]] == plate_number],
+                             top_text              = plate_labels[[plate_index]],
+                             top_text_color        = top_text_colors[[plate_index]],
                              show_low_read_numbers = TRUE,
                              outline_few_reads     = binarize
                              )
