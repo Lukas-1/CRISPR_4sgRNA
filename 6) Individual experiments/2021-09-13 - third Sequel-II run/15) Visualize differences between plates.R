@@ -40,10 +40,7 @@ load(file.path(s2r3_R_objects_directory, "11) Process demultiplexed PacBio reads
 titles_list <- c(list("Count_total" = "Number of reads per well"),
                  titles_list
                  )
-plates_df[["Plate_rank"]] <- order(order(plates_df[["Run2_pool"]],
-                                         seq_len(nrow(plates_df))
-                                         )
-                                   )
+
 
 
 
