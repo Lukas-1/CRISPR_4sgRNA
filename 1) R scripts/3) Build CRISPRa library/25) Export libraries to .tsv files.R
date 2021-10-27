@@ -292,7 +292,8 @@ omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRa_v2_ID", "Original_PAM",
                   "TSS_searched_by_GuideScan", "TSS_regions",
                   "Best_combination_rank", "Original_rank",
 
-                  "TSS_number", "Num_TSSs", "Allocated_TSS", "hCRISPRa_v2_transcript", "AltTSS_ID",
+                  "TSS_number", "Num_TSSs", "Allocated_TSS",
+                  "hCRISPRa_v2_transcript", "AltTSS_ID",
                   "Spacing", "Overlaps_tolerance",
 
                   "Num_5G_MM",
@@ -309,7 +310,8 @@ omit_columns <- c("Combined_ID", "Sublibrary", "hCRISPRa_v2_ID", "Original_PAM",
                   "Best_TSS", "First_TSS", "Last_TSS",
                   "hCRISPRa_TSS_source", "Strand_of_TSS",
                   "Start", "End", "GuideScan_Num_2or3MM", "Original_entrez",
-                  "Entrez_source_hCRISPRa_v2", "Entrez_source_Calabrese", "Off_target_stringency"
+                  "Entrez_source_hCRISPRa_v2", "Entrez_source_Calabrese",
+                  "Off_target_stringency"
                   )
 omit_SNP_columns <- grep("SNP", names(merged_replaced_CRISPRa_df), value = TRUE)
 omit_SNP_columns <- setdiff(omit_SNP_columns, c(preferred_rsID_column, preferred_AF_max_column))
