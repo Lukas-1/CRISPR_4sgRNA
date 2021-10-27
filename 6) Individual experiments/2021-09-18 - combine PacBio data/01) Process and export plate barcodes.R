@@ -37,6 +37,10 @@ rm(plates_df)
 run1_plates_df[["DNA_isolation"]] <- ifelse(grepl("beads", run1_plates_df[["Plate_name"]], fixed = TRUE),
                                             "Beads", "Columns"
                                             )
+
+run1_plates_df[["Run2_pool"]] <- 0L
+run1_plates_df[["Number_96wp"]] <- NA
+
 run2_plates_df[["DNA_isolation"]] <- "Beads"
 
 common_columns <- intersect(names(run2_plates_df), names(run1_plates_df))
