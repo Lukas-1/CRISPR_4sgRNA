@@ -68,9 +68,8 @@ GetCodingSequence("5350")[["End"]] + 50
 GetCodingSequence(SymbolsToEntrezIDs("HNRNPK"))
 GetCodingSequence(SymbolsToEntrezIDs("HNRNPK"), get_exons = TRUE)
 
-
-
-
+GetCodingSequence(SymbolsToEntrezIDs("PRNP"))
+GetCodingSequence(SymbolsToEntrezIDs("PRNP"), get_exons = TRUE)
 
 
 
