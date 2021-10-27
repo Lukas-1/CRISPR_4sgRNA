@@ -82,6 +82,12 @@ hCRISPRa_v2_df[["Sublibrary"]] <- hCRISPRa_v2_sublibrary_map[hCRISPRa_v2_df[["Su
 
 hCRISPRa_v2_df <- AddHorlbeckTSSSource(hCRISPRa_v2_df, Horlbeck_TSS_df)
 
+# Examine duplicated sgRNAs
+hCRISPRa_v2_sg_vec <- toupper(hCRISPRa_v2_df[["protospacer sequence"]])
+hCRISPRa_v2_table <- table(hCRISPRa_v2_sg_vec)
+table(hCRISPRa_v2_table)
+hCRISPRa_v2_occurrences <- hCRISPRa_v2_table[hCRISPRa_v2_sg_vec]
+
 
 
 
