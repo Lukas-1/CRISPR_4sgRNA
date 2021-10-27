@@ -41,7 +41,8 @@ load(file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads
 ccs_df[["Category_string"]] <- MakeCategoryString(ccs_df, extracted_df)
 
 ccs_df[["ZMW_string"]] <- paste0("R", ccs_df[["Run"]], "P", ccs_df[["Pool"]],
-                                 "_", ccs_df[["Original_ZMW"]]
+                                 "_", ccs_df[["Original_ZMW"]], "_",
+                                 ccs_df[["Category_string"]]
                                  )
 
 ccs_df[["Passed_filters"]] <- ccs_df[["Plate_passed_filters"]] &
