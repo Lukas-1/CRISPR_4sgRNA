@@ -9,7 +9,7 @@ library("readxl")
 CRISPR_root_directory      <- "~/CRISPR"
 experiments_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments")
 plate1_directory           <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate")
-s2r1_directory             <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
+s2r1_directory             <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
 s2r1_R_functions_directory <- file.path(s2r1_directory, "1) R functions")
 R_functions_directory      <- file.path(plate1_directory, "1) R functions")
 
@@ -260,9 +260,11 @@ ccs7_df_list <- SummarizeWells(new_analysis_list,
 
 
 
+
 # Produce plate-level summary data ----------------------------------------
 
 summaries_df <- SummarizePlates(ccs7_df_list[["filtered_summary_df"]])
+
 
 
 
@@ -299,7 +301,7 @@ pool1_df <- merged_df[merged_df[["Run2_pool"]] %in% 1, ]
 pool2_df <- merged_df[merged_df[["Run2_pool"]] %in% 2, ]
 
 use_columns <- c(
-  "Number_of_wells", "Median_count", "Median_count_per_well",
+  "Number_of_wells", "Median_read_count", "Median_count_adjust_by_no_of_wells",
   "Fraction_wells_with_few_reads", "Fraction_wells_with_no_reads",
   "Sum_counts_in_k", "Thousands_of_reads"
 )
