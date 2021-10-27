@@ -12,13 +12,13 @@ library("RColorBrewer")
 # Define labels -----------------------------------------------------------
 
 axis_labels_list <- list(
-  "Original_concentration"        = expression("Measured DNA concentration (Units" * scriptscriptstyle(" ") * "/" * scriptscriptstyle(" ") * mu * "L)"),
-  "Corrected_concentration"       = expression("Corrected DNA concentration (Units" * scriptscriptstyle(" ") * "/" * scriptscriptstyle(" ") * mu * "L)"),
-  "Thousands_of_reads"            = expression("Read count, demultiplexing by FGCZ (thousands)"),
-  "Sum_counts_in_k"               = expression("High-quality read count (thousands)"),
-  "Median_count_per_well"         = expression("Median number of high-quality reads per well"),
-  "Fraction_wells_with_few_reads" = expression("Fraction of wells with" < "10 reads"),
-  "Fraction_wells_with_no_reads"  = expression("Fraction of wells with zero reads")
+  "Original_concentration"             = expression("Measured DNA concentration (Units" * scriptscriptstyle(" ") * "/" * scriptscriptstyle(" ") * mu * "L)"),
+  "Corrected_concentration"            = expression("Corrected DNA concentration (Units" * scriptscriptstyle(" ") * "/" * scriptscriptstyle(" ") * mu * "L)"),
+  "Thousands_of_reads"                 = expression("Read count, demultiplexing by FGCZ (thousands)"),
+  "Sum_counts_in_k"                    = expression("High-quality read count (thousands)"),
+  "Median_count_adjust_by_no_of_wells" = expression("Median number of high-quality reads per well"),
+  "Fraction_wells_with_few_reads"      = expression("Fraction of wells with" < "10 reads"),
+  "Fraction_wells_with_no_reads"       = expression("Fraction of wells with zero reads")
 )
 
 
@@ -29,6 +29,7 @@ RegressionScatter <- function(input_df,
                               x_column,
                               y_column,
                               same_limits_xy = FALSE,
+                              highlight_zero = FALSE,
                               color_column   = NULL,
                               x_label        = "",
                               y_label        = "",
@@ -67,10 +68,6 @@ RegressionScatter <- function(input_df,
   } else {
     use_x_max <- max(input_df[, x_column], na.rm = TRUE)
   }
-  assign("delete_input_df", input_df, envir = globalenv())
-  assign("delete_x_column", x_column, envir = globalenv())
-  assign("delete_y_column", y_column, envir = globalenv())
-  assign("delete_use_x_max", use_x_max, envir = globalenv())
   new_seq <- seq(0, use_x_max, length.out = 200)
   new_df <- data.frame("x_var" = new_seq)
   conf_int_mat <- predict(lm_model,
@@ -111,7 +108,10 @@ RegressionScatter <- function(input_df,
        xlab = x_label,
        ylab = y_label
        )
-
+  if (highlight_zero) {
+    abline(h = 0, col = "gray85")
+    abline(v = 0, col = "gray85")
+  }
 
   ## Add the R^2
   r2_text <- bquote(italic("R") * ""^2  ~ "=" ~
@@ -153,6 +153,7 @@ RegressionScatter <- function(input_df,
 
 
 
+
 SummarizePlates <- function(summary_df) {
 
   plates_fac <- factor(summary_df[["Plate_number"]])
@@ -169,20 +170,36 @@ SummarizePlates <- function(summary_df) {
                                      function(x) sum(x == 0)
                                      )
 
+  are_good_but_few_reads <- (summary_df[["Count_total"]] < 10) &
+                            (summary_df[["Perc_at_least_1"]] > 50)
+
+  num_good_wells_with_few_reads <- tapply(are_good_but_few_reads %in% TRUE,
+                                          plates_fac,
+                                          sum
+                                          )
+
+  fraction_below_zero <- tapply(summary_df[["Count_total"]],
+                                plates_fac,
+                                function(x) pnorm(0, mean(x), sd(x))
+                                )
+
   matches_vec <- match(levels(plates_fac), plates_df[["Plate_number"]])
   number_of_wells <- tabulate(plates_fac)
 
   results_df <- data.frame(
     plates_df[matches_vec, names(plates_df) != "Barcode_sequence"],
-    "Number_of_wells"               = number_of_wells,
-    "Median_count"                  = median_counts,
-    "Median_count_per_well"         = median_counts / 384 * number_of_wells,
-    "Fraction_wells_with_few_reads" = num_wells_with_few_reads / number_of_wells,
-    "Fraction_wells_with_no_reads"  = num_wells_with_no_reads / number_of_wells,
-    "Sum_counts"                    = sum_counts,
-    "Sum_counts_in_k"               = sum_counts / 1000,
-    stringsAsFactors                = FALSE,
-    row.names                       = NULL
+    "Number_of_wells"                    = number_of_wells,
+    "Fraction_wells_with_few_reads"      = num_wells_with_few_reads / number_of_wells,
+    "Fraction_wells_with_no_reads"       = num_wells_with_no_reads / number_of_wells,
+    "Fraction_good_wells_with_few_reads" = num_good_wells_with_few_reads / number_of_wells,
+    "Expected_fraction_below_0"          = fraction_below_zero,
+    "Sum_counts"                         = sum_counts,
+    "Sum_counts_in_k"                    = sum_counts / 1000,
+    "Mean_read_count"                    = sum_counts / number_of_wells,
+    "Median_read_count"                  = median_counts,
+    "Median_count_adjust_by_no_of_wells" = median_counts / 384 * number_of_wells,
+    stringsAsFactors                     = FALSE,
+    row.names                            = NULL
   )
   return(results_df)
 }
