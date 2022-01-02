@@ -130,7 +130,6 @@ ReplaceNNNLines <- function(lines_vec, four_guides) {
 
 
 
-
 ExportVectorsForGene <- function(symbol_or_entrez, CRISPR_df) {
 
   if (!(is.na(suppressWarnings(as.integer(symbol_or_entrez))))) {
