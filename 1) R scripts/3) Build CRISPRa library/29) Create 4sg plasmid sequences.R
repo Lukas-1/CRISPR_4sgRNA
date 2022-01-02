@@ -39,10 +39,12 @@ export_genes <- c(
 )
 
 
-export_genes %in% sg4_df[["Gene_symbol"]]
+export_genes <- c(
+  "ADGRG6", "ADGRD1", "ADGRG1", "Control_TF1"
+)
 
 for (gene_symbol in export_genes) {
-  ExportVectorsForGene(gene_symbol, sg4_df)
+  ExportVectorsForGene(gene_symbol, full_4sg_by_gene_df)
 }
 
 
