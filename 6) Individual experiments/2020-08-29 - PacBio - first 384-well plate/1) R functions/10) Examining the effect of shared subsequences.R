@@ -182,18 +182,17 @@ PlotBySharedSubsequence <- function(summary_df,
   boxplot_fac[table(boxplot_fac)[boxplot_fac] == 1] <- NA # I don't want the mean to be shown if there is only one point
 
   boxplot(numeric_vec ~ boxplot_fac,
-          ylim      = c(0.5, 1),
           boxwex    = use_boxwex,
           outline   = FALSE,
           names     = rep("", 20),
           whisklty  = "blank",
           staplewex = 0,
-          axes      = FALSE,
           whisklwd  = 0,
           staplelty = 0,
           col       = light_color,
           boxlwd    = 0.75,
           medlwd    = par("lwd") * 2,
+          axes      = FALSE,
           add       = TRUE
           )
 
