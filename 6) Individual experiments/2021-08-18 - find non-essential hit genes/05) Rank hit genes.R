@@ -37,6 +37,8 @@ integrated_df <- data.frame(
   "sgRNA_sequence" = YM5_v_DMSO5_df[["Gene_Name"]],
   YM5_v_DMSO5_df["Gene_symbol"],
   "B1vD5_log2FC"        = baseline_df[matches_vec, "log2 Ratio"],
+  "B1vD5_hit_strength"  = baseline_df[matches_vec, "log2 Ratio"] *
+                          (-log10(baseline_df[matches_vec, "pValue"])),
   "B1vD5_p_value"       = baseline_df[matches_vec, "pValue"],
   "B1vD5_FDR"           = baseline_df[matches_vec, "fdr"],
 
@@ -164,7 +166,7 @@ save(list = c("top_10_HS", "top_10_NE",
               "integrated_df",
               "inters_HS_df", "inters_NE_df"
               ),
-     file = file.path(R_objects_directory, "04) Rank hit genes.RData")
+     file = file.path(R_objects_directory, "05) Rank hit genes.RData")
      )
 
 
