@@ -11,7 +11,7 @@ use_width <- 7
 
 
 
-# Define functions --------------------------------------------------------
+# Helper functions --------------------------------------------------------
 
 SideTextAndAxes <- function(side_text,
                             use_lwd               = 0.75,
@@ -21,10 +21,17 @@ SideTextAndAxes <- function(side_text,
                             horizontal_y_lab_pos  = -0.06,
                             vertical_y_label_line = 3,
                             draw_outer_box        = FALSE,
+                            many_ticks            = FALSE,
                             sparse_ticks          = TRUE,
-                            label_x_axis          = FALSE
+                            label_x_axis          = FALSE,
+                            x_axis_label          = "Percentage of sequenced genes",
+                            x_label_line          = 1.55,
+                            x_ticks_line          = 0,
+                            x_ticks_length        = -0.2
                             ) {
-  if (sparse_ticks) {
+  if (many_ticks) {
+    y_tick_locations <- seq(0, 1, 0.2)
+  } else if (sparse_ticks) {
     y_tick_locations <- seq(0, 1, 0.5)
   } else {
     y_tick_locations <- seq(0, 1, 0.25)
@@ -41,7 +48,7 @@ SideTextAndAxes <- function(side_text,
        pos      = par("usr")[[1]] - (use_lwd * GetHalfLineWidth())
        )
   if (label_x_axis) {
-    if (sparse_ticks) {
+    if (sparse_ticks && !(many_ticks)) {
       x_tick_locations <- seq(0, 1, 0.2)
     } else {
       x_tick_locations <- seq(0, 1, 0.1)
@@ -51,16 +58,16 @@ SideTextAndAxes <- function(side_text,
          labels   = x_tick_labels,
          at       = x_tick_locations,
          las      = 1,
-         mgp      = c(3, 0, 0),
-         tcl      = -0.2,
+         mgp      = c(3, x_ticks_line, 0),
+         tcl      = -x_ticks_length,
          lwd      = use_lwd * par("lwd"),
          cex.axis = use_cex_axis,
-         pos      = par("usr")[[3]] - (use_lwd * GetHalfLineWidth())
+         pos      = par("usr")[[3]] - (use_lwd * GetHalfLineWidth(y_axis = TRUE))
          )
     text(x      = 0.5,
-         y      =  par("usr")[[3]] - diff(grconvertY(c(0, 1.55), from = "lines", to = "user")),
+         y      = par("usr")[[3]] - diff(grconvertY(c(0, x_label_line), from = "lines", to = "user")),
          adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
-         labels = "Percentage of sequenced genes",
+         labels = x_axis_label,
          xpd    = NA,
          cex    = sg_label_cex
          )
@@ -82,6 +89,9 @@ SideTextAndAxes <- function(side_text,
 
 
 
+
+
+# Functions for creating alteration bar plots -----------------------------
 
 DrawAlterationBarplot <- function(summary_df,
                                   main_title           = NULL,
@@ -200,7 +210,6 @@ DrawAlterationBarplot <- function(summary_df,
   }
 
 
-
   ## Draw a vertical barplot for the mutation categories
 
   column_name_list <- lapply(1:4,
@@ -314,7 +323,6 @@ DrawAlterationBarplot <- function(summary_df,
 
 
 
-
 ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
   use_width <- 3.5
   use_height <- 4
@@ -358,6 +366,30 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
 
 
 
+# Functions for creating "sand charts" ------------------------------------
+
+SandPlotMatList <- function(summary_df, consider_promoters = FALSE) {
+  four_columns <- c("Perc_at_least_1", "Perc_at_least_2", "Perc_at_least_3", "Perc_all_4")
+  if (consider_promoters) {
+    four_columns <- sub("Perc_", "Perc_pr_", four_columns, fixed = TRUE)
+  }
+  column_mat_list <- lapply(four_columns, function(x) {
+    results_mat <- cbind(summary_df[[x]],
+                         100 - summary_df[[x]]
+                         )
+    results_mat <- results_mat / 100
+    colnames(results_mat) <- c(x, "Rest")
+    results_mat <- results_mat[order(results_mat[, 1], na.last = FALSE), ]
+    return(t(results_mat))
+  })
+  for (i in 2:4) {
+    stopifnot(all(column_mat_list[[i - 1]][1, ] >= column_mat_list[[i]][1, ], na.rm = TRUE))
+  }
+  return(column_mat_list)
+}
+
+
+
 
 DrawReorderedSandPlots <- function(summary_df,
                                    main_title         = NULL,
@@ -390,8 +422,6 @@ DrawReorderedSandPlots <- function(summary_df,
 
   summary_df <- summary_df[are_to_include, ]
   row.names(summary_df) <- NULL
-
-  num_wells <- nrow(summary_df)
 
 
   ## Set up the layout
@@ -441,25 +471,13 @@ DrawReorderedSandPlots <- function(summary_df,
 
   }
 
+  num_wells <- nrow(summary_df)
   positions_vec <- seq_len(num_wells)
 
-  four_columns <- c("Perc_at_least_1", "Perc_at_least_2", "Perc_at_least_3", "Perc_all_4")
   use_colors <- c("#2A3B6B", "#D2D1CF")
   barplot_colors <- c("#FCFDCB", "#FDAC87", "#DB678B", "#934E9B", "#4E4073")
 
-  column_mat_list <- lapply(four_columns, function(x) {
-    results_mat <- cbind(summary_df[[x]],
-                         100 - summary_df[[x]]
-                         )
-    results_mat <- results_mat / 100
-    colnames(results_mat) <- c(x, "Rest")
-    results_mat <- results_mat[order(results_mat[, 1]), ]
-    return(t(results_mat))
-  })
-
-  for (i in 2:4) {
-    stopifnot(all(column_mat_list[[i - 1]][1, ] >= column_mat_list[[i]][1, ], na.rm = TRUE))
-  }
+  column_mat_list <- SandPlotMatList(summary_df)
 
   MakeEmptyPlot()
   PlotBarplotMat(column_mat_list[[1]], use_colors, positions_vec)
@@ -560,7 +578,224 @@ DrawReorderedSandPlots <- function(summary_df,
 
 
 
+SingleSandPlot <- function(summary_df,
+                           consider_promoters = TRUE,
+                           show_grid          = TRUE,
+                           invert_x_axis      = TRUE,
+                           x_axis_label       = "% wells"
+                           ) {
 
+
+  ## Prepare the plot
+
+  num_wells <- nrow(summary_df)
+  positions_vec <- seq_len(num_wells)
+
+  barplot_colors <- c("#FCFDCB", "#FDAC87", "#DB678B", "#934E9B", "#4E4073")
+
+  column_mat_list <- SandPlotMatList(summary_df)
+
+  num_NA <- sum(is.na(summary_df[, "Perc_at_least_1"]))
+  NA_vec <- c(rep(1, num_NA), rep(0, num_wells - num_NA))
+  NA_mat <- rbind("Fraction_NA" = NA_vec, "Fraction_present" = abs(1 - NA_vec))
+
+  if (invert_x_axis) {
+    rev_indices <- rev(seq_len(num_wells))
+    column_mat_list <- lapply(column_mat_list, function(x) x[, rev_indices])
+    NA_mat <- NA_mat[, rev_indices]
+  }
+
+
+  ## Prepare the grid lines
+
+  four_columns <- c("Perc_at_least_1", "Perc_at_least_2", "Perc_at_least_3", "Perc_all_4")
+  if (consider_promoters) {
+    four_columns <- sub("Perc_", "Perc_pr_", four_columns, fixed = TRUE)
+  }
+  barplot_mat <- do.call(rbind, lapply(four_columns, function(x) summary_df[[x]]))
+  barplot_mat <- barplot_mat / 100
+  barplot_mat <- rbind(
+    "none"      = 1 - barplot_mat[1, ],
+    "exactly_1" = barplot_mat[1, ] - barplot_mat[2, ],
+    "exactly_2" = barplot_mat[2, ] - barplot_mat[3, ],
+    "exactly_3" = barplot_mat[3, ] - barplot_mat[4, ],
+    "all_4"     = barplot_mat[4, ]
+  )
+
+
+  ## Set up the layout
+
+  layout_mat <- cbind(rep(1, 3),
+                      3:(3 + 3 - 1),
+                      rep(2, 3)
+                      )
+  layout(layout_mat,
+         widths  = c(0.2, 0.8, 0.2),
+         heights = c(0.1, 0.8, 0.3)
+         )
+
+  old_par <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
+
+  for (i in 1:4) {
+    MakeEmptyPlot()
+  }
+
+  DrawOuterBox(fill = TRUE)
+
+  PlotBarplotMat(column_mat_list[[1]], c(barplot_colors[[2]], barplot_colors[[1]]), positions_vec)
+  PlotBarplotMat(column_mat_list[[2]], c(barplot_colors[[3]], NA), positions_vec)
+  PlotBarplotMat(column_mat_list[[3]], c(barplot_colors[[4]], NA), positions_vec)
+  PlotBarplotMat(column_mat_list[[4]], c(barplot_colors[[5]], NA), positions_vec)
+  PlotBarplotMat(NA_mat,               c("white", NA),             positions_vec)
+
+  if (show_grid) {
+    grid_colors <- c("#FFFFFF", barplot_colors)
+    grid_colors[1:4] <- vapply(grid_colors[1:4], Darken, factor = 1.05, "")
+    grid_colors[5:6] <- vapply(grid_colors[5:6], Palify, fraction_pale = 0.1, "")
+
+    pixels_per_line <- 101 # ceilGetHalfLineWidthing(line_width / (1 / num_wells)) + 1
+    vert_line_width  <- GetHalfLineWidth(y_axis = FALSE) * 2
+    horiz_line_width <- GetHalfLineWidth(y_axis = TRUE) * 2
+
+    vert_line_width  <- vert_line_width * 0.85
+    horiz_line_width <- horiz_line_width * 0.85
+
+    vert_rect_width <- vert_line_width / pixels_per_line
+    horiz_rect_width <- horiz_line_width / pixels_per_line
+
+
+    for (use_fraction in seq(0.05, 0.95, by = 0.05)) {
+      fractions_seq <- seq(from = use_fraction - (vert_line_width / 2) + (vert_rect_width / 2),
+                           to   = use_fraction + (vert_line_width / 2) - (vert_rect_width / 2),
+                           by   = vert_rect_width
+                           )
+      for (sub_fraction in fractions_seq) {
+        segments_mat <- StartStopMat(VerticalLineLengths(column_mat_list, use_fraction = sub_fraction))
+        for (i in seq_len(nrow(segments_mat))) {
+          rect(xleft   = sub_fraction - (vert_rect_width / 2),
+               xright  = sub_fraction + (vert_rect_width / 2),
+               ybottom = segments_mat[i, 1],
+               ytop    = segments_mat[i, 2],
+               col     = rev(grid_colors)[[i]],
+               border  = NA
+               )
+        }
+      }
+    }
+    for (use_fraction in seq(0.05, 0.95, by = 0.05)) {
+      fractions_seq <- seq(from = use_fraction - (horiz_line_width / 2) + (horiz_rect_width / 2),
+                           to   = use_fraction + (horiz_line_width / 2) - (horiz_rect_width / 2),
+                           by   = vert_rect_width
+                           )
+      for (sub_fraction in fractions_seq) {
+        segments_mat <- StartStopMat(HorizontalLineLengths(column_mat_list, use_fraction = sub_fraction))
+        if (invert_x_axis) {
+          segments_mat <- 1 - segments_mat
+        }
+        for (i in seq_len(nrow(segments_mat))) {
+          rect(xleft   = segments_mat[i, 1],
+               xright  = segments_mat[i, 2],
+               ybottom = sub_fraction - (horiz_rect_width / 2),
+               ytop    = sub_fraction + (horiz_rect_width / 2),
+               col     = grid_colors[[i]],
+               border  = NA
+               )
+        }
+      }
+    }
+
+  }
+
+  SideTextAndAxes("% reads from each well",
+                  use_lwd               = 1,
+                  use_cex_axis          = 1,
+                  many_ticks            = TRUE,
+                  horizontal_y_label    = FALSE,
+                  sg_label_cex          = 1,
+                  vertical_y_label_line = 3.3,
+                  label_x_axis          = TRUE,
+                  x_axis_label          = x_axis_label,
+                  x_ticks_length        = 0.3,
+                  x_ticks_line          = 0.35,
+                  x_label_line          = 2.5
+                  )
+
+  DrawOuterBox()
+  MakeEmptyPlot()
+
+  plot.window(c(0, 1), c(0, 1), "", asp = 1)
+  MakeColorBoxLegend(labels_vec         = as.character(0:4),
+                     colors_vec         = barplot_colors,
+                     x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.12),
+                     y_pos              = 0.2,
+                     use_constant_space = FALSE,
+                     vertical_adjust    = 0.2,
+                     x_space_adjust     = 4,
+                     after_text         = " correct gRNAs",
+                     use_lwd            = 1
+                     )
+
+  par(old_par)
+  return(invisible(NULL))
+}
+
+
+
+VerticalLineLengths <- function(column_mat_list, use_fraction = 0.5) {
+
+  lengths_mat <- cbind(
+    "NA"        = ifelse(is.na(column_mat_list[[1]][2, ]), 1, 0),
+    "None"      = column_mat_list[[1]][2, ],
+    "Exactly_1" = column_mat_list[[1]][1, ] - column_mat_list[[2]][1, ],
+    "Exactly_2" = column_mat_list[[2]][1, ] - column_mat_list[[3]][1, ],
+    "Exactly_3" = column_mat_list[[3]][1, ] - column_mat_list[[4]][1, ],
+    "Exactly_4" = column_mat_list[[4]][1, ]
+  )
+  lengths_mat[is.na(lengths_mat)] <- 0
+  stopifnot(all(abs(rowSums(lengths_mat) - 1) < sqrt(.Machine$double.eps)))
+
+  num_wells <- ncol(column_mat_list[[1]])
+  use_well <- round(num_wells * use_fraction)
+  lengths_vec <- lengths_mat[use_well, ]
+  lengths_vec <- rev(lengths_vec)
+  return(lengths_vec)
+}
+
+
+
+HorizontalLineLengths <- function(column_mat_list, use_fraction = 0.5) {
+
+  perc_mat <- t(do.call(rbind, lapply(column_mat_list, function(x) x[1, , drop = FALSE])))
+  total_vec <- apply(perc_mat, 2, function(x) sum(x > use_fraction, na.rm = TRUE))
+  total_vec <- total_vec / nrow(perc_mat)
+
+  NA_fraction <- sum(is.na(perc_mat[, 1])) / nrow(perc_mat)
+
+  lengths_vec <- c("NA"        = NA_fraction,
+                   "None"      = 1 - total_vec[[1]] - NA_fraction,
+                   "Exactly_1" = total_vec[[1]] - total_vec[[2]],
+                   "Exactly_2" = total_vec[[2]] - total_vec[[3]],
+                   "Exactly_3" = total_vec[[3]] - total_vec[[4]],
+                   "Exactly_4" = total_vec[[4]]
+                   )
+
+  assign("delete_lengths_vec", lengths_vec, envir = globalenv())
+  stopifnot((sum(lengths_vec) - 1) < sqrt(.Machine$double.eps))
+
+  return(lengths_vec)
+}
+
+
+
+StartStopMat <- function(lengths_vec) {
+  cumsum_vec <- cumsum(lengths_vec)
+  results_mat <- cbind(
+    "from" = c(0, cumsum_vec[seq_len(length(lengths_vec) - 1)]),
+    "to"   = cumsum_vec
+  )
+  rownames(results_mat) <- names(lengths_vec)
+  return(results_mat)
+}
 
 
 
