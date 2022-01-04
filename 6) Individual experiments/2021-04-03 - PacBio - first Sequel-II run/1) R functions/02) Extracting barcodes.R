@@ -16,6 +16,9 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
 
   stopifnot(all(c("row_bc_vec", "column_bc_vec", "row_constant_region", "column_constant_region") %in% ls(envir = globalenv())))
 
+
+  message("Preparing barcode sequences and quality scores...")
+
   matches_vec <- match(alignments_df[["ZMW"]], ccs_df[["ZMW"]])
 
   stopifnot(!(anyNA(matches_vec)))
@@ -34,6 +37,9 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
   well_bc_qual_2 <- ccs_df[["Well_barcode_2_quality"]][matches_vec]
 
 
+  message("Adjusting for strand orientation...")
+  message("... for well barcodes...")
+
   column_seq <- ifelse(are_forward, well_bc_seq_1, NA_character_)
   column_seq[!(are_forward)] <- as.character(reverseComplement(DNAStringSet(well_bc_seq_2[!(are_forward)])))
   row_seq <- ifelse(are_forward, well_bc_seq_2, NA_character_)
@@ -44,7 +50,7 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
   row_qual <- ifelse(are_forward, well_bc_qual_2, NA_character_)
   row_qual[!(are_forward)] <- reverse(well_bc_qual_1[!(are_forward)])
 
-
+  message("... for plate barcodes...")
   plate_start_seq <- ifelse(are_forward, plate_bc_seq_1, NA_character_)
   plate_start_seq[!(are_forward)] <- as.character(reverseComplement(DNAStringSet(plate_bc_seq_2[!(are_forward)])))
   plate_end_seq <- ifelse(are_forward, plate_bc_seq_2, NA_character_)
@@ -55,6 +61,9 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
   plate_end_qual <- ifelse(are_forward, plate_bc_qual_2, NA_character_)
   plate_end_seq[!(are_forward)] <- reverse(plate_bc_qual_1[!(are_forward)])
 
+
+
+  message("Extracting flanking sequences...")
 
   flank_1_pos <- ccs_df[["Plate_barcode_1_length"]][matches_vec] +
                  ccs_df[["Well_barcode_1_length"]][matches_vec]
@@ -70,6 +79,8 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
                        nchar(ccs_seq) - flank_2_pos
                        )
 
+  message("Checking flanking sequences...")
+
   column_is_flanked <- (flanking_1 == column_constant_region) |
                        (flanking_2 == as.character(reverseComplement(DNAString(column_constant_region))))
 
@@ -78,6 +89,9 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
 
   row_templates_vec <- row_bc_vec[ccs_df[["Well_number"]][matches_vec]]
   column_templates_vec <- column_bc_vec[ccs_df[["Well_number"]][matches_vec]]
+
+
+  message("Compiling results...")
 
   results_df <- data.frame(
     alignments_df[, c("ZMW", "Combined_ID")],
@@ -104,6 +118,8 @@ GetBarcodes <- function(ccs_df, alignments_df, tolerate_unexpected_barcodes = FA
   } else {
     results_df <- results_df[, names(results_df) != "Plate_number"]
   }
+
+  message("Processing barcodes...")
   results_df <- ProcessBarcodesDf(results_df, tolerate_unexpected_barcodes = tolerate_unexpected_barcodes)
   return(results_df)
 }
@@ -125,6 +141,7 @@ ProcessBarcodesDf <- function(barcodes_df, tolerate_unexpected_barcodes = FALSE)
                               "Ends_with_column_barcode"
                               )
   for (well_ID in unique(barcodes_df[["Combined_ID"]])) {
+    message(paste0("Checking well barcodes for ", well_ID, "..."))
     are_this_ID <- barcodes_df[["Combined_ID"]] %in% well_ID
     well_number <- unique(barcodes_df[["Well_number"]][are_this_ID])
     row_bc <- row_bc_vec[[well_number]]
@@ -137,6 +154,8 @@ ProcessBarcodesDf <- function(barcodes_df, tolerate_unexpected_barcodes = FALSE)
     contains_mat[are_this_ID, "Starts_with_column_barcode"] <- grepl(paste0("^", column_bc), barcodes_df[["Column_barcode"]][are_this_ID])
     contains_mat[are_this_ID, "Ends_with_column_barcode"]   <- grepl(paste0(column_bc, "$"), barcodes_df[["Column_barcode"]][are_this_ID])
   }
+
+  message("Integrating results...")
 
   unexpected_col_bc <- (contains_mat[, "Starts_with_column_barcode"] |
                         contains_mat[, "Contains_column_barcode"]) &
