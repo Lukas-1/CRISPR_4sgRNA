@@ -24,6 +24,11 @@ membrane_hits_path      <- file.path(gene_lists_directory,
                                      "Hits list for membrane heterogeneity_SAM library_Mouse_GT1-7.xlsx"
                                      )
 
+synthetic_lethal_path   <- file.path(gene_lists_directory,
+                                     "Prions synthetic lethality",
+                                     "Hits list.xlsx"
+                                     )
+
 
 
 # Load data ---------------------------------------------------------------
@@ -41,6 +46,10 @@ membrane_df <- data.frame(read_excel(membrane_hits_path),
                           check.names = FALSE
                           )
 
+lethality_df <- data.frame(read_excel(synthetic_lethal_path),
+                           stringsAsFactors = FALSE,
+                           check.names = FALSE
+                           )
 
 
 
@@ -73,16 +82,32 @@ row.names(membrane_het_df) <- NULL
 
 
 
+# Collect Entrez IDs from the prion synthetic lethality screen ------------
+
+lethal_symbols_vec <- lethality_df[, "Hits in total_decreased_P2 P4 P8 and P2 P4 and P4 P8 overlapped preference"]
+lethal_mapped_df <- MapToEntrezs(symbols_vec = lethal_symbols_vec, is_mouse = TRUE)
+prions_lethality_df <- lethal_mapped_df[, 1:2]
+
+prions_lethality_df[["Gene_rank"]] <- seq_len(nrow(prions_lethality_df))
+
+prions_category_vec <- vapply(lethal_mapped_df[, "Gene_symbol"], function(x) {
+  col_names <- names(lethality_df)[4:2]
+  is_in_list <- vapply(col_names, function(y) x %in% lethality_df[, y], logical(1))
+  col_names[[which(is_in_list)[[1]]]]
+}, "")
+
+prions_category_fac <- factor(prions_category_vec, names(lethality_df)[c(4, 2, 3)])
+
+prions_lethality_df[["Category"]] <- prions_category_fac
+
+
+
+
 # Save data ---------------------------------------------------------------
 
-save(list = "membrane_het_df",
+save(list = c("membrane_het_df", "prions_lethality_df"),
      file = file.path(general_RData_directory, "06) Read in gene lists.RData")
      )
-
-
-
-
-
 
 
 
