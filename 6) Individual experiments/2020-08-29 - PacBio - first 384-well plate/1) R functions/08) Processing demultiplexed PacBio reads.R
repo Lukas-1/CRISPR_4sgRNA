@@ -11,7 +11,6 @@ library("ShortRead") # For processing the quality scores
 
 
 
-
 # Functions for subsampling reads (for simulations) -----------------------
 
 ProcessWithSubsampling <- function(ccs_df,
@@ -943,6 +942,65 @@ AlterationCategoriesToIntegerMat <- function(input_df) {
 
 
 
+PassQualityFilters <- function(reads_df,
+                               barcodes_df,
+                               bc_min_comb_score = 60,
+                               bc_min_score_lead = 30,
+                               bc_length_cutoff  = 8L,
+                               min_mean_quality  = 85 / 93 * 100
+                               ) {
+
+  matches_vec <- match(reads_df[["ZMW"]], barcodes_df[["ZMW"]])
+
+  stopifnot(!(anyNA(matches_vec)))
+  barcodes_df <- barcodes_df[matches_vec, !(names(barcodes_df) %in% names(reads_df))]
+  reads_df <- data.frame(reads_df,
+                         barcodes_df,
+                         stringsAsFactors = FALSE,
+                         row.names = NULL
+                         )
+
+  have_correct_row <- reads_df[, "Starts_with_row_barcode"] |
+                      ((reads_df[, "Row_bc_length"] >= bc_length_cutoff) &
+                      reads_df[, "Correct_row_flank"])
+
+  have_correct_column <- reads_df[, "Ends_with_column_barcode"] |
+                         ((reads_df[, "Column_bc_length"] >= bc_length_cutoff) &
+                         reads_df[, "Correct_column_flank"])
+
+
+  if ("Barcode_combined_score" %in% names(reads_df)) {
+    pass_bc <- have_correct_row & have_correct_column &
+              (reads_df[, "Barcode_combined_score"] >= bc_min_comb_score) &
+              (reads_df[, "Barcode_score_lead"] >= bc_min_score_lead)
+  } else {
+    pass_bc <- have_correct_row & have_correct_column &
+              (reads_df[, "Plate_barcode_combined_score"] >= bc_min_comb_score) &
+              (reads_df[, "Well_barcode_combined_score"] >= bc_min_comb_score) &
+              (reads_df[, "Plate_barcode_score_lead"] >= bc_min_score_lead) &
+              (reads_df[, "Well_barcode_score_lead"] >= bc_min_score_lead)
+  }
+
+  if (!("Mean_quality" %in% names(reads_df))) {
+    reads_df[["Mean_quality"]] <- GetMeanQuality(substr(reads_df[, "Quality"],
+                                                        reads_df[, "Clip_start"],
+                                                        reads_df[, "Clip_end"]
+                                                        )
+                                                 )
+  }
+
+  pass_rq <- (reads_df[["Mean_quality"]]) >= min_mean_quality
+  pass_filters <- pass_bc & pass_rq
+
+  reads_df[["Passes_filters"]]         <- as.integer(pass_filters)
+  reads_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
+  reads_df[["Passes_read_quality"]]    <- as.integer(pass_rq)
+
+  return(reads_df)
+}
+
+
+
 AnalyzeWells <- function(ccs_df,
                          sg_df,
                          barcodes_df,
@@ -952,19 +1010,30 @@ AnalyzeWells <- function(ccs_df,
                          bc_length_cutoff    = 8L,
                          min_mean_quality    = 85 / 93 * 100,
                          set_seed            = TRUE,
-                         use_guides_ref_list = guides_ref_list,
                          verbose             = TRUE
                          ) {
 
+  assign("delete_ccs_df",              ccs_df,       envir = globalenv())
+  assign("delete_sg_df",               sg_df,        envir = globalenv())
+  assign("delete_barcodes_df",         barcodes_df,  envir = globalenv())
+  assign("delete_extracted_df",        extracted_df, envir = globalenv())
+
   stopifnot("manhattan_dist_list" %in% ls(envir = globalenv()))
 
-  ccs_df[["Mean_quality"]] <- GetMeanQuality(substr(ccs_df[["Quality"]],
-                                                    ccs_df[["Clip_start"]],
-                                                    ccs_df[["Clip_end"]]
-                                                    )
-                                             )
+  have_well <- !(is.na(ccs_df[["Well_number"]])) &
+               ccs_df[["Passed_filters"]]
+
+  if (!(any(have_well))) {
+    message("No reads remained after filtering! The NULL value was returned.")
+    return(NULL)
+  }
 
   ccs_df[["Pass_CCS5"]] <- as.integer(ccs_df[["Pass_CCS5"]])
+  ccs_df[["Mean_quality"]] <- GetMeanQuality(substr(ccs_df[, "Quality"],
+                                                    ccs_df[, "Clip_start"],
+                                                    ccs_df[, "Clip_end"]
+                                                    )
+                                             )
 
 
   ## Add data on contaminations / wrong barcodes
@@ -976,9 +1045,7 @@ AnalyzeWells <- function(ccs_df,
   contamin_mat <- Reduce(`+`, contamin_mat_list)
 
   have_contamin_mat <- contamin_mat >= 1
-  have_well <- !(is.na(ccs_df[["Well_number"]])) &
-               ccs_df[["Passed_filters"]]
-  have_valid_well <- have_well & ccs_df[["Well_number"]] %in% sg_df[, "Well_number"]
+
   well_numbers_vec <- ifelse(have_well, ccs_df[["Well_number"]], NA_integer_)
   distance_mat <- DistanceForContam(contamin_mat,
                                     well_numbers_vec,
@@ -1108,7 +1175,7 @@ AnalyzeWells <- function(ccs_df,
   )
 
   wells_ccs_df <- do.call(rbind.data.frame,
-                          c(split(ccs_df[, names(ccs_df) %in% all_columns],
+                          c(split(ccs_df[, names(ccs_df) %in% all_columns, drop = FALSE],
                                   well_numbers_vec
                                   ),
                           list(stringsAsFactors = FALSE,
@@ -1127,42 +1194,13 @@ AnalyzeWells <- function(ccs_df,
 
   contamin_mat_list <- lapply(contamin_mat_list, function(x) x[, are_real_wells])
 
-  matches_vec <- match(individual_ZMWs_df[["ZMW"]], barcodes_df[["ZMW"]])
-  stopifnot(!(anyNA(matches_vec)))
-  barcodes_df <- barcodes_df[matches_vec, !(names(barcodes_df) %in% names(individual_ZMWs_df))]
-  individual_ZMWs_df <- data.frame(individual_ZMWs_df,
-                                   barcodes_df,
-                                   stringsAsFactors = FALSE,
-                                   row.names = NULL
-                                   )
-
-  have_correct_row <- individual_ZMWs_df[, "Starts_with_row_barcode"] |
-                      ((individual_ZMWs_df[, "Row_bc_length"] >= bc_length_cutoff) &
-                        individual_ZMWs_df[, "Correct_row_flank"])
-
-  have_correct_column <- individual_ZMWs_df[, "Ends_with_column_barcode"] |
-                         ((individual_ZMWs_df[, "Column_bc_length"] >= bc_length_cutoff) &
-                           individual_ZMWs_df[, "Correct_column_flank"])
-
-
-  if ("Barcode_combined_score" %in% names(individual_ZMWs_df)) {
-    pass_bc <- have_correct_row & have_correct_column &
-              (individual_ZMWs_df[, "Barcode_combined_score"] >= bc_min_comb_score) &
-              (individual_ZMWs_df[, "Barcode_score_lead"] >= bc_min_score_lead)
-  } else {
-    pass_bc <- have_correct_row & have_correct_column &
-              (individual_ZMWs_df[, "Plate_barcode_combined_score"] >= bc_min_comb_score) &
-              (individual_ZMWs_df[, "Well_barcode_combined_score"] >= bc_min_comb_score) &
-              (individual_ZMWs_df[, "Plate_barcode_score_lead"] >= bc_min_score_lead) &
-              (individual_ZMWs_df[, "Well_barcode_score_lead"] >= bc_min_score_lead)
-  }
-
-  pass_rq <- (individual_ZMWs_df[["Mean_quality"]]) >= min_mean_quality
-  pass_filters <- pass_bc & pass_rq
-
-  individual_ZMWs_df[["Passes_filters"]]         <- as.integer(pass_filters)
-  individual_ZMWs_df[["Passes_barcode_filters"]] <- as.integer(pass_bc)
-  individual_ZMWs_df[["Passes_read_quality"]]    <- as.integer(pass_rq)
+  individual_ZMWs_df <- PassQualityFilters(individual_ZMWs_df,
+                                           barcodes_df,
+                                           bc_min_comb_score = bc_min_comb_score,
+                                           bc_min_score_lead = bc_min_score_lead,
+                                           bc_length_cutoff  = bc_length_cutoff,
+                                           min_mean_quality  = min_mean_quality
+                                           )
 
   if (is.null(extracted_df)) {
     results_list <- list(
@@ -1172,7 +1210,7 @@ AnalyzeWells <- function(ccs_df,
     return(results_list)
   }
 
-  alterations_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]])
+  alterations_mat  <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]])
   subqualities_mat <- GetFeaturesData(extracted_df, individual_ZMWs_df[["ZMW"]], extract_column = "Mean_quality")
   subqualities_mat <- subqualities_mat / 93 * 100
 
@@ -1340,6 +1378,7 @@ DistanceForContam <- function(contamination_mat, long_wells_vec, wells_vec = seq
   distance_mat <- matrix(nrow = nrow(contamination_mat),
                          ncol = ncol(contamination_mat)
                          )
+  mode(distance_mat) <- "integer"
   for (i in wells_vec) {
     are_this_well <- long_wells_vec[have_wells] %in% i
     are_contam <- contamination_mat[, are_this_well, drop = FALSE] >= 1
