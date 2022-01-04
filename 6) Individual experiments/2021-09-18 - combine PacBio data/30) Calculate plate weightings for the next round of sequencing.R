@@ -30,7 +30,7 @@ file_output_directory    <- file.path(s2rC_directory, "5) Output", "Tables", "Co
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(s2r2_R_objects_directory, "30) Calculate correction factors to account for mean read counts.RData"))
+load(file.path(s2r2_R_objects_directory, "29) Correlate median read count with DNA concentration.RData"))
 
 load(file.path(s2rC_R_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(s2rC_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
@@ -46,7 +46,6 @@ pool3_df <- data.frame(read_excel(file.path(s2r2_directory, "5) Output", "Tables
                        check.names = FALSE, stringsAsFactors = FALSE
                        )
 
-setdiff(extended_df[["Plate_name"]][extended_df[["Run3_pool"]] %in% c("3", "3 and 4")], pool3_df[["Plate name"]])
 
 
 
@@ -64,7 +63,8 @@ matches_vec <- match(summaries_df[, "Plate_name"], pool3_df[, "Plate name"])
 summaries_df[["In_pool3"]] <- !(is.na(matches_vec))
 summaries_df[["Pool3_weight"]] <- pool3_df[matches_vec, "Correct-ion factor (relative amount)"]
 
-summaries_df[["Position_FGCZ_plate"]] <- pool3_df[matches_vec, "Position on the FGCZ plate"]
+matches_vec <- match(summaries_df[, "Plate_name"], merged_plates_df[, "Plate_name"])
+summaries_df[["Position_FGCZ_plate"]] <- merged_plates_df[matches_vec, "Position_FGCZ_plate"]
 
 
 
@@ -72,7 +72,7 @@ summaries_df[["Position_FGCZ_plate"]] <- pool3_df[matches_vec, "Position on the 
 
 # Define the plates that require re-ligation ------------------------------
 
-replace_plates <- c("HA_21", "HO_13", "HO_16")
+replace_plates <- c("HA_21", "HO_13", "HO_16", "HO_15", "HO_19")
 summaries_df[["Religation"]] <- summaries_df[["Plate_name"]] %in% replace_plates
 
 
@@ -95,6 +95,12 @@ are_good <- (summaries_df[["Fraction_good_wells_with_few_reads"]] < 0.01) &
             (!(summaries_df[["Religation"]]))
 
 are_good[are_borderline %in% TRUE] <- TRUE
+
+do_not_resequence <- c(
+  "HA_24", "HA_25", "HA_28", "HA_39", "HA_41",
+  "HO_18", "HO_23", "HO_31", "HO_32", "HO_34", "HO_45"
+)
+are_good[summaries_df[["Plate_name"]] %in% do_not_resequence] <- TRUE
 
 are_good[are_run1 | summaries_df[["Colony_picked"]]] <- NA
 
@@ -180,7 +186,7 @@ exchange_barcodes <- setdiff(good_barcodes_pool1,
 
 summaries_df[are_pool2 & (summaries_df[["Barcode_ID"]] %in% exchange_barcodes), ]
 
-exception_plates <- c("HA_46", "HO_39", "HO_52") #  "HA_57", "HA_58"
+exception_plates <- c("HA_20", "HA_23", "HA_57", "HA_58", "HO_51", "HO_52")
 are_exceptions <- summaries_df[["Plate_name"]] %in% exception_plates
 
 summaries_df[["Switch_pools"]] <- (summaries_df[, "Barcode_ID"] %in% exchange_barcodes) &
@@ -189,7 +195,8 @@ summaries_df[["Switch_pools"]] <- (summaries_df[, "Barcode_ID"] %in% exchange_ba
 summaries_df[summaries_df[["Switch_pools"]], ]
 
 
-are_to_include <- (are_good %in% FALSE) | summaries_df[["Colony_picked"]]
+are_to_include <- ((are_good %in% FALSE) | summaries_df[["Colony_picked"]]) &
+                  (!(are_run1))
 summaries_df[["Run4_pool"]] <- ifelse(summaries_df[["Switch_pools"]],
                                       4L,
                                       ifelse(are_to_include,
@@ -206,11 +213,21 @@ summaries_df[["Corrections_integrated"]][summaries_df[["In_pool3"]]] <- as.integ
 summaries_df[["Corrections_integrated"]][summaries_df[["Plate_name"]] %in% "HA_35"] <- 4L
 
 summaries_df[["Corrections_integrated"]][summaries_df[["Run4_pool"]] %in% 5] <- as.integer(ceiling(summaries_df[["Corrections_integrated"]][summaries_df[["Run4_pool"]] %in% 5] / 2))
-summaries_df[["Corrections_integrated"]][summaries_df[["Plate_name"]] %in% c("HA_45", "HA_47", "HO_13", "HO_16", "HO_29")] <- 2L
-summaries_df[["Corrections_integrated"]][summaries_df[["Plate_name"]] %in% c("HA_55")] <- 4L
+
+CF_two_plates <- c("HA_45", "HA_47", "HO_13", "HO_16", "HO_29",
+                   paste0("HO_", 37:40), "HA_43", "HO_14"
+                   )
+summaries_df[["Corrections_integrated"]][summaries_df[["Plate_name"]] %in% CF_two_plates] <- 2L
+
+summaries_df[["Corrections_integrated"]][summaries_df[["Religation"]]] <- 2L
+
+summaries_df[["Corrections_integrated"]][summaries_df[["Plate_name"]] %in% c("HA_55", "HO_19")] <- 4L
 
 summaries_df[["Corrections_integrated"]][summaries_df[["Colony_picked"]] & !(are_run1)] <- 0.3
-summaries_df[["Corrections_integrated"]][summaries_df[["Religation"]]] <- 2L
+
+summaries_df[["Corrections_integrated"]][summaries_df[["Plate_name"]] %in% c("HA_46", paste0("HO_", 24:28), "HO_47")] <- 1L
+
+
 
 
 
@@ -298,6 +315,7 @@ run4_df[new_weight1, ]
 
 
 
+
 # Export data -------------------------------------------------------------
 
 exclude_columns <- c("Position_96wp", "Plate_number", "DNA_isolation",
@@ -329,5 +347,12 @@ write.table(export_df,
             )
 
 
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "run4_df",
+     file = file.path(s2rC_R_objects_directory, "30) Calculate plate weightings for the next round of sequencing.RData")
+     )
 
 
