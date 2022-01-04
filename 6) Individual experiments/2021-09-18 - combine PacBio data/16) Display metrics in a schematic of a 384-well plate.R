@@ -66,7 +66,7 @@ plates_df[, "Highlight_color"] <- ifelse(pools_vec %in% 3,
 
 use_plate_numbers <- plates_df[["Plate_number"]]#[order(plates_df[["Plate_rank"]])]
 
-DrawSchematicsForAllPlates(export_PNGs = FALSE, exclude_CCS3 = TRUE)
+DrawSchematicsForAllPlates(export_PNGs = FALSE)
 
 
 

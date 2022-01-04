@@ -79,7 +79,6 @@ DrawAllPlateComparisons(use_cex          = 0.175,
                         side_space       = -3.5,
                         use_width        = 22,
                         use_height       = 6.5,
-                        exclude_CCS3     = TRUE,
                         export_PNGs      = FALSE,
                         exclude_controls = TRUE
                         )
