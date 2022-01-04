@@ -45,6 +45,35 @@ merged_replaced_CRISPRa_df[[preferred_AF_max_column]] <- NA_real_
 
 
 
+# Identify the main TSS by its inclusion in the Caprano library -----------
+
+TSS_IDs_fac <- factor(merged_replaced_CRISPRa_df[["AltTSS_ID"]],
+                      levels = unique(merged_replaced_CRISPRa_df[["AltTSS_ID"]])
+                      )
+CheckThatFactorIsInOrder(TSS_IDs_fac)
+include_Caprano <- tapply(merged_replaced_CRISPRa_df[["Source"]],
+                          TSS_IDs_fac,
+                          function(x) any(grepl("Caprano", x, fixed = TRUE))
+                          )
+merged_replaced_CRISPRa_df[["Is_Caprano_TSS"]] <- rep(include_Caprano,
+                                                      as.integer(table(TSS_IDs_fac))
+                                                      )
+
+
+gene_IDs_fac <- factor(merged_replaced_CRISPRa_df[["Combined_ID"]],
+                       levels = unique(merged_replaced_CRISPRa_df[["Combined_ID"]])
+                       )
+CheckThatFactorIsInOrder(gene_IDs_fac)
+
+are_main <- tapply(merged_replaced_CRISPRa_df[["Is_Caprano_TSS"]],
+                   gene_IDs_fac,
+                   function(x) if (!(any(x))) rep(TRUE, length(x)) else x,
+                   simplify = FALSE
+                   )
+
+merged_replaced_CRISPRa_df[["Use_as_main_TSS"]] <- unlist(are_main)
+
+
 
 
 # Assign all guides to plates ---------------------------------------------
@@ -69,7 +98,6 @@ sg4_by_well_df <- sg4_by_well_df[, names(sg4_by_well_df) != "Old_order"]
 
 
 
-
 # Assign membrane sgRNAs to plates ----------------------------------------
 
 are_membrane <- (merged_replaced_CRISPRa_df[["Combined_ID"]] %in% membrane_het_df[["Entrez_ID"]]) |
@@ -84,12 +112,10 @@ membrane_4sg_by_gene_df <- AllocateAllGuidesToPlates(membrane_CRISPRa_df,
 
 
 
-
 # Re-order the membrane sgRNAs according to the plate layout --------------
 
 membrane_4sg_by_gene_df[["Old_order"]] <- seq_len(nrow(membrane_4sg_by_gene_df))
 membrane_4sg_by_well_df <- ReorderPlates(membrane_4sg_by_gene_df)
-
 
 
 
@@ -113,12 +139,53 @@ membrane_4sg_by_well_df <- AssignPlateStrings(membrane_4sg_by_well_df, use_prefi
 
 
 
-# Restore the original plate order ----------------------------------------
 
-membrane_4sg_by_gene_df <- membrane_4sg_by_gene_df[order(membrane_4sg_by_gene_df[["Old_order"]]), ]
-row.names(membrane_4sg_by_gene_df) <- NULL
-membrane_4sg_by_well_df <- membrane_4sg_by_well_df[, names(membrane_4sg_by_well_df) != "Old_order"]
-membrane_4sg_by_gene_df <- membrane_4sg_by_gene_df[, names(membrane_4sg_by_gene_df) != "Old_order"]
+# Assign synthetic lethality sgRNAs to plates -----------------------------
+
+# No controls are needed
+
+are_synthetic_lethal <- (merged_replaced_CRISPRa_df[["Combined_ID"]] %in% prions_lethality_df[["Entrez_ID"]])
+lethal_CRISPRa_df <- merged_replaced_CRISPRa_df[are_synthetic_lethal, ]
+
+are_synthetic_lethal <- (sg4_by_gene_df[["Combined_ID"]] %in% prions_lethality_df[["Entrez_ID"]])
+lethal_4sg_df <- sg4_by_gene_df[are_synthetic_lethal, ]
+stopifnot(identical(unique(as.integer(table(lethal_4sg_df[["AltTSS_ID"]]))), 4L))
+TSS_splits <- lapply(split(lethal_4sg_df[["AltTSS_ID"]], lethal_4sg_df[["Entrez_ID"]]), unique)
+matches_vec <- match(prions_lethality_df[["Entrez_ID"]], names(TSS_splits))
+prions_lethality_df[["Num_TSSs"]] <- lengths(TSS_splits)[matches_vec]
+
+are_first_plate <- cumsum(prions_lethality_df[["Num_TSSs"]]) <= 96
+
+prions_lethality_df[["Plate_number"]] <- ifelse(are_first_plate, 1L, 2L)
+
+lethal_4sg_by_gene_df <- AllocateAllGuidesToPlates(lethal_CRISPRa_df,
+                                                   list("Lethality" = prions_lethality_df[["Entrez_ID"]]),
+                                                   num_control_wells = 0,
+                                                   reorder_df = FALSE
+                                                   )
+
+matches_vec <- match(lethal_4sg_by_gene_df[["Entrez_ID"]], prions_lethality_df[["Entrez_ID"]])
+new_order <- order(prions_lethality_df[["Plate_number"]][matches_vec],
+                   lethal_4sg_by_gene_df[["Well_number"]]
+                   )
+
+lethal_4sg_by_gene_df <- lethal_4sg_by_gene_df[new_order, ]
+row.names(lethal_4sg_by_gene_df) <- NULL
+lethal_4sg_by_gene_df[["Well_number"]] <- rep(seq_len(nrow(lethal_4sg_by_gene_df) / 4), each = 4)
+
+matches_vec <- match(lethal_4sg_by_gene_df[["Entrez_ID"]], prions_lethality_df[["Entrez_ID"]])
+categories_fac <- prions_lethality_df[["Category"]][matches_vec]
+categories_vec <- sub(" overlapped top hits", "", as.character(categories_fac), fixed = TRUE)
+categories_vec <- gsub(" ", "_", categories_vec, fixed = TRUE)
+lethal_4sg_by_gene_df[["Plate_string"]] <- paste0(categories_vec, "__well",
+                                                  lethal_4sg_by_gene_df[["Well_number"]],
+                                                  paste0("__sg", lethal_4sg_by_gene_df[["Rank"]])
+                                                  )
+
+lethal_4sg_by_well_df <- lethal_4sg_by_gene_df
+new_order <- order(as.integer(lethal_4sg_by_well_df[["Entrez_ID"]]))
+lethal_4sg_by_gene_df <- lethal_4sg_by_well_df[new_order, ]
+row.names(lethal_4sg_by_gene_df) <- NULL
 
 
 
@@ -135,7 +202,6 @@ ExportSharedDf(shared_sgRNAs_df,
                          "Duplicated mouse CRISPRa sgRNAs (shared between genes)"
                          )
                )
-
 
 
 
@@ -158,6 +224,27 @@ for (i in 1:4) {
                add_padding_between_plates = TRUE
                )
 }
+
+
+
+# Export the prion synthetic lethality plate layouts ----------------------
+
+lethal_4sg_by_gene_df <- lethal_4sg_by_gene_df[, names(lethal_4sg_by_gene_df) != "Sublibrary_4sg"]
+lethal_4sg_by_well_df <- lethal_4sg_by_well_df[, names(lethal_4sg_by_well_df) != "Sublibrary_4sg"]
+
+ExportPlates(lethal_4sg_by_gene_df, "Prions_synthetic_lethal_4sg_by_gene", sub_folder = "Plate layout - prion synthetic lethality")
+ExportPlates(lethal_4sg_by_well_df, "Prions_synthetic_lethal_4sg_by_well", sub_folder = "Plate layout - prion synthetic lethality")
+
+for (i in 1:4) {
+  use_df <- lethal_4sg_by_well_df[lethal_4sg_by_well_df[["Rank"]] %in% i, ]
+  ExportPlates(use_df,
+               paste0("Prions_lethal_", i),
+               sub_folder = "Plate layout - prion synthetic lethality",
+               add_padding_between_plates = TRUE
+               )
+}
+
+
 
 
 
@@ -191,6 +278,8 @@ for (i in 1:4) {
 
 membrane_4sg_by_gene_df <- membrane_4sg_by_gene_df[, names(membrane_4sg_by_gene_df) != preferred_AF_max_column]
 membrane_4sg_by_well_df <- membrane_4sg_by_well_df[, names(membrane_4sg_by_well_df) != preferred_AF_max_column]
+lethal_4sg_by_gene_df <- lethal_4sg_by_gene_df[, names(lethal_4sg_by_gene_df) != preferred_AF_max_column]
+lethal_4sg_by_well_df <- lethal_4sg_by_well_df[, names(lethal_4sg_by_well_df) != preferred_AF_max_column]
 
 
 
@@ -198,7 +287,8 @@ membrane_4sg_by_well_df <- membrane_4sg_by_well_df[, names(membrane_4sg_by_well_
 # Save data ---------------------------------------------------------------
 
 save(list = c("sg4_by_gene_df", "sg4_by_well_df",
-              "membrane_4sg_by_well_df", "membrane_4sg_by_gene_df"
+              "membrane_4sg_by_well_df", "membrane_4sg_by_gene_df",
+              "lethal_4sg_by_gene_df", "lethal_4sg_by_well_df"
               ),
      file = file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData")
      )
