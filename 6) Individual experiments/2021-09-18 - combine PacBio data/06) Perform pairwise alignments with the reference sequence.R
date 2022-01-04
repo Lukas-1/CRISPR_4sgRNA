@@ -1,17 +1,22 @@
 ### 24th September 2021 ###
 
 
+# Import packages and source code -----------------------------------------
+
+CRISPR_root_directory <- "~/CRISPR"
+experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
+s2rC_directory        <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
+R_functions_directory <- file.path(s2rC_directory, "1) R functions")
+
+source(file.path(R_functions_directory, "01) Reassigning read unique IDs.R"))
+
 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
-experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
-
 s2r1_directory           <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
 s2r2_directory           <- file.path(experiments_directory, "2021-07-24 - second Sequel-II run")
 s2r3_directory           <- file.path(experiments_directory, "2021-09-13 - third Sequel-II run")
-s2rC_directory           <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 
 s2r1_R_objects_directory <- file.path(s2r1_directory, "3) R objects")
 s2r2_R_objects_directory <- file.path(s2r2_directory, "3) R objects")
@@ -40,37 +45,6 @@ run2_ccs_df <- ccs_df
 
 load(file.path(s2rC_R_objects_directory, "05) Read in PacBio data.RData"))
 
-
-
-# Define functions --------------------------------------------------------
-
-AddNewZMWs <- function(use_ccs_df, use_align_df, pool_number) {
-
-  are_this_pool <- use_ccs_df[, "Pool"] %in% pool_number
-  ccs_read_IDs <- paste0(use_ccs_df[["Combined_ID"]][are_this_pool], "__",
-                         use_ccs_df[["Original_ZMW"]][are_this_pool]
-                         )
-
-  align_read_IDs <- paste0(use_align_df[["Combined_ID"]], "__",
-                           use_align_df[["Original_ZMW"]]
-                           )
-
-  are_included <- align_read_IDs %in% ccs_read_IDs
-
-  matches_vec <- match(align_read_IDs[are_included], ccs_read_IDs)
-  stopifnot(!(anyNA(matches_vec)))
-
-  ccs_columns <- c("Run", "Pool", "ZMW", "Original_ZMW")
-
-  results_df <- data.frame(
-    use_ccs_df[are_this_pool, ][matches_vec, ccs_columns],
-    use_align_df[are_included, !(names(use_align_df) %in% ccs_columns)],
-    stringsAsFactors = FALSE,
-    row.names = NULL
-  )
-
-  return(results_df)
-}
 
 
 
