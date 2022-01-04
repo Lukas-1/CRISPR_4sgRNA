@@ -42,15 +42,17 @@ load(file.path(s2rC_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 # Make preparations -------------------------------------------------------
 
-matches_vec <- match(plates_df[, "Plate_name"], extended_df[, "Plate_name"])
-pools_vec <- extended_df[matches_vec, "Run3_pool"]
-plates_df[, "Highlight_color"] <- ifelse(pools_vec %in% 3,
-                                         brewer.pal(9, "Blues")[[7]],
-                                         ifelse(pools_vec %in% 4,
-                                                brewer.pal(9, "Purples")[[7]],
-                                                "#000000"
-                                                )
-                                         )
+# matches_vec <- match(plates_df[, "Plate_name"], extended_df[, "Plate_name"])
+# pools_vec <- extended_df[matches_vec, "Run3_pool"]
+# plates_df[, "Highlight_color"] <- ifelse(pools_vec %in% 3,
+#                                          brewer.pal(9, "Blues")[[7]],
+#                                          ifelse(pools_vec %in% 4,
+#                                                 brewer.pal(9, "Purples")[[7]],
+#                                                 "#000000"
+#                                                 )
+#                                          )
+
+
 
 
 
@@ -58,7 +60,7 @@ plates_df[, "Highlight_color"] <- ifelse(pools_vec %in% 3,
 
 use_plate_numbers <- unique(library_df[["Plate_number"]])
 
-DrawBarplotsAndHeatmapsForAllPlates(export_PNGs = FALSE, exclude_CCS3 = TRUE)
+DrawBarplotsAndHeatmapsForAllPlates(export_PNGs = FALSE)
 
 
 
