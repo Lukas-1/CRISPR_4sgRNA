@@ -539,21 +539,24 @@ DrawPercentCorrectBarplot <- function(summary_df,
 
 
 
-GetHalfLineWidth <- function() {
-  1 / par("pin")[[1]] / 96 / 2 * par("lwd")
+GetHalfLineWidth <- function(y_axis = FALSE) {
+  1 / par("pin")[[if (y_axis) 2 else 1]] / 96 / 2 * par("lwd")
 }
 
 
 
-DrawOuterBox <- function(use_lwd = 1) {
-  half_lwd <- GetHalfLineWidth() * use_lwd
-  rect(xleft   = par("usr")[[1]] - half_lwd,
-       xright  = par("usr")[[2]] + half_lwd,
-       ybottom = par("usr")[[3]] - half_lwd,
-       ytop    = par("usr")[[4]] + half_lwd,
+DrawOuterBox <- function(use_lwd = 1, fill = FALSE) {
+  half_lwd_x <- GetHalfLineWidth() * use_lwd
+  half_lwd_y <- GetHalfLineWidth(y_axis = TRUE) * use_lwd
+  rect(xleft   = par("usr")[[1]] - half_lwd_x,
+       xright  = par("usr")[[2]] + half_lwd_x,
+       ybottom = par("usr")[[3]] - half_lwd_y,
+       ytop    = par("usr")[[4]] + half_lwd_y,
        xpd     = NA,
-       lwd     = use_lwd,
-       ljoin   = "mitre"
+       lwd     = use_lwd * par("lwd"),
+       ljoin   = "mitre",
+       lmitre  = 30,
+       col     = if (fill) "black" else NA
        )
 }
 
@@ -595,7 +598,6 @@ DrawHeatMap <- function(summary_df,
   }
 
   MakeEmptyPlot()
-  assign("delete_my_color_mat_3", my_color_mat, envir = globalenv())
   Do_cimage(my_color_mat)
   x_range <- par("usr")[[2]] - par("usr")[[1]]
 
@@ -685,7 +687,8 @@ PrepareSummaryDf <- function(summary_df, reorder_wells = FALSE) {
                        summary_df[["Perc_at_least_3"]],
                        summary_df[["Perc_at_least_2"]],
                        summary_df[["Perc_at_least_1"]],
-                       mean_accuracies
+                       mean_accuracies,
+                       na.last = FALSE
                        )
   } else {
     new_order <- seq_len(nrow(summary_df))
@@ -1463,7 +1466,7 @@ sparse_height <- 1.5 * (2 + (3 / margin_ratio)) - (0.2 * 2)
 
 
 
-DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE, exclude_CCS3 = FALSE) {
+DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
 
   required_objects <- c("use_plate_numbers", "plates_df", "library_df")
 
@@ -1475,11 +1478,10 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE, exclude_CCS3
 
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
-
-  if (exclude_CCS3) {
-    ccs_numbers <- ccs_numbers[-1]
-    accuracy_percentages <- accuracy_percentages[-1]
-  }
+  df_list_names <- paste0("ccs", ccs_numbers, "_df_list")
+  ccs_are_present <- df_list_names %in% ls(envir = globalenv())
+  ccs_numbers <- ccs_numbers[ccs_are_present]
+  accuracy_percentages <- accuracy_percentages[ccs_are_present]
 
   if ("Highlight_color" %in% names(plates_df)) {
     title_colors <- plates_df[, "Highlight_color"]
@@ -1506,12 +1508,11 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE, exclude_CCS3
 
         use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
 
-        filter_stages <- c("original_summary_df", "filtered_summary_df")
-        filter_labels <- c("i) unfiltered", "ii) filtered")
-        if ("filtered_cross_plate_df" %in% names(use_df_list)) {
-          filter_stages <- c(filter_stages, "filtered_cross_plate_df")
-          filter_labels <- c(filter_labels, "iii) filtered cross-plate")
-        }
+        filter_stages <- c("original_summary_df", "filtered_summary_df", "filtered_cross_plate_df")
+        filter_labels <- c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")
+        df_are_present <- filter_stages %in% names(use_df_list)
+        filter_stages <- filter_stages[df_are_present]
+        filter_labels <- filter_labels[df_are_present]
 
         titles_list <- lapply(plates_df[["Plate_number"]], function(x) {
           bquote({"Plate #" * .(as.character(x)) * " \u2013 " *
