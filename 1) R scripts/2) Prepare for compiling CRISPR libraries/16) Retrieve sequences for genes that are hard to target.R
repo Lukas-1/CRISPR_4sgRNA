@@ -76,7 +76,3 @@ GetCodingSequence(SymbolsToEntrezIDs("PRNP"), get_exons = TRUE)
 
 
 
-
-
-
-
