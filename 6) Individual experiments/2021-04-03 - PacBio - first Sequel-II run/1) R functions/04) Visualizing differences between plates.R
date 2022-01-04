@@ -179,6 +179,10 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
 
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
+  df_list_names <- paste0("ccs", ccs_numbers, "_df_list")
+  ccs_are_present <- df_list_names %in% ls(envir = globalenv())
+  ccs_numbers <- ccs_numbers[ccs_are_present]
+  accuracy_percentages <- accuracy_percentages[ccs_are_present]
 
   if (exclude_CCS3) {
     ccs_numbers <- ccs_numbers[-1]
@@ -188,16 +192,16 @@ DrawAllPlateComparisons <- function(export_PNGs      = TRUE,
   use_metrics <- setdiff(names(titles_list), "Longest_subsequence")
   use_metrics <- grep("^Binary_", use_metrics, value = TRUE, invert = TRUE)
 
-
   for (file_format in file_formats) {
     for (i in seq_along(ccs_numbers)) {
       use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
-      filter_stages <- c("original_summary_df", "filtered_summary_df")
-      filter_labels <- c("i) unfiltered", "ii) filtered")
-      if ("filtered_cross_plate_df" %in% names(use_df_list)) {
-        filter_stages <- c(filter_stages, "filtered_cross_plate_df")
-        filter_labels <- c(filter_labels, "iii) filtered cross-plate")
-      }
+
+      filter_stages <- c("original_summary_df", "filtered_summary_df", "filtered_cross_plate_df")
+      filter_labels <- c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")
+      df_are_present <- filter_stages %in% names(use_df_list)
+      filter_stages <- filter_stages[df_are_present]
+      filter_labels <- filter_labels[df_are_present]
+
       for (filter_stage in seq_along(filter_stages)) {
         df_name <- filter_stages[[filter_stage]] # "filtered_gRNAs_df"
 
