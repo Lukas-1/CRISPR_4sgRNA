@@ -7,7 +7,7 @@
 
 GetMeanQuality <- function(qualities, rescale = TRUE) {
   if (!(identical("PhredQuality", as.character(class(qualities))))) {
-    qualities <- PhredQuality(qualities)
+    qualities <- Biostrings::PhredQuality(qualities)
   }
   mean_qualities <- ShortRead::alphabetScore(qualities) / width(qualities)
   if (rescale) {
