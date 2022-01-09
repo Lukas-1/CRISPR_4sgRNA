@@ -542,9 +542,9 @@ MergeCommonElements <- function(input_list) {
   # from https://stackoverflow.com/a/47328161
   i <- rep(seq_along(input_list), lengths(input_list))
   j <- factor(unlist(input_list))
-  tab <- sparseMatrix(i = i, j = as.integer(j), x = TRUE, dimnames = list(NULL, levels(j)))
-  connects <- tcrossprod(tab, boolArith = TRUE)
-  group <- clusters(graph_from_adjacency_matrix(as(connects, "lsCMatrix")))[["membership"]]
+  tab <- Matrix::sparseMatrix(i = i, j = as.integer(j), x = TRUE, dimnames = list(NULL, levels(j)))
+  connects <- Matrix::tcrossprod(tab, boolArith = TRUE)
+  group <- igraph::clusters(igraph::graph_from_adjacency_matrix(as(connects, "lsCMatrix")))[["membership"]]
   results_list <- tapply(input_list,
                          group,
                          function(x) unique(unlist(x)),
