@@ -8,7 +8,7 @@ library("rcartocolor")
 library("png")
 library("vioplot")
 library("eulerr")
-library("gridExtra")
+library("gridExtra") # For grid.arrange
 library("ggplot2")
 library("RColorBrewer")
 
@@ -2939,11 +2939,11 @@ PlotVennDiagrams <- function(CRISPR_df) {
     empty_plot <- ggplot() + theme_void()
     title_rest <- ggplot() + theme_void() + annotate("text", x = 1, y = 1, label = 'bold("Rest")', parse = TRUE, size = 5)
     title_4sg  <- ggplot() + theme_void() + annotate("text", x = 1, y = 1, label = 'bold("4sg")',  parse = TRUE, size = 5)
-    grid.arrange(empty_plot, empty_plot, empty_plot, empty_plot, empty_plot,
-                 empty_plot, title_rest, empty_plot, title_4sg, empty_plot,
-                 empty_plot, euler_not_chosen, empty_plot, euler_4sg, empty_plot,
-                 nrow = 3, widths = c(0.1, 1, 0.1, 1, 0.1), heights = c(0.075, 0.075, 1)
-                 )
+    gridExtra::grid.arrange(empty_plot, empty_plot, empty_plot, empty_plot, empty_plot,
+                            empty_plot, title_rest, empty_plot, title_4sg, empty_plot,
+                            empty_plot, euler_not_chosen, empty_plot, euler_4sg, empty_plot,
+                            nrow = 3, widths = c(0.1, 1, 0.1, 1, 0.1), heights = c(0.075, 0.075, 1)
+                            )
     if (make_PDF) {
       dev.off()
     }
@@ -3691,7 +3691,7 @@ TSSDonutBar <- function(CRISPR_df,
                         donut_radius    = 0.26,
                         donut_x_mid     = 0.72,
                         donut_y_mid     = 0.28,
-                        use_colors      = carto_pal(6, "Emrld"),
+                        use_colors      = rcartocolor::carto_pal(6, "Emrld"),
                         ...
                         ) {
 
@@ -3778,7 +3778,7 @@ CategoriesDonutBar <- function(character_vec,
   category_fac <- factor(new_categories_map[character_vec],
                          levels = names(categories_map_list)
                          )
-  category_colors <- carto_pal(12, "Safe")[c(4, 5, 2, 11, 10)]
+  category_colors <- rcartocolor::carto_pal(12, "Safe")[c(4, 5, 2, 11, 10)]
 
   DonutBars(category_fac,
             category_colors,
@@ -3881,7 +3881,7 @@ CompareTSSDonutBars <- function(CRISPR_df) {
 
   DonutBars(counts_vec      = num_TSSs_hCRISPR,
             use_labels      = num_TSS_labels[seq_along(num_TSSs_hCRISPR)],
-            use_colors      = carto_pal(6, "Emrld")[seq_along(num_TSSs_hCRISPR)],
+            use_colors      = rcartocolor::carto_pal(6, "Emrld")[seq_along(num_TSSs_hCRISPR)],
             donut_label     = library_name,
             donut_text_size = 0.5,
             donut_radius    = 0.26,
