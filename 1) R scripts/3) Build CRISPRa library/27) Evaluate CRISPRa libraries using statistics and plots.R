@@ -81,7 +81,6 @@ CRISPRa_figure_list <- PrepareManuscriptPlots(merged_replaced_CRISPRa_df)
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "CRISPRa_figure_list",
@@ -167,6 +166,7 @@ CreateAllTSSHistograms(merged_replaced_CRISPRa_df)
 
 
 
+
 # Draw scatter plots ------------------------------------------------------
 
 MakeScatterPlots(merged_replaced_CRISPRa_df)
@@ -190,11 +190,6 @@ SourcesBarPlots(merged_replaced_CRISPRa_df)
 UniquePointsBoxPlots(merged_replaced_CRISPRa_df)
 
 SourcesBoxPlots(merged_replaced_CRISPRa_df)
-
-
-
-
-
 
 
 
