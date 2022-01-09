@@ -65,6 +65,10 @@ column_labels_list <- list(
 )
 
 
+
+
+
+
 column_groups_list <- list(
   "At_least_num_guides"  = c(paste0("Count_at_least_", 1:3), "Count_all_4"),
   "No_contam_num_guides" = paste0("Count_no_contam_", c(paste0("at_least_", 1:3), "all_4")),
@@ -232,6 +236,22 @@ PreparePlates <- function(input_df, plate_names) {
   results_mat <- StandardizeCounts(input_df)
   return(results_mat)
 }
+
+
+
+HandleEmptyWells <- function(input_mat) {
+  exclude_NA <- grepl("mut|del|contam", colnames(input_mat), ignore.case = TRUE)
+  include_NA <- grepl("correct|count",  colnames(input_mat), ignore.case = TRUE)
+  if (all(include_NA)) {
+    are_NA <- is.na(input_mat)
+    input_mat[are_NA] <- 0
+  } else if (!(all(exclude_NA))) {
+    stop("Unexpected column names!")
+  }
+  return(input_mat)
+}
+
+
 
 
 
@@ -456,8 +476,11 @@ LollipopPlot <- function(input_df,
     old_mar <- par("mar" = c(5.5, 5, 4, 8))
   }
 
-  control_mat <- PreparePlates(input_df, plates_df[["Plate_name"]][plates_df[["Colony_picked"]]])
-  selected_mat <- PreparePlates(input_df, plate_names)
+  control_mat  <- PreparePlates(input_df, plates_df[plates_df[, "Colony_picked"], "Plate_name"])
+  selected_mat <- PreparePlates(input_df, plate_names)[, use_columns,  drop = FALSE]
+
+  control_mat  <- HandleEmptyWells(control_mat[, use_columns,  drop = FALSE])
+  selected_mat <- HandleEmptyWells(selected_mat[, use_columns,  drop = FALSE])
 
   assign("delete_input_df", input_df, envir = globalenv())
   assign("delete_control_mat", control_mat, envir = globalenv())
@@ -547,8 +570,11 @@ SummaryBoxPlot <- function(input_df,
     old_mar <- par("mar" = use_mar)
   }
 
-  control_mat <- PreparePlates(input_df, plates_df[["Plate_name"]][plates_df[["Colony_picked"]]])
+  control_mat <- PreparePlates(input_df, plates_df[plates_df[, "Colony_picked"], "Plate_name"])
   selected_mat <- PreparePlates(input_df, plate_names)
+
+  control_mat  <- HandleEmptyWells(control_mat[, use_columns, drop = FALSE])
+  selected_mat <- HandleEmptyWells(selected_mat[, use_columns, drop = FALSE])
 
   control_list <- lapply(use_columns, function(x) control_mat[, x])
   selected_list <- lapply(use_columns, function(x) selected_mat[, x])
@@ -805,6 +831,11 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
   ccs_numbers <- c(3, 5, 7)
   accuracy_percentages <- c(99, 99.9, 99.99)
 
+  df_list_names <- paste0("ccs", ccs_numbers, "_df_list")
+  ccs_are_present <- df_list_names %in% ls(envir = globalenv())
+  ccs_numbers <- ccs_numbers[ccs_are_present]
+  accuracy_percentages <- accuracy_percentages[ccs_are_present]
+
   if (export_PNGs) {
     file_formats <- c("png", "pdf")
   } else {
@@ -825,12 +856,11 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
         use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
 
-        filter_stages <- "filtered_summary_df"
-        filter_labels <- "ii) filtered"
-        if ("filtered_cross_plate_df" %in% names(use_df_list)) {
-          filter_stages <- c(filter_stages, "filtered_cross_plate_df")
-          filter_labels <- c(filter_labels, "iii) filtered cross-plate")
-        }
+        filter_stages <- c("original_summary_df", "filtered_summary_df", "filtered_cross_plate_df")
+        filter_labels <- c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")
+        df_are_present <- filter_stages %in% names(use_df_list)
+        filter_stages <- filter_stages[df_are_present]
+        filter_labels <- filter_labels[df_are_present]
 
         for (filter_stage in seq_along(filter_stages)) {
 
