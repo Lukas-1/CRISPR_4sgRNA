@@ -20,24 +20,23 @@ source(file.path(R_functions_directory, "24) Finding unintended targets of mutat
 
 # Define folder paths -----------------------------------------------------
 
-sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
-sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
-
 library_RData_directory  <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(library_RData_directory, "1) General")
-output_directory         <- file.path(sql2_directory, "5) Output", "Tables", "Targets of mutated gRNAs")
 
+sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
+sql2_R_objects_directory <- file.path(sql2_directory, "3) R objects")
+tables_directory         <- file.path(sql2_directory, "5) Output", "Tables",  "Targets of mutated gRNAs")
+figures_directory        <- file.path(sql2_directory, "5) Output", "Figures", "Targets of mutated gRNAs")
 
 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
-load(file.path(sql2_R_objects_directory, "26) Annotate mutated sgRNAs with any perfect matches in the genome.RData"))
-
 load(file.path(general_RData_directory, "20) Compile all relevant TSSs for each gene.RData"))
 load(file.path(general_RData_directory, "21) Assemble data frames of gene, transcript, exon and CDS coordinates.RData"))
 
+load(file.path(sql2_R_objects_directory, "03) Import and process sgRNA sequences.RData"))
+load(file.path(sql2_R_objects_directory, "26) Annotate mutated sgRNAs with any perfect matches in the genome.RData"))
 
 
 
@@ -45,7 +44,6 @@ load(file.path(general_RData_directory, "21) Assemble data frames of gene, trans
 # Add gene information to the mutations_df data frame ---------------------
 
 mutations_df <- AddGeneInfo(mutations_df, library_df)
-
 
 
 
@@ -94,7 +92,7 @@ ExportMutatedDf(CRISPRko_20bp_mut_list[["annotated_df"]],
 
 # Draw doughnut/bar plots -------------------------------------------------
 
-pdf(file = file.path(output_directory, "Donut charts - 19bp - targets of mutated gRNAs.pdf"),
+pdf(file = file.path(figures_directory, "Donut charts - 19bp - targets of mutated gRNAs.pdf"),
     width = 6, height = 4
     )
 MutationsDonutBar(CRISPRko_19bp_mut_list[["gRNA_numbers"]],
@@ -107,7 +105,7 @@ dev.off()
 
 
 
-pdf(file = file.path(output_directory, "Donut charts - 20bp - targets of mutated gRNAs.pdf"),
+pdf(file = file.path(figures_directory, "Donut charts - 20bp - targets of mutated gRNAs.pdf"),
     width = 6, height = 4
     )
 MutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]],

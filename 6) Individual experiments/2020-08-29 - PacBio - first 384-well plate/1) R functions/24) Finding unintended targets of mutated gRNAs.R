@@ -145,11 +145,6 @@ Find19or20MutatedAndTemplate <- function(mut_df) {
 
 
 
-
-
-
-
-
 # Functions for annotating mutations_df -----------------------------------
 
 AddContamZMW <- function(mut_df, use_df_list) {
@@ -509,7 +504,7 @@ ExportMutatedDf <- function(input_df, file_name) {
   }
 
   write.table(export_df,
-              file      = file.path(output_directory, paste0(file_name, ".tsv")),
+              file      = file.path(tables_directory, paste0(file_name, ".tsv")),
               sep       = "\t",
               row.names = FALSE#,
               # quote     = FALSE
