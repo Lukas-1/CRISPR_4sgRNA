@@ -138,8 +138,12 @@ DrawColorTrapezoid <- function(start_x     = 0,
 
     for (i in seq_len(length(use_colors) - 1L)) {
       my_color <- use_colors[[i + 1L]]
-      polygon(x      = c(bottom_left_corners_x[[i]], top_left_corners_x[[i]], top_right_corners_x[[i]], bottom_right_corners_x[[i]]),
-              y      = c(bottom_left_corners_y[[i]], top_left_corners_y[[i]], top_right_corners_y[[i]], bottom_right_corners_y[[i]]),
+      polygon(x      = c(bottom_left_corners_x[[i]], top_left_corners_x[[i]],
+                         top_right_corners_x[[i]], bottom_right_corners_x[[i]]
+                         ),
+              y      = c(bottom_left_corners_y[[i]], top_left_corners_y[[i]],
+                         top_right_corners_y[[i]], bottom_right_corners_y[[i]]
+                         ),
               col    = my_color,
               border = NA,
               xpd    = NA
@@ -739,7 +743,7 @@ DrawAccuracyHeatmap <- function(summary_df,
   num_wells <- nrow(summary_df)
 
 
-  ## Set up the layout
+  ## Set up the plot layout
 
   space_height <- 1
   golden_ratio <- (1 + sqrt(5)) / 2
@@ -762,7 +766,7 @@ DrawAccuracyHeatmap <- function(summary_df,
                      )
          )
 
-  par(mar = rep(0, 4))
+  old_par <- par(mar = rep(0, 4))
 
   for (i in 1:3) {
     MakeEmptyPlot()
@@ -939,6 +943,9 @@ DrawAccuracyHeatmap <- function(summary_df,
        )
 
   MakeEmptyPlot()
+  par(old_par)
+  layout(1)
+
   return(invisible(NULL))
 }
 
@@ -956,7 +963,7 @@ SparseAccuracyHeatmap <- function(summary_df,
                                   ) {
 
   layout_mat <- cbind(rep(1, 5), 3:7, rep(2, 5))
-  par(mar = rep(0, 4))
+  old_par <- par(mar = rep(0, 4))
   layout(layout_mat,
          heights = c(2.98, margin_ratio, 0.01, margin_ratio, 0.01),
          widths = c(1, margin_ratio, 1)
@@ -1006,6 +1013,9 @@ SparseAccuracyHeatmap <- function(summary_df,
               )
   par(mar = rep(0, 4))
   MakeEmptyPlot()
+
+  par(old_par)
+  layout(1)
 
   return(invisible(NULL))
 }
