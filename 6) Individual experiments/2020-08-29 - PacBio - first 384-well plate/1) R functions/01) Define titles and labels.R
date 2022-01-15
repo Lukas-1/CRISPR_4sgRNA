@@ -75,7 +75,7 @@ titles_list <- list(
   "Binary_count_pr_at_least_1"    = "In the majority of reads, at least 1 gRNA is correct (sg+cr 100%, promoter 95%)",
   "Binary_count_pr_at_least_2"    = "In the majority of reads, at least 2 gRNAs are correct (sg+cr 100%, promoter 95%)",
   "Binary_count_pr_at_least_3"    = "In the majority of reads, at least 3 gRNAs are correct (sg+cr 100%, promoter 95%)",
-  "Binary_count_pr_all_4"         = "In the majority of reads, all 4 gRNAs are correct  (sg+cr 100%, promoter 95%)",
+  "Binary_count_pr_all_4"         = "In the majority of reads, all 4 gRNAs are correct (sg+cr 100%, promoter 95%)",
 
   "Binary_count_all_4_promoters"  = "In the majority of reads, all 4 gRNAs (including the promoters) are 100% correct",
   "Binary_count_whole_plasmid"    = "In the majority of reads, the entire plasmid sequence is 100% correct",
