@@ -847,11 +847,11 @@ DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
                                        plates_df[["Plate_name"]][plates_df[["Plate_number"]] == plate_number]
                                        )
                   file_name <- paste0(file_prefix, " - ", plate_name, ".png")
-                  png(file   = file.path(metric_path, file_name),
-                      width  = use_width,
-                      height = use_height,
-                      units  = "in",
-                      res    = 600
+                  png(filename = file.path(metric_path, file_name),
+                      width    = use_width,
+                      height   = use_height,
+                      units    = "in",
+                      res      = 600
                       )
                 }
                 summary_sub_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_number, ]
