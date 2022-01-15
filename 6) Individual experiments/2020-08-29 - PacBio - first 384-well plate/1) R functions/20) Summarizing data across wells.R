@@ -67,8 +67,6 @@ column_labels_list <- list(
 
 
 
-
-
 column_groups_list <- list(
   "At_least_num_guides"  = c(paste0("Count_at_least_", 1:3), "Count_all_4"),
   "No_contam_num_guides" = paste0("Count_no_contam_", c(paste0("at_least_", 1:3), "all_4")),
@@ -205,7 +203,6 @@ DrawGridlines <- function(y_limits, extra_grid_lines = TRUE) {
 
 
 
-
 # Functions for aggregating and tidying data ------------------------------
 
 StandardizeCounts <- function(input_df) {
@@ -250,8 +247,6 @@ HandleEmptyWells <- function(input_mat) {
   }
   return(input_mat)
 }
-
-
 
 
 
@@ -593,12 +588,12 @@ SummaryBoxPlot <- function(input_df,
     temp_width <- use_width - sum(cur_mai[c(2, 4)])
     temp_height <- use_height - sum(cur_mai[c(1, 3)])
 
-    png(file   = temp_path,
-        width  = temp_width,
-        height = temp_height,
-        units  = "in",
-        res    = 900,
-        bg     = "transparent"
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "transparent"
         )
 
     par(mar = rep(0, 4))
