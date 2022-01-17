@@ -257,17 +257,31 @@ HandleEmptyWells <- function(input_mat) {
 SetUpPercentagePlot <- function(use_columns,
                                 use_y_limits,
                                 main_title,
-                                point_cex        = 1.5,
-                                legend_pch       = 21,
-                                side_gap         = 0.5,
-                                draw_grid        = TRUE,
-                                extra_grid_lines = FALSE,
-                                for_embedded_PNG = FALSE,
-                                make_plot        = TRUE,
-                                add_mean         = FALSE,
-                                y_axis_label     = "Percentage of reads",
-                                sub_title        = NULL,
-                                draw_legend      = TRUE
+                                title_line         = 1.8,
+                                title_cex          = 1.1,
+                                point_cex          = 1.5,
+                                legend_pch         = 21,
+                                side_gap           = 0.5,
+                                draw_grid          = TRUE,
+                                extra_grid_lines   = FALSE,
+                                for_embedded_PNG   = FALSE,
+                                make_plot          = TRUE,
+                                add_mean           = FALSE,
+                                y_axis_label       = "Percentage of reads",
+                                y_label_line       = 3,
+                                sub_title          = NULL,
+                                draw_legend        = TRUE,
+                                bottom_labels_list = NULL,
+                                bottom_start_y     = 0.65,
+                                bottom_y_gap       = 2.5,
+                                bottom_large_y     = 1,
+                                side_y_gap         = bottom_y_gap,
+                                side_labels_list   = list(c("Colony-", "picked", "controls"),
+                                                          c("Polyclonal", "plasmid", "population")
+                                                          ),
+                                points_centered    = FALSE,
+                                side_legend_x      = 1.25,
+                                side_legend_x_gap  = 0
                                 ) {
 
   stopifnot("column_labels_list" %in% ls(envir = globalenv()))
@@ -287,7 +301,7 @@ SetUpPercentagePlot <- function(use_columns,
 
   if (make_plot) {
     final_y_range <- numeric_limits[[2]] - numeric_limits[[1]]
-    y_gap <- final_y_range * 0.0075
+    y_gap <- final_y_range * 0.02
     final_y_limits <- c(numeric_limits[[1]] - y_gap, numeric_limits[[2]] + y_gap)
     ## Set up the plot canvas
     plot(1,
@@ -320,7 +334,8 @@ SetUpPercentagePlot <- function(use_columns,
        mgp      = c(3, 0.38, 0),
        gap.axis = 0,
        tcl      = -0.3,
-       las      = 1
+       las      = 1,
+       lwd      = par("lwd")
        )
 
   are_no_contam <- grepl("_no_contam_", use_columns, fixed = TRUE)
@@ -329,62 +344,54 @@ SetUpPercentagePlot <- function(use_columns,
     stopifnot(all(are_no_contam))
     # y_axis_label <- paste0(y_axis_label, " (excluding contaminations)")
   }
-  mtext(text = y_axis_label, side = 2, line = 3)
+  mtext(text = y_axis_label, side = 2, line = y_label_line, cex = par("cex"))
 
 
   ## Draw the title
-  title(main_title, cex.main = 1.1, font.main = 1, line = 1.8)
+  title(main_title, cex.main = title_cex, font.main = 1, line = title_line)
 
 
   ## Draw the x axis labels
-  large_gap_lines <- 2.5
-  start_line <- 0.65
 
   if (!(is.null(sub_title))) {
     mtext(text = VerticalAdjust(sub_title),
           at   = mean(group_positions),
-          line = start_line + large_gap_lines * 1.3,
+          line = bottom_start_y + bottom_y_gap * 1.3,
           side = 1,
-          cex  = 0.9,
+          cex  = 0.9 * par("cex"),
           col  = "gray50"
           )
   } else {
-    start_line <- start_line + 0.3
+    bottom_start_y <- bottom_start_y + 0.3
+  }
+
+  if (is.null(bottom_labels_list)) {
+    bottom_labels_list <- column_labels_list
   }
 
   for (i in seq_along(group_positions)) {
-    mtext(text = VerticalAdjust(column_labels_list[[use_columns[[i]]]][[1]]),
+    mtext(text = VerticalAdjust(bottom_labels_list[[use_columns[[i]]]][[1]]),
           at   = group_positions[[i]],
-          line = start_line,
-          side = 1
+          line = bottom_start_y,
+          side = 1,
+          cex  = par("cex")
           )
 
-    mtext(text = VerticalAdjust(column_labels_list[[use_columns[[i]]]][[2]]),
+    mtext(text = VerticalAdjust(bottom_labels_list[[use_columns[[i]]]][[2]]),
           at   = group_positions[[i]],
-          line = start_line + (large_gap_lines / 2),
-          side = 1
+          line = bottom_start_y + (bottom_y_gap / 2),
+          side = 1,
+          cex  = par("cex")
           )
   }
-
 
 
   ## Prepare for drawing the legend
   y_mid <- 0.5
-  large_gap <- diff(grconvertY(c(0, large_gap_lines), from = "lines", to = "npc"))
+  large_gap <- diff(grconvertY(c(0, side_y_gap), from = "lines", to = "npc"))
   small_gap <- large_gap / 2
 
-  labels_list <- list(
-    c("Colony-",
-      "picked",
-      "controls"
-    ),
-    c("Polyclonal",
-      "plasmid",
-      "population"
-    )
-  )
-
-  is_large_gap <- lapply(labels_list, function(x) {
+  is_large_gap <- lapply(side_labels_list, function(x) {
     if (length(x) == 1) {
       FALSE
     } else {
@@ -392,27 +399,28 @@ SetUpPercentagePlot <- function(use_columns,
     }
   })
 
-  gaps_vec <- ifelse(unlist(is_large_gap), large_gap, small_gap)
+  gaps_vec <- ifelse(unlist(is_large_gap), large_gap * bottom_large_y, small_gap)
   gaps_vec[[1]] <- 0
   total_span <- sum(gaps_vec)
   start_y <- y_mid + (total_span / 2)
   y_sequence <- start_y - cumsum(gaps_vec)
   y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
-  x_start <- 1 + diff(grconvertX(c(0, 1.25), from = "lines", to = "npc"))
+  x_start <- 1 + diff(grconvertX(c(0, side_legend_x), from = "lines", to = "npc"))
 
   if (draw_legend) {
   ## Draw the legend
     text(x      = grconvertX(x = x_start, from = "npc", to = "user"),
          y      = y_pos,
          cex    = 1,
-         labels = sapply(unlist(labels_list), VerticalAdjust),
+         labels = sapply(unlist(side_labels_list), VerticalAdjust),
          adj    = c(0, 0.5),
          xpd    = NA
          )
 
     colors_mat <- GetColorMat()
-    points(x   = rep(grconvertX(x = x_start - 0.0, from = "npc", to = "user"), 2),
-           y   = y_pos[c(1, 4)],
+    side_legend_x_gap <- diff(grconvertX(c(0, side_legend_x_gap), from = "lines", to = "npc"))
+    points(x   = rep(grconvertX(x = x_start - side_legend_x_gap, from = "npc", to = "user"), 2),
+           y   = if (points_centered) y_pos[c(2, 5)] else y_pos[c(1, 4)],
            cex = point_cex,
            pch = legend_pch,
            bg  = colors_mat[, "opaque_fill"],
@@ -461,7 +469,8 @@ LollipopPlot <- function(input_df,
                          label_percentages = TRUE,
                          use_y_limits      = c(0, 1),
                          black_percentages = TRUE,
-                         sub_title         = NULL
+                         custom_title      = NULL,
+                         ...
                          ) {
 
   plates_list <- GetPlateSelection(plate_names)
@@ -486,9 +495,13 @@ LollipopPlot <- function(input_df,
   selected_metrics <- colMeans(selected_mat[, use_columns, drop = FALSE], na.rm = TRUE)
 
   point_cex <- 1.5
-  SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
-                      y_axis_label = "Mean percentage of reads",
-                      sub_title = sub_title
+  if (is.null(custom_title)) {
+    use_title <- plates_list[["title"]]
+  } else {
+    use_title <- custom_title
+  }
+  SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
+                      y_axis_label = "Mean percentage of reads", ...
                       )
 
   spaced_percent <- 2.5
@@ -539,8 +552,71 @@ LollipopPlot <- function(input_df,
          )
   }
 
-  par(old_mar)
+  if (set_mar) {
+    par(old_mar)
+  }
   return(invisible(NULL))
+}
+
+
+
+CustomBoxPlot <- function(input_list,
+                          at_positions,
+                          use_brewer_pal,
+                          use_wex       = 0.4,
+                          draw_whiskers = TRUE,
+                          median_lwd    = 3
+                          ) {
+
+  if (draw_whiskers) {
+    quantile_mat <- t(sapply(input_list, quantile, probs = c(0.05, 0.95)))
+    whisker_color <- brewer.pal(9, use_brewer_pal)[[5]]
+    segments(x0   = at_positions,
+             y0   = quantile_mat[, 1],
+             y1   = quantile_mat[, 2],
+             col  = whisker_color,
+             lwd  = par("lwd") * 1.5,
+             xpd  = NA,
+             lend = "butt"
+             )
+    # whisker_half_width <- 0.025
+    # segments(x0   = at_positions - whisker_half_width,
+    #          x1   = at_positions + whisker_half_width,
+    #          y0   = quantile_mat[, 1],
+    #          col  = whisker_color,
+    #          lwd  = par("lwd"),
+    #          xpd  = NA,
+    #          lend = "butt"
+    #          )
+    # segments(x0   = at_positions - whisker_half_width,
+    #          x1   = at_positions + whisker_half_width,
+    #          y0   = quantile_mat[, 2],
+    #          col  = whisker_color,
+    #          lwd  = par("lwd"),
+    #          xpd  = NA,
+    #          lend = "butt"
+    #          )
+  }
+
+  boxplot(input_list,
+          at         = at_positions,
+          boxwex     = use_wex * 0.4,
+          outline    = FALSE,
+          names      = rep.int("", length(at_positions)),
+          whisklty   = "blank",
+          staplewex  = 0,
+          whisklwd   = 0,
+          staplelty  = 0,
+          medlwd     = par("lwd") * median_lwd,
+          col        = brewer.pal(9, use_brewer_pal)[[2]],
+          border     = brewer.pal(9, use_brewer_pal)[[9]],
+          add        = TRUE,
+          axes       = FALSE,
+          lwd        = par("lwd") * 1.5
+          )
+
+  return(invisible(NULL))
+
 }
 
 
@@ -552,7 +628,12 @@ SummaryBoxPlot <- function(input_df,
                            label_percentages = TRUE,
                            use_y_limits      = c(0, 1),
                            embed_PNG         = FALSE,
-                           sub_title         = NULL
+                           custom_title      = NULL,
+                           draw_whiskers     = FALSE,
+                           median_lwd        = 3,
+                           box_wex           = 0.4,
+                           violin_wex        = 0.4,
+                           ...
                            ) {
 
   set.seed(1) # For reproducible jitter
@@ -579,14 +660,20 @@ SummaryBoxPlot <- function(input_df,
 
   point_cex <- 1.5
 
+  if (is.null(custom_title)) {
+    use_title <- plates_list[["title"]]
+  } else {
+    use_title <- custom_title
+  }
   ## Prepare the raster graphics device
   if (embed_PNG) {
     PDF_mar <- par("mar")
     PDF_device <- dev.cur()
     temp_path <- file.path(file_output_directory, "temp.png")
-    cur_mai <- par("mar") * 0.2
-    temp_width <- use_width - sum(cur_mai[c(2, 4)])
-    temp_height <- use_height - sum(cur_mai[c(1, 3)])
+    cur_mai <- par("mai")
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
 
     png(filename = temp_path,
         width    = temp_width,
@@ -596,15 +683,16 @@ SummaryBoxPlot <- function(input_df,
         bg       = "transparent"
         )
 
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
     par(mar = rep(0, 4))
-
-    SetUpPercentagePlot(use_columns, use_y_limits, side_gap = 0.3,
+    SetUpPercentagePlot(use_columns, use_y_limits, NULL, side_gap = 0.3,
                         for_embedded_PNG = TRUE, extra_grid_lines = TRUE
                         )
   } else {
-    SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
+    SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE,
-                        sub_title = sub_title
+                        ...
                         )
   }
 
@@ -612,8 +700,6 @@ SummaryBoxPlot <- function(input_df,
   colors_mat <- GetColorMat()
   num_groups <- length(use_columns)
   group_positions <- seq_len(num_groups)
-
-  use_wex <- 0.4
 
   use_gap <- 0.35
   control_pos  <- group_positions - (use_gap / 2)
@@ -629,47 +715,67 @@ SummaryBoxPlot <- function(input_df,
     })
   }
 
-  vioplot(RemoveAllZeros(control_list),
-          at       = control_pos,
-          pchMed   = NA,
-          drawRect = FALSE,
-          col      = brewer.pal(9, "Purples")[[4]],
-          border   = NA,
-          wex      = use_wex,
-          add      = TRUE,
-          axes     = FALSE
-          )
+  use_brewer_pals <- c("Purples", "Blues")
+
+  if (draw_whiskers) {
+    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[3]], "")
+  } else {
+    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[4]], "")
+  }
 
   vioplot(RemoveAllZeros(selected_list),
           at       = selected_pos,
           pchMed   = NA,
           drawRect = FALSE,
-          col      = brewer.pal(9, "Blues")[[4]],
+          col      = brewer.pal(9, use_brewer_pals[[2]])[[3]],
           border   = NA,
-          wex      = use_wex,
+          wex      = violin_wex,
           add      = TRUE,
           axes     = FALSE
           )
 
+  vioplot(RemoveAllZeros(control_list),
+          at       = control_pos,
+          pchMed   = NA,
+          drawRect = FALSE,
+          col      = brewer.pal(9, use_brewer_pals[[1]])[[3]],
+          border   = NA,
+          wex      = violin_wex,
+          add      = TRUE,
+          axes     = FALSE
+          )
+  if (draw_whiskers) {
+    jitter_sd <- 0.02
+  } else {
+    jitter_sd <- 0.03
+  }
+
   control_jittered  <- control_pos[rep(seq_along(control_list), lengths(control_list))] +
-                       rnorm(n = length(control_unlisted), mean = 0, sd = 0.03)
+                       rnorm(n = length(control_unlisted), mean = 0, sd = jitter_sd)
 
   selected_jittered <- selected_pos[rep(seq_along(selected_list), lengths(selected_list))] +
-                       rnorm(n = length(selected_unlisted), mean = 0, sd = 0.03)
+                       rnorm(n = length(selected_unlisted), mean = 0, sd = jitter_sd)
 
-  points_alpha <- 0.2
-  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+  if (draw_whiskers) {
+    point_colors <- vapply(use_brewer_pals, function(x) {
+      colorRampPalette(brewer.pal(9, x))(101)[[80]]
+    }, "")
+  } else {
+    point_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[8]], "")
+  }
+  point_colors <- adjustcolor(point_colors, alpha.f = 0.2)
+
   ## Draw the jittered points
   points(x   = control_jittered,
          y   = control_unlisted,
          cex = 0.4,
-         col = paste0(brewer.pal(9, "Purples")[[8]], alpha_hex),
+         col = point_colors[[1]],
          pch = 16
          )
   points(x   = selected_jittered,
          y   = selected_unlisted,
          cex = 0.4,
-         col = paste0(brewer.pal(9, "Blues")[[8]], alpha_hex),
+         col = point_colors[[2]],
          pch = 16
          )
 
@@ -690,50 +796,26 @@ SummaryBoxPlot <- function(input_df,
                 ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
                 )
 
-    SetUpPercentagePlot(use_columns, use_y_limits, plates_list[["title"]], point_cex,
+    SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         legend_pch = 22, draw_grid = FALSE,
-                        make_plot = FALSE, sub_title = sub_title
+                        make_plot = FALSE, ...
                         )
   }
 
   ## Draw the superimposed box plots
-  boxplot(control_list,
-          at         = control_pos,
-          boxwex     = use_wex * 0.4,
-          outline    = FALSE,
-          names      = rep.int("", length(group_positions)),
-          whisklty   = "blank",
-          staplewex  = 0,
-          whisklwd   = 0,
-          staplelty  = 0,
-          medlwd     = par("lwd") * 3,
-          col        = brewer.pal(9, "Purples")[[2]],
-          border     = brewer.pal(9, "Purples")[[9]],
-          add        = TRUE,
-          axes       = FALSE,
-          lwd        = 1
-          )
+  CustomBoxPlot(control_list, control_pos, use_brewer_pals[[1]],
+                use_wex = box_wex, draw_whiskers = draw_whiskers
+                )
 
   if (!(all(is.na(selected_mat)))) {
-    boxplot(selected_list,
-            at         = selected_pos,
-            boxwex     = use_wex * 0.4,
-            outline    = FALSE,
-            names      = rep.int("", length(group_positions)),
-            whisklty   = "blank",
-            staplewex  = 0,
-            whisklwd   = 0,
-            staplelty  = 0,
-            medlwd     = par("lwd") * 3,
-            col        = brewer.pal(9, "Blues")[[2]],
-            border     = brewer.pal(9, "Blues")[[9]],
-            add        = TRUE,
-            axes       = FALSE,
-            lwd        = 1
-            )
+    CustomBoxPlot(selected_list, selected_pos, use_brewer_pals[[2]],
+                  use_wex = box_wex, draw_whiskers = draw_whiskers
+                  )
   }
 
-  par(old_mar)
+  if (set_mar) {
+    par(old_mar)
+  }
   return(invisible(NULL))
 }
 
@@ -813,11 +895,11 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
   if (export_PNGs) {
     use_file_name <- "Theoretical_at_least_num_guides"
-    png(file   = file.path(PNGs_output_directory, "Theoretical", paste0(use_file_name, ".png")),
-        width  = use_width,
-        height = use_height,
-        units  = "in",
-        res    = 600
+    png(filename = file.path(PNGs_output_directory, "Theoretical", paste0(use_file_name, ".png")),
+        width    = use_width,
+        height   = use_height,
+        units    = "in",
+        res      = 600
         )
     TheoreticalAtLeastCounts()
     dev.off()
@@ -928,11 +1010,11 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
                   file_name <- paste0(plate_selection_prefixes[[k]],
                                       ") ", plate_selection, ".png"
                                       )
-                  png(file   = file.path(metric_path, file_name),
-                      width  = use_width,
-                      height = use_height,
-                      units  = "in",
-                      res    = 600
+                  png(filename = file.path(metric_path, file_name),
+                      width    = use_width,
+                      height   = use_height,
+                      units    = "in",
+                      res      = 600
                       )
                 }
                 UseFunction(use_df,
