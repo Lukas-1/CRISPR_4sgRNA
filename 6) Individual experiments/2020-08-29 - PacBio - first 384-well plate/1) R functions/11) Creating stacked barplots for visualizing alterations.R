@@ -28,12 +28,18 @@ titles_list[["Count_all_4_promoters"]] <- "Percentage of reads for which all 4 g
 
 eCDF_combos_list <- list(
   "4_guides" = list(
-    "Count_all_4"       = c("All 4 sgRNAs", "correct in the", "same read"),
-    "All4_sg_cr_pass"   = c("Correct percentage", "exceeds threshold", "for all 4 sgRNAs")#,
+    "Count_all_4"       = expression(scriptscriptstyle(" ") * "All 4 gRNAs",
+                                     scriptscriptstyle(" ") * "correct in",
+                                     scriptscriptstyle(" ") * "same read"
+                                     ),
+    "All4_sg_cr_pass"   = expression(scriptscriptstyle(" ") * "Correct %",
+                                     "" >=  "cutoff for",
+                                     scriptscriptstyle(" ") * "all 4 gRNAs"
+                                     )#,
     # "Count_mean_sg1to4" = c("Mean correct", "percentage", "(sg1-4)")
   ),
   "Contaminations" = list(
-    "Num_contaminated_reads" = "Contaminations"
+    "Num_contaminated_reads" = c("Contains", "gRNA from", "other wells")
   ),
   "Deletions" = list(
     "Num_reads_with_deletions_exceeding_20bp"     = expression("All deletions", "(" >= "20 bp)"),
@@ -90,7 +96,8 @@ SideTextAndAxes <- function(side_text,
                             x_label_line          = 1.55,
                             x_ticks_line          = 0,
                             x_ticks_length        = 0.2,
-                            both_axes_the_same    = FALSE
+                            both_axes_the_same    = FALSE,
+                            use_mtext             = FALSE
                             ) {
   if (many_ticks) {
     y_tick_locations <- seq(0, 1, 0.2)
@@ -141,6 +148,9 @@ SideTextAndAxes <- function(side_text,
          cex    = sg_label_cex
          )
   }
+  if (use_mtext && !(horizontal_y_label)) {
+    mtext(side_text, side = 2, line = vertical_y_label_line, cex = par("cex"))
+  } else {
   text(x      = if (horizontal_y_label) horizontal_y_lab_pos else par("usr")[[1]] - diff(grconvertX(c(0, vertical_y_label_line), from = "lines", to = "user")),
        y      = 0.5,
        adj    = if (horizontal_y_label) c(1, 0.5) else 0.5,
@@ -149,6 +159,8 @@ SideTextAndAxes <- function(side_text,
        cex    = sg_label_cex,
        srt    = if (horizontal_y_label) 0 else 90
        )
+  }
+
   if (draw_outer_box) {
     DrawOuterBox()
   }
@@ -470,7 +482,14 @@ MakeSteps <- function(data_vec) {
 
 
 
-SingleSandAxes <- function(rotate_axes, data_axis_label, fraction_axis_label) {
+SingleSandAxes <- function(rotate_axes,
+                           data_axis_label,
+                           fraction_axis_label,
+                           vertical_y_label_line = 3.3,
+                           x_label_line = 2.5,
+                           x_ticks_line = 0.35,
+                           use_mtext = FALSE
+                           ) {
 
   if (rotate_axes) {
     x_axis_label <- fraction_axis_label
@@ -486,16 +505,16 @@ SingleSandAxes <- function(rotate_axes, data_axis_label, fraction_axis_label) {
                   many_ticks            = TRUE,
                   horizontal_y_label    = FALSE,
                   sg_label_cex          = 1,
-                  vertical_y_label_line = 3.3,
+                  vertical_y_label_line = vertical_y_label_line,
                   label_x_axis          = TRUE,
                   x_axis_label          = x_axis_label,
                   x_ticks_length        = 0.3,
-                  x_ticks_line          = 0.35,
-                  x_label_line          = 2.5,
-                  both_axes_the_same    = TRUE
+                  x_ticks_line          = x_ticks_line,
+                  x_label_line          = x_label_line,
+                  both_axes_the_same    = TRUE,
+                  use_mtext             = use_mtext
                   )
 
-  DrawOuterBox()
   return(invisible(NULL))
 }
 
@@ -560,6 +579,13 @@ FractionsForCutoffs <- function(summary_df, column_name, cutoffs_vec) {
 }
 
 
+ValuesForQuantiles <- function(summary_df, column_name, quantiles_vec) {
+  sorted_vec <- ColumnToCDFVec(summary_df, column_name)
+  results_vec <- quantile(sorted_vec, probs = quantiles_vec)
+  return(results_vec)
+}
+
+
 
 
 StepsAUC <- function(xy_mat) {
@@ -580,9 +606,22 @@ Plot_eCDF <- function(summary_df,
                       flip_axis            = FALSE,
                       data_axis_label      = "Percentage of reads from each well",
                       fraction_axis_label  = "Percentile of wells",
+                      top_title            = NULL,
                       always_side_legend   = FALSE,
                       reverse_legend_order = FALSE,
-                      use_brewer_pal       = "Blues"
+                      reverse_colors       = FALSE,
+                      use_brewer_pal       = "Blues",
+                      line_colors          = NULL,
+                      set_mar              = TRUE,
+                      legend_y_gap         = 1.25,
+                      legend_gap_ratio     = 1.75,
+                      legend_x_start       = 1,
+                      legend_segment_left  = legend_x_start - 0.3,
+                      legend_segment_right = legend_x_start + 0.4,
+                      legend_pch           = NULL,
+                      point_x_start        = legend_x_start + 0.2,
+                      lwd_multiplier       = 2,
+                      ...
                       ) {
 
   if ((length(show_columns) == 1) && (show_columns %in% names(eCDF_combos_list))) {
@@ -608,22 +647,26 @@ Plot_eCDF <- function(summary_df,
 
   ## Set up the graphical parameters
 
-  if (length(show_columns) == 1) {
-    line_colors <- brewer.pal(9, use_brewer_pal)[[7]]
-  } else if (length(show_columns) == 2) {
-    line_colors <- brewer.pal(9, use_brewer_pal)[c(9, 5)]
-  } else {
-    line_colors <- colorRampPalette(brewer.pal(9, use_brewer_pal)[9:4])(length(show_columns))
+  if (is.null(line_colors)) {
+    if (length(show_columns) == 1) {
+      line_colors <- brewer.pal(9, use_brewer_pal)[[7]]
+    } else if (length(show_columns) == 2) {
+      line_colors <- brewer.pal(9, use_brewer_pal)[c(9, 5)]
+    } else {
+      line_colors <- colorRampPalette(brewer.pal(9, use_brewer_pal)[9:4])(length(show_columns))
+    }
   }
 
-  space_fraction <- 0.04
+  space_fraction <- 0.0
   axis_limits <- c(-(space_fraction), 1 + space_fraction)
 
   show_side_legend <- always_side_legend || (length(show_columns) > 1)
-  if (show_side_legend) {
-    old_mar <- par("mar" = c(4.7, 5, 4.1, 10))
-  } else {
-    old_mar <- par("mar" = c(4.7, 5, 4.1, 3))
+  if (set_mar) {
+    if (show_side_legend) {
+      old_mar <- par("mar" = c(4.7, 5, 4.1, 10))
+    } else {
+      old_mar <- par("mar" = c(4.7, 5, 4.1, 3))
+    }
   }
 
   ## Set up the plot region
@@ -631,14 +674,24 @@ Plot_eCDF <- function(summary_df,
        axes = FALSE, ann = FALSE, typ = "n"
        )
 
+  if (!(is.null(top_title))) {
+    mtext(top_title, line = 0.3, cex = par("cex"))
+  } else if (!(show_side_legend)) {
+    title(titles_list[[show_columns]], cex.main = 1)
+  }
 
   ## Draw the grid lines
   light_grey <- "gray95"
-  darker_grey <- "gray85"
+  darker_grey <- "gray88"
   abline(v = seq(0.05, 0.95, by = 0.1), col = light_grey)
   abline(h = seq(0.05, 0.95, by = 0.1), col = light_grey)
   abline(v = seq(0, 1, by = 0.1), col = darker_grey)
   abline(h = seq(0, 1, by = 0.1), col = darker_grey)
+
+
+  ## Plot the x and y axes
+  SingleSandAxes(rotate_axes, data_axis_label, fraction_axis_label, ...)
+  DrawOuterBox()
 
 
   ## Plot the eCDF curve
@@ -646,7 +699,7 @@ Plot_eCDF <- function(summary_df,
     lines(eCDF_mat_list[[i]],
           lend  = "butt",
           ljoin = "mitre",
-          lwd   = 2,
+          lwd   = par("lwd") * lwd_multiplier,
           col   = line_colors[[i]],
           xpd   = NA
           )
@@ -661,17 +714,20 @@ Plot_eCDF <- function(summary_df,
         strwrap(titles_list[[x]], 21)
       }
     })
-    DrawSideLegend(labels_list = labels_list[legend_order],
-                   use_colors  = line_colors[legend_order]
+    DrawSideLegend(labels_list     = labels_list[legend_order],
+                   use_colors      = line_colors[legend_order],
+                   small_y_gap     = legend_y_gap,
+                   large_gap_ratio = legend_gap_ratio,
+                   lines_x_start   = legend_x_start,
+                   point_x_start   = point_x_start,
+                   use_pch         = legend_pch
                    )
-  } else {
-    title(titles_list[[show_columns]], cex.main = 1)
   }
 
-  ## Plot the x and y axes
-  SingleSandAxes(rotate_axes, data_axis_label, fraction_axis_label)
 
-  par(old_mar)
+  if (set_mar) {
+    par(old_mar)
+  }
 
   return(invisible(NULL))
 }
@@ -681,8 +737,17 @@ Plot_eCDF <- function(summary_df,
 
 DrawSideLegend <- function(labels_list,
                            use_colors,
-                           use_line_width = 3,
-                           lines_x_start  = 1
+                           top_labels      = NULL,
+                           use_pch         = NULL,
+                           point_cex       = 1.5,
+                           use_line_width  = 3,
+                           lines_x_start   = 1,
+                           lines_x_title   = lines_x_start - 1,
+                           small_y_gap     = 1.25,
+                           large_gap_ratio = 1.75,
+                           segment_left    = lines_x_start - 0.3,
+                           segment_right   = lines_x_start + 0.4,
+                           point_x_start   = lines_x_start + 0.2
                            ) {
 
   ## Perform checks
@@ -690,46 +755,86 @@ DrawSideLegend <- function(labels_list,
 
   ## Prepare for drawing the legend
   y_mid <- 0.5
-  small_gap <- diff(grconvertY(c(0, 1.25), from = "char", to = "npc"))
+  small_gap <- diff(grconvertY(c(0, small_y_gap), from = "line", to = "npc"))
   medium_gap <- small_gap * 1.25
-  large_gap <- small_gap * 1.75
+  large_gap <- small_gap * large_gap_ratio
+  have_multiline <- any(lengths(labels_list) > 1)
 
-  if (all(lengths(labels_list) == 1)) {
-    gaps_vec <- rep(medium_gap, length(labels_list))
-    are_first <- rep(TRUE, length(labels_list))
-  } else {
+  if (have_multiline) {
     are_first <- unlist(lapply(labels_list, function(x) {
       c(TRUE, rep(FALSE, length(x) - 1))
     }))
     gaps_vec <- ifelse(are_first, large_gap, small_gap)
+  } else {
+    gaps_vec <- rep(medium_gap, length(labels_list))
+  }
+
+  are_top_labels <- rep(FALSE, length(gaps_vec))
+  if (!(is.null(top_labels))) {
+    if (have_multiline) {
+      are_first <- c(TRUE, rep(FALSE, length(top_labels) - 1))
+      top_gaps_vec <- ifelse(are_first, large_gap, small_gap)
+    } else {
+      top_gaps_vec <- rep(medium_gap, length(top_labels))
+    }
+    are_top_labels <- c(rep(TRUE, length(top_labels)), are_top_labels)
+    gaps_vec[[1]] <- (large_gap + 2 * medium_gap) / 3
+    gaps_vec <- c(top_gaps_vec, gaps_vec)
+    text_list <- c(as.list(top_labels), labels_list)
+  } else {
+    text_list <- labels_list
+    are_top_labels <- rep(FALSE, length(gaps_vec))
   }
   gaps_vec[[1]] <- 0
+
   total_span <- sum(gaps_vec)
+
   start_y <- y_mid + (total_span / 2)
   y_sequence <- start_y - cumsum(gaps_vec)
   y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
 
-  x_text       <- 1 + diff(grconvertX(c(0, lines_x_start),        from = "lines", to = "npc"))
-  x_line_start <- 1 + diff(grconvertX(c(0, lines_x_start - 0.3), from = "lines", to = "npc"))
-  x_line_end   <- 1 + diff(grconvertX(c(0, lines_x_start + 0.4), from = "lines", to = "npc"))
+  LinesFromEdge <- function(num_lines) {
+    par("usr")[[2]] + diff(grconvertX(c(0, num_lines), from = "lines", to = "user"))
+  }
 
   ## Draw the legend
-  text(x      = grconvertX(x = x_text, from = "npc", to = "user"),
+  text(x      = ifelse(are_top_labels,
+                       LinesFromEdge(lines_x_title),
+                       LinesFromEdge(lines_x_start)
+                       ),
        y      = y_pos,
        cex    = 1,
-       labels = sapply(unlist(labels_list), VerticalAdjust),
+       labels = sapply(unlist(text_list), VerticalAdjust),
        adj    = c(0, 0.5),
        xpd    = NA
        )
 
   groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
-  segments(x0  = grconvertX(x = x_line_start, from = "npc", to = "user"),
-           x1  = grconvertX(x = x_line_end,   from = "npc", to = "user"),
-           y0  = tapply(y_pos, groups_vec, mean),
-           lwd = use_line_width,
-           col = use_colors,
+  assign("delete_groups_vec", groups_vec, envir = globalenv())
+    assign("delete_y_pos", y_pos, envir = globalenv())
+  assign("delete_are_top_labels", are_top_labels, envir = globalenv())
+
+  groups_y_pos <- tapply(y_pos[!(are_top_labels)], groups_vec, mean)
+
+
+  if (!(is.null(use_pch))) {
+    points(x   = rep(LinesFromEdge(point_x_start), length(use_colors)),
+           y   = groups_y_pos,
+           col = "gray30",
+           bg  = use_colors,
+           pch = use_pch,
+           cex = point_cex,
            xpd = NA
            )
+  } else {
+    segments(x0  = LinesFromEdge(segment_left),
+             x1  = LinesFromEdge(segment_right),
+             y0  = groups_y_pos,
+             lwd = use_line_width * par("lwd"),
+             col = use_colors,
+             xpd = NA
+             )
+  }
 
   return(invisible(NULL))
 }
@@ -1053,7 +1158,15 @@ SingleSandPlot <- function(summary_df,
                            invert_x_axis       = TRUE,
                            rotate_axes         = TRUE,
                            data_axis_label     = "Percentage of reads from each well",
-                           fraction_axis_label = "Percentile of wells"
+                           fraction_axis_label = "Percentile of wells",
+                           side_legend         = TRUE,
+                           top_title           = NULL,
+                           set_mar             = TRUE,
+                           NA_in_legend        = TRUE, # Only implemented for the side legend
+                           legend_y_gap        = 1,    # For the side legend
+                           legend_x_start      = 1.5,  # For the side legend
+                           legend_x_title      = 0,    # For the side legend
+                           ...
                            ) {
 
   ## Prepare data for plotting
@@ -1088,29 +1201,41 @@ SingleSandPlot <- function(summary_df,
   }
 
 
-  ## Set up the plot layout (this is necessary to make a legend with
-  ## an aspect ratio of 1, see below.)
-  layout_mat <- cbind(rep(1, 3),
-                      3:(3 + 3 - 1),
-                      rep(2, 3)
-                      )
-  layout(layout_mat,
-         widths  = c(0.2, 0.8, 0.2),
-         heights = c(0.1, 0.8, 0.3)
-         )
-  old_par <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
-
-  for (i in 1:4) {
+  if (side_legend) {
+    if (set_mar) {
+      old_par <- par("mar" = c(5, 4.1, 4, 6.7))
+    }
     MakeEmptyPlot()
+  } else {
+    ## Set up the plot layout (this is necessary to make a legend with
+    ## an aspect ratio of 1, see below.)
+    layout_mat <- cbind(rep(1, 3),
+                        3:(3 + 3 - 1),
+                        rep(2, 3)
+                        )
+    layout(layout_mat,
+           widths  = c(0.2, 0.8, 0.2),
+           heights = c(0.1, 0.8, 0.3)
+           )
+    old_par <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
+
+    for (i in 1:4) {
+      MakeEmptyPlot()
+    }
+    DrawOuterBox(fill = TRUE)
   }
-  DrawOuterBox(fill = TRUE)
+
+  if (!(is.null(top_title))) {
+    mtext(top_title, line = 0.3, cex = par("cex"))
+  }
 
 
   ## Draw the "NA" rectangle
   basic_mat <- cbind("data_axis" = c(0, 1, 1), "fraction_axis" = c(0, 0, 1))
   polygon_mat <- SliceFraction(basic_mat, "fraction_axis", 0, NA_fraction)
   DrawPolygon(polygon_mat, polygon_colors[[1]],
-              rotate_axes = rotate_axes, flip_axis = invert_x_axis)
+              rotate_axes = rotate_axes, flip_axis = invert_x_axis
+              )
   if (show_grid) {
     PolygonGrid(basic_mat, grid_colors[[1]],
                 rotate_axes = rotate_axes, flip_axis = invert_x_axis
@@ -1142,24 +1267,42 @@ SingleSandPlot <- function(summary_df,
   }
 
   ## Draw the axes
-  SingleSandAxes(rotate_axes, data_axis_label, fraction_axis_label)
-  MakeEmptyPlot()
+  SingleSandAxes(rotate_axes, data_axis_label, fraction_axis_label, ...)
+  DrawOuterBox()
 
-  ## Draw the legend
-  plot.window(c(0, 1), c(0, 1), "", asp = 1)
-  MakeColorBoxLegend(labels_vec         = as.character(0:4),
-                     colors_vec         = polygon_colors[2:6],
-                     x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.12),
-                     y_pos              = 0.2,
-                     use_constant_space = FALSE,
-                     vertical_adjust    = 0.2,
-                     x_space_adjust     = 4,
-                     after_text         = " correct gRNAs",
-                     use_lwd            = 1
-                     )
+  if (side_legend) {
+    legend_labels <- as.list(as.character(0:4))
+    legend_colors <- polygon_colors[2:6]
+    if (NA_in_legend) {
+      legend_labels <- c(legend_labels, "No data")
+      legend_colors <- c(legend_colors, polygon_colors[[1]])
+    }
+    DrawSideLegend(legend_labels, #as.list(as.character(0:4)),
+                   use_colors = legend_colors,
+                   use_pch = 22, small_y_gap = legend_y_gap,
+                   lines_x_start = legend_x_start,
+                   lines_x_title = legend_x_title,
+                   top_labels = c("Correct", "gRNAs:")
+                   )
+  } else {
+    MakeEmptyPlot()
+    plot.window(c(0, 1), c(0, 1), "", asp = 1)
+    MakeColorBoxLegend(labels_vec         = as.character(0:4),
+                       colors_vec         = polygon_colors[2:6],
+                       x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.12),
+                       y_pos              = 0.2,
+                       use_constant_space = FALSE,
+                       vertical_adjust    = 0.2,
+                       x_space_adjust     = 4,
+                       after_text         = " correct gRNAs",
+                       use_lwd            = 1
+                       )
+    layout(1)
+  }
 
-  par(old_par)
-  layout(1)
+  if (set_mar || (!(side_legend))) {
+    par(old_par)
+  }
   return(invisible(NULL))
 }
 
