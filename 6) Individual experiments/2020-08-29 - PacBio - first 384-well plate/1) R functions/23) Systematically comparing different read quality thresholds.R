@@ -217,7 +217,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
   y_gap <- final_y_range * 0.0075
   final_y_limits <- c(numeric_limits[[1]] - y_gap, numeric_limits[[2]] + y_gap)
 
-
   if (embed_PNG) {
     PDF_mar <- par("mar")
     PDF_device <- dev.cur()
@@ -266,7 +265,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
 
 
   ## Draw the jittered points
-
   jittered_vec  <- group_positions[rep(seq_along(metric_list), lengths(metric_list))] +
                    rnorm(n = length(metric_unlisted), mean = 0, sd = 0.05)
   points_alpha <- 0.2
@@ -277,7 +275,6 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
          col = paste0(brewer.pal(9, "Blues")[[8]], alpha_hex),
          pch = 16
          )
-
 
   if (embed_PNG) {
     dev.off()
