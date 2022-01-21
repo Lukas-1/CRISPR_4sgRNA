@@ -285,6 +285,112 @@ GappedPositionsVec <- function(groups_vec, gap_weight = 2L) {
 
 
 
+DrawSideLegend <- function(labels_list,
+                           use_colors,
+                           top_labels      = NULL,
+                           use_pch         = NULL,
+                           point_cex       = 1.5,
+                           use_line_width  = 3,
+                           lines_x_start   = 1,
+                           lines_x_title   = lines_x_start - 1,
+                           small_y_gap     = 1.25,
+                           large_gap_ratio = 1.75,
+                           segment_left    = lines_x_start - 0.3,
+                           segment_right   = lines_x_start + 0.4,
+                           point_x_start   = lines_x_start + 0.2
+                           ) {
+
+  ## Perform checks
+  stopifnot(identical(length(labels_list), length(use_colors)))
+
+  ## Prepare for drawing the legend
+  y_mid <- 0.5
+  small_gap <- diff(grconvertY(c(0, small_y_gap), from = "line", to = "npc"))
+  medium_gap <- small_gap * 1.25
+  large_gap <- small_gap * large_gap_ratio
+  have_multiline <- any(lengths(labels_list) > 1)
+
+  if (have_multiline) {
+    are_first <- unlist(lapply(labels_list, function(x) {
+      c(TRUE, rep(FALSE, length(x) - 1))
+    }))
+    gaps_vec <- ifelse(are_first, large_gap, small_gap)
+  } else {
+    gaps_vec <- rep(medium_gap, length(labels_list))
+  }
+
+  are_top_labels <- rep(FALSE, length(gaps_vec))
+  if (!(is.null(top_labels))) {
+    if (have_multiline) {
+      are_first <- c(TRUE, rep(FALSE, length(top_labels) - 1))
+      top_gaps_vec <- ifelse(are_first, large_gap, small_gap)
+    } else {
+      top_gaps_vec <- rep(medium_gap, length(top_labels))
+    }
+    are_top_labels <- c(rep(TRUE, length(top_labels)), are_top_labels)
+    gaps_vec[[1]] <- (large_gap + 2 * medium_gap) / 3
+    gaps_vec <- c(top_gaps_vec, gaps_vec)
+    text_list <- c(as.list(top_labels), labels_list)
+  } else {
+    text_list <- labels_list
+    are_top_labels <- rep(FALSE, length(gaps_vec))
+  }
+  gaps_vec[[1]] <- 0
+
+  total_span <- sum(gaps_vec)
+
+  start_y <- y_mid + (total_span / 2)
+  y_sequence <- start_y - cumsum(gaps_vec)
+  y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
+
+  LinesFromEdge <- function(num_lines) {
+    par("usr")[[2]] + diff(grconvertX(c(0, num_lines), from = "lines", to = "user"))
+  }
+
+  ## Draw the legend
+  text(x      = ifelse(are_top_labels,
+                       LinesFromEdge(lines_x_title),
+                       LinesFromEdge(lines_x_start)
+                       ),
+       y      = y_pos,
+       cex    = 1,
+       labels = sapply(unlist(text_list), VerticalAdjust),
+       adj    = c(0, 0.5),
+       xpd    = NA
+       )
+
+  groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
+  assign("delete_groups_vec", groups_vec, envir = globalenv())
+    assign("delete_y_pos", y_pos, envir = globalenv())
+  assign("delete_are_top_labels", are_top_labels, envir = globalenv())
+
+  groups_y_pos <- tapply(y_pos[!(are_top_labels)], groups_vec, mean)
+
+
+  if (!(is.null(use_pch))) {
+    points(x   = rep(LinesFromEdge(point_x_start), length(use_colors)),
+           y   = groups_y_pos,
+           col = "gray30",
+           bg  = use_colors,
+           pch = use_pch,
+           cex = point_cex,
+           xpd = NA
+           )
+  } else {
+    segments(x0  = LinesFromEdge(segment_left),
+             x1  = LinesFromEdge(segment_right),
+             y0  = groups_y_pos,
+             lwd = use_line_width * par("lwd"),
+             col = use_colors,
+             xpd = NA
+             )
+  }
+
+  return(invisible(NULL))
+}
+
+
+
 
 
 # Plotting functions ------------------------------------------------------
@@ -537,14 +643,16 @@ DrawPercentCorrectBarplot <- function(summary_df,
            )
     }
   }
-
-
 }
 
 
 
 GetHalfLineWidth <- function(y_axis = FALSE) {
-  1 / par("pin")[[if (y_axis) 2 else 1]] / 96 / 2 * par("lwd")
+  if (y_axis) {
+    diff(grconvertY(c(0, par("lwd") / 96), from = "inches", to = "user")) / 2
+  } else {
+    diff(grconvertX(c(0, par("lwd") / 96), from = "inches", to = "user")) / 2
+  }
 }
 
 
