@@ -9,8 +9,6 @@ use_width <- 7
 
 
 
-
-
 # Define column selections and labels -------------------------------------
 
 source(file.path(R_functions_directory, "01) Define titles and labels.R"))
@@ -18,10 +16,53 @@ source(file.path(R_functions_directory, "01) Define titles and labels.R"))
 titles_list <- c(
   titles_list,
   list(
-    "All4_sg_cr_pass"    = "All 4 sgRNAs (+ tracrRNA) pass percentage threshold",
-    "All4_pr_sg_cr_pass" = "All 4 sgRNAs (+ promoter) pass percentage threshold"
+    "All4_sg_cr_pass"       = "All 4 sgRNAs (+ tracrRNA) pass percentage threshold",
+    "All4_pr_sg_cr_pass"    = "All 4 sgRNAs (+ promoter) pass percentage threshold",
+
+    "Mutation_sg1_cr1"      = "Percentage of reads where sg1 (or its tracrRNA) are mutated",
+    "Mutation_sg2_cr2"      = "Percentage of reads where sg2 (or its tracrRNA) are mutated",
+    "Mutation_sg3_cr3"      = "Percentage of reads where sg3 (or its tracrRNA) are mutated",
+    "Mutation_sg4_cr4"      = "Percentage of reads where sg4 (or its tracrRNA) are mutated",
+
+    "Deletion_sg1_cr1"      = "Percentage of reads where sg1 (and its tracrRNA) are deleted",
+    "Deletion_sg2_cr2"      = "Percentage of reads where sg2 (and its tracrRNA) are deleted",
+    "Deletion_sg3_cr3"      = "Percentage of reads where sg3 (and its tracrRNA) are deleted",
+    "Deletion_sg4_cr4"      = "Percentage of reads where sg4 (and its tracrRNA) are deleted",
+
+    "Contamination_sg1_cr1" = "Percentage of reads where sg1 (+ tracrRNA) is a contamination",
+    "Contamination_sg2_cr2" = "Percentage of reads where sg2 (+ tracrRNA) is a contamination",
+    "Contamination_sg3_cr3" = "Percentage of reads where sg3 (+ tracrRNA) is a contamination",
+    "Contamination_sg4_cr4" = "Percentage of reads where sg4 (+ tracrRNA) is a contamination",
+
+    "Correct_sg1_cr1"       = "Percentage of reads where sg1 (and its tracrRNA) are 100% correct",
+    "Correct_sg2_cr2"       = "Percentage of reads where sg2 (and its tracrRNA) are 100% correct",
+    "Correct_sg3_cr3"       = "Percentage of reads where sg3 (and its tracrRNA) are 100% correct",
+    "Correct_sg4_cr4"       = "Percentage of reads where sg4 (and its tracrRNA) are 100% correct",
+
+
+    "Mutation_sg1"          = "Percentage of reads where sg1 is mutated",
+    "Mutation_sg2"          = "Percentage of reads where sg2 is mutated",
+    "Mutation_sg3"          = "Percentage of reads where sg3 is mutated",
+    "Mutation_sg4"          = "Percentage of reads where sg4 is mutated",
+
+    "Deletion_sg1"          = "Percentage of reads where sg1 is deleted",
+    "Deletion_sg2"          = "Percentage of reads where sg2 is deleted",
+    "Deletion_sg3"          = "Percentage of reads where sg3 is deleted",
+    "Deletion_sg4"          = "Percentage of reads where sg4 is deleted",
+
+    "Contamination_sg1"     = "Percentage of reads where sg1 is a contamination",
+    "Contamination_sg2"     = "Percentage of reads where sg2 is a contamination",
+    "Contamination_sg3"     = "Percentage of reads where sg3 is a contamination",
+    "Contamination_sg4"     = "Percentage of reads where sg4 is a contamination",
+
+    "Correct_sg1"           = "Percentage of reads where sg1 is 100% correct",
+    "Correct_sg2"           = "Percentage of reads where sg2 is 100% correct",
+    "Correct_sg3"           = "Percentage of reads where sg3 is 100% correct",
+    "Correct_sg4"           = "Percentage of reads where sg4 is 100% correct"
   )
 )
+
+
 
 titles_list[["Count_all_4_promoters"]] <- "Percentage of reads for which all 4 gRNAs (+ full promoters) are 100% correct"
 
@@ -42,12 +83,12 @@ eCDF_combos_list <- list(
     "Num_contaminated_reads" = c("Contains", "gRNA from", "other wells")
   ),
   "Deletions" = list(
-    "Num_reads_with_deletions_exceeding_20bp"     = expression("All deletions", "(" >= "20 bp)"),
-    "Num_reads_with_deletions_spanning_tracrRNAs" = c("Deletions", "spanning", "tracrRNAs"),
-    "Num_reads_with_deletions_spanning_promoters" = c("Deletions", "spanning", "promoters")
+    "Num_reads_with_deletions_exceeding_20bp"     = expression("Any deletion", "(" >= "20 bp)"),
+    "Num_reads_with_deletions_spanning_tracrRNAs" = c("Deletion", "spanning", "tracrRNAs"),
+    "Num_reads_with_deletions_spanning_promoters" = c("Deletion", "spanning", "promoters")
   )
-
 )
+
 
 eCDF_combos_list[["4_guides_pr"]] <- eCDF_combos_list[["4_guides"]]
 names(eCDF_combos_list[["4_guides_pr"]]) <- c("Count_pr_all_4", "All4_pr_sg_cr_pass")#, "Count_mean_pr_sg1to4")
@@ -61,7 +102,17 @@ count_metrics <- c(
   "Count_pr_at_least_1", "Count_pr_at_least_2", "Count_pr_at_least_3", "Count_pr_all_4",
   "All4_pr_sg_cr_pass", "Count_mean_pr_sg1to4",
 
-  "Count_all_4_promoters", "Count_whole_plasmid"
+  "Count_all_4_promoters", "Count_whole_plasmid",
+
+  paste0("Mutation_sg", 1:4, "_cr", 1:4),
+  paste0("Deletion_sg", 1:4, "_cr", 1:4),
+  paste0("Contamination_sg", 1:4, "_cr", 1:4),
+  paste0("Correct_sg",  1:4, "_cr", 1:4),
+
+  paste0("Mutation_sg", 1:4),
+  paste0("Deletion_sg", 1:4),
+  paste0("Contamination_sg", 1:4),
+  paste0("Correct_sg",  1:4)
 )
 
 percentages_metrics <- c(
@@ -166,7 +217,6 @@ SideTextAndAxes <- function(side_text,
   }
   return(invisible(NULL))
 }
-
 
 
 
@@ -447,7 +497,6 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
 
 
 
-
 # Basic functions for creating both eCDF plots and sand charts ------------
 
 MakeSteps <- function(data_vec) {
@@ -522,9 +571,6 @@ SingleSandAxes <- function(rotate_axes,
 
 
 
-
-
-
 # Functions for creating eCDF plots ---------------------------------------
 
 ColumnToCDFVec <- function(summary_df, column_name) {
@@ -584,7 +630,6 @@ ValuesForQuantiles <- function(summary_df, column_name, quantiles_vec) {
   results_vec <- quantile(sorted_vec, probs = quantiles_vec)
   return(results_vec)
 }
-
 
 
 
@@ -735,118 +780,6 @@ Plot_eCDF <- function(summary_df,
 
 
 
-DrawSideLegend <- function(labels_list,
-                           use_colors,
-                           top_labels      = NULL,
-                           use_pch         = NULL,
-                           point_cex       = 1.5,
-                           use_line_width  = 3,
-                           lines_x_start   = 1,
-                           lines_x_title   = lines_x_start - 1,
-                           small_y_gap     = 1.25,
-                           large_gap_ratio = 1.75,
-                           segment_left    = lines_x_start - 0.3,
-                           segment_right   = lines_x_start + 0.4,
-                           point_x_start   = lines_x_start + 0.2
-                           ) {
-
-  ## Perform checks
-  stopifnot(identical(length(labels_list), length(use_colors)))
-
-  ## Prepare for drawing the legend
-  y_mid <- 0.5
-  small_gap <- diff(grconvertY(c(0, small_y_gap), from = "line", to = "npc"))
-  medium_gap <- small_gap * 1.25
-  large_gap <- small_gap * large_gap_ratio
-  have_multiline <- any(lengths(labels_list) > 1)
-
-  if (have_multiline) {
-    are_first <- unlist(lapply(labels_list, function(x) {
-      c(TRUE, rep(FALSE, length(x) - 1))
-    }))
-    gaps_vec <- ifelse(are_first, large_gap, small_gap)
-  } else {
-    gaps_vec <- rep(medium_gap, length(labels_list))
-  }
-
-  are_top_labels <- rep(FALSE, length(gaps_vec))
-  if (!(is.null(top_labels))) {
-    if (have_multiline) {
-      are_first <- c(TRUE, rep(FALSE, length(top_labels) - 1))
-      top_gaps_vec <- ifelse(are_first, large_gap, small_gap)
-    } else {
-      top_gaps_vec <- rep(medium_gap, length(top_labels))
-    }
-    are_top_labels <- c(rep(TRUE, length(top_labels)), are_top_labels)
-    gaps_vec[[1]] <- (large_gap + 2 * medium_gap) / 3
-    gaps_vec <- c(top_gaps_vec, gaps_vec)
-    text_list <- c(as.list(top_labels), labels_list)
-  } else {
-    text_list <- labels_list
-    are_top_labels <- rep(FALSE, length(gaps_vec))
-  }
-  gaps_vec[[1]] <- 0
-
-  total_span <- sum(gaps_vec)
-
-  start_y <- y_mid + (total_span / 2)
-  y_sequence <- start_y - cumsum(gaps_vec)
-  y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
-
-  LinesFromEdge <- function(num_lines) {
-    par("usr")[[2]] + diff(grconvertX(c(0, num_lines), from = "lines", to = "user"))
-  }
-
-  ## Draw the legend
-  text(x      = ifelse(are_top_labels,
-                       LinesFromEdge(lines_x_title),
-                       LinesFromEdge(lines_x_start)
-                       ),
-       y      = y_pos,
-       cex    = 1,
-       labels = sapply(unlist(text_list), VerticalAdjust),
-       adj    = c(0, 0.5),
-       xpd    = NA
-       )
-
-  groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
-  assign("delete_groups_vec", groups_vec, envir = globalenv())
-    assign("delete_y_pos", y_pos, envir = globalenv())
-  assign("delete_are_top_labels", are_top_labels, envir = globalenv())
-
-  groups_y_pos <- tapply(y_pos[!(are_top_labels)], groups_vec, mean)
-
-
-  if (!(is.null(use_pch))) {
-    points(x   = rep(LinesFromEdge(point_x_start), length(use_colors)),
-           y   = groups_y_pos,
-           col = "gray30",
-           bg  = use_colors,
-           pch = use_pch,
-           cex = point_cex,
-           xpd = NA
-           )
-  } else {
-    segments(x0  = LinesFromEdge(segment_left),
-             x1  = LinesFromEdge(segment_right),
-             y0  = groups_y_pos,
-             lwd = use_line_width * par("lwd"),
-             col = use_colors,
-             xpd = NA
-             )
-  }
-
-  return(invisible(NULL))
-}
-
-
-
-
-
-
-
-
-
 # Functions for creating sand charts --------------------------------------
 
 AddCorner <- function(input_mat) {
@@ -894,7 +827,6 @@ DrawReorderedSandPlots <- function(summary_df,
   summary_df <- summary_df[are_to_include, ]
   row.names(summary_df) <- NULL
 
-
   ## Prepare data for plotting
 
   two_colors <- c("#D2D1CF", "#2A3B6B")
@@ -930,7 +862,6 @@ DrawReorderedSandPlots <- function(summary_df,
     expression("" >= "3 correct sgRNAs"),
     expression("4 correct sgRNAs")
   )
-
 
   ## Set up the plot layout
 
@@ -1006,9 +937,7 @@ DrawReorderedSandPlots <- function(summary_df,
     MakeEmptyPlot()
   }
 
-
   ## Draw the four-color plot
-
   MakeEmptyPlot()
   polygon_mat <- SliceFraction(basic_mat, "fraction_axis", 0, NA_fraction)
   DrawPolygon(polygon_mat, six_colors[[1]],
@@ -1054,6 +983,7 @@ DrawReorderedSandPlots <- function(summary_df,
   layout(1)
   return(invisible(NULL))
 }
+
 
 
 ReorientSteps <- function(input_mat, rotate_axes = FALSE, flip_axis = FALSE) {
@@ -1148,7 +1078,6 @@ SliceFraction <- function(input_mat, slice_column, start_value, end_value, add_c
   }
   return(sliced_mat)
 }
-
 
 
 
