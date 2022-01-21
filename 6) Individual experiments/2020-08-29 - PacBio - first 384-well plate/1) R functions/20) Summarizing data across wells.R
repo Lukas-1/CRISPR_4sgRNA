@@ -160,7 +160,11 @@ GetPlateSelection <- function(plate_names) {
     plate_names <- "All plates"
   }
   if ((length(plate_names) == 1) && (plate_names %in% names(plate_selection_list))) {
-    main_title <- plate_selection_titles_list[[plate_names]]
+    if (plate_names == "Colony-picked") {
+      main_title <- "Colony-picked controls"
+    } else {
+      main_title <- plate_selection_titles_list[[plate_names]]
+    }
     plate_names <- plate_selection_list[[plate_names]]
   } else if ((length(plate_names) == 1) && (plate_names %in% names(plate_selection_titles_list))) {
     main_title <- plate_selection_titles_list[[plate_names]]
@@ -287,6 +291,7 @@ SetUpPercentagePlot <- function(use_columns,
   stopifnot("column_labels_list" %in% ls(envir = globalenv()))
 
   ## Determine group positions
+  assign("delete_group_positions", use_columns, envir = globalenv())
   num_groups <- length(use_columns)
   group_positions <- seq_len(num_groups)
   group_limits <- c((min(group_positions) - side_gap) - (num_groups * 0.04),
@@ -569,7 +574,7 @@ CustomBoxPlot <- function(input_list,
                           ) {
 
   if (draw_whiskers) {
-    quantile_mat <- t(sapply(input_list, quantile, probs = c(0.05, 0.95)))
+    quantile_mat <- t(sapply(input_list, quantile, probs = c(0.05, 0.95), na.rm = TRUE))
     whisker_color <- brewer.pal(9, use_brewer_pal)[[5]]
     segments(x0   = at_positions,
              y0   = quantile_mat[, 1],
@@ -620,6 +625,81 @@ CustomBoxPlot <- function(input_list,
 }
 
 
+ViolinClippedBorders <- function(violin_list,
+                                 at_positions  = seq_along(violin_list),
+                                 border_color  = "black",
+                                 fill          = FALSE,
+                                 use_wex       = 0.4,
+                                 use_lwd       = 0.75,
+                                 clip_distance = 0.015
+                                 ) {
+
+  assign("delete_violin_list", violin_list, envir = globalenv())
+  assign("delete_at_positions", at_positions, envir = globalenv())
+
+  violin_list <- RemoveAllZeros(violin_list)
+
+  stopifnot(length(violin_list) == length(at_positions))
+  for (i in seq_along(violin_list)) {
+    bottom_border <- quantile(violin_list[[i]], probs = 0.005, na.rm = TRUE, names = FALSE)
+    top_border    <- quantile(violin_list[[i]], probs = 0.995, na.rm = TRUE, names = FALSE)
+    distance_to_top <- 1 - top_border
+    distance_to_bottom <- bottom_border
+    if (fill) {
+      ## We only want to clip off the extreme ends of the violin,
+      ## not the area close to the axis.
+
+      if (distance_to_top > distance_to_bottom) {
+        bottom_border <- 0
+        if (top_border < 0.3) {
+          top_border <- 0.3
+        }
+      } else {
+        top_border <- 1
+        if (bottom_border > 0.7) {
+          bottom_border <- 0.7
+        }
+      }
+    } else {
+      if (distance_to_bottom > 0.5) {
+        bottom_border <- bottom_border - 0.05
+      } else if (distance_to_top > 0.5) {
+        top_border <- top_border + 0.05
+      }
+      ## We do not want the border of the violin to extend along the bottom
+      ## or top of the plot, hence the clipping at 0.02 and 99.8.
+      bottom_border <- max(c(clip_distance, bottom_border))
+      top_border    <- min(c(1 - clip_distance, top_border))
+    }
+    do.call(clip, as.list(c(par("usr")[c(1, 2)], bottom_border, top_border)))
+    vioplot(violin_list[[i]],
+            at       = at_positions[[i]],
+            pchMed   = NA,
+            drawRect = FALSE,
+            col      = if (fill) border_color else "#00000000",
+            border   = if (fill) border_color else adjustcolor(border_color, alpha.f = 0.7),
+            wex      = use_wex,
+            lwd      = use_lwd,
+            add      = TRUE,
+            axes     = FALSE
+            )
+    do.call(clip, as.list(par("usr")))
+  }
+  return(invisible(NULL))
+}
+
+
+
+RemoveAllZeros <- function(input_list) {
+  lapply(input_list, function(x) {
+    if (all(x == 0, na.rm = TRUE)) {
+      0
+    } else {
+      x
+    }
+  })
+}
+
 
 SummaryBoxPlot <- function(input_df,
                            plate_names       = NULL,
@@ -628,11 +708,14 @@ SummaryBoxPlot <- function(input_df,
                            label_percentages = TRUE,
                            use_y_limits      = c(0, 1),
                            embed_PNG         = FALSE,
+                           embed_PNG_res     = 900,
                            custom_title      = NULL,
                            draw_whiskers     = FALSE,
                            median_lwd        = 3,
                            box_wex           = 0.4,
                            violin_wex        = 0.4,
+                           use_side_gap      = 0.3,
+                           controls_x_gap    = 0.35,
                            ...
                            ) {
 
@@ -670,7 +753,6 @@ SummaryBoxPlot <- function(input_df,
     PDF_mar <- par("mar")
     PDF_device <- dev.cur()
     temp_path <- file.path(file_output_directory, "temp.png")
-    cur_mai <- par("mai")
     temp_width  <- par("pin")[[1]]
     temp_height <- par("pin")[[2]]
     current_par <- par(no.readonly = TRUE)
@@ -679,19 +761,19 @@ SummaryBoxPlot <- function(input_df,
         width    = temp_width,
         height   = temp_height,
         units    = "in",
-        res      = 900,
+        res      = embed_PNG_res,
         bg       = "transparent"
         )
 
     par(lwd = current_par[["lwd"]])
     par(cex = current_par[["cex"]])
     par(mar = rep(0, 4))
-    SetUpPercentagePlot(use_columns, use_y_limits, NULL, side_gap = 0.3,
+    SetUpPercentagePlot(use_columns, use_y_limits, NULL, side_gap = use_side_gap,
                         for_embedded_PNG = TRUE, extra_grid_lines = TRUE
                         )
   } else {
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
-                        side_gap = 0.3, legend_pch = 22, extra_grid_lines = TRUE,
+                        side_gap = use_side_gap, legend_pch = 22, extra_grid_lines = TRUE,
                         ...
                         )
   }
@@ -701,9 +783,8 @@ SummaryBoxPlot <- function(input_df,
   num_groups <- length(use_columns)
   group_positions <- seq_len(num_groups)
 
-  use_gap <- 0.35
-  control_pos  <- group_positions - (use_gap / 2)
-  selected_pos <- group_positions + (use_gap / 2)
+  control_pos  <- group_positions - (controls_x_gap / 2)
+  selected_pos <- group_positions + (controls_x_gap / 2)
 
   RemoveAllZeros <- function(input_list) {
     lapply(input_list, function(x) {
@@ -722,12 +803,22 @@ SummaryBoxPlot <- function(input_df,
   } else {
     violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[4]], "")
   }
+  violin_border_width <- 1
+
+  ViolinClippedBorders(control_list, control_pos, fill = TRUE,
+                       border_color = violin_colors[[1]],
+                       use_wex = violin_wex, use_lwd = violin_border_width
+                       )
+  ViolinClippedBorders(selected_list, selected_pos, fill = TRUE,
+                       border_color = violin_colors[[2]],
+                       use_wex = violin_wex, use_lwd = violin_border_width
+                       )
 
   vioplot(RemoveAllZeros(selected_list),
           at       = selected_pos,
           pchMed   = NA,
           drawRect = FALSE,
-          col      = brewer.pal(9, use_brewer_pals[[2]])[[3]],
+          col      = violin_colors[[2]],
           border   = NA,
           wex      = violin_wex,
           add      = TRUE,
@@ -738,12 +829,14 @@ SummaryBoxPlot <- function(input_df,
           at       = control_pos,
           pchMed   = NA,
           drawRect = FALSE,
-          col      = brewer.pal(9, use_brewer_pals[[1]])[[3]],
+          col      = violin_colors[[1]],
           border   = NA,
           wex      = violin_wex,
           add      = TRUE,
           axes     = FALSE
           )
+
+
   if (draw_whiskers) {
     jitter_sd <- 0.02
   } else {
@@ -787,7 +880,7 @@ SummaryBoxPlot <- function(input_df,
     par(PDF_mar)
 
     SetUpPercentagePlot(use_columns, use_y_limits, main_title = "",
-                        side_gap = 0.3,
+                        side_gap = use_side_gap,
                         for_embedded_PNG = TRUE, draw_grid = FALSE
                         )
 
@@ -801,6 +894,17 @@ SummaryBoxPlot <- function(input_df,
                         make_plot = FALSE, ...
                         )
   }
+
+  ## Draw the superimposed borders of the violin plots
+  ViolinClippedBorders(control_list, control_pos,
+                       border_color = violin_colors[[1]],
+                       use_wex = violin_wex, use_lwd = violin_border_width
+                       )
+  ViolinClippedBorders(selected_list, selected_pos,
+                       border_color = violin_colors[[2]],
+                       use_wex = violin_wex, use_lwd = violin_border_width,
+                       clip_distance = 0.15
+                       )
 
   ## Draw the superimposed box plots
   CustomBoxPlot(control_list, control_pos, use_brewer_pals[[1]],
@@ -819,6 +923,202 @@ SummaryBoxPlot <- function(input_df,
   return(invisible(NULL))
 }
 
+
+
+SummaryStackedBars <- function(summary_df,
+                               plate_names        = NULL,
+                               consider_tracrRNAs = FALSE,
+                               top_title          = NULL,
+                               top_title_line     = 1.2,
+                               top_title_cex      = 1.1,
+                               top_title_font     = 2,
+                               sub_title          = NULL,
+                               set_mar            = TRUE,
+                               y_label_line       = 3,
+                               x_labels_line      = 0.5,
+                               use_side_gap       = 0.5,
+                               ...
+                               ) {
+
+  ## Filter the input data frame
+  if (!(is.null(plate_names))) {
+    plates_list <- GetPlateSelection(plate_names)
+    plate_names <- plates_list[["plate_names"]]
+    plate_matches <- match(plate_names, plates_df[, "Plate_name"])
+    plate_numbers <- plates_df[["Plate_number"]][plate_matches]
+    summary_df <- summary_df[summary_df[["Plate_number"]] %in% plate_numbers, ]
+    if (is.null(top_title)) {
+      top_title <- plates_list[["title"]]
+    }
+  }
+
+  ## Prepare column names
+  four_categories <- c("Correct", "Mutation", "Deletion", "Contamination")
+  if (consider_tracrRNAs) {
+    columns_list <- lapply(four_categories, function(x) {
+      paste0(x, "_sg", 1:4, "_cr", 1:4)
+    })
+  } else {
+    columns_list <- lapply(four_categories, function(x) {
+      paste0(x, "_sg", 1:4)
+    })
+  }
+
+  ## Extract data for columns
+  counts_mat_list <- lapply(1:4, function(x) {
+    use_columns <- sapply(columns_list, "[[", x)
+    as.matrix(summary_df[, use_columns])
+  })
+
+  ## Check that all counts add up correctly
+  counts_list <- c(list(summary_df[, "Count_total"]),
+                   lapply(counts_mat_list, function(x) as.integer(rowSums(x)))
+                   )
+  stopifnot(length(unique(counts_list)) == 1)
+  rm(counts_list)
+
+  ## Convert counts to fractions. Ensure that NA values are counted.
+  no_data_vec <- ifelse(summary_df[, "Count_total"] == 0L, 1L, 0L)
+  pseudo_counts <- ifelse(summary_df[, "Count_total"] == 0L, 1L, summary_df[, "Count_total"])
+  fractions_mat_list <- lapply(counts_mat_list, function(x) {
+    x <- cbind(x, no_data_vec)
+    apply(x, 2, function(x) x / pseudo_counts)
+  })
+
+  ## Summarize data across wells, then add the mean values
+  fractions_mat <- do.call(cbind, lapply(fractions_mat_list, colMeans, na.rm = TRUE))
+  dimnames(fractions_mat) <- list(c(four_categories, "No_data"), paste0("sg", 1:4))
+  fractions_mat <- cbind(fractions_mat, "Mean" = rowMeans(fractions_mat))
+
+  ## Determine group positions
+  num_groups <- ncol(fractions_mat)
+  group_positions <- seq_len(num_groups)
+  side_gap <- use_side_gap
+  group_limits <- c((min(group_positions) - side_gap) - (num_groups * 0.04),
+                     max(group_positions) + side_gap  + (num_groups * 0.04)
+                    )
+
+  ## Prepare the data axis
+  numeric_axis_pos <- pretty(c(0, 1))
+  numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
+  numeric_axis_labels <- paste0(format(numeric_axis_pos * 100), "%")
+  final_y_range <- numeric_limits[[2]] - numeric_limits[[1]]
+  y_gap <- final_y_range * 0.02
+  final_y_limits <- c(numeric_limits[[1]] - y_gap, numeric_limits[[2]] + y_gap)
+
+  if (set_mar) {
+    old_mar <- par("mar" = c(5, 5, 4, 8))
+  }
+
+  ## Set up the plot canvas
+  plot(1,
+       xlim = group_limits,
+       ylim = final_y_limits,
+       xaxs = "i",
+       yaxs = "i",
+       type = "n",
+       axes = FALSE,
+       ann  = FALSE
+       )
+  DrawGridlines(numeric_limits, extra_grid_lines = TRUE)
+
+  ## Draw the title and/or sub-title
+  if (!(is.null(sub_title))) {
+    mtext(sub_title, line = 1.8, cex = par("cex"), side = 1)
+  }
+  if (!(is.null(top_title) || isFALSE(top_title))) {
+    mtext(top_title,
+          line = top_title_line,
+          cex  = par("cex") * top_title_cex,
+          font = top_title_font
+          )
+  }
+
+  ## Draw the axes and axis labels
+  segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = 0, xpd = NA)
+  mtext(sapply(c(paste0("sg", 1:4), expression(italic("mean"))), VerticalAdjust),
+        at   = seq_len(num_groups),
+        side = 1,
+        line = x_labels_line,
+        cex  = par("cex")
+        )
+  axis(2,
+       at       = numeric_axis_pos,
+       labels   = numeric_axis_labels,
+       mgp      = c(3, 0.38, 0),
+       gap.axis = 0,
+       tcl      = -0.3,
+       las      = 1,
+       lwd      = par("lwd")
+       )
+  mtext(text = "Percentage of reads", side = 2, line = y_label_line, cex = par("cex"))
+
+  ## Prepare for drawing the bars
+  four_colors <- c("#F9F4EC", "#EE442F", "#63ACBE", "#601A4A", NA)
+  num_categories <- nrow(fractions_mat)
+  lower_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
+    if (x == 1) {
+      rep(0, ncol(fractions_mat))
+    } else {
+      colSums(fractions_mat[seq_len(x - 1), , drop = FALSE])
+    }
+  })
+  upper_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
+    colSums(fractions_mat[seq_len(x), , drop = FALSE])
+  })
+
+  ## Draw the bars
+  bar_half_width <- 0.3
+  for (i in seq_len(ncol(fractions_mat))) {
+    for (j in 1:4) {
+      rect(xleft   = group_positions[[i]] - bar_half_width,
+           xright  = group_positions[[i]] + bar_half_width,
+           ybottom = lower_borders_vec_list[[j]][[i]],
+           ytop    = upper_borders_vec_list[[j]][[i]],
+           col     = four_colors[[j]],
+           border  = NA,
+           xpd     = NA
+           )
+    }
+  }
+
+  ## Draw bar borders (for the "correct" category only)
+  half_width <- bar_half_width - GetHalfLineWidth()
+  segments(x0  = group_positions - half_width,
+           y0  = 0,
+           y1  = upper_borders_vec_list[[1]],
+           col = Darken(four_colors[[1]], factor = 1.1),
+           lend = "butt",
+           xpd = NA
+           )
+  segments(x0  = group_positions + half_width,
+           y0  = 0,
+           y1  = upper_borders_vec_list[[1]],
+           col = Darken(four_colors[[1]], factor = 1.1),
+           lend = "butt",
+           xpd = NA
+           )
+
+  ## Draw the side legend
+  means_vec <- formatC(fractions_mat[, "Mean"] * 100, digits = 1, format = "f")
+  labels_list <- lapply(1:4, function(x) {
+    bquote_list <- list(bquote(.(four_categories[[x]])),
+                        bquote(italic("(" * .(means_vec[[x]]) * "%)"))
+                        )
+    sapply(bquote_list, as.expression)
+  })
+  labels_order <- c(1, 4:2)
+  DrawSideLegend(labels_list[labels_order],
+                 four_colors[labels_order],
+                 use_pch = 22, ...
+                 )
+
+  ## Final steps
+  if (set_mar) {
+    par(old_mar)
+  }
+  return(invisible(NULL))
+}
 
 
 
@@ -882,7 +1182,6 @@ TheoreticalAtLeastCounts <- function(black_percentages = TRUE,
 # Functions for writing all plots to disk ---------------------------------
 
 DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
-
 
   message("Exporting plots for theoretical (expected) probabilities...")
   use_file_name <- "Theoretical_at_least_num_guides"
@@ -1041,7 +1340,61 @@ DrawAllLollipopsAndViolins <- function(export_PNGs = TRUE) {
 
 
 
+DrawAllSummaryBarPlots <- function() {
 
+  ccs_numbers <- c(3, 5, 7)
+  accuracy_percentages <- c(99, 99.9, 99.99)
+
+  df_list_names <- paste0("ccs", ccs_numbers, "_df_list")
+  ccs_are_present <- df_list_names %in% ls(envir = globalenv())
+  ccs_numbers <- ccs_numbers[ccs_are_present]
+  accuracy_percentages <- accuracy_percentages[ccs_are_present]
+
+  for (i in seq_along(ccs_numbers)) {
+
+    use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
+
+    filter_stages <- c("original_summary_df", "filtered_summary_df", "filtered_cross_plate_df")
+    filter_labels <- c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")
+    df_are_present <- filter_stages %in% names(use_df_list)
+    filter_stages <- filter_stages[df_are_present]
+    filter_labels <- filter_labels[df_are_present]
+
+    for (filter_stage in seq_along(filter_stages)) {
+
+      df_name <- filter_stages[[filter_stage]] # "filtered_gRNAs_df"
+
+      use_df <- use_df_list[[df_name]]
+
+      folder_name <- paste0("CCS", ccs_numbers[[i]],
+                            " (", accuracy_percentages[[i]], ") - ",
+                            filter_labels[[filter_stage]]
+                            )
+
+      message(paste0("Exporting summary stacked bar plots for the following data: ",
+                     folder_name, "..."
+                     )
+              )
+
+      folder_path <- file.path(file_output_directory, folder_name)
+      dir.create(folder_path, showWarnings = FALSE)
+
+      all_selections <- union(names(plate_selection_list),
+                              names(plate_selection_titles_list)
+                              )
+      file_name <- paste0("Summary bar plots - ", folder_name, ".pdf")
+
+      pdf(file = file.path(folder_path, file_name),
+          width = use_width, height = use_height
+          )
+      for (k in seq_along(all_selections)) {
+        SummaryStackedBars(use_df, plate_names = all_selections[[k]])
+      }
+      dev.off()
+    }
+  }
+  return(invisible(NULL))
+}
 
 
 
