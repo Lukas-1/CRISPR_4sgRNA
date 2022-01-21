@@ -1018,7 +1018,7 @@ FixNumericColumns <- function(CRISPR_df, y_column) {
 
 
 
-GetAxisLimits <- function(numeric_vec, column_name = NULL, provide_other_limits = FALSE, extend_range_fraction = 0.02) {
+GetAxisLimits <- function(numeric_vec, column_name = NULL, provide_other_limits = FALSE) {
   max_value <- max(numeric_vec, na.rm = TRUE)
   min_value <- min(numeric_vec, na.rm = TRUE)
   span <- max_value - min_value
@@ -3045,7 +3045,7 @@ ScatterPlot <- function(CRISPR_df,
     file_path <- file.path(output_plots_directory, "Scatter plots",
                            sub_folder, file_name
                            )
-    png(file = file_path,
+    png(filename = file_path,
         width = 5.75, height = 5.75, units = "in", res = 600
         )
     current_number <- current_number + 1L
@@ -3100,7 +3100,7 @@ ScatterPlot <- function(CRISPR_df,
     temp_file_path <- file.path(output_plots_directory, "Scatter plots",
                                 sub_folder, "temp.png"
                                 )
-    png(file = temp_file_path,
+    png(filename = temp_file_path,
         width = 4.75, height = 4.75, units = "in", res = 600
         )
     par(mar = rep(0, 4))
@@ -4590,12 +4590,12 @@ ManuscriptViolinBox <- function(plot_df,
   temp_width <- use_width - sum(use_mai[c(2, 4)])
   temp_height <- use_height - sum(use_mai[c(1, 3)])
 
-  png(file   = temp_path,
-      width  = temp_width,
-      height = temp_height,
-      units  = "in",
-      res    = 900,
-      bg     = "transparent"
+  png(filename = temp_path,
+      width    = temp_width,
+      height   = temp_height,
+      units    = "in",
+      res      = 900,
+      bg       = "transparent"
       )
 
 
