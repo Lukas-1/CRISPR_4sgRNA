@@ -2,12 +2,10 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("vioplot")
 library("png")
-
 
 
 
@@ -1035,7 +1033,6 @@ SummaryStackedBars <- function(summary_df,
   }
 
   ## Draw the axes and axis labels
-  segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = 0, xpd = NA)
   mtext(sapply(c(paste0("sg", 1:4), expression(italic("mean"))), VerticalAdjust),
         at   = seq_len(num_groups),
         side = 1,
@@ -1098,6 +1095,8 @@ SummaryStackedBars <- function(summary_df,
            lend = "butt",
            xpd = NA
            )
+  ## Re-draw the x axis line
+  segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = 0, xpd = NA)
 
   ## Draw the side legend
   means_vec <- formatC(fractions_mat[, "Mean"] * 100, digits = 1, format = "f")
@@ -1363,9 +1362,7 @@ DrawAllSummaryBarPlots <- function() {
     for (filter_stage in seq_along(filter_stages)) {
 
       df_name <- filter_stages[[filter_stage]] # "filtered_gRNAs_df"
-
       use_df <- use_df_list[[df_name]]
-
       folder_name <- paste0("CCS", ccs_numbers[[i]],
                             " (", accuracy_percentages[[i]], ") - ",
                             filter_labels[[filter_stage]]
@@ -1375,22 +1372,33 @@ DrawAllSummaryBarPlots <- function() {
                      folder_name, "..."
                      )
               )
-
       folder_path <- file.path(file_output_directory, folder_name)
       dir.create(folder_path, showWarnings = FALSE)
+
+      sub_folder_path <- file.path(folder_path, "Summary bar plots")
+      dir.create(sub_folder_path, showWarnings = FALSE)
 
       all_selections <- union(names(plate_selection_list),
                               names(plate_selection_titles_list)
                               )
-      file_name <- paste0("Summary bar plots - ", folder_name, ".pdf")
 
-      pdf(file = file.path(folder_path, file_name),
-          width = use_width, height = use_height
-          )
-      for (k in seq_along(all_selections)) {
-        SummaryStackedBars(use_df, plate_names = all_selections[[k]])
+      for (include_tracrRNAs in c(TRUE, FALSE)) {
+
+        file_name <- paste0("Summary bar plots - ",
+                            if (include_tracrRNAs) "including tracrRNA" else "only protospacer",
+                            ".pdf"
+                            )
+
+        pdf(file = file.path(sub_folder_path, file_name),
+            width = use_width, height = use_height
+            )
+        for (k in seq_along(all_selections)) {
+          SummaryStackedBars(use_df, plate_names = all_selections[[k]],
+                             consider_tracrRNAs = include_tracrRNAs
+                             )
+        }
+        dev.off()
       }
-      dev.off()
     }
   }
   return(invisible(NULL))
