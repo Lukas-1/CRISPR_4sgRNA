@@ -117,8 +117,11 @@ LollipopPlot(use_df,
              )
 
 
-SummaryStackedBars(use_df, "CRISPRa")
-SummaryStackedBars(use_df, "CRISPRko")
+SummaryStackedBars(use_df, "CRISPRa", consider_tracrRNAs = FALSE)
+SummaryStackedBars(use_df, "CRISPRko", consider_tracrRNAs = FALSE)
+
+SummaryStackedBars(use_df, "CRISPRa", consider_tracrRNAs = TRUE)
+SummaryStackedBars(use_df, "CRISPRko", consider_tracrRNAs = TRUE)
 
 
 
@@ -236,7 +239,6 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
 # Export summary stacked bar plots ----------------------------------------
 
 DrawAllSummaryBarPlots()
-stop()
 
 
 
