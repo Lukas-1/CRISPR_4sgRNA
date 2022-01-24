@@ -100,8 +100,8 @@ column_group_subtitles_list <- list(
 column_group_subtitles_list <- c(
   column_group_subtitles_list,
   list(
-    "Count_sg_cr"        = column_group_subtitles_list[["At_least_num_guides"]],
-    "Count_pr_sg_cr"     = column_group_subtitles_list[["Promoter_num_guides"]]
+    "Count_sg_cr"    = column_group_subtitles_list[["At_least_num_guides"]],
+    "Count_pr_sg_cr" = column_group_subtitles_list[["Promoter_num_guides"]]
   )
 )
 
@@ -144,7 +144,6 @@ alignment_columns <- c(
   paste0("Mutation_sg",      1:4, "_cr", 1:4),
   paste0("Contamination_sg", 1:4, "_cr", 1:4)
 )
-
 
 
 
