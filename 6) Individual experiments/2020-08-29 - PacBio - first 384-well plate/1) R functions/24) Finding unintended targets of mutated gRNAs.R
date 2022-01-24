@@ -527,17 +527,21 @@ SubtractFollowing <- function(numeric_vec) {
 }
 
 
+
+
+
+
 MutationsDonutBar <- function(gRNA_numbers, main_title) {
-  labels_vec <- c(
+  donut_labels <- c(
     "Mutated gRNAs that lack a perfect-\nmatch site in the human genome",
     "Mutated gRNAs whose target sites\nare not expected to affect any gene",
     "Mutated gRNAs that share its target\ngenes with the unmutated gRNA",
     "Mutated gRNAs that affect\na new off-target gene"
   )
-  colors_vec <- c("#DDDDDD", "#88CCEE", "#332288", "#AA4499")
+  donut_colors <- c("#DDDDDD", "#88CCEE", "#332288", "#AA4499")
   DonutBars(counts_vec      = SubtractFollowing(gRNA_numbers),
-            use_colors      = colors_vec,
-            use_labels      = labels_vec,
+            use_colors      = donut_colors,
+            use_labels      = donut_labels,
             use_title       = main_title,
             title_line      = 0.4,
             donut_label     = "Mutated\ngRNAs",
