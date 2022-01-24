@@ -3454,6 +3454,8 @@ DonutBars <- function(use_factor         = NULL,
                       use_title          = NULL,
                       title_line         = 0,
                       title_font         = 2,
+                      title_text_size    = 0.8,
+                      side_space_ratio   = 2/3,
                       bar_labels         = NULL,
                       donut_radius       = 0.15,
                       donut_label        = "",
@@ -3467,6 +3469,7 @@ DonutBars <- function(use_factor         = NULL,
                       side_text_size     = 0.9,
                       bar_text_size      = 0.7,
                       bar_text_font      = 2,
+                      donut_text_font    = bar_text_font,
                       text_dark_color    = NULL,
                       use_mai            = c(0.2, 1.9, 0.1, 0.3),
                       use_omi            = c(0, 0, 0.45, 0),
@@ -3500,6 +3503,7 @@ DonutBars <- function(use_factor         = NULL,
     are_single_digit <- (percentages_vec < 10) & (percentages_vec >= 1)
     percentages_strings[are_single_digit] <- format(percentages_vec[are_single_digit], digits = 2)
     percentages_strings[percentages_vec > 10] <- round(percentages_vec[percentages_vec > 10])
+    percentages_strings[percentages_vec > 99] <- round(percentages_vec[percentages_vec > 99], digits = 1)
     count_labels <- paste0(counts_vec, " (", percentages_strings, "%)")
   } else {
     count_labels <- counts_vec
@@ -3513,7 +3517,7 @@ DonutBars <- function(use_factor         = NULL,
     num_positions <- num_bars
   }
 
-  side_space <- space * (2 / 3)
+  side_space <- space * side_space_ratio
   num_units <- num_positions + ((num_positions - 1) * space) + (2 * side_space)
   unit_width <- 1 / num_units
 
@@ -3543,7 +3547,7 @@ DonutBars <- function(use_factor         = NULL,
 
 
   if (!(is.null(use_title))) {
-    title(use_title, outer = TRUE, cex.main = par("cex") * 0.8,
+    title(use_title, outer = TRUE, cex.main = title_text_size,
           line = title_line, font.main = title_font
           )
   }
@@ -3619,7 +3623,7 @@ DonutBars <- function(use_factor         = NULL,
   text(x      = donut_x_mid,
        y      = donut_y_mid,
        labels = donut_label,
-       font   = bar_text_font,
+       font   = donut_text_font,
        cex    = donut_text_size
        )
 
