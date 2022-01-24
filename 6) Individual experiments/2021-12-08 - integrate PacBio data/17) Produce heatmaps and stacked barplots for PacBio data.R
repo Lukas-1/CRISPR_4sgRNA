@@ -22,7 +22,7 @@ file_output_directory    <- file.path(s2rI_directory, "5) Output")
 plots_output_directory   <- file.path(file_output_directory, "Figures")
 # PNGs_output_directory    <- file.path(file_output_directory, "PNGs")
 across_plate_directory   <- file.path(plots_output_directory, "Sand and eCDF charts - all plates combined")
-manuscript_directory     <- file.path(plots_output_directory, "Manuscript", "Fig. 5")
+manuscript_directory     <- file.path(plots_output_directory, "Manuscript")
 
 
 
@@ -78,9 +78,42 @@ Plot_eCDF(CRISPRa_summary_df, "4_guides", flip_axis = TRUE)
 
 # Look up quantiles for cutoffs, or values for specific quantiles ---------
 
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_1", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_2", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_3", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_all_4",      0.5)
+
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_1", 0.05)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_2", 0.05)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_3", 0.05)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_all_4",      0.05)
+
+
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_3", 0.5)
 ValuesForQuantiles(CRISPRa_summary_df, "Count_all_4", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_3", 0.05)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_all_4", 0.05)
 ValuesForQuantiles(CRISPRa_summary_df, "Num_reads_with_deletions_exceeding_20bp", 0.5)
 FractionsForCutoffs(CRISPRa_summary_df, "Num_reads_with_deletions_exceeding_20bp", 0.5)
+
+ValuesForQuantiles(CRISPRko_summary_df, "Count_at_least_3", 0.5)
+ValuesForQuantiles(CRISPRko_summary_df, "Count_all_4", 0.5)
+ValuesForQuantiles(CRISPRko_summary_df, "Count_at_least_3", 0.05)
+ValuesForQuantiles(CRISPRko_summary_df, "Count_all_4", 0.05)
+
+
+FractionsForCutoffs(CRISPRa_summary_df, "Count_all_4", 0.75)
+FractionsForCutoffs(CRISPRa_summary_df, "All4_sg_cr_pass", 0.75)
+
+
+median(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_tracrRNAs"))
+median(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_promoters"))
+
+
+table(c(CRISPRa_summary_df[, "Count_total"], CRISPRko_summary_df[, "Count_total"]) >= 10) /
+(nrow(CRISPRa_summary_df) + nrow(CRISPRko_summary_df))
+
+
 
 
 
@@ -88,100 +121,122 @@ FractionsForCutoffs(CRISPRa_summary_df, "Num_reads_with_deletions_exceeding_20bp
 
 manuscript_mai <- c(0.35 + 0.024, 0.5, 0.2 + 0.024, 0.9)
 
-for (show_library in c("a", "o")) {
+for (include_promoters in c(FALSE, TRUE)) {
 
-  if (show_library == "a") {
-    current_summary_df <- CRISPRa_summary_df
-  } else if (show_library == "o") {
-    current_summary_df <- CRISPRko_summary_df
+  for (show_library in c("a", "o")) {
+
+    if (show_library == "a") {
+      current_summary_df <- CRISPRa_summary_df
+    } else if (show_library == "o") {
+      current_summary_df <- CRISPRko_summary_df
+    }
+    use_top_title <- paste0("CRISPR", show_library, " library")
+    use_file_name <- paste0("B) Sand chart - CRISPR", show_library, " library.pdf")
+    pdf(file = file.path(manuscript_directory,
+                         if (include_promoters) "Fig. S4" else "Fig. 4",
+                         "Individual plots",
+                         use_file_name
+                         ),
+        width = 3.4, height = 1.75
+        )
+    old_par <- par(cex = 0.7, lwd = 0.8, mai = manuscript_mai)
+    SingleSandPlot(current_summary_df,
+                   top_title             = use_top_title,
+                   show_grid             = TRUE,
+                   consider_promoters    = include_promoters,
+                   rotate_axes           = FALSE,
+                   invert_x_axis         = TRUE,
+                   side_legend           = TRUE,
+                   NA_in_legend          = FALSE,
+                   set_mar               = FALSE,
+                   data_axis_label       = "Percentage of reads",
+                   vertical_y_label_line = 2.65,
+                   x_label_line          = 2.1,
+                   x_ticks_line          = 0.3,
+                   use_mtext             = TRUE,
+                   legend_x_start        = 1.3,
+                   legend_x_title        = -0.1,
+                   legend_y_gap          = 0.9
+                   )
+    par(old_par)
+    dev.off()
   }
-  use_top_title <- paste0("CRISPR", show_library, " library")
-  use_file_name <- paste0("B) Sand chart - CRISPR", show_library, " library")
-  pdf(file = file.path(manuscript_directory, paste0(use_file_name, ".pdf")),
-      width = 3.4, height = 1.75
-      )
-  old_par <- par(cex = 0.7, lwd = 0.8, mai = manuscript_mai)
-  SingleSandPlot(current_summary_df,
-                 top_title             = use_top_title,
-                 show_grid             = TRUE,
-                 consider_promoters    = FALSE,
-                 rotate_axes           = FALSE,
-                 invert_x_axis         = TRUE,
-                 side_legend           = TRUE,
-                 NA_in_legend          = FALSE,
-                 set_mar               = FALSE,
-                 data_axis_label       = "Percentage of reads",
-                 vertical_y_label_line = 2.65,
-                 x_label_line          = 2.1,
-                 x_ticks_line          = 0.3,
-                 use_mtext             = TRUE,
-                 legend_x_start        = 1.3,
-                 legend_x_title        = -0.1,
-                 legend_y_gap          = 0.9
-                 )
-  par(old_par)
-  dev.off()
 }
 
 
 
 # Export eCDF plots for the manuscript ------------------------------------
 
-for (show_library in c("a", "o")) {
+for (include_promoters in c(FALSE, TRUE)) {
 
-  if (show_library == "a") {
-    current_summary_df <- CRISPRa_summary_df
-  } else if (show_library == "o") {
-    current_summary_df <- CRISPRko_summary_df
-  }
-  use_top_title <- paste0("CRISPR", show_library, " library")
+  for (show_library in c("a", "o")) {
 
-  for (draw_figure in c("D", "E", "F")) {
-
-    if (draw_figure == "D") {
-      use_file_name <- paste0(draw_figure, ") eCDF - polyclonal bonus")
-      column_combo <- "4_guides"
-      use_line_colors <- c("#4E4073", brewer.pal(9, "Blues")[[6]])
-    } else if (draw_figure == "E") {
-      use_file_name <- paste0(draw_figure, ") eCDF - deletions")
-      column_combo <- "Deletions"
-      use_line_colors <- brewer.pal(9, "Blues")[c(9, 7)]
-      use_line_colors[[3]] <- brewer.pal(9, "Oranges")[[6]]
-    } else if (draw_figure == "F") {
-      use_file_name <- paste0(draw_figure, ") eCDF - contaminations")
-      column_combo <- "Contaminations"
-      use_line_colors <- brewer.pal(9, "Blues")[[7]] #brewer.pal(9, "Set1")[[7]]
+    if (show_library == "a") {
+      current_summary_df <- CRISPRa_summary_df
+    } else if (show_library == "o") {
+      current_summary_df <- CRISPRko_summary_df
     }
+    use_top_title <- paste0("CRISPR", show_library, " library")
 
-    use_file_name <- paste0(use_file_name, " - CRISPR", show_library, " library")
-    pdf(file = file.path(manuscript_directory, paste0(use_file_name, ".pdf")),
-        width = 3.4, height = 1.75
-        )
-    old_par <- par(cex = 0.7, lwd = 0.8, mai = manuscript_mai)
-    Plot_eCDF(current_summary_df,
-              column_combo,
-              top_title             = use_top_title,
-              flip_axis             = TRUE,
-              rotate_axes           = FALSE,
-              data_axis_label       = "Percentage of reads",
-              set_mar               = FALSE,
-              vertical_y_label_line = 2.65,
-              x_label_line          = 2.1,
-              x_ticks_line          = 0.3,
-              use_mtext             = TRUE,
-              always_side_legend    = TRUE,
-              legend_y_gap          = if (draw_figure == "E") 1 else 1.125,
-              legend_x_start        = if (draw_figure == "D") 0.6 else 0.7,
-              legend_gap_ratio      = if (draw_figure == "E") 1.45 else 1.5,
-              point_x_start         = 0.9,
-              reverse_legend_order  = draw_figure == "D",
-              line_colors           = use_line_colors,
-              legend_pch            = 22,
-              lwd_multiplier        = 1.5
-              )
+    for (draw_figure in c("D", "E", "F")) {
 
-    par(old_par)
-    dev.off()
+      if (include_promoters && (draw_figure != "D")) {
+        next
+      }
+
+      if (draw_figure == "D") {
+        use_file_name <- paste0(draw_figure, ") eCDF - polyclonal bonus")
+        use_line_colors <- c("#4E4073", brewer.pal(9, "Blues")[[6]])
+        if (include_promoters) {
+          column_combo <- "4_guides_with_promoters"
+        } else {
+          column_combo <- "4_guides"
+        }
+      } else if (draw_figure == "E") {
+        use_file_name <- paste0(draw_figure, ") eCDF - deletions")
+        column_combo <- "Deletions"
+        use_line_colors <- brewer.pal(9, "Blues")[c(9, 7)]
+        use_line_colors[[3]] <- brewer.pal(9, "Oranges")[[6]]
+      } else if (draw_figure == "F") {
+        use_file_name <- paste0(draw_figure, ") eCDF - contaminations")
+        column_combo <- "Contaminations"
+        use_line_colors <- brewer.pal(9, "Blues")[[7]] #brewer.pal(9, "Set1")[[7]]
+      }
+
+      use_file_name <- paste0(use_file_name, " - CRISPR", show_library, " library.pdf")
+      pdf(file = file.path(manuscript_directory,
+                           if (include_promoters) "Fig. S4" else "Fig. 4",
+                           "Individual plots",
+                           use_file_name
+                           ),
+          width = 3.4, height = 1.75
+          )
+      old_par <- par(cex = 0.7, lwd = 0.8, mai = manuscript_mai)
+      Plot_eCDF(current_summary_df,
+                column_combo,
+                top_title             = use_top_title,
+                flip_axis             = TRUE,
+                rotate_axes           = FALSE,
+                data_axis_label       = "Percentage of reads",
+                set_mar               = FALSE,
+                vertical_y_label_line = 2.65,
+                x_label_line          = 2.1,
+                x_ticks_line          = 0.3,
+                use_mtext             = TRUE,
+                always_side_legend    = TRUE,
+                legend_y_gap          = if (draw_figure == "E") 1 else 1.125,
+                legend_x_start        = if (draw_figure == "D") 0.6 else 0.7,
+                legend_gap_ratio      = if (draw_figure == "E") 1.45 else 1.5,
+                point_x_start         = 0.9,
+                reverse_legend_order  = draw_figure == "D",
+                line_colors           = use_line_colors,
+                legend_pch            = 22,
+                lwd_multiplier        = 1.5
+                )
+
+      par(old_par)
+      dev.off()
+    }
   }
 }
 
@@ -256,6 +311,7 @@ for (i in 1:4) {
     }
   }
 }
+
 
 
 

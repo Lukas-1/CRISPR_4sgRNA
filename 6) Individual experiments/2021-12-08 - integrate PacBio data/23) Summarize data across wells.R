@@ -15,16 +15,14 @@ source(file.path(R_functions_directory, "20) Summarizing data across wells.R"))
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 s2rI_directory           <- file.path(experiments_directory, "2021-12-08 - integrate PacBio data")
 s2rI_R_objects_directory <- file.path(s2rI_directory, "3) R objects")
 file_output_directory    <- file.path(s2rI_directory, "5) Output", "Figures", "Summaries across wells")
-manuscript_directory     <- file.path(s2rI_directory, "5) Output", "Figures", "Manuscript", "Fig. 5")
+manuscript_directory     <- file.path(s2rI_directory, "5) Output", "Figures", "Manuscript")
 
 # PNGs_output_directory    <- file.path(s2rI_directory, "5) Output", "PNGs", "Summaries across wells")
-
 
 
 
@@ -32,7 +30,6 @@ manuscript_directory     <- file.path(s2rI_directory, "5) Output", "Figures", "M
 
 load(file.path(s2rI_R_objects_directory, "01) Process and export plate barcodes.RData"))
 load(file.path(s2rI_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
-
 
 
 
@@ -135,73 +132,95 @@ manuscript_side_labels <- list(
 
 for (show_library in c("CRISPRa", "CRISPRo")) {
 
-  use_side_labels <- manuscript_side_labels
-  if (show_library == "CRISPRa") {
-    use_side_labels[[2]][[2]] <- "CRISPRa"
-  } else {
-    use_side_labels[[2]][[2]] <- "CRISPRo"
-  }
+  for (include_promoters in c(FALSE, TRUE)) {
 
-  for (draw_figure in c("A", "C", "E", "F")) {
-    if (draw_figure == "A") {
-      selection_name <- "At_least_num_guides"
-      custom_labels <- list(
-        "Count_at_least_1" = expression("" >= "1 gRNA",  "correct"),
-        "Count_at_least_2" = expression("" >= "2", "correct"),
-        "Count_at_least_3" = expression("" >= "3", "correct"),
-        "Count_all_4"      = expression("All 4", "correct")
-      )
-    } else if (draw_figure == "C") {
-      selection_name <- "Count_sg_cr"
-      custom_labels <- lapply(1:4, function(x) c(paste0("sg", x), "correct"))
-      names(custom_labels) <- paste0("Count_sg", 1:4, "_cr", 1:4)
-    } else if (draw_figure == "E") {
-      selection_name <- "Deletions"
-      custom_labels <- list(
-        "Num_reads_with_deletions_exceeding_20bp"     = expression("Any deletion", "(" >= "20 bp)"),
-        "Num_reads_with_deletions_spanning_tracrRNAs" = c("spanning", "tracrRNAs"),
-        "Num_reads_with_deletions_spanning_promoters" = c("spanning", "promoters")
-      )
-    } else if (draw_figure == "F") {
-      selection_name <- "Contaminations"
-      custom_labels <- list(
-        "Num_contaminated_reads" = c("Well-to-well", "contamination")
-      )
+    use_side_labels <- manuscript_side_labels
+    if (show_library == "CRISPRa") {
+      use_side_labels[[2]][[2]] <- "CRISPRa"
+    } else {
+      use_side_labels[[2]][[2]] <- "CRISPRo"
     }
 
-    file_name <- paste0(draw_figure, ") Box plot - ", selection_name, " - ", show_library, " library.pdf")
-    pdf(file   = file.path(manuscript_directory, file_name),
-        width  = if (draw_figure == "F") 2.7 else 3.4, height = 1.75
+    for (draw_figure in c("A", "C", "E", "F")) {
+
+      if (include_promoters && (!(draw_figure %in% c("A", "C")))) {
+        next
+      }
+
+      if (draw_figure == "A") {
+        custom_labels <- list(
+          "Count_at_least_1" = expression("" >= "1 gRNA",  "correct"),
+          "Count_at_least_2" = expression("" >= "2", "correct"),
+          "Count_at_least_3" = expression("" >= "3", "correct"),
+          "Count_all_4"      = expression("All 4", "correct")
         )
-    old_par <- par(lwd = 0.8, cex = 0.7, mai = c(0.35, 0.5, 0.2, 0.75))
-    SummaryBoxPlot(use_df,
-                   plate_names        = plate_selection_list[[show_library]],
-                   use_columns        = names(custom_labels),
-                   custom_title       = "",
-                   title_line         = 0.5,
-                   title_cex          = 1,
-                   bottom_labels_list = custom_labels,
-                   y_label_line       = 2.65,
-                   bottom_start_y     = 0.1,
-                   draw_whiskers      = TRUE,
-                   embed_PNG          = TRUE,
-                   embed_PNG_res      = 900,
-                   set_mar            = FALSE,
-                   points_centered    = TRUE,
-                   side_labels_list   = use_side_labels,
-                   side_legend_x      = 0.8,
-                   side_legend_x_gap  = -0.2,
-                   side_y_gap         = 2.25,
-                   bottom_y_gap       = 1.8,
-                   bottom_large_y     = 0.8,
-                   median_lwd         = 2,
-                   violin_wex         = if (draw_figure %in% c("E", "F")) 0.4 else 0.52,
-                   box_wex            = if (draw_figure == "E") 0.55 else if (draw_figure == "F") 1 else 0.6,
-                   use_side_gap       = if (draw_figure == "E") 0.5 else if (draw_figure == "F") 0.8 else 0.3,
-                   controls_x_gap     = if (draw_figure == "F") 0.425 else 0.35
-                   )
-    par(old_par)
-    dev.off()
+        if (include_promoters) {
+          selection_name <- "Promoter_num_guides"
+          names(custom_labels) <- sub("Count_at", "Count_pr_at", names(custom_labels), fixed = TRUE)
+        } else {
+          selection_name <- "At_least_num_guides"
+        }
+      } else if (draw_figure == "C") {
+        custom_labels <- lapply(1:4, function(x) c(paste0("sg", x), "correct"))
+        if (include_promoters) {
+          selection_name <- "Count_pr_sg_cr"
+          names(custom_labels) <- paste0("Count_pr", 1:4, "_sg", 1:4, "_cr", 1:4)
+        } else {
+          selection_name <- "Count_sg_cr"
+          names(custom_labels) <- paste0("Count_sg", 1:4, "_cr", 1:4)
+        }
+      } else if (draw_figure == "E") {
+        selection_name <- "Deletions"
+        custom_labels <- list(
+          "Num_reads_with_deletions_exceeding_20bp"     = expression("Any deletion", "(" >= "20 bp)"),
+          "Num_reads_with_deletions_spanning_tracrRNAs" = c("spanning", "tracrRNAs"),
+          "Num_reads_with_deletions_spanning_promoters" = c("spanning", "promoters")
+        )
+      } else if (draw_figure == "F") {
+        selection_name <- "Contaminations"
+        custom_labels <- list(
+          "Num_contaminated_reads" = c("Well-to-well", "contamination")
+        )
+      }
+
+      file_name <- paste0(draw_figure, ") Box plot - ", selection_name, " - ", show_library, " library.pdf")
+      pdf(file  = file.path(manuscript_directory,
+                            if (include_promoters) "Fig. S4" else "Fig. 4",
+                            "Individual plots",
+                            file_name
+                            ),
+          width = if (draw_figure == "F") 2.7 else 3.4, height = 1.75
+          )
+      old_par <- par(lwd = 0.8, cex = 0.7, mai = c(0.35, 0.5, 0.2, 0.75))
+      SummaryBoxPlot(use_df,
+                     plate_names        = plate_selection_list[[show_library]],
+                     use_columns        = names(custom_labels),
+                     custom_title       = "",
+                     title_line         = 0.5,
+                     title_cex          = 1,
+                     bottom_labels_list = custom_labels,
+                     y_label_line       = 2.65,
+                     bottom_start_y     = 0.1,
+                     draw_whiskers      = TRUE,
+                     embed_PNG          = TRUE,
+                     embed_PNG_res      = 900,
+                     set_mar            = FALSE,
+                     points_centered    = TRUE,
+                     side_labels_list   = use_side_labels,
+                     side_legend_x      = 0.8,
+                     side_legend_x_gap  = -0.2,
+                     side_y_gap         = 2.25,
+                     bottom_y_gap       = 1.8,
+                     bottom_large_y     = 0.8,
+                     median_lwd         = 2,
+                     violin_wex         = if (draw_figure %in% c("E", "F")) 0.4 else 0.52,
+                     box_wex            = if (draw_figure == "E") 0.55 else if (draw_figure == "F") 1 else 0.6,
+                     use_side_gap       = if (draw_figure == "E") 0.5 else if (draw_figure == "F") 0.8 else 0.3,
+                     controls_x_gap     = if (draw_figure == "F") 0.425 else 0.35
+                     )
+      par(old_par)
+      dev.off()
+    }
   }
 }
 
@@ -211,23 +230,24 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
 
 for (show_library in c("CRISPRa", "CRISPRko")) {
   file_name <- paste0("E) Stacked bar plot - ", show_library, " library.pdf")
-  pdf(file   = file.path(manuscript_directory, file_name),
-      width  = 3.4, height = 1.75
+  pdf(file  = file.path(manuscript_directory, "Fig. 4", "Individual plots", file_name),
+      width = 3.4, height = 1.75
       )
   old_par <- par(lwd = 0.8, cex = 0.7, mai = c(0.35, 0.5, 0.2, 0.95))
   SummaryStackedBars(use_df,
                      show_library,
-                     top_title       = paste0(sub("ko", "o", show_library, fixed = TRUE), " library"),
-                     top_title_line  = 0.3,
-                     top_title_cex   = 1,
-                     top_title_font  = 1,
-                     set_mar         = FALSE,
-                     y_label_line    = 2.65,
-                     x_labels_line   = 0.3,
-                     small_y_gap     = 1,
-                     lines_x_start   = 0.7,
-                     large_gap_ratio = 1.45,
-                     use_side_gap    = 0.6
+                     consider_tracrRNAs = TRUE,
+                     top_title          = paste0(sub("ko", "o", show_library, fixed = TRUE), " library"),
+                     top_title_line     = 0.3,
+                     top_title_cex      = 1,
+                     top_title_font     = 1,
+                     set_mar            = FALSE,
+                     y_label_line       = 2.65,
+                     x_labels_line      = 0.3,
+                     small_y_gap        = 1,
+                     lines_x_start      = 0.7,
+                     large_gap_ratio    = 1.45,
+                     use_side_gap       = 0.6
                      )
   par(old_par)
   dev.off()
