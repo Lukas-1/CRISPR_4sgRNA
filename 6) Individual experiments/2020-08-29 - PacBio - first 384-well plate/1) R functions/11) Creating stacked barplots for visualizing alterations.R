@@ -58,7 +58,11 @@ titles_list <- c(
     "Correct_sg1"           = "Percentage of reads where sg1 is 100% correct",
     "Correct_sg2"           = "Percentage of reads where sg2 is 100% correct",
     "Correct_sg3"           = "Percentage of reads where sg3 is 100% correct",
-    "Correct_sg4"           = "Percentage of reads where sg4 is 100% correct"
+    "Correct_sg4"           = "Percentage of reads where sg4 is 100% correct",
+
+    "Correct_TpR_DHFR"      = "Percentage of reads where the TpR element is 100% correct",
+    "Mutation_TpR_DHFR"     = "Percentage of reads where the TpR element is mutated",
+    "Deletion_TpR_DHFR"     = "Percentage of reads where the TpR element is deleted"
   )
 )
 
@@ -78,6 +82,17 @@ eCDF_combos_list <- list(
                                      scriptscriptstyle(" ") * "all 4 gRNAs"
                                      )#,
     # "Count_mean_sg1to4" = c("Mean correct", "percentage", "(sg1-4)")
+  ),
+  "4_guides_with_promoters" = list(
+    "Count_pr_all_4"       = expression(scriptscriptstyle(" ") * "All 4 gRNAs",
+                                        scriptscriptstyle(" ") * "correct in",
+                                        scriptscriptstyle(" ") * "same read"
+                                        ),
+    "All4_pr_sg_cr_pass"   = expression(scriptscriptstyle(" ") * "Correct %",
+                                        "" >=  "cutoff for",
+                                        scriptscriptstyle(" ") * "all 4 gRNAs"
+                                        )#,
+    # "Count_mean_pr_sg1to4" = c("Mean correct", "percentage", "(sg1-4)")
   ),
   "Contaminations" = list(
     "Num_contaminated_reads" = c("Contains", "gRNA from", "other wells")
@@ -112,7 +127,9 @@ count_metrics <- c(
   paste0("Mutation_sg", 1:4),
   paste0("Deletion_sg", 1:4),
   paste0("Contamination_sg", 1:4),
-  paste0("Correct_sg",  1:4)
+  paste0("Correct_sg",  1:4),
+
+  "Correct_TpR_DHFR", "Mutation_TpR_DHFR", "Deletion_TpR_DHFR"
 )
 
 percentages_metrics <- c(
@@ -126,7 +143,6 @@ percentages_metrics <- c(
   "Num_reads_with_deletions_spanning_promoters",
   count_metrics
 )
-
 
 
 
