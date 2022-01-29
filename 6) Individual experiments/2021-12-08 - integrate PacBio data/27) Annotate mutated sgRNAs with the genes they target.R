@@ -92,7 +92,6 @@ ExportMutatedDf(CRISPRko_20bp_mut_list[["annotated_df"]],
 
 
 
-
 # Draw doughnut/bar plots -------------------------------------------------
 
 pdf(file = file.path(donut_plots_directory, "Donut charts - 19bp - targets of mutated gRNAs.pdf"),
@@ -166,8 +165,7 @@ ManuscriptMutationsDonutBar <- function(gRNA_numbers, main_title, donut_label) {
 
 
 
-pdf(file.path(manuscript_directory, paste0("E) Doughnut plot - CRISPRa library.pdf")
-              ),
+pdf(file.path(manuscript_directory, paste0("E) Doughnut plot - CRISPRa library.pdf")),
     width = 3.4, height = 2
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
@@ -175,13 +173,11 @@ ManuscriptMutationsDonutBar(TSS_20bp_mut_list[["gRNA_numbers"]],
                   "CRISPRa library (target: within 1000 bp of the TSS)",
                   "Mutated\nCRISPRa\ngRNAs"
                   )
-
 dev.off()
 
 
 
-pdf(file.path(manuscript_directory, paste0("F) Doughnut plot - CRISPRo library.pdf")
-              ),
+pdf(file.path(manuscript_directory, paste0("F) Doughnut plot - CRISPRo library.pdf")),
     width = 3.4, height = 2
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
@@ -189,7 +185,6 @@ ManuscriptMutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]],
                   "CRISPRo library (target: CDS or exon)",
                   "Mutated\nCRISPRo\ngRNAs"
                   )
-
 dev.off()
 
 
