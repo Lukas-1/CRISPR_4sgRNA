@@ -316,7 +316,7 @@ pdf(file.path(manuscript_directory,  "Fig. S4", "Individual plots",
 par(cex = 0.7, lwd = 0.8, mai = c(0.35, 0.47, 0.15, 0.5))
 ReadCountsBoxPlot(use_df, c("CRISPRa", "CRISPRko"),
                   x_labels_line = 0.3,
-                  y_label_line  = 2.53,
+                  y_label_line  = 2.4,
                   side_gap      = 0.5,
                   embed_PNG     = TRUE
                   )
