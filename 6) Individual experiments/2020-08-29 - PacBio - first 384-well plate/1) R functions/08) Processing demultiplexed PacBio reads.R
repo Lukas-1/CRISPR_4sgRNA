@@ -540,6 +540,7 @@ CreateSummaryDf <- function(reads_df,
       alterations_vec_list[are_empty] <- list(integer(ncol(alterations_mat)))
     }
     alteration_counts_mat <- do.call(rbind, alterations_vec_list)
+    mode(alteration_counts_mat) <- "integer"
   }
 
 
