@@ -206,8 +206,103 @@ DrawGridlines <- function(y_limits, extra_grid_lines = TRUE) {
 
 # Functions for aggregating and tidying data ------------------------------
 
+GetMinQuality <- function(input_integer) {
+  is_even <- (input_integer %% 2) == 0
+  num_nines <- ceiling(input_integer / 2)
+  digits_string <- paste0(rep("9", num_nines), collapse = "")
+  if (is_even) {
+    digits_string <- paste0(digits_string, "5")
+  }
+  final_number <- as.numeric(paste0("0.", digits_string))
+  return(final_number)
+}
+
+
+
+SampleControlReads <- function(reads_df, plates_df, ccs_number = 7) {
+
+  control_plates <- plates_df[plates_df[, "Colony_picked"], "Plate_number"]
+  are_control_plates <- reads_df[, "Plate_number"] %in% control_plates
+  exclude_columns <- "Pool"
+
+  non_controls_df <- reads_df[!(are_control_plates), names(reads_df) != exclude_columns]
+  median_read_count <- median(as.integer(table(non_controls_df[, "Combined_ID"])))
+
+  controls_df <- reads_df[are_control_plates, names(reads_df) != exclude_columns]
+  are_passing <- (controls_df[, "Passes_barcode_filters"] == 1) &
+                 (controls_df[, "Read_quality"] >= GetMinQuality(ccs_number)) &
+                 (controls_df[, "Num_full_passes"] >= ccs_number)
+  if (!(all(are_passing))) {
+    controls_df <- controls_df[are_passing, ]
+  }
+
+  controls_df_list <- split(controls_df, controls_df[, "Well_number"])
+  set.seed(1)
+  controls_df_list <- lapply(controls_df_list, function(x) {
+    random_indices <- sample(seq_len(nrow(x)), median_read_count)
+    x[random_indices, ]
+  })
+  sampled_controls_df <- do.call(rbind.data.frame,
+                                 c(controls_df_list,
+                                   list(stringsAsFactors = FALSE,
+                                        make.row.names = FALSE
+                                        )
+                                   ))
+
+  sampled_controls_df[, "Plate_number"] <- control_plates[[1]]
+  sampled_controls_df[, "Combined_ID"] <- paste0(
+    "Plate", formatC(control_plates[[1]], width = 3, flag = "0"),
+    "_Well", formatC(sampled_controls_df[, "Well_number"], width = 3, flag = "0")
+  )
+
+  results_df <- rbind.data.frame(sampled_controls_df,
+                                 non_controls_df,
+                                 stringsAsFactors = FALSE,
+                                 make.row.names = FALSE
+                                 )
+  return(results_df)
+}
+
+
+
+
+ConsolidateControls <- function(summary_df, plates_df) {
+
+  ID_columns <- c("Combined_ID", "Plate_number", "Well_number")
+  exclude_columns <- c(
+    "Mean_read_quality", "Expected_from_close_wells",
+    "Mean_distance", "Expected_distance", "Distance_p_value",
+    grep("Perc", names(summary_df), fixed = TRUE, value = TRUE)
+  )
+  sum_columns <- setdiff(names(summary_df), c(ID_columns, exclude_columns))
+
+  control_plates <- plates_df[plates_df[, "Colony_picked"], "Plate_number"]
+  are_controls <- summary_df[, "Plate_number"] %in% control_plates
+  controls_df <- summary_df[are_controls, ]
+  not_controls_df <- summary_df[!(are_controls), ]
+
+  sums_mat <- do.call(cbind, sapply(sum_columns, function(x) {
+    tapply(controls_df[, x], controls_df[, "Well_number"], sum)
+  }, simplify = FALSE))
+
+  use_control_plate <- control_plates[[1]]
+  sum_controls_df <- data.frame(
+    controls_df[controls_df[, "Plate_number"] %in% use_control_plate, ID_columns],
+    sums_mat,
+    stringsAsFactors = FALSE
+  )
+  results_df <- rbind.data.frame(sum_controls_df,
+                                 not_controls_df[, c(ID_columns, sum_columns)],
+                                 stringsAsFactors = FALSE,
+                                 make.row.names = FALSE
+                                 )
+  return(results_df)
+}
+
+
+
 StandardizeCounts <- function(input_df) {
-  stopifnot(all(c("count_columns", "alignment_columns") %in% ls(envir = globalenv())))
+  stopifnot(all(c("count_columns", "num_columns", "alignment_columns") %in% ls(envir = globalenv())))
 
   assign("delete_input_df", input_df, envir = globalenv())
   count_mat <- as.matrix(input_df[, count_columns])
@@ -478,15 +573,16 @@ LollipopPlot <- function(input_df,
   plates_list <- GetPlateSelection(plate_names)
   plate_names <- plates_list[["plate_names"]]
 
-  if (set_mar) {
-    old_mar <- par("mar" = c(5.5, 5, 4, 8))
-  }
+  input_df <- ConsolidateControls(input_df, plates_df)
 
   control_mat  <- PreparePlates(input_df, plates_df[plates_df[, "Colony_picked"], "Plate_name"])
-  selected_mat <- PreparePlates(input_df, plate_names)[, use_columns,  drop = FALSE]
+  selected_mat <- PreparePlates(input_df, plate_names)[, use_columns, drop = FALSE]
 
-  control_mat  <- HandleEmptyWells(control_mat[, use_columns,  drop = FALSE])
-  selected_mat <- HandleEmptyWells(selected_mat[, use_columns,  drop = FALSE])
+  assign("delete_selected_mat_1", selected_mat, envir = globalenv())
+  assign("delete_plate_names", plate_names, envir = globalenv())
+
+  control_mat  <- HandleEmptyWells(control_mat[, use_columns, drop = FALSE])
+  selected_mat <- HandleEmptyWells(selected_mat[, use_columns, drop = FALSE])
 
   assign("delete_input_df", input_df, envir = globalenv())
   assign("delete_control_mat", control_mat, envir = globalenv())
@@ -501,6 +597,9 @@ LollipopPlot <- function(input_df,
     use_title <- plates_list[["title"]]
   } else {
     use_title <- custom_title
+  }
+  if (set_mar) {
+    old_mar <- par("mar" = c(5.5, 5, 4, 8))
   }
   SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                       y_axis_label = "Mean percentage of reads", ...
@@ -624,22 +723,30 @@ CustomBoxPlot <- function(input_list,
 
 ViolinClippedBorders <- function(violin_list,
                                  at_positions  = seq_along(violin_list),
-                                 border_color  = "black",
+                                 border_colors = "black",
                                  fill          = FALSE,
                                  use_wex       = 0.4,
                                  use_lwd       = 0.75,
-                                 clip_distance = 0.015
+                                 clip_distance = 0.015,
+                                 use_quantiles = c(0.005, 0.995)
                                  ) {
 
   assign("delete_violin_list", violin_list, envir = globalenv())
   assign("delete_at_positions", at_positions, envir = globalenv())
 
-  violin_list <- RemoveAllZeros(violin_list)
+  if (length(border_colors) == 1) {
+    border_colors <- rep(border_colors, length(violin_list))
+  }
+  violin_list <- RemoveIfOnlyZeros(violin_list)
 
   stopifnot(length(violin_list) == length(at_positions))
   for (i in seq_along(violin_list)) {
-    bottom_border <- quantile(violin_list[[i]], probs = 0.005, na.rm = TRUE, names = FALSE)
-    top_border    <- quantile(violin_list[[i]], probs = 0.995, na.rm = TRUE, names = FALSE)
+    use_borders <- vapply(use_quantiles, function(x) {
+      use_border <- quantile(violin_list[[i]], probs = x, na.rm = TRUE, names = FALSE)
+      return(grconvertY(use_border, from = "user", to = "npc"))
+    }, numeric(1))
+    bottom_border <- use_borders[[1]]
+    top_border    <- use_borders[[2]]
     distance_to_top <- 1 - top_border
     distance_to_bottom <- bottom_border
     if (fill) {
@@ -668,13 +775,15 @@ ViolinClippedBorders <- function(violin_list,
       bottom_border <- max(c(clip_distance, bottom_border))
       top_border    <- min(c(1 - clip_distance, top_border))
     }
-    do.call(clip, as.list(c(par("usr")[c(1, 2)], bottom_border, top_border)))
+    do.call(clip, as.list(c(par("usr")[c(1, 2)],
+                            grconvertY(c(bottom_border, top_border), from = "npc", to = "user")
+                            )))
     vioplot(violin_list[[i]],
             at       = at_positions[[i]],
             pchMed   = NA,
             drawRect = FALSE,
-            col      = if (fill) border_color else "#00000000",
-            border   = if (fill) border_color else adjustcolor(border_color, alpha.f = 0.7),
+            col      = if (fill) border_colors[[i]] else "#00000000",
+            border   = if (fill) border_colors[[i]] else adjustcolor(border_colors[[i]], alpha.f = 0.7),
             wex      = use_wex,
             lwd      = use_lwd,
             add      = TRUE,
@@ -687,7 +796,7 @@ ViolinClippedBorders <- function(violin_list,
 
 
 
-RemoveAllZeros <- function(input_list) {
+RemoveIfOnlyZeros <- function(input_list) {
   lapply(input_list, function(x) {
     if (all(x == 0, na.rm = TRUE)) {
       0
@@ -725,6 +834,8 @@ SummaryBoxPlot <- function(input_df,
   if (set_mar) {
     old_mar <- par("mar" = use_mar)
   }
+
+  input_df <- ConsolidateControls(input_df, plates_df)
 
   control_mat <- PreparePlates(input_df, plates_df[plates_df[, "Colony_picked"], "Plate_name"])
   selected_mat <- PreparePlates(input_df, plate_names)
@@ -783,7 +894,7 @@ SummaryBoxPlot <- function(input_df,
   control_pos  <- group_positions - (controls_x_gap / 2)
   selected_pos <- group_positions + (controls_x_gap / 2)
 
-  RemoveAllZeros <- function(input_list) {
+  RemoveIfOnlyZeros <- function(input_list) {
     lapply(input_list, function(x) {
       if (all(x == 0, na.rm = TRUE)) {
         0
@@ -803,15 +914,15 @@ SummaryBoxPlot <- function(input_df,
   violin_border_width <- 1
 
   ViolinClippedBorders(control_list, control_pos, fill = TRUE,
-                       border_color = violin_colors[[1]],
+                       border_colors = violin_colors[[1]],
                        use_wex = violin_wex, use_lwd = violin_border_width
                        )
   ViolinClippedBorders(selected_list, selected_pos, fill = TRUE,
-                       border_color = violin_colors[[2]],
+                       border_colors = violin_colors[[2]],
                        use_wex = violin_wex, use_lwd = violin_border_width
                        )
 
-  vioplot(RemoveAllZeros(selected_list),
+  vioplot(RemoveIfOnlyZeros(selected_list),
           at       = selected_pos,
           pchMed   = NA,
           drawRect = FALSE,
@@ -822,7 +933,7 @@ SummaryBoxPlot <- function(input_df,
           axes     = FALSE
           )
 
-  vioplot(RemoveAllZeros(control_list),
+  vioplot(RemoveIfOnlyZeros(control_list),
           at       = control_pos,
           pchMed   = NA,
           drawRect = FALSE,
@@ -894,16 +1005,17 @@ SummaryBoxPlot <- function(input_df,
 
   ## Draw the superimposed borders of the violin plots
   ViolinClippedBorders(control_list, control_pos,
-                       border_color = violin_colors[[1]],
+                       border_colors = violin_colors[[1]],
                        use_wex = violin_wex, use_lwd = violin_border_width
                        )
   ViolinClippedBorders(selected_list, selected_pos,
-                       border_color = violin_colors[[2]],
+                       border_colors = violin_colors[[2]],
                        use_wex = violin_wex, use_lwd = violin_border_width,
                        clip_distance = 0.15
                        )
 
   ## Draw the superimposed box plots
+  assign("delete_control_list", control_list, envir = globalenv())
   CustomBoxPlot(control_list, control_pos, use_brewer_pals[[1]],
                 use_wex = box_wex, draw_whiskers = draw_whiskers
                 )
@@ -918,6 +1030,21 @@ SummaryBoxPlot <- function(input_df,
     par(old_mar)
   }
   return(invisible(NULL))
+}
+
+
+
+SummaryDfForPlates <- function(plate_names, use_summary_df) {
+  plates_list <- GetPlateSelection(plate_names)
+  plate_names <- plates_list[["plate_names"]]
+  plate_matches <- match(plate_names, plates_df[, "Plate_name"])
+  plate_numbers <- plates_df[["Plate_number"]][plate_matches]
+  summary_df <- use_summary_df[use_summary_df[["Plate_number"]] %in% plate_numbers, ]
+  results_list <- list(
+    "summary_df" = summary_df,
+    "title"      = plates_list[["title"]]
+  )
+  return(results_list)
 }
 
 
@@ -938,14 +1065,13 @@ SummaryStackedBars <- function(summary_df,
                                ) {
 
   ## Filter the input data frame
+  summary_df <- ConsolidateControls(summary_df, plates_df)
+  assign("delete_consolidate_df", summary_df, envir = globalenv())
   if (!(is.null(plate_names))) {
-    plates_list <- GetPlateSelection(plate_names)
-    plate_names <- plates_list[["plate_names"]]
-    plate_matches <- match(plate_names, plates_df[, "Plate_name"])
-    plate_numbers <- plates_df[["Plate_number"]][plate_matches]
-    summary_df <- summary_df[summary_df[["Plate_number"]] %in% plate_numbers, ]
+    filtered_list <- SummaryDfForPlates(plate_names, summary_df)
+    summary_df <- filtered_list[["summary_df"]]
     if (is.null(top_title)) {
-      top_title <- plates_list[["title"]]
+      top_title <- filtered_list[["title"]]
     }
   }
 
@@ -971,6 +1097,7 @@ SummaryStackedBars <- function(summary_df,
   counts_list <- c(list(summary_df[, "Count_total"]),
                    lapply(counts_mat_list, function(x) as.integer(rowSums(x)))
                    )
+  assign("delete_counts_list", counts_list, envir = globalenv())
   stopifnot(length(unique(counts_list)) == 1)
   rm(counts_list)
 
@@ -1003,11 +1130,10 @@ SummaryStackedBars <- function(summary_df,
   y_gap <- final_y_range * 0.02
   final_y_limits <- c(numeric_limits[[1]] - y_gap, numeric_limits[[2]] + y_gap)
 
+  ## Set up the plot canvas
   if (set_mar) {
     old_mar <- par("mar" = c(5, 5, 4, 8))
   }
-
-  ## Set up the plot canvas
   plot(1,
        xlim = group_limits,
        ylim = final_y_limits,
@@ -1115,6 +1241,205 @@ SummaryStackedBars <- function(summary_df,
   if (set_mar) {
     par(old_mar)
   }
+  return(invisible(NULL))
+}
+
+
+
+ReadCountsBoxPlot <- function(summary_df,
+                              plate_selections = list("CRISPRa", "CRISPRko"),
+                              x_labels_line    = 0.5,
+                              y_label_line     = 3,
+                              side_gap         = 0.5,
+                              embed_PNG        = FALSE
+                              ) {
+
+  ## Prepare data on read counts
+  selections_list <- lapply(plate_selections, function(x) {
+    summary_results <- SummaryDfForPlates(x, summary_df)
+    results_list <- c(list("count" = summary_results[["summary_df"]][, "Count_total"]),
+                      summary_results["title"]
+                      )
+    return(results_list)
+  })
+  counts_list <- lapply(selections_list, function(x) x[["count"]])
+  labels_vec <- vapply(selections_list, function(x) x[["title"]], "")
+  labels_vec <- sub("CRISPRko", "CRISPRo", labels_vec, fixed = TRUE)
+
+  ## Determine group positions
+  num_groups <- length(plate_selections)
+  group_positions <- seq_len(num_groups)
+  group_limits <- c((min(group_positions) - side_gap) - (num_groups * 0.04),
+                     max(group_positions) + side_gap  + (num_groups * 0.04)
+                    )
+
+  ## Prepare the data axis
+  y_span <- max(unlist(counts_list))
+  y_space <- y_span * 0.02
+  use_y_limits <- c(-y_space, y_span + y_space)
+
+  if (embed_PNG) {
+    PDF_mar <- par("mar")
+    PDF_device <- dev.cur()
+    temp_path <- file.path(file_output_directory, "temp.png")
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
+
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "transparent"
+        )
+
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
+    par(mar = rep(0, 4))
+  }
+
+  ## Set up the plot canvas
+  plot(1,
+       xlim = group_limits,
+       ylim = use_y_limits,
+       xaxs = "i",
+       yaxs = "i",
+       type = "n",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+  ## Prepare the plot colors
+  light_colors <- c("#FDE0EF", "#D1E5F0")
+  dark_colors <- c("#E44499", "#2363B2")
+  violin_colors <- vapply(seq_along(light_colors),
+                          function(x) colorRampPalette(c(light_colors[[x]], dark_colors[[x]]))(5)[[2]],
+                          ""
+                          )
+
+  ## Draw the violin plots (in the background)
+  vioplot(counts_list,
+          pchMed   = NA,
+          drawRect = FALSE,
+          col      = violin_colors,
+          border   = violin_colors,
+          wex      = 0.8,
+          add      = TRUE,
+          axes     = FALSE
+          )
+
+  ## Draw the x axis line
+  segments(x0  = par("usr")[[1]],
+           x1  = par("usr")[[2]] - ((par("usr")[[2]] - par("usr")[[1]]) * 0.005), # Prevent line end from being clipped (when embed_PNG is TRUE)
+           y0  = 0,
+           xpd = NA
+           )
+
+  ## Draw the jittered points
+  set.seed(1)
+  x_vec <- rep(group_positions, lengths(counts_list))
+  x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.06)
+  points(x   = x_vec,
+         y   = unlist(counts_list),
+         cex = 0.4,
+         col = rep(adjustcolor(dark_colors, alpha.f = 0.2), lengths(counts_list)),
+         pch = 16,
+         xpd = NA
+         )
+
+  if (embed_PNG) {
+    dev.off()
+    raster_array <- readPNG(temp_path)
+    file.remove(temp_path)
+    dev.set(PDF_device)
+    par(PDF_mar)
+
+    plot(1,
+         xlim = group_limits,
+         ylim = use_y_limits,
+         xaxs = "i",
+         yaxs = "i",
+         type = "n",
+         axes = FALSE,
+         ann  = FALSE
+         )
+
+    rasterImage(raster_array,
+                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
+                )
+  }
+
+  ## Draw the violins' borders
+  ViolinClippedBorders(counts_list,
+                       group_positions,
+                       border_colors = violin_colors,
+                       use_wex       = 0.8,
+                       use_quantiles = c(0, 1),
+                       clip_distance = 0.03
+                       )
+
+  ## Draw the boxplot whiskers
+  quantile_mat <- t(sapply(counts_list, quantile, probs = c(0.05, 0.95), na.rm = TRUE))
+  segments(x0   = group_positions,
+           y0   = quantile_mat[, 1],
+           y1   = quantile_mat[, 2],
+           col  = violin_colors,
+           lwd  = par("lwd") * 1.5,
+           lend = "butt",
+           xpd  = NA
+           )
+
+  ## Draw the superimposed box plots
+  boxplot(counts_list,
+          at         = group_positions,
+          boxwex     = 0.3,
+          outline    = FALSE,
+          names      = rep.int("", length(group_positions)),
+          whisklty   = "blank",
+          staplewex  = 0,
+          whisklwd   = 0,
+          staplelty  = 0,
+          medlwd     = par("lwd") * 2,
+          col        = light_colors,
+          border     = dark_colors,
+          add        = TRUE,
+          axes       = FALSE,
+          lwd        = par("lwd") * 1.5
+          )
+
+  ## Draw the y axis and x and y axis labels
+  axis(2,
+       mgp      = c(3, 0.38, 0),
+       gap.axis = 0,
+       tcl      = -0.3,
+       las      = 1,
+       lwd      = par("lwd")
+       )
+  mtext("Number of HiFi reads", side = 2, line = y_label_line, cex = par("cex"))
+
+  labels_splits <- strsplit(labels_vec, " ", fixed = TRUE)
+  labels_top <- sapply(labels_splits, "[", 1)
+  labels_bottom <- sapply(labels_splits, "[", 2)
+
+  mtext(sapply(labels_top, VerticalAdjust),
+        at   = seq_len(num_groups),
+        side = 1,
+        line = x_labels_line,
+        cex  = par("cex")
+        )
+
+  mtext(ifelse(is.na(labels_bottom),
+               NA,
+               sapply(labels_bottom, VerticalAdjust)
+               ),
+        at   = seq_len(num_groups),
+        side = 1,
+        line = x_labels_line + 1,
+        cex  = par("cex")
+        )
+
   return(invisible(NULL))
 }
 

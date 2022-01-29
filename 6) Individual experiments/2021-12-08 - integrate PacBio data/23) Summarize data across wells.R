@@ -10,6 +10,8 @@ plate1_directory      <- file.path(experiments_directory, "2020-08-29 - PacBio -
 s2r1_directory        <- file.path(experiments_directory, "2021-04-03 - PacBio - first Sequel-II run")
 R_functions_directory <- file.path(plate1_directory, "1) R functions")
 
+source(file.path(R_functions_directory, "02) Analyzing reads.R"))
+source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio reads.R"))
 source(file.path(R_functions_directory, "09) Producing heatmaps.R")) # For VerticalAdjust and related functions
 source(file.path(R_functions_directory, "20) Summarizing data across wells.R"))
 
@@ -29,7 +31,53 @@ manuscript_directory     <- file.path(s2rI_directory, "5) Output", "Figures", "M
 # Load data ---------------------------------------------------------------
 
 load(file.path(s2rI_R_objects_directory, "01) Process and export plate barcodes.RData"))
+load(file.path(s2rI_R_objects_directory, "04) Create reference sequences for each well - sg_sequences_df.RData"))
+load(file.path(s2rI_R_objects_directory, "09) Characterize contaminations (using aligned reads).RData"))
+load(file.path(s2rI_R_objects_directory, "10) Identify and characterize deletions.RData"))
 load(file.path(s2rI_R_objects_directory, "11) Process demultiplexed PacBio reads - ccs_df_lists.RData"))
+load(file.path(s2rI_R_objects_directory, "11) Process demultiplexed PacBio reads - plates_analysis_list.RData"))
+
+
+
+
+
+# Consolidate colony-picked control wells ---------------------------------
+
+manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
+
+use_reads_df <- SampleControlReads(plates_analysis_list[["individual_reads_df"]],
+                                   plates_df
+                                   )
+are_to_keep <- sg_sequences_df[, "Plate_number"] %in% use_reads_df[, "Plate_number"]
+sg_sequences_df <- sg_sequences_df[are_to_keep, ]
+
+use_analysis_list <- plates_analysis_list
+use_analysis_list[["individual_reads_df"]] <- use_reads_df
+use_analysis_list[["individual_reads_df"]][["Passed_filters"]] <- TRUE
+
+ccs3_zmws <- GetCCS3_ZMWs(use_analysis_list[["individual_reads_df"]])
+ccs7_zmws <- GetCCS7_ZMWs(use_analysis_list[["individual_reads_df"]])
+
+use_IDs <- intersect(sg_sequences_df[["Combined_ID"]], use_reads_df[["Combined_ID"]])
+
+ccs3_df_list <- SummarizeWells(use_analysis_list,
+                               use_zmws           = ccs3_zmws,
+                               ID_column          = "Combined_ID",
+                               unique_IDs         = sg_sequences_df[, "Combined_ID"],
+                               deletions_df       = deletions_df,
+                               aligned_contam_df  = contam_df,
+                               filter_cross_plate = TRUE
+                               )
+
+ccs7_df_list <- SummarizeWells(plates_analysis_list,
+                               use_zmws           = ccs7_zmws,
+                               ID_column          = "Combined_ID",
+                               unique_IDs         = sg_sequences_df[, "Combined_ID"],
+                               deletions_df       = deletions_df,
+                               aligned_contam_df  = contam_df,
+                               filter_cross_plate = TRUE
+                               )
+
 
 
 
@@ -49,7 +97,7 @@ plate_selection_list <- list(
 )
 
 plate_selection_titles_list <- list(
-  "All plates"    = "Both libraries",
+  "All plates" = "Both libraries",
   "CRISPRa"       = "CRISPRa library",
   "CRISPRko"      = "CRISPRko library"
 )
@@ -99,13 +147,13 @@ LollipopPlot(use_df,
              )
 
 LollipopPlot(use_df,
-             "All plates (second run)",
+             "All plates",
              c("Num_contaminated_reads"),
              use_y_limits = c(0, 0.05)
              )
 
 LollipopPlot(use_df,
-             "All plates (second run)",
+             "All plates",
              c("Num_reads_with_sgRNA_deletion",
                "Num_reads_with_deletions_exceeding_20bp",
                "Num_reads_with_deletions_spanning_tracrRNAs",
@@ -113,6 +161,8 @@ LollipopPlot(use_df,
                )
              )
 
+
+ReadCountsBoxPlot(use_df, c("CRISPRa", "CRISPRko"))
 
 SummaryStackedBars(use_df, "CRISPRa", consider_tracrRNAs = FALSE)
 SummaryStackedBars(use_df, "CRISPRko", consider_tracrRNAs = FALSE)
@@ -143,8 +193,9 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
 
     for (draw_figure in c("A", "C", "E", "F")) {
 
-      if (include_promoters && (!(draw_figure %in% c("A", "C")))) {
-        next
+      figure_prefix <- draw_figure
+      if (include_promoters) {
+        figure_prefix <- file.path("Not used", draw_figure)
       }
 
       if (draw_figure == "A") {
@@ -183,7 +234,7 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
         )
       }
 
-      file_name <- paste0(draw_figure, ") Box plot - ", selection_name, " - ", show_library, " library.pdf")
+      file_name <- paste0(figure_prefix, ") Box plot - ", selection_name, " - ", show_library, " library.pdf")
       pdf(file  = file.path(manuscript_directory,
                             if (include_promoters) "Fig. S4" else "Fig. 4",
                             "Individual plots",
@@ -242,8 +293,8 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
                      top_title_cex      = 1,
                      top_title_font     = 1,
                      set_mar            = FALSE,
-                     y_label_line       = 2.65,
                      x_labels_line      = 0.3,
+                     y_label_line       = 2.65,
                      small_y_gap        = 1,
                      lines_x_start      = 0.7,
                      large_gap_ratio    = 1.45,
@@ -252,6 +303,24 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
   par(old_par)
   dev.off()
 }
+
+
+
+# Export violin/box plots of total read counts ----------------------------
+
+pdf(file.path(manuscript_directory,  "Fig. S4", "Individual plots",
+              paste0("B) Read counts.pdf")
+              ),
+    width = 2.2, height = 1.7
+    )
+par(cex = 0.7, lwd = 0.8, mai = c(0.35, 0.47, 0.15, 0.5))
+ReadCountsBoxPlot(use_df, c("CRISPRa", "CRISPRko"),
+                  x_labels_line = 0.3,
+                  y_label_line  = 2.53,
+                  side_gap      = 0.5,
+                  embed_PNG     = TRUE
+                  )
+dev.off()
 
 
 
