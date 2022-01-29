@@ -59,19 +59,6 @@ export_metrics <- c("Num_contaminated_reads",
 
 # Define functions --------------------------------------------------------
 
-GetMinQuality <- function(input_integer) {
-  is_even <- (input_integer %% 2) == 0
-  num_nines <- ceiling(input_integer / 2)
-  digits_string <- paste0(rep("9", num_nines), collapse = "")
-  if (is_even) {
-    digits_string <- paste0(digits_string, "5")
-  }
-  final_number <- as.numeric(paste0("0.", digits_string))
-  return(final_number)
-}
-
-
-
 CustomSummarizeWells <- function(analysis_list, input_ccs_number, filter_cross_plate = FALSE) {
   required_objects <- c("sg_sequences_df", "contam_df", "deletions_df")
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
