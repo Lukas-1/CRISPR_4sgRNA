@@ -3,7 +3,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("Biostrings")
@@ -15,7 +14,6 @@ library("Biostrings")
 
 CRISPR_root_directory <- "~/CRISPR"
 plasmids_directory <- file.path(CRISPR_root_directory, "2) Input data", "Vectors")
-
 
 
 
@@ -35,7 +33,6 @@ after_seq <- seq(from = last_index + 1,
 after_lines <- plasmid_genbank_snapgene[after_seq]
 sequence_seq <- seq(from = first_index, to = last_index)
 sequence_lines <- plasmid_genbank_snapgene[sequence_seq]
-
 
 
 
@@ -174,8 +171,6 @@ ExportVectorsForGene <- function(symbol_or_entrez, CRISPR_df) {
   }
   return(invisible(NULL))
 }
-
-
 
 
 
