@@ -140,7 +140,7 @@ axis_labels <- c(
 
 for (var in manuscript_vars) {
   pdf(file.path(manuscript_directory, paste0("Shared sub-sequences - ", var, ".pdf")),
-      width = 3.9, height = 2.6
+      width = 3.8, height = 2.4
       )
   par(cex = 0.7, lwd = 0.8, mai = rep(0.5, 4))
   PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]],
