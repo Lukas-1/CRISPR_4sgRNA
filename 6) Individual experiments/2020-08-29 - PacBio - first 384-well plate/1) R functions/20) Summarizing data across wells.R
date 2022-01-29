@@ -1417,7 +1417,7 @@ ReadCountsBoxPlot <- function(summary_df,
        las      = 1,
        lwd      = par("lwd")
        )
-  mtext("Number of HiFi reads", side = 2, line = y_label_line, cex = par("cex"))
+  mtext("HiFi reads per well", side = 2, line = y_label_line, cex = par("cex"))
 
   labels_splits <- strsplit(labels_vec, " ", fixed = TRUE)
   labels_top <- sapply(labels_splits, "[", 1)
