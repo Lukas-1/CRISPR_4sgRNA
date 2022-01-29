@@ -2747,7 +2747,8 @@ DrawDeletionHistogram <- function(overview_df,
                                   use_breaks   = 100,
                                   box_type     = "l",
                                   use_y_max    = NULL,
-                                  box_color    = "black"
+                                  box_color    = "black",
+                                  abbreviate_1000 = FALSE
                                   ) {
 
   are_4sg <- overview_df[["In_4sg_library"]] %in% "Yes"
@@ -2789,6 +2790,9 @@ DrawDeletionHistogram <- function(overview_df,
   axis_ticks <- axTicks(1)
   old_scipen <- options(scipen = -1)
   axis_labels <- as.character(10^axis_ticks)
+  if (abbreviate_1000) {
+    axis_labels[axis_labels == "1000"] <- "10^3"
+  }
   axis_labels <- sub("e+0", "0^", axis_labels, fixed = TRUE)
   options(old_scipen)
 
@@ -2806,10 +2810,7 @@ DrawDeletionHistogram <- function(overview_df,
 
   box(bty = box_type, col = box_color)
 
-  title(use_title,
-        cex.main = 1,
-        line = 2.2
-        )
+  title(use_title, cex.main = 1, line = 2.2)
 
   plot_height <- par("usr")[[4]] - par("usr")[[3]]
 
@@ -3638,7 +3639,8 @@ DonutBars <- function(use_factor         = NULL,
          labels = paste0(pretty_pos, "%"),
          mgp    = c(3, 0.38, 0),
          tcl    = -0.3,
-         lwd    = par("lwd")
+         lwd    = par("lwd"),
+         gap.axis = 0.2
          )
 
     if (!(is.null(x_axis_label))) {
@@ -4873,7 +4875,7 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
           use_numeric_limits <- NULL
         }
 
-        make_wide <- (var_name == "Have_homologies") && filter_genes
+        make_wide <- FALSE #(var_name == "Have_homologies") && filter_genes
 
         if (make_wide) {
           pdf_width <- manuscript_wide_width
@@ -4884,20 +4886,14 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
         }
         sub_folder <- paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes")
         if (make_PNGs) {
-          png(file.path(use_folder,
-                        paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
-                        paste0(file_name, ".png")
-                        ),
+          png(file.path(use_folder, sub_folder, paste0(file_name, ".png")),
               width  = pdf_width,
               height = pdf_height,
               units  = "in",
               res    = 900
               )
         } else {
-          pdf(file.path(use_folder,
-                        paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes"),
-                        paste0(file_name, ".pdf")
-                        ),
+          pdf(file.path(use_folder, sub_folder,  paste0(file_name, ".pdf")),
               width = pdf_width,
               height = pdf_height
               )
