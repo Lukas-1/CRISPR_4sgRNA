@@ -130,8 +130,16 @@ for (include_promoters in c(FALSE, TRUE)) {
     } else if (show_library == "o") {
       current_summary_df <- CRISPRko_summary_df
     }
+    figure_prefix <- "B"
+    if (include_promoters) {
+      if (show_library == "a") {
+        figure_prefix <- "C"
+      } else {
+        figure_prefix <- "D"
+      }
+    }
     use_top_title <- paste0("CRISPR", show_library, " library")
-    use_file_name <- paste0("B) Sand chart - CRISPR", show_library, " library.pdf")
+    use_file_name <- paste0(figure_prefix, ") Sand chart - CRISPR", show_library, " library.pdf")
     pdf(file = file.path(manuscript_directory,
                          if (include_promoters) "Fig. S4" else "Fig. 4",
                          "Individual plots",
@@ -180,12 +188,17 @@ for (include_promoters in c(FALSE, TRUE)) {
 
     for (draw_figure in c("D", "E", "F")) {
 
-      if (include_promoters && (draw_figure != "D")) {
-        next
+      figure_prefix <- paste0(draw_figure, ") ")
+      if (include_promoters) {
+        if (draw_figure == "D") {
+          figure_prefix <- file.path("Not used", figure_prefix)
+        } else {
+          next
+        }
       }
 
       if (draw_figure == "D") {
-        use_file_name <- paste0(draw_figure, ") eCDF - polyclonal bonus")
+        use_file_name <- paste0(figure_prefix, "eCDF - polyclonal bonus")
         use_line_colors <- c("#4E4073", brewer.pal(9, "Blues")[[6]])
         if (include_promoters) {
           column_combo <- "4_guides_with_promoters"
@@ -193,14 +206,14 @@ for (include_promoters in c(FALSE, TRUE)) {
           column_combo <- "4_guides"
         }
       } else if (draw_figure == "E") {
-        use_file_name <- paste0(draw_figure, ") eCDF - deletions")
+        use_file_name <- paste0(figure_prefix, "eCDF - deletions")
         column_combo <- "Deletions"
         use_line_colors <- brewer.pal(9, "Blues")[c(9, 7)]
         use_line_colors[[3]] <- brewer.pal(9, "Oranges")[[6]]
       } else if (draw_figure == "F") {
-        use_file_name <- paste0(draw_figure, ") eCDF - contaminations")
+        use_file_name <- paste0(figure_prefix, "eCDF - contaminations")
         column_combo <- "Contaminations"
-        use_line_colors <- brewer.pal(9, "Blues")[[7]] #brewer.pal(9, "Set1")[[7]]
+        use_line_colors <- brewer.pal(9, "Blues")[[7]] # brewer.pal(9, "Set1")[[7]]
       }
 
       use_file_name <- paste0(use_file_name, " - CRISPR", show_library, " library.pdf")
@@ -233,7 +246,6 @@ for (include_promoters in c(FALSE, TRUE)) {
                 legend_pch            = 22,
                 lwd_multiplier        = 1.5
                 )
-
       par(old_par)
       dev.off()
     }
