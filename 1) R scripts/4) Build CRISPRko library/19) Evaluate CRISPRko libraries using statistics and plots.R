@@ -82,28 +82,25 @@ DrawAllManuscriptPlots(CRISPRko_figure_list)
 DrawAllManuscriptPlots(CRISPRko_figure_list, make_PNGs = TRUE)
 
 
-
 ## Draw the deletion histogram
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
-              paste0("Histogram - size of expected deletions", ".pdf")),
-    width = 3.4, height = 2.5
+              "Histogram - size of expected deletions.pdf"
+              ),
+    width = 2.4, height = 1.7 # width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex,
     lwd = manuscript_lwd,
-    mai = c(0.7,
-            manuscript_donut_args[["use_mai"]][[2]],
-            0.5,
-            manuscript_donut_args[["use_mai"]][[4]]
-            )
+    mai = c(0.45, 0.47, 0.1, 0.32) # c(0.7, 1, 0.5, 0.15)
     )
 hist_results <- DrawDeletionHistogram(sgRNAs_overview_df,
-                                      use_title    = "",
-                                      x_axis_label = "Size of expected deletion (base pairs)",
-                                      y_axis_label = "Number of genes",
-                                      fill_color   = "#3576c0", #colorRampPalette(CRISPRo_colors)(100)[[75]],
-                                      x_label_line = 1.8,
-                                      y_label_line = 2.53,
-                                      use_y_max    = 600
+                                      use_title       = "",
+                                      x_axis_label    = "Size of expected deletion (bp)",
+                                      y_axis_label    = "Number of genes",
+                                      fill_color      = "#3576c0", #colorRampPalette(CRISPRo_colors)(100)[[75]],
+                                      x_label_line    = 1.8,
+                                      y_label_line    = 2.53,
+                                      use_y_max       = 600,
+                                      abbreviate_1000 = TRUE
                                       )
 
 # text(x      = hist_results[["mids"]][which.max(hist_results[["counts"]])],
@@ -117,20 +114,28 @@ dev.off()
 
 
 
+
 ## Draw the gene deletions doughnut plot
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
-              paste0("Doughnut plots - CRISPRo plasmids", ".pdf")
+              "Doughnut plots - CRISPRo plasmids.pdf"
               ),
-    width = 3.4, height = 2.5
+    width = 3, height = 1.7 # width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
+new_donut_args <- list(space           = 0.3,
+                       use_mai         = c(0.05, 1, 0.4, 0.16),
+                       donut_radius    = 0.34,
+                       use_line_height = 0.72,
+                       donut_y_mid     = 0.35
+                       )
 do.call(SummaryDonutBar,
-        c(manuscript_donut_args,
+        c(manuscript_donut_args[!(names(manuscript_donut_args) %in% names(new_donut_args))],
           list(CRISPR_df    = merged_CRISPRko_df,
                targets_df   = guides_CDS_df,
                x_axis_label = "Genes in CRISPRo library",
                use_map_list = manuscript_map_list
-               )
+               ),
+          new_donut_args
           )
         )
 dev.off()
