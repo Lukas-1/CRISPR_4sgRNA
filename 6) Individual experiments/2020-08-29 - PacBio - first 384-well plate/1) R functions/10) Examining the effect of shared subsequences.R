@@ -45,7 +45,7 @@ use_vars <-  setdiff(names(titles_list), exclude_vars)
 
 MakeCorrTitle <- function(numeric_vec_1, numeric_vec_2, use_line = 0.75, bold_corr = TRUE, text_cex = 0.9) {
   corr_results <- cor.test(numeric_vec_1, numeric_vec_2)
-  corr_value <- as.character(signif(corr_results[["estimate"]], digits = 2))
+  corr_value <- formatC(corr_results[["estimate"]], digits = 2, format = "f")
   p_value <- format(signif(corr_results[["p.value"]], digits = 1), scientific = 8)
   if (bold_corr) {
     title_expression <- as.expression(bquote(
