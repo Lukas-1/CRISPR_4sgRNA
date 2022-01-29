@@ -50,7 +50,6 @@ sg_sequences_df[!(sg_sequences_df[["Combined_ID"]] %in% ccs_df[["Combined_ID"]])
 
 
 
-
 # Process the data on the level of individual reads -----------------------
 
 plates_analysis_list <- AnalyzePlates(ccs_df,
@@ -58,7 +57,6 @@ plates_analysis_list <- AnalyzePlates(ccs_df,
                                       barcodes_df,
                                       extracted_df
                                       )
-
 
 
 
@@ -90,14 +88,11 @@ ccs7_df_list <- SummarizeWells(plates_analysis_list,
 
 
 
-
-
 # Remove unnecessary data -------------------------------------------------
 
 ccs3_df_list <- ccs3_df_list[c("original_summary_df", "individual_reads_df")]
 stopifnot(identical(ccs7_df_list[["original_summary_df"]], ccs7_df_list[["filtered_summary_df"]]))
 ccs7_df_list <- ccs7_df_list[names(ccs7_df_list) != "original_summary_df"]
-
 
 
 
