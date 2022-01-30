@@ -1176,7 +1176,8 @@ SummaryStackedBars <- function(summary_df,
   mtext(text = "Percentage of reads", side = 2, line = y_label_line, cex = par("cex"))
 
   ## Prepare for drawing the bars
-  four_colors <- c("#F9F4EC", "#EE442F", "#63ACBE", "#601A4A", NA)
+  four_colors <- c("#F9F4EC", "#DB678B", colorRampPalette(brewer.pal(9, "Blues")[c(4, 5)])(5)[[2]], "#601A4A", NA)
+
   num_categories <- nrow(fractions_mat)
   lower_borders_vec_list <- lapply(seq_len(num_categories), function(x) {
     if (x == 1) {

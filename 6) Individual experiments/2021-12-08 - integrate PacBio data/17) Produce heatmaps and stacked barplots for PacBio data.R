@@ -114,6 +114,15 @@ table(c(CRISPRa_summary_df[, "Count_total"], CRISPRko_summary_df[, "Count_total"
 (nrow(CRISPRa_summary_df) + nrow(CRISPRko_summary_df))
 
 
+ValuesForQuantiles(CRISPRko_summary_df, "Count_sg1_cr1", 0.5)
+ValuesForQuantiles(CRISPRko_summary_df, "Count_sg2_cr2", 0.5)
+ValuesForQuantiles(CRISPRko_summary_df, "Count_sg3_cr3", 0.5)
+ValuesForQuantiles(CRISPRko_summary_df, "Count_sg4_cr4", 0.5)
+
+ValuesForQuantiles(CRISPRa_summary_df, "Count_sg1_cr1", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_sg2_cr2", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_sg3_cr3", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Count_sg4_cr4", 0.5)
 
 
 
@@ -209,7 +218,7 @@ for (include_promoters in c(FALSE, TRUE)) {
         use_file_name <- paste0(figure_prefix, "eCDF - deletions")
         column_combo <- "Deletions"
         use_line_colors <- brewer.pal(9, "Blues")[c(9, 7)]
-        use_line_colors[[3]] <- brewer.pal(9, "Oranges")[[6]]
+        use_line_colors[[3]] <- colorRampPalette(c("#FDAC87", "#DB678B"))(10)[[4]] #brewer.pal(9, "Oranges")[[6]]
       } else if (draw_figure == "F") {
         use_file_name <- paste0(figure_prefix, "eCDF - contaminations")
         column_combo <- "Contaminations"
