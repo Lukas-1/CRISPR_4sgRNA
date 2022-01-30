@@ -52,7 +52,6 @@ ccs7_title <- expression(plain({"Long-read sequencing of plasmids" *
 
 
 
-
 # Helper functions --------------------------------------------------------
 
 MakeEmptyPlot <- function(y_limits = c(0, 1), use_cex = NULL) {
