@@ -234,7 +234,7 @@ Get4sgFactor <- function(CRISPR_df) {
 
 CRISPRko_number_labels_list <- list(
 
-  "CRISPRo"= c(
+  "T.spiezzo"= c(
     "x" = 0.77, "y" = 0.72
   ),
 
@@ -280,7 +280,7 @@ CRISPRko_line_positions <- list(
 
 CRISPRa_number_labels_list <- list(
 
-  "CRISPRa"= c(
+  "T.gonfio"= c(
     "x" = 0.69, "y" = 0.80
   ),
 
