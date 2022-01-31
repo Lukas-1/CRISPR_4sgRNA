@@ -85,7 +85,7 @@ save(list = "CRISPRa_figure_list",
 
 # Export plots for the manuscript -----------------------------------------
 
-DrawAllManuscriptPlots(CRISPRa_figure_list)
+DrawAllManuscriptPlots(CRISPRa_figure_list, rename_libraries = TRUE)
 DrawAllManuscriptPlots(CRISPRa_figure_list, make_PNGs = TRUE)
 
 
@@ -104,7 +104,7 @@ par(cex = manuscript_cex, lwd = manuscript_lwd)
 do.call(TSSDonutBar,
         c(manuscript_donut_args[!(names(manuscript_donut_args) %in% c("use_mai", "bar_label_line", "donut_radius", "donut_y_mid"))],
           list(CRISPR_df       = merged_replaced_CRISPRa_df,
-               x_axis_label    = "Genes in CRISPRa library",
+               x_axis_label    = "Genes in T.gonfio library",
                use_labels      = 1:6,
                use_colors      = TSS_colors,
                use_mai         = c(0.2, 0.47, 0.4, 0.32),
@@ -125,7 +125,7 @@ dev.off()
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Doughnut plots - CRISPRa plasmids.pdf")
               ),
-    width = 3, height = 1.7 #width = 3.4, height = 2.5
+    width = 2.6, height = 1.7 #width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 new_donut_args <- list(space           = 0.3,
@@ -138,7 +138,7 @@ do.call(SummaryDonutBar,
         c(manuscript_donut_args[!(names(manuscript_donut_args) %in% names(new_donut_args))],
           list(CRISPR_df    = merged_replaced_CRISPRa_df,
                targets_df   = TSS_targets_df,
-               x_axis_label = "Plasmids in CRISPRa library",
+               x_axis_label = "Plasmids in T.gonfio library",
                use_map_list = manuscript_map_list,
                percent_max  = 100
                ),
@@ -146,7 +146,6 @@ do.call(SummaryDonutBar,
           )
         )
 dev.off()
-
 
 
 

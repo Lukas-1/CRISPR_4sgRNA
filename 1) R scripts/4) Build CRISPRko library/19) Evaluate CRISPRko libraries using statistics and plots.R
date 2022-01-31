@@ -78,7 +78,7 @@ BarPlot_Sources(merged_CRISPRko_df, "Are_overlapping")
 
 # Export plots for the manuscript -----------------------------------------
 
-DrawAllManuscriptPlots(CRISPRko_figure_list)
+DrawAllManuscriptPlots(CRISPRko_figure_list, rename_libraries = TRUE)
 DrawAllManuscriptPlots(CRISPRko_figure_list, make_PNGs = TRUE)
 
 
@@ -119,7 +119,7 @@ dev.off()
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               "Doughnut plots - CRISPRo plasmids.pdf"
               ),
-    width = 3, height = 1.7 # width = 3.4, height = 2.5
+    width = 2.6, height = 1.7 # width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 new_donut_args <- list(space           = 0.3,
@@ -132,14 +132,13 @@ do.call(SummaryDonutBar,
         c(manuscript_donut_args[!(names(manuscript_donut_args) %in% names(new_donut_args))],
           list(CRISPR_df    = merged_CRISPRko_df,
                targets_df   = guides_CDS_df,
-               x_axis_label = "Genes in CRISPRo library",
+               x_axis_label = "Genes in T.spiezzo library",
                use_map_list = manuscript_map_list
                ),
           new_donut_args
           )
         )
 dev.off()
-
 
 
 

@@ -3635,12 +3635,12 @@ DonutBars <- function(use_factor         = NULL,
                       )
 
     axis(if (bottom_axis) 1 else 3,
-         at     = actual_pos,
-         labels = paste0(pretty_pos, "%"),
-         mgp    = c(3, 0.38, 0),
-         tcl    = -0.3,
-         lwd    = par("lwd"),
-         gap.axis = 0.2
+         at       = actual_pos,
+         labels   = paste0(pretty_pos, "%"),
+         mgp      = c(3, 0.38, 0),
+         tcl      = -0.3,
+         lwd      = par("lwd"),
+         gap.axis = -1
          )
 
     if (!(is.null(x_axis_label))) {
@@ -3683,6 +3683,7 @@ ReverseList <- function(my_list) {
 DeletionsDonutBar <- function(deletions_summary_df, ...) {
   CategoriesDonutBar(as.character(deletions_summary_df[, "Gene_targets_summary"]), ...)
 }
+
 
 SummaryDonutBar <- function(CRISPR_df, targets_df, ...) {
   categories_vec <- Summarize4sgTargets(CRISPR_df, targets_df)
@@ -4253,7 +4254,8 @@ ManuscriptBars <- function(counts_mat,
                            use_mai              = NULL,
                            expected_SNP_percent = TRUE,
                            CRISPRa_colors       = manuscript_CRISPRa_colors,
-                           CRISPRo_colors       = manuscript_CRISPRo_colors
+                           CRISPRo_colors       = manuscript_CRISPRo_colors,
+                           rename_libraries     = FALSE
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -4261,9 +4263,15 @@ ManuscriptBars <- function(counts_mat,
   if ("Brunello" %in% colnames(counts_mat)) {
     modality_label <- "CRISPRo"
     use_colors <- manuscript_CRISPRo_colors
+    if (rename_libraries) {
+      group_names[group_names == "4sg"] <- "T.spiezzo"
+    }
   } else if ("Calabrese" %in% colnames(counts_mat)) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
+    if (rename_libraries) {
+      group_names[group_names == "4sg"] <- "T.gonfio"
+    }
     if (horizontal) {
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
@@ -4524,7 +4532,8 @@ ManuscriptViolinBox <- function(plot_df,
                                 abbreviate_libraries = TRUE,
                                 modality_on_bottom   = FALSE,
                                 CRISPRa_colors       = manuscript_CRISPRa_colors,
-                                CRISPRo_colors       = manuscript_CRISPRo_colors
+                                CRISPRo_colors       = manuscript_CRISPRo_colors,
+                                rename_libraries     = FALSE
                                 ) {
 
   ## Prepare colors and labels
@@ -4533,9 +4542,15 @@ ManuscriptViolinBox <- function(plot_df,
   if ("Brunello" %in% plot_df[["Group"]]) {
     modality_label <- "CRISPRo"
     use_colors <- CRISPRo_colors
+    if (rename_libraries) {
+      group_names[group_names == "4sg"] <- "T.spiezzo"
+    }
   } else if ("Calabrese" %in% plot_df[["Group"]]) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
+    if (rename_libraries) {
+      group_names[group_names == "4sg"] <- "T.gonfio"
+    }
     if (horizontal) {
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
@@ -4812,7 +4827,7 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
 
 
 
-DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
+DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_libraries = FALSE) {
 
   labels_list <- list(
     "Num_genes"                        = "Number of genes in library",
@@ -4929,7 +4944,8 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
                          use_cex              = manuscript_cex,
                          use_lwd              = manuscript_lwd,
                          CRISPRa_colors       = manuscript_CRISPRa_colors,
-                         CRISPRo_colors       = manuscript_CRISPRo_colors
+                         CRISPRo_colors       = manuscript_CRISPRo_colors,
+                         rename_libraries     = rename_libraries
                          )
         } else if (var_name %in% names(df_list)) {
           ManuscriptViolinBox(df_list[[var_name]],
@@ -4943,7 +4959,8 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE) {
                               use_cex              = manuscript_cex,
                               use_lwd              = manuscript_lwd,
                               CRISPRa_colors       = manuscript_CRISPRa_colors,
-                              CRISPRo_colors       = manuscript_CRISPRo_colors
+                              CRISPRo_colors       = manuscript_CRISPRo_colors,
+                              rename_libraries     = rename_libraries
                               )
         }
         dev.off()
