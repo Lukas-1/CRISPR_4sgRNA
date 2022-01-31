@@ -1249,6 +1249,7 @@ SummaryStackedBars <- function(summary_df,
 
 ReadCountsBoxPlot <- function(summary_df,
                               plate_selections = list("CRISPRa", "CRISPRko"),
+                              selection_labels = NULL,
                               x_labels_line    = 0.5,
                               y_label_line     = 3,
                               side_gap         = 0.5,
@@ -1264,8 +1265,9 @@ ReadCountsBoxPlot <- function(summary_df,
     return(results_list)
   })
   counts_list <- lapply(selections_list, function(x) x[["count"]])
-  labels_vec <- vapply(selections_list, function(x) x[["title"]], "")
-  labels_vec <- sub("CRISPRko", "CRISPRo", labels_vec, fixed = TRUE)
+  if (is.null(selection_labels)) {
+    selection_labels <- vapply(selections_list, function(x) x[["title"]], "")
+  }
 
   ## Determine group positions
   num_groups <- length(plate_selections)
@@ -1420,7 +1422,7 @@ ReadCountsBoxPlot <- function(summary_df,
        )
   mtext("HiFi reads per well", side = 2, line = y_label_line, cex = par("cex"))
 
-  labels_splits <- strsplit(labels_vec, " ", fixed = TRUE)
+  labels_splits <- strsplit(selection_labels, " ", fixed = TRUE)
   labels_top <- sapply(labels_splits, "[", 1)
   labels_bottom <- sapply(labels_splits, "[", 2)
 
