@@ -29,14 +29,14 @@ annotation_intermediate_files_directory <- file.path(CRISPR_root_directory, "4) 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
 load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
 
-load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the human genome.RData"))
 load(file.path(CRISPRko_RData_directory, "13) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRko_RData_directory, "14) Summarize the human secretome sub-library.RData"))
 CRISPRko_sgRNAs_overview_df    <- sgRNAs_overview_df
 CRISPRko_TF_overview_df        <- TF_overview_df
 CRISPRko_secretome_overview_df <- secretome_overview_df
 
-load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome - sgRNAs_overview_df.RData"))
+load(file.path(CRISPRa_RData_directory, "20) Create a gene-based summary of the human genome.RData"))
 load(file.path(CRISPRa_RData_directory, "21) Summarize the human transcription factor sub-library - TF_overview_df.RData"))
 load(file.path(CRISPRa_RData_directory, "22) Summarize the human secretome sub-library.RData"))
 CRISPRa_sgRNAs_overview_df    <- sgRNAs_overview_df
@@ -48,7 +48,6 @@ rm(sgRNAs_overview_df)
 
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
-
 
 
 
@@ -98,9 +97,6 @@ ArePresentInCRISPRDf <- function(entrez_IDs, CRISPR_df) {
 
 
 
-
-
-
 # Define the set of included genes ----------------------------------------
 
 TF_entrezs <- unique(c(CRISPRa_TF_overview_df[["Entrez_ID"]][!(is.na(CRISPRa_TF_overview_df[["Num_total"]]))],
@@ -112,7 +108,6 @@ secretome_entrezs <- unique(c(CRISPRa_secretome_overview_df[["Entrez_ID"]][!(is.
                               )
                             )
 all_entrezs <- unique(c(collected_entrez_IDs, TF_entrezs, secretome_entrezs))
-
 
 
 
@@ -146,7 +141,6 @@ present_genes_df <- data.frame(
 
 
 
-
 # Define subsets of genes -------------------------------------------------
 
 are_present_in_both    <- present_genes_df[["Are_present_CRISPRa"]] & present_genes_df[["Are_present_CRISPRko"]]
@@ -177,7 +171,6 @@ are_present_but_not_on_genome <- (present_genes_df[["Are_present_CRISPRa"]] |
 
 
 
-
 # Count the number of available genes -------------------------------------
 
 sum(are_present_in_both)
@@ -187,7 +180,6 @@ sum(present_genes_df[["Are_present_CRISPRko"]])
 sum(are_non_homologous_in_both)
 sum(present_genes_df[["Are_non_homologous_CRISPRa"]])
 sum(present_genes_df[["Are_non_homologous_CRISPRko"]])
-
 
 
 
@@ -208,7 +200,6 @@ present_genes_df[are_present_but_not_on_genome, ]
 
 present_genes_df[are_unspaced_CRISPRa, ]
 present_genes_df[are_unspaced_CRISPRko, ]
-
 
 
 
@@ -234,7 +225,6 @@ all_CRISPRa_df[CRISPRa_are_top4_mat[, "Are_chosen_4sg"] & !(CRISPRa_are_top4_mat
 
 
 
-
 # Examine problematic sgRNAs for CRISPRko ----------------------------------
 
 all_CRISPRko_df <- merged_CRISPRko_df[merged_CRISPRko_df[["Entrez_ID"]] %in% all_entrezs, ]
@@ -244,7 +234,6 @@ CRISPRko_are_top4_mat <- CRISPRkoAreTop4Mat(all_CRISPRko_df)
 show_columns_CRISPRko <- grep("TSS", show_columns_CRISPRa, value = TRUE, invert = TRUE)
 
 all_CRISPRko_df[CRISPRko_are_top4_mat[, "Are_top4"] & !(CRISPRko_are_top4_mat[, "Have_complete_guides"]), show_columns_CRISPRko]
-
 
 
 
@@ -264,13 +253,49 @@ length(unique_IDs_CRISPRko)
 
 
 
-
 # Filter the sublibraries for available genes -----------------------------
 
 sublibrary_filtered_df <- sublibrary_df[sublibrary_df[["Entrez_ID"]] %in% present_genes_df[["Entrez_ID"]][are_present_in_either], ]
 rownames(sublibrary_filtered_df) <- NULL
 
 table(sublibrary_filtered_df[["Sublibrary"]])
+
+
+
+
+
+
+# Count the number of plasmids with gRNAs derived from GPP ----------------
+
+load(file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData"))
+CRISPRa_by_well_df <- full_4sg_by_well_df
+load(file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData"))
+CRISPRko_by_well_df <- full_4sg_by_well_df
+rm(full_4sg_by_gene_df)
+rm(full_4sg_by_well_df)
+
+
+are_selected <- !((CRISPRa_by_well_df[["Is_obsolete"]] %in% "Yes") |
+                  (CRISPRa_by_well_df[["Is_control"]] %in% "Yes")
+                  )
+CRISPRa_use_df <- CRISPRa_by_well_df[are_selected, c("Combined_ID", "AltTSS_ID", "Source")]
+
+have_GPP_CRISPRa <- tapply(CRISPRa_use_df[["Source"]],
+                           factor(CRISPRa_use_df[["AltTSS_ID"]], levels = unique(CRISPRa_use_df[["AltTSS_ID"]])),
+                           function(x) any(x == "GPP")
+                           )
+table(have_GPP_CRISPRa)
+
+
+are_selected <- !((CRISPRko_by_well_df[["Is_obsolete"]] %in% "Yes") |
+                  (CRISPRko_by_well_df[["Is_control"]] %in% "Yes")
+                  )
+CRISPRko_use_df <- CRISPRko_by_well_df[are_selected, c("Combined_ID", "Source")]
+
+have_GPP_CRISPRko <- tapply(CRISPRko_use_df[["Source"]],
+                            factor(CRISPRko_use_df[["Combined_ID"]], levels = unique(CRISPRko_use_df[["Combined_ID"]])),
+                            function(x) any(x == "GPP")
+                            )
 
 
 
