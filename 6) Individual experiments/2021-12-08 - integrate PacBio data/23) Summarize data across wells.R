@@ -40,7 +40,6 @@ load(file.path(s2rI_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 
 
-
 # Consolidate colony-picked control wells ---------------------------------
 
 manhattan_dist_list <- MakeDistanceList(manhattan_distance = TRUE)
@@ -77,7 +76,6 @@ ccs7_df_list <- SummarizeWells(plates_analysis_list,
                                aligned_contam_df  = contam_df,
                                filter_cross_plate = TRUE
                                )
-
 
 
 
@@ -186,9 +184,9 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
 
     use_side_labels <- manuscript_side_labels
     if (show_library == "CRISPRa") {
-      use_side_labels[[2]][[2]] <- "CRISPRa"
+      use_side_labels[[2]][[2]] <- "T.gonfio"
     } else {
-      use_side_labels[[2]][[2]] <- "CRISPRo"
+      use_side_labels[[2]][[2]] <- "T.spiezzo"
     }
 
     for (draw_figure in c("A", "C", "E", "F")) {
@@ -285,10 +283,15 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
       width = 3.4, height = 1.75
       )
   old_par <- par(lwd = 0.8, cex = 0.7, mai = c(0.35, 0.5, 0.2, 0.95))
+  if (show_library == "CRISPRa") {
+    library_name <- "T.gonfio"
+  } else {
+    library_name <- "T.spiezzo"
+  }
   SummaryStackedBars(use_df,
                      show_library,
                      consider_tracrRNAs = TRUE,
-                     top_title          = paste0(sub("ko", "o", show_library, fixed = TRUE), " library"),
+                     top_title          = paste0(library_name, " library"),
                      top_title_line     = 0.3,
                      top_title_cex      = 1,
                      top_title_font     = 1,
@@ -305,7 +308,6 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
 }
 
 
-
 # Export violin/box plots of total read counts ----------------------------
 
 pdf(file.path(manuscript_directory,  "Fig. S4", "Individual plots",
@@ -315,13 +317,13 @@ pdf(file.path(manuscript_directory,  "Fig. S4", "Individual plots",
     )
 par(cex = 0.7, lwd = 0.8, mai = c(0.35, 0.47, 0.15, 0.5))
 ReadCountsBoxPlot(use_df, c("CRISPRa", "CRISPRko"),
+                  selection_labels = c("T.gonfio library", "T.spiezzo library"),
                   x_labels_line = 0.3,
                   y_label_line  = 2.4,
                   side_gap      = 0.5,
                   embed_PNG     = TRUE
                   )
 dev.off()
-
 
 
 

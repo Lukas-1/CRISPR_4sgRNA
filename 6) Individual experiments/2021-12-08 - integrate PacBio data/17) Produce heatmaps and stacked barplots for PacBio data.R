@@ -136,8 +136,10 @@ for (include_promoters in c(FALSE, TRUE)) {
 
     if (show_library == "a") {
       current_summary_df <- CRISPRa_summary_df
+      use_top_title <- "T.gonfio library"
     } else if (show_library == "o") {
       current_summary_df <- CRISPRko_summary_df
+      use_top_title <- "T.spiezzo library"
     }
     figure_prefix <- "B"
     if (include_promoters) {
@@ -147,7 +149,6 @@ for (include_promoters in c(FALSE, TRUE)) {
         figure_prefix <- "D"
       }
     }
-    use_top_title <- paste0("CRISPR", show_library, " library")
     use_file_name <- paste0(figure_prefix, ") Sand chart - CRISPR", show_library, " library.pdf")
     pdf(file = file.path(manuscript_directory,
                          if (include_promoters) "Fig. S4" else "Fig. 4",
@@ -190,10 +191,12 @@ for (include_promoters in c(FALSE, TRUE)) {
 
     if (show_library == "a") {
       current_summary_df <- CRISPRa_summary_df
+      use_top_title <- "T.gonfio library"
     } else if (show_library == "o") {
       current_summary_df <- CRISPRko_summary_df
+      use_top_title <- "T.spiezzo library"
     }
-    use_top_title <- paste0("CRISPR", show_library, " library")
+
 
     for (draw_figure in c("D", "E", "F")) {
 
