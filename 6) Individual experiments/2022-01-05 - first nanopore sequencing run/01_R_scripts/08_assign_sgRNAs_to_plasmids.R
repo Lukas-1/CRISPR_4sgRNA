@@ -384,39 +384,6 @@ median(counts_df[, "Count_unfiltered"])
 
 
 
-
-
-# Do stuff ----------------------------------------------------------------
-
-
-hist(counts_df[, "Count_unfiltered"], breaks = 200
-     )
-
-
-
-matches_vec <- match(sg_combos_vec, names(combo_plasmids_vec))
-are_present_2 <- (names(combo_plasmids_vec) %in% perfect_vec)[matches_vec]
-
-identical(are_present, are_present_2)
-
-are_discrepant
-
-discrepant_plasmids <- sg_sequences_df[are_discrepant, "Plasmid_ID"]
-discrepant_combos <- sg_combos_vec[are_discrepant]
-nano4_df[perfect_vec %in% discrepant_combos, ]
-
-
-(rowSums(are_unique_library_mat))[are_discrepant]
-
-View(counts_df[are_present_2 & !(are_present), ])
-
-table(counts_df[, "Count_perfect"] > 0) / nrow(counts_df)
-table(counts_df[, "Count_perfect"] > 0) / length(combo_plasmids_vec)
-
-
-
-
-
 # Save data ---------------------------------------------------------------
 
 save(nano_df,
