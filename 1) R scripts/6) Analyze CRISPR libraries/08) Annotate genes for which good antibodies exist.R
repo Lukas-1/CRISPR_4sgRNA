@@ -10,6 +10,7 @@ library("readxl")
 general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
+source(file.path(general_functions_directory, "32) Compiling data on essential genes.R"))
 
 
 
@@ -21,6 +22,7 @@ RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory  <- file.path(RData_directory, "2) CRISPRa")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")
+analysis_RData_directory <- file.path(RData_directory, "14) Analysis of CRISPR libraries")
 file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Analysis", "Alexa", "Antibodies")
 gene_lists_directory     <- file.path(CRISPR_root_directory, "2) Input data", "Gene lists")
 
@@ -47,32 +49,6 @@ rm(full_4sg_by_gene_df)
 original_4i_df <- data.frame(read_excel(file.path(gene_lists_directory, "4i_Antibodies_PelkmansLab.xlsx")),
                              stringsAsFactors = FALSE, check.names = FALSE
                              )
-
-
-
-
-# Define functions --------------------------------------------------------
-
-ReplaceNAs <- function(input_df) {
-  NA_columns <- c("Achilles_common", "CRISPR_common", "Hart_3_or_more_lines",
-                  "Hart_HeLa", "Blomen_HAP1_KBM7_intersect"
-                  )
-  no_entrez <- is.na(input_df[["Entrez_ID"]])
-  for (column_name in NA_columns) {
-    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
-                                      ifelse(no_entrez, "", "N/A"),
-                                      as.character(input_df[, column_name])
-                                      )
-  }
-
-  for (column_name in setdiff(names(input_df), NA_columns)) {
-    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
-                                      "",
-                                      as.character(input_df[, column_name])
-                                      )
-  }
-  return(input_df)
-}
 
 
 
@@ -294,8 +270,6 @@ all_genes_df <- data.frame(all_4sg_df,
 
 
 
-
-
 # Select surface proteins that are not expressed for CRISPRa FACS ---------
 
 are_CRISPRa <- all_genes_df[["CRISPRa_4sg"]] %in% "Yes"
@@ -316,7 +290,7 @@ FACS_df[["Randomized_rank"]] <- sample(seq_len(nrow(FACS_df)))
 shuffled_FACS_df <- FACS_df[order(FACS_df[["Randomized_rank"]]), ]
 row.names(shuffled_FACS_df) <- NULL
 
-export_FACS_df <- ReplaceNAs(shuffled_FACS_df)
+export_FACS_df <- ReplaceEssentialNAs(shuffled_FACS_df)
 
 write.table(export_FACS_df,
             file = file.path(file_output_directory, "CRISPRa_for_FACS.tsv"),
@@ -361,8 +335,8 @@ all_4i_4sg_df <- data.frame(
 
 # Replace NAs with empty strings ------------------------------------------
 
-export_4i_4sg_df <- ReplaceNAs(all_4i_4sg_df)
-export_all_genes_df <- ReplaceNAs(all_genes_df)
+export_4i_4sg_df <- ReplaceEssentialNAs(all_4i_4sg_df)
+export_all_genes_df <- ReplaceEssentialNAs(all_genes_df)
 
 
 
@@ -380,4 +354,15 @@ write.table(export_all_genes_df,
             file = file.path(file_output_directory, "All_4sg.tsv"),
             quote = FALSE, row.names = FALSE, sep = "\t"
             )
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = c("all_genes_df", "export_all_genes_df"),
+     file = file.path(analysis_RData_directory, "08) Annotate genes for which good antibodies exist.RData")
+     )
+
+
 

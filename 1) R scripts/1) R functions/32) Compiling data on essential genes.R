@@ -5,7 +5,6 @@
 
 # Define functions --------------------------------------------------------
 
-
 ProcessAchillesGenesDf <- function(genes_df) {
   # genes_df is a single column in the format A1BG (1) {1 being the Entrez ID}
 
@@ -193,6 +192,29 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
   }
 
   return(genes_df)
+}
+
+
+
+ReplaceEssentialNAs <- function(input_df) {
+  NA_columns <- c("Achilles_common", "CRISPR_common", "Hart_3_or_more_lines",
+                  "Hart_HeLa", "Blomen_HAP1_KBM7_intersect"
+                  )
+  no_entrez <- is.na(input_df[["Entrez_ID"]])
+  for (column_name in NA_columns) {
+    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
+                                      ifelse(no_entrez, "", "N/A"),
+                                      as.character(input_df[, column_name])
+                                      )
+  }
+
+  for (column_name in setdiff(names(input_df), NA_columns)) {
+    input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
+                                      "",
+                                      as.character(input_df[, column_name])
+                                      )
+  }
+  return(input_df)
 }
 
 
