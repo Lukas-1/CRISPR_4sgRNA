@@ -93,6 +93,7 @@ CRISPRaAreTop4Mat <- function(CRISPRa_df) {
     "Have_non_homologous_guides" = have_non_homologous_guides,
     "Have_valid_guides"          = have_non_homologous_guides & have_complete_guides
   )
+  results_mat <- cbind(results_mat, "Are_final_4sg" = are_valid_or_only_top4 & results_mat[, "Have_valid_guides"])
   ReportProblematic(results_mat, CRISPRa_df)
   return(results_mat)
 }
@@ -120,6 +121,7 @@ CRISPRkoAreTop4Mat <- function(CRISPRko_df) {
     "Have_non_homologous_guides" = have_non_homologous_guides,
     "Have_valid_guides"          = have_non_homologous_guides & have_complete_guides
   )
+  results_mat <- cbind(results_mat, "Are_final_4sg" = are_top4 & results_mat[, "Have_valid_guides"])
   ReportProblematic(results_mat, CRISPRko_df)
   return(results_mat)
 }
@@ -137,7 +139,7 @@ Are4sg <- function(CRISPR_df, sublibraries_entrezs_list, show_messages = TRUE) {
   }
   ShowProblematicGuides(targeting_df, are_top4_mat, show_messages = show_messages)
   are_4sg <- are_targeting
-  are_4sg[are_targeting] <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
+  are_4sg[are_targeting] <- are_top4_mat[, "Are_final_4sg"]
   return(are_4sg)
 }
 
@@ -187,9 +189,8 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat, show_messages =
     problematic_df <- NULL
   }
 
-  are_valid_top4 <- top4_mat[, "Are_chosen_4sg"] & top4_mat[, "Have_valid_guides"]
-  num_unique_genes <- length(unique(targeting_CRISPR_df[["Entrez_ID"]][are_valid_top4]))
-  num_combos <- sum(are_valid_top4) / 4
+  num_unique_genes <- length(unique(targeting_CRISPR_df[["Entrez_ID"]][top4_mat[, "Are_final_4sg"]]))
+  num_combos <- sum(top4_mat[, "Are_final_4sg"]) / 4
   show_message <- paste0("\nThe 4sg library targets ", num_unique_genes,
                          " unique genes"
                          )
@@ -198,7 +199,7 @@ ShowProblematicGuides <- function(targeting_CRISPR_df, top4_mat, show_messages =
   if (is_CRISPRko) {
     stopifnot(num_unique_genes == num_combos)
   } else {
-    num_unique_TSSs <- length(unique(targeting_CRISPR_df[["AltTSS_ID"]][are_valid_top4]))
+    num_unique_TSSs <- length(unique(targeting_CRISPR_df[["AltTSS_ID"]][top4_mat[, "Are_final_4sg"]]))
     stopifnot(num_unique_TSSs == num_combos)
     show_message <- paste0(show_message, " and ", num_unique_TSSs, " unique ",
                            "transcription start sites (TSSs)"
@@ -705,8 +706,7 @@ AllocateAllGuides_v2 <- function(CRISPR_df,
   }
   ShowProblematicGuides(targeting_df, are_top4_mat)
 
-  are_valid_chosen <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
-  targeting_df <- targeting_df[are_valid_chosen, ]
+  targeting_df <- targeting_df[are_top4_mat[, "Are_final_4sg"], ]
   targeting_df <- AddSublibrary(targeting_df, sublibraries_entrezs_list)
   targeting_df <- AssignToPlates(targeting_df, num_wells_per_plate = num_wells_per_plate)
   targeting_df <- ReorderPlates(targeting_df)
@@ -811,9 +811,7 @@ AllocateAllGuidesToPlates <- function(CRISPR_df,
 
   ShowProblematicGuides(targeting_df, are_top4_mat)
 
-  are_valid_chosen <- are_top4_mat[, "Are_chosen_4sg"] & are_top4_mat[, "Have_valid_guides"]
-
-  targeting_df <- targeting_df[are_valid_chosen, ]
+  targeting_df <- targeting_df[are_top4_mat[, "Are_final_4sg"], ]
   targeting_df <- AddSublibrary(targeting_df, sublibraries_entrezs_list)
   targeting_df <- AssignToPlates(targeting_df)
 
