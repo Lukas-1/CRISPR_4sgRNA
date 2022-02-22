@@ -13,7 +13,6 @@ source(file.path(general_functions_directory, "22) Generating statistics and plo
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory       <- "~/CRISPR"
@@ -26,7 +25,6 @@ previous_versions_directory <- file.path(RData_directory, "5) Previous versions 
 
 
 
-
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
@@ -35,7 +33,6 @@ load(file.path(general_RData_directory, "17) Read in additional gene lists.RData
 load(file.path(CRISPRa_RData_directory, "19) For problematic genes, pick 4 guides without reference to the TSS.RData"))
 load(file.path(CRISPRa_RData_directory, "24) Find all TSSs targeted by each sgRNA - summary data.RData"))
 load(file.path(CRISPRa_RData_directory, "25) Export libraries to .tsv files - TF_v1_CRISPRa_df.RData"))
-
 
 
 
@@ -115,7 +112,6 @@ sum(are_selected_TSSs) # Number of TSSs targeted by the library
 table(sg4_allTFs_df[["Num_TSSs"]][!(are_controls) & are_unique_gene] >= 2) # Number of genes with multiple TSSs
 
 table(full_4sg_by_well_df[["Is_control"]]) / 4 # Number of controls
-
 
 
 
@@ -202,7 +198,6 @@ for (i in 1:4) {
 
 
 
-
 # Export sparse data / only the most important columns --------------------
 
 export_columns <- c("Sublibrary_4sg", "Plate_number", "Well_number",
@@ -216,7 +211,6 @@ ExportPlates(full_4sg_by_well_df,
              add_colors  = FALSE,
              add_primers = FALSE
              )
-
 
 
 
