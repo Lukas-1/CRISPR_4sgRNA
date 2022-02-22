@@ -3,7 +3,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("Biostrings")
@@ -77,6 +76,7 @@ FeaturesListToDf <- function(features_list) {
                             features_mat,
                             stringsAsFactors = FALSE
                             )
+  return(features_df)
 }
 
 
