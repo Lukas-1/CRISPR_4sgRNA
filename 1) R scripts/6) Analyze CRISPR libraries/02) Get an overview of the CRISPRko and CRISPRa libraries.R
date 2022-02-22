@@ -76,7 +76,6 @@ ArePresentInCRISPRDf <- function(entrez_IDs, CRISPR_df) {
     are_top4_mat <- CRISPRkoAreTop4Mat(CRISPR_df)
   }
 
-
   present_entrezs        <- unique(CRISPR_df[["Entrez_ID"]])
   complete_entrezs       <- unique(CRISPR_df[["Entrez_ID"]][are_top4_mat[, "Have_complete_guides"]])
   non_homologous_entrezs <- unique(CRISPR_df[["Entrez_ID"]][are_top4_mat[, "Have_non_homologous_guides"]])
@@ -267,19 +266,7 @@ table(sublibrary_filtered_df[["Sublibrary"]])
 
 # Count the number of plasmids with gRNAs derived from GPP ----------------
 
-load(file.path(CRISPRa_RData_directory, "28) Distribute sgRNAs for the whole genome onto plates.RData"))
-CRISPRa_by_well_df <- full_4sg_by_well_df
-load(file.path(CRISPRko_RData_directory, "20) Distribute sgRNAs for the whole genome onto plates.RData"))
-CRISPRko_by_well_df <- full_4sg_by_well_df
-rm(full_4sg_by_gene_df)
-rm(full_4sg_by_well_df)
-
-
-are_selected <- !((CRISPRa_by_well_df[["Is_obsolete"]] %in% "Yes") |
-                  (CRISPRa_by_well_df[["Is_control"]] %in% "Yes")
-                  )
-CRISPRa_use_df <- CRISPRa_by_well_df[are_selected, c("Combined_ID", "AltTSS_ID", "Source")]
-
+CRISPRa_use_df <- all_CRISPRa_df[CRISPRa_are_top4_mat[, "Are_final_4sg"], c("Combined_ID", "AltTSS_ID", "Source")]
 have_GPP_CRISPRa <- tapply(CRISPRa_use_df[["Source"]],
                            factor(CRISPRa_use_df[["AltTSS_ID"]], levels = unique(CRISPRa_use_df[["AltTSS_ID"]])),
                            function(x) any(x == "GPP")
@@ -287,15 +274,13 @@ have_GPP_CRISPRa <- tapply(CRISPRa_use_df[["Source"]],
 table(have_GPP_CRISPRa)
 
 
-are_selected <- !((CRISPRko_by_well_df[["Is_obsolete"]] %in% "Yes") |
-                  (CRISPRko_by_well_df[["Is_control"]] %in% "Yes")
-                  )
-CRISPRko_use_df <- CRISPRko_by_well_df[are_selected, c("Combined_ID", "Source")]
+CRISPRko_use_df <- all_CRISPRko_df[CRISPRko_are_top4_mat[, "Are_final_4sg"], c("Combined_ID", "Source")]
 
 have_GPP_CRISPRko <- tapply(CRISPRko_use_df[["Source"]],
                             factor(CRISPRko_use_df[["Combined_ID"]], levels = unique(CRISPRko_use_df[["Combined_ID"]])),
                             function(x) any(x == "GPP")
                             )
+table(have_GPP_CRISPRko)
 
 
 
