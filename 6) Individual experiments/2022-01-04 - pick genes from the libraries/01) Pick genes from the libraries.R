@@ -50,8 +50,8 @@ TidySgDf <- function(sg_df) {
                                    sg_df[, "Combined_ID"],
                                    sg_df[, "Gene_symbol"]
                                    )
-  plate_string_splits <- strsplit(sg_df[, "Plate_string"], "_", fixed = TRUE)
   sg_df[, "Coords_96wp"] <- ConvertWellNumbers(sg_df[, "Well_number"])
+  plate_string_splits <- strsplit(sg_df[, "Plate_string"], "_", fixed = TRUE)
   sg_df[, "Plate_number"] <- sapply(plate_string_splits, "[[", 2)
   use_columns <- intersect(CRISPRa_columns, names(sg_df))
   sg_df <- sg_df[sg_df[, "Rank"] == 1, use_columns]
