@@ -67,7 +67,7 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
 
 
 
-ProcessDEMETERDataDf <- function(data_df) {
+ProcessDEMETERDataDf <- function(data_df, check_replacements = TRUE) {
   stopifnot(all(c("depmap_samples_df", "DEMETER2_samples_df") %in% ls(envir = globalenv())))
 
   new_order <- order(as.integer(sub("ACH-", "", data_df[[1]])))
@@ -83,7 +83,9 @@ ProcessDEMETERDataDf <- function(data_df) {
   replaced_names <- DEMETER_names[have_no_match]
   stopifnot(!(anyNA(replaced_names)))
   replaced_names <- toupper(replaced_names)
-  stopifnot(!(any(replaced_names %in% depmap_samples_df[["stripped_cell_line_name"]])))
+  if (check_replacements) {
+    stopifnot(!(any(replaced_names %in% depmap_samples_df[["stripped_cell_line_name"]])))
+  }
 
   colnames(data_mat) <- ifelse(have_no_match,
                                replaced_names,
@@ -114,7 +116,6 @@ ProcessDEMETERDataDf <- function(data_df) {
     stringsAsFactors = FALSE,
     row.names = NULL
   )
-
 
   expanded_df <- expanded_df[order(expanded_df[["Entrez_ID"]]), ]
   row.names(expanded_df) <- NULL
