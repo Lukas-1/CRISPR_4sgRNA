@@ -241,7 +241,6 @@ export_df <- export_df[, !(names(export_df) %in% omit_columns)]
 
 
 
-
 # Export data -------------------------------------------------------------
 
 write.csv(export_df,
