@@ -789,9 +789,6 @@ CreateCrossContamMat <- function(contamin_mat_list, well_numbers_vec, wells_vec 
   cross_contam_mat <- do.call(cbind, lapply(1:4, function(sg_number) {
     use_mat <- counts_wells_mat_list[[sg_number]]
     sub_mat <- t(mapply(function(x, y) {
-      assign("delete_x", x, envir = globalenv())
-      assign("delete_y", y, envir = globalenv())
-      assign("delete_use_mat", use_mat, envir = globalenv())
       x_index <- wells_vec == x
       y_index <- wells_vec == y
       c(use_mat[x_index, y_index], use_mat[y_index, x_index])
