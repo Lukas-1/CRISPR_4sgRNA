@@ -346,6 +346,7 @@ sg1_matches_sg4 <- (nano4_df[, "Plasmid_sg1"] == nano4_df[, "Plasmid_sg4"])
 double_switch <- sg1_matches_sg4 & (nano4_df[, "Num_template_switches"] > 0)
 table(double_switch) / nrow(nano4_df)
 sum(nano4_df[, "Plasmid_sg1"] == nano4_df[, "Plasmid_sg4"]) / nrow(nano4_df)
+sum(double_switch) / sum(sg1_matches_sg4)
 
 
 ## When including only ideal reads (with four recognized sgRNAs that all map
@@ -381,6 +382,26 @@ sum(counts_df[, "Count_unfiltered"] > 0) / nrow(counts_df)
 sum(counts_df[, "Count_unfiltered"] >= 100) / nrow(counts_df)
 sum(counts_df[, "Count_unfiltered"] >= 50) / nrow(counts_df)
 median(counts_df[, "Count_unfiltered"])
+
+
+
+
+sg2_matches_sg3 <- (nano4_df[, "Plasmid_sg2"] == nano4_df[, "Plasmid_sg3"])
+switch_outside <- sg2_matches_sg3 & (nano4_df[, "Num_template_switches"] > 0)
+table(switch_outside) / nrow(nano4_df)
+table(nano4_df[, "Num_template_switches"][switch_outside])
+sum(nano4_df[, "Plasmid_sg2"] == nano4_df[, "Plasmid_sg3"]) / nrow(nano4_df)
+sum(switch_outside) / sum(sg2_matches_sg3)
+
+
+sg3_matches_sg4 <- (nano4_df[, "Plasmid_sg3"] == nano4_df[, "Plasmid_sg4"])
+switch_outside <- sg3_matches_sg4 & (nano4_df[, "Num_template_switches"] > 0)
+table(switch_outside) / nrow(nano4_df)
+sum(nano4_df[, "Plasmid_sg3"] == nano4_df[, "Plasmid_sg4"]) / nrow(nano4_df)
+sum(switch_outside) / sum(sg3_matches_sg4)
+
+
+sum(nano4_df[, "Plasmid_sg1"] != nano4_df[, "Plasmid_sg2"]) / nrow(nano4_df)
 
 
 
