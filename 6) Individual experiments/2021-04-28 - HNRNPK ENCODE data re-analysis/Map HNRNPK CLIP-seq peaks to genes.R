@@ -195,8 +195,6 @@ WriteTable <- function(export_df, file_path) {
 
 
 
-
-
 # Explore data ------------------------------------------------------------
 
 table(HepG2_IDR_df[["name"]])
@@ -209,7 +207,6 @@ table(K562_IDR_df[["name"]])
 
 HepG2_peaks_df <- ReformatNarrowPeaks(HepG2_IDR_df)
 K562_peaks_df <- ReformatNarrowPeaks(K562_IDR_df)
-
 
 
 
@@ -270,12 +267,10 @@ for (i in seq_along(change_symbols)) {
 
 
 
-
 # Find overlaps with peaks ------------------------------------------------
 
 HepG2_CLIPseq_df <- AnnotatePeaks(HepG2_peaks_df, use_transcripts_df)
 K562_CLIPseq_df  <- AnnotatePeaks(K562_peaks_df, use_transcripts_df)
-
 
 
 
@@ -289,7 +284,6 @@ WriteTable(HepG2_CLIPseq_df,
 WriteTable(K562_CLIPseq_df,
            file.path(file_output_directory, "K562_CLIPseq_peaks.tsv")
            )
-
 
 
 
