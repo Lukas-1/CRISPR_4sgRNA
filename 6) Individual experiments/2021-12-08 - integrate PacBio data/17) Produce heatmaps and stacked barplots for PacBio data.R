@@ -20,7 +20,7 @@ s2rI_directory           <- file.path(experiments_directory, "2021-12-08 - integ
 s2rI_R_objects_directory <- file.path(s2rI_directory, "3) R objects")
 file_output_directory    <- file.path(s2rI_directory, "5) Output")
 plots_output_directory   <- file.path(file_output_directory, "Figures")
-# PNGs_output_directory    <- file.path(file_output_directory, "PNGs")
+PNGs_output_directory    <- file.path(file_output_directory, "PNGs")
 across_plate_directory   <- file.path(plots_output_directory, "Sand and eCDF charts - all plates combined")
 manuscript_directory     <- file.path(plots_output_directory, "Manuscript")
 
@@ -343,7 +343,7 @@ for (i in 1:4) {
 
 use_plate_numbers <- unique(library_df[["Plate_number"]])
 
-DrawBarplotsAndHeatmapsForAllPlates(export_PNGs = FALSE)
+DrawBarplotsAndHeatmapsForAllPlates(export_PNGs = TRUE)
 
 
 

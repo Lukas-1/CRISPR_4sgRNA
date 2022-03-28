@@ -21,8 +21,8 @@ s2rI_directory           <- file.path(experiments_directory, "2021-12-08 - integ
 p1_R_objects_directory   <- file.path(plate1_directory, "3) R objects")
 s2rI_R_objects_directory <- file.path(s2rI_directory, "3) R objects")
 file_output_directory    <- file.path(s2rI_directory, "5) Output")
-plots_output_directory   <- file.path(file_output_directory, "Figures", "Schematics")
-# PNGs_output_directory    <- file.path(file_output_directory, "PNGs", "Schematics")
+plots_output_directory   <- file.path(file_output_directory, "Figures", "Schemas")
+PNGs_output_directory    <- file.path(file_output_directory, "PNGs", "Schemas")
 
 
 
@@ -48,7 +48,7 @@ sg_sequences_df[["Empty_well"]] <- FALSE
 
 use_plate_numbers <- plates_df[["Plate_number"]]#[order(plates_df[["Plate_rank"]])]
 
-DrawSchematicsForAllPlates(export_PNGs = FALSE)
+DrawSchematicsForAllPlates(export_PNGs = TRUE)
 
 
 

@@ -23,6 +23,7 @@ s2rI_directory           <- file.path(experiments_directory, "2021-12-08 - integ
 s2rI_R_objects_directory <- file.path(s2rI_directory, "3) R objects")
 file_output_directory    <- file.path(s2rI_directory, "5) Output")
 plots_output_directory   <- file.path(file_output_directory, "Figures", "Compare plates")
+PNGs_output_directory    <- file.path(file_output_directory, "PNGs", "Compare plates")
 
 
 
@@ -61,7 +62,7 @@ DrawAllPlateComparisons(use_cex          = 0.175,
                         side_space       = -3.5,
                         use_width        = 22,
                         use_height       = 6.5,
-                        export_PNGs      = FALSE,
+                        export_PNGs      = TRUE,
                         exclude_controls = TRUE
                         )
 

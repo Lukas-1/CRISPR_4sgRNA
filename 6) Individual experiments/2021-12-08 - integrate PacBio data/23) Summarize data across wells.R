@@ -23,8 +23,7 @@ s2rI_directory           <- file.path(experiments_directory, "2021-12-08 - integ
 s2rI_R_objects_directory <- file.path(s2rI_directory, "3) R objects")
 file_output_directory    <- file.path(s2rI_directory, "5) Output", "Figures", "Summaries across wells")
 manuscript_directory     <- file.path(s2rI_directory, "5) Output", "Figures", "Manuscript")
-
-# PNGs_output_directory    <- file.path(s2rI_directory, "5) Output", "PNGs", "Summaries across wells")
+PNGs_output_directory    <- file.path(s2rI_directory, "5) Output", "PNGs", "Summaries across wells")
 
 
 
@@ -335,7 +334,7 @@ DrawAllSummaryBarPlots()
 
 # Export lollipop plots and violin/box plots ------------------------------
 
-DrawAllLollipopsAndViolins(export_PNGs = FALSE)
+DrawAllLollipopsAndViolins(export_PNGs = TRUE)
 
 
 
