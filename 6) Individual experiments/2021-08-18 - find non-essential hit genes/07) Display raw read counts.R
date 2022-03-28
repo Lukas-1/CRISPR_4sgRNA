@@ -346,22 +346,22 @@ ExportPNGsForGene <- function(gene_symbol,
     file_name <- paste0(gene_number, ") ", file_name)
   }
 
-  png(file = file.path(plots_directory,
-                       "Horizontal",
-                       sub_folder,
-                       paste0(file_name, ".png")
-                       ),
+  png(filename = file.path(plots_directory,
+                           "Horizontal",
+                           sub_folder,
+                           paste0(file_name, ".png")
+                           ),
       width = 9.5, height = 4.2,
       units = "in", res = 600
       )
   HorizontalCountsForGene(gene_symbol)
   dev.off()
 
-  png(file = file.path(plots_directory,
-                       "Vertical",
-                       sub_folder,
-                       paste0(file_name, ".png")
-                       ),
+  png(filename = file.path(plots_directory,
+                           "Vertical",
+                           sub_folder,
+                           paste0(file_name, ".png")
+                           ),
       width = 4.7, height = 7,
       units = "in", res = 600
       )

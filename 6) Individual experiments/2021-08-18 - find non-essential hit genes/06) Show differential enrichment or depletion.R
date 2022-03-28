@@ -484,11 +484,11 @@ AllHitStrengthScatters <- function(input_df_1,
     for (i in seq_along(selection_names)) {
       if (use_device == "png") {
         file_name <- paste0(folder_name, " - ", letters[[i]], ") ", selection_names[[i]])
-        png(file   = file.path(folder_path, paste0(file_name, ".png")),
-            width  = use_width,
-            height = use_height,
-            units  = "in",
-            res    = 600
+        png(filename = file.path(folder_path, paste0(file_name, ".png")),
+            width    = use_width,
+            height   = use_height,
+            units    = "in",
+            res      = 600
             )
       }
       HitStrengthScatter(input_df_1, input_df_2,
@@ -801,10 +801,6 @@ All3BeeBoxes <- function(add_to_file_name, symbols_list = NULL, brewers_vec = NU
 
   return(invisible(NULL))
 }
-
-
-
-
 
 
 

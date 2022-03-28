@@ -419,7 +419,7 @@ DrawHistogram <- function(numeric_vec,
 for (make_PNG in c(TRUE, FALSE)) {
 
   if (make_PNG) {
-    png(file = file.path(file_output_directory, "Histograms - gene effects.png"),
+    png(filename = file.path(file_output_directory, "Histograms - gene effects.png"),
         height = 6, width = 8, units = "in", res = 900
         )
   }
