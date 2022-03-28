@@ -769,7 +769,7 @@ DrawSchematicsForAllPlates <- function(export_PNGs = TRUE) {
       use_df_list <- get(paste0("ccs", ccs_numbers[[i]], "_df_list"))
 
       filter_stages <- c("original_summary_df", "filtered_summary_df", "filtered_cross_plate_df")
-      filter_labels <- c("i) unfiltered", "ii) filtered", "iii) filtered cross-plate")
+      filter_labels <- c("i) unfiltered", "ii) filtered", "iii) cross-plate")
       df_are_present <- filter_stages %in% names(use_df_list)
       filter_stages <- filter_stages[df_are_present]
       filter_labels <- filter_labels[df_are_present]
