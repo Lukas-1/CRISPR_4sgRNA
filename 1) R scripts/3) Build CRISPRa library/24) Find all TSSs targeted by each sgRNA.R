@@ -40,7 +40,6 @@ are_to_replace <- (merged_replaced_CRISPRa_df[["Entrez_ID"]] %in% "7795") &
                   (merged_replaced_CRISPRa_df[["Gene_symbol"]] %in% "MEMO1")
 merged_replaced_CRISPRa_df[["Entrez_ID"]][are_to_replace] <- "51072"
 
-
 nearby_list <- AlignSummaryDf(FindNearbyTSSs,
                               merged_replaced_CRISPRa_df,
                               all_TSS_df
