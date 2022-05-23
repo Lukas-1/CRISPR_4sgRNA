@@ -55,7 +55,7 @@ MixColors <- function (rcol_in) {
 
 
 
-Rotate <- function (x, y = NULL, mx = NULL, my = NULL, theta = pi/3, asp = 1) {
+Rotate <- function(x, y = NULL, mx = NULL, my = NULL, theta = pi/3, asp = 1) {
   ## Adapted from DescTools::Rotate()
   xy <- xy.coords(x, y)
   if (is.null(mx))
@@ -196,7 +196,7 @@ ThreeSetsVenn <- function(use_factor,
       if (is_combo && !(grepl(",", combo, fixed = TRUE))) {
         use_label <- combo
         if (use_label %in% c("GPPa", "GPPo")) {
-          use_label <- "GPP"
+          use_label <- "CRISPick"
         }
         y_distance <- (par("usr")[[4]] - par("usr")[[3]]) * 0.048
         text(x = x_pos, y = y_pos + y_distance, labels = use_label, font = 2)
@@ -204,6 +204,9 @@ ThreeSetsVenn <- function(use_factor,
       }
       if (combo %in% names(number_table)) {
         draw_text <- number_table[[combo]]
+        if (draw_text >= 10000) {
+          draw_text <- FormatThousands(draw_text)
+        }
       } else {
         draw_text <- combo
       }
@@ -234,7 +237,7 @@ Get4sgFactor <- function(CRISPR_df) {
 
 CRISPRko_number_labels_list <- list(
 
-  "T.spiezzo"= c(
+  "T.spiezzo" = c(
     "x" = 0.77, "y" = 0.72
   ),
 
@@ -247,7 +250,7 @@ CRISPRko_number_labels_list <- list(
   ),
 
   "GPPo" = c(
-    "x" = 0.42, "y" = 0.75
+    "x" = 0.42, "y" = 0.73
   ),
 
   "Brunello, TKOv3" = c(
@@ -293,7 +296,7 @@ CRISPRa_number_labels_list <- list(
   ),
 
   "GPPa" = c(
-    "x" = 0.3694435, "y" = 0.6985547
+    "x" = 0.385, "y" = 0.6985547
   ),
 
   "Calabrese, hCRISPRa-v2" = c(
