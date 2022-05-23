@@ -33,7 +33,6 @@ load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 
 
 
-
 # Find overlapping genes for 4sg combinations (predicted deletions) -------
 
 are_4sg <- Are4sg(merged_CRISPRko_df, sublibraries_all_entrezs_list)
