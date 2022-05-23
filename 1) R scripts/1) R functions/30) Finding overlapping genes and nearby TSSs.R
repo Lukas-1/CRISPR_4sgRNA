@@ -84,19 +84,12 @@ PrepareTSSDf <- function(TSS_df,
 
 
 
-FindNearbyTSSs <- function(CRISPR_df,
-                           input_TSS_df,
-                           only_protein_coding = FALSE,
-                           only_best_TSS = FALSE
-                           ) {
+FindNearbyTSSs <- function(CRISPR_df, input_TSS_df, ...) {
 
   stopifnot(!(anyNA(CRISPR_df[["Entrez_ID"]])))
   stopifnot(!(any(grepl(",", CRISPR_df[["Entrez_ID"]], fixed = TRUE))))
 
-  TSS_df <- PrepareTSSDf(input_TSS_df,
-                         only_protein_coding = only_protein_coding,
-                         only_best_TSS = only_best_TSS
-                         )
+  TSS_df <- PrepareTSSDf(input_TSS_df, ...)
 
   stopifnot(!(anyNA(TSS_df[["Chromosome"]])))
 
@@ -234,10 +227,10 @@ PrepareGenesDf <- function(genes_df,
 
 FindOverlappingGenes <- function(CRISPR_df,
                                  input_genes_df,
-                                 only_protein_coding       = FALSE,
-                                 exclude_pseudogenes       = TRUE,
-                                 only_known_gene_type      = TRUE,
-                                 require_Entrez_ID         = FALSE
+                                 only_protein_coding  = FALSE,
+                                 exclude_pseudogenes  = TRUE,
+                                 only_known_gene_type = TRUE,
+                                 require_Entrez_ID    = FALSE
                                  ) {
 
 
