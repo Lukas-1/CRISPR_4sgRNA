@@ -80,17 +80,21 @@ ExportSharedDf(shared_sgRNAs_df,
 
 
 
+
+
+
+
 # Export the whole-genome plate layouts -----------------------------------
 
 ExportPlates(sg4_by_gene_df,
              "All_sublibraries_ordered_by_gene",
              use_sub_folder,
-             add_primers = FALSE
+             add_primers = TRUE
              )
 ExportPlates(sg4_by_well_df,
              "All_sublibraries_ordered_by_well",
              use_sub_folder,
-             add_primers = FALSE
+             add_primers = TRUE
              )
 
 
