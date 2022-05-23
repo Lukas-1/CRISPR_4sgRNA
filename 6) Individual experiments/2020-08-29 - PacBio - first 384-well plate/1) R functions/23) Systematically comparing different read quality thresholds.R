@@ -211,12 +211,12 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
     cur_mai <- par("mar") * 0.2
     temp_width <- use_width - sum(cur_mai[c(2, 4)])
     temp_height <- use_height - sum(cur_mai[c(1, 3)])
-    png(file   = temp_path,
-        width  = temp_width,
-        height = temp_height,
-        units  = "in",
-        res    = 900,
-        bg     = "transparent"
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "transparent"
         )
     par(mar = rep(0, 4))
   }
@@ -429,11 +429,11 @@ DrawAllCutoffComparisons <- function(export_PNGs = TRUE) {
             file_name <- paste0(plate_selection_prefixes[[j]],
                                 ") ", plate_selection, ".png"
                                 )
-            png(file   = file.path(sub_folder_path, file_name),
-                width  = use_width,
-                height = use_height,
-                units  = "in",
-                res    = 600
+            png(filename = file.path(sub_folder_path, file_name),
+                width    = use_width,
+                height   = use_height,
+                units    = "in",
+                res      = 600
                 )
           }
           ViolinBoxAllCutoffs(summary_list_list,
