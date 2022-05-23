@@ -243,7 +243,7 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
       SummaryBoxPlot(use_df,
                      plate_names        = plate_selection_list[[show_library]],
                      use_columns        = names(custom_labels),
-                     custom_title       = "",
+                     custom_title       = if (show_library == "CRISPRa") "T.gonfio library" else "T.spiezzo library",
                      title_line         = 0.5,
                      title_cex          = 1,
                      bottom_labels_list = custom_labels,
