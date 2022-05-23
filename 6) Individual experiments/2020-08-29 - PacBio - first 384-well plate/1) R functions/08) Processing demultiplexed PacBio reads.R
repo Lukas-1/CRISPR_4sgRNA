@@ -526,10 +526,20 @@ CreateSummaryDf <- function(reads_df,
   has_alterations <- "sg1_category" %in% names(reads_df)
   if (has_alterations) {
     alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
+
     deletion_columns <- c(paste0("Deletion_sg", 1:4), paste0("Deletion_sg", 1:4, "_cr", 1:4))
     have_any_deletion <- as.integer(rowSums(alterations_mat[, deletion_columns]) >= 1)
+
+    sg_only_mut_columns <- paste0("Mutation_sg", 1:4)
+    have_sg_only_mutation <- as.integer(rowSums(alterations_mat[, sg_only_mut_columns]) >= 1)
+
+    sg_cr_mut_columns <- paste0("Mutation_sg", 1:4, "_cr", 1:4)
+    have_sg_cr_mutation <- as.integer(rowSums(alterations_mat[, sg_cr_mut_columns]) >= 1)
+
     alterations_mat <- cbind(alterations_mat,
-                             "Num_reads_with_sgRNA_deletion" = have_any_deletion
+                             "Num_reads_with_sgRNA_deletion"       = have_any_deletion,
+                             "Num_reads_with_mutation_in_sg_only"  = have_sg_only_mutation,
+                             "Num_reads_with_mutation_in_sg_or_cr" = have_sg_cr_mutation
                              )
     alterations_vec_list <- tapply(seq_len(nrow(reads_df)),
                                    wells_fac,
