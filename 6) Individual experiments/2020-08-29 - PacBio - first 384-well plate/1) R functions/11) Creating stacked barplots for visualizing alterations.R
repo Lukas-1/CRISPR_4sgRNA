@@ -101,6 +101,10 @@ eCDF_combos_list <- list(
     "Num_reads_with_deletions_exceeding_20bp"     = expression("Any deletion", "(" >= "20 bp)"),
     "Num_reads_with_deletions_spanning_tracrRNAs" = c("Deletion", "spanning", "tracrRNAs"),
     "Num_reads_with_deletions_spanning_promoters" = c("Deletion", "spanning", "promoters")
+  ),
+  "Mutations" = list(
+    "Num_reads_with_mutation_in_sg_or_cr" = c("Mutation", "(sgRNAs +", "tracrRNAs)"),
+    "Num_reads_with_mutation_in_sg_only"  = c("Mutation", "(sgRNAs", "only)")
   )
 )
 
