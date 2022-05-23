@@ -87,6 +87,40 @@ ccs7_df_list <- SummarizeWells(plates_analysis_list,
                                )
 
 
+reads_df <- plates_analysis_list[["individual_reads_df"]]
+alterations_mat <- AlterationCategoriesToIntegerMat(reads_df)
+deletion_columns <- c(paste0("Deletion_sg", 1:4), paste0("Deletion_sg", 1:4, "_cr", 1:4))
+have_any_deletion <- rowSums(alterations_mat[, deletion_columns]) >= 1
+onlydel_plates_analysis_list <- list(
+  "individual_reads_df" = reads_df[have_any_deletion, ]
+)
+row.names(onlydel_plates_analysis_list[["individual_reads_df"]]) <- NULL
+onlydel_zmws <- intersect(onlydel_plates_analysis_list[["individual_reads_df"]][, "ZMW"], ccs3_zmws)
+onlydel_ccs3_df_list <- SummarizeWells(onlydel_plates_analysis_list,
+                                       use_zmws           = onlydel_zmws,
+                                       ID_column          = "Combined_ID",
+                                       unique_IDs         = sg_sequences_df[["Combined_ID"]],
+                                       deletions_df       = deletions_df,
+                                       aligned_contam_df  = contam_df,
+                                       filter_cross_plate = TRUE
+                                       )
+
+source(file.path(R_functions_directory, "11) Creating stacked barplots for visualizing alterations.R"))
+load(file.path(s2rI_R_objects_directory, "01) Process and export plate barcodes.RData"))
+
+
+CRISPRa_plate_numbers  <- plates_df[grepl("^HA", plates_df[, "Plate_name"]), "Plate_number"]
+CRISPRko_plate_numbers <- plates_df[grepl("^HO", plates_df[, "Plate_name"]), "Plate_number"]
+
+use_summary_df <- onlydel_ccs3_df_list[["original_summary_df"]]
+use_summary_df <- use_summary_df[use_summary_df[, "Count_total"] > 0, ]
+CRISPRa_summary_df  <- use_summary_df[use_summary_df[, "Plate_number"] %in% CRISPRa_plate_numbers, ]
+CRISPRko_summary_df <- use_summary_df[use_summary_df[, "Plate_number"] %in% CRISPRko_plate_numbers, ]
+
+mean(ColumnToCDFVec(use_summary_df, "Count_at_least_3"))
+mean(ColumnToCDFVec(use_summary_df, "Count_at_least_2"))
+mean(ColumnToCDFVec(use_summary_df, "Count_at_least_1"))
+
 
 # Remove unnecessary data -------------------------------------------------
 
@@ -94,6 +128,35 @@ ccs3_df_list <- ccs3_df_list[c("original_summary_df", "individual_reads_df")]
 stopifnot(identical(ccs7_df_list[["original_summary_df"]], ccs7_df_list[["filtered_summary_df"]]))
 ccs7_df_list <- ccs7_df_list[names(ccs7_df_list) != "original_summary_df"]
 
+
+
+
+# Summarize the median read counts ----------------------------------------
+
+load(file.path(s2rI_R_objects_directory, "01) Process and export plate barcodes.RData"))
+
+summary_df <- ccs7_df_list[["filtered_summary_df"]]
+
+CRISPRa_plate_numbers  <- plates_df[grepl("^HA", plates_df[, "Plate_name"]), "Plate_number"]
+CRISPRko_plate_numbers <- plates_df[grepl("^HO", plates_df[, "Plate_name"]), "Plate_number"]
+
+summary_df <- summary_df[summary_df[, "Plate_number"] %in% c(CRISPRa_plate_numbers, CRISPRko_plate_numbers), ]
+row.names(summary_df) <- NULL
+
+median(summary_df[["Count_total"]])
+sum(summary_df[["Count_total"]] >= 10) / nrow(summary_df)
+sum(summary_df[["Count_total"]] > 1) / nrow(summary_df)
+
+table((summary_df[["Perc_at_least_1"]] > 50) %in% TRUE)
+table(is.na(summary_df[["Perc_at_least_1"]]))
+
+
+summary_df <- ccs3_df_list[["original_summary_df"]]
+summary_df <- summary_df[summary_df[, "Plate_number"] %in% c(CRISPRa_plate_numbers, CRISPRko_plate_numbers), ]
+row.names(summary_df) <- NULL
+
+table((summary_df[["Perc_at_least_1"]] > 50))
+table(is.na(summary_df[["Perc_at_least_1"]]))
 
 
 
