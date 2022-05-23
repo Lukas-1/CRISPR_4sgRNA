@@ -3497,6 +3497,8 @@ DonutBars <- function(use_factor         = NULL,
     }
   }
 
+
+
   if (show_percentages) {
     percentages_vec <- counts_vec / sum(counts_vec) * 100
     percentages_strings <- rep(NA, length(percentages_vec))
@@ -3505,9 +3507,10 @@ DonutBars <- function(use_factor         = NULL,
     percentages_strings[are_single_digit] <- format(percentages_vec[are_single_digit], digits = 2)
     percentages_strings[percentages_vec > 10] <- round(percentages_vec[percentages_vec > 10])
     percentages_strings[percentages_vec > 99] <- round(percentages_vec[percentages_vec > 99], digits = 1)
-    count_labels <- paste0(counts_vec, " (", percentages_strings, "%)")
+    count_labels <- ifelse(counts_vec >= 10000, vapply(counts_vec, format, big.mark = "-", ""), counts_vec)
+    count_labels <- FormatPlotMath(paste0(count_labels, " (", percentages_strings, "%)"))
   } else {
-    count_labels <- counts_vec
+    count_labels <- ifelse(counts_vec >= 10000, FormatThousands(counts_vec), counts_vec)
   }
 
   num_bars <- length(counts_vec)
@@ -3637,7 +3640,7 @@ DonutBars <- function(use_factor         = NULL,
     axis(if (bottom_axis) 1 else 3,
          at       = actual_pos,
          labels   = paste0(pretty_pos, "%"),
-         mgp      = c(3, 0.38, 0),
+         mgp      = c(3, 0.3, 0),
          tcl      = -0.3,
          lwd      = par("lwd"),
          gap.axis = -1
@@ -3645,13 +3648,13 @@ DonutBars <- function(use_factor         = NULL,
 
     if (!(is.null(x_axis_label))) {
       mtext(x_axis_label, side = if (bottom_axis) 1 else 3,
-            line = 1.7, cex = par("cex")
+            line = 1.5, cex = par("cex")
             )
     }
   }
 
   if (!(is.null(y_axis_label))) {
-    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2.53), from = "lines", to = "user")),
+    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2.53), from = "lines", to = "user")), # 2.53
          y      = grconvertY(0.5, from = "npc", to = "user"),
          labels = VerticalAdjust(y_axis_label),
          srt    = 90,
@@ -4140,8 +4143,11 @@ ManuscriptAnnotate <- function(group_positions,
                                colored_modality   = FALSE,
                                modality_on_top    = FALSE,
                                modality_on_side   = FALSE,
-                               modality_on_bottom = FALSE
+                               modality_on_bottom = FALSE,
+                               diagonal_labels    = TRUE
                                ) {
+
+  old_lheight <- par("lheight" = 0.8)
 
   if (horizontal) {
     mtext(group_names, line = 0.35, at = group_positions, side = 2, las = 2,
@@ -4149,9 +4155,10 @@ ManuscriptAnnotate <- function(group_positions,
           )
   } else {
     text(x      = group_positions,
-         y      = par("usr")[[3]] - diff(grconvertY(c(0, 0.44), from = "lines", to = "user")),
+         y      = par("usr")[[3]] - diff(grconvertY(c(0, if (diagonal_labels) 0.05 else 0.44), from = "lines", to = "user")),
          labels = group_names,
-         adj    = c(0.5, 1),
+         adj    = if (diagonal_labels) c(1, 1) else c(0.5, 1),
+         srt    = if (diagonal_labels) 45 else 0,
          xpd    = NA
          )
   }
@@ -4167,8 +4174,8 @@ ManuscriptAnnotate <- function(group_positions,
   } else {
     if (modality_on_top) {
       text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.5),
-           y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.78), from = "lines", to = "user")),
-           labels = modality_label,
+           y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.715), from = "lines", to = "user")),
+           labels = FormatPlotMath(modality_label, vertical_adjust = TRUE),
            col    = modality_color,
            xpd    = NA
            )
@@ -4202,6 +4209,8 @@ ManuscriptAnnotate <- function(group_positions,
          adj    = c(0.5, 0)
          )
   }
+  par(old_lheight)
+  return(invisible(NULL))
 }
 
 
@@ -4235,6 +4244,57 @@ ManuscriptGrid <- function(horizontal = TRUE) {
 }
 
 
+RenameLibraries <- function(group_names, modality) {
+  if (modality == "CRISPRko") {
+    rename_vec <- c(
+      "4sg"         = "T.spiezzo",
+      "Brunello"    = "Brunello",
+      "TKOv3"       = "TKOv3"
+    )
+  } else if (modality == "CRISPRa") {
+    rename_vec <- c(
+      "4sg"         = "T.gonfio",
+      "Calabrese"   = "Calab\n-rese",
+      "hCRISPRa-v2" = "hCRISP\nRa-v2"
+    )
+  } else {
+    stop("Unexpected input!")
+  }
+  rename_vec <- c(rename_vec, c("GPP" = "CRISPick"))
+  results_vec <- unname(rename_vec[group_names])
+  return(results_vec)
+}
+
+
+FormatPlotMath <- function(char_vec, vertical_adjust = FALSE) {
+
+  if (any(grepl("\"", char_vec, fixed = TRUE))) {
+    stop("The FormatPlotMath function does not support input strings with double quotation marks!")
+  }
+
+  replace_strings <- c(
+    "-"  = "\" * scriptscriptstyle(\" \") * \""
+  )
+
+  if (vertical_adjust) {
+    char_vec <- paste0("phantom(gh) * \"", char_vec, "\" * phantom(gh)")
+  } else {
+    char_vec <- paste0("phantom() * \"", char_vec, "\" * phantom()")
+  }
+  for (sub_string in names(replace_strings)) {
+    char_vec <- gsub(sub_string, replace_strings[[sub_string]], char_vec)
+  }
+  results_vec <- sapply(char_vec, function(x) parse(text = x), USE.NAMES = FALSE)
+  return(results_vec)
+}
+
+
+FormatThousands <- function(numeric_vec) {
+  stopifnot(is.numeric(numeric_vec))
+  char_vec <- vapply(numeric_vec, format, big.mark = "-", "")
+  results_expression <- sapply(char_vec, FormatPlotMath)
+  return(results_expression)
+}
 
 
 ManuscriptBars <- function(counts_mat,
@@ -4261,18 +4321,17 @@ ManuscriptBars <- function(counts_mat,
   ## Prepare colors, percentages and labels
   group_names <- colnames(counts_mat)
   if ("Brunello" %in% colnames(counts_mat)) {
-    modality_label <- "CRISPRo"
+    modality_label <- "CRISPRko"
     use_colors <- manuscript_CRISPRo_colors
     if (rename_libraries) {
-      group_names[group_names == "4sg"] <- "T.spiezzo"
+      group_names <- RenameLibraries(group_names, modality_label)
     }
   } else if ("Calabrese" %in% colnames(counts_mat)) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
     if (rename_libraries) {
-      group_names[group_names == "4sg"] <- "T.gonfio"
-    }
-    if (horizontal) {
+      group_names <- RenameLibraries(group_names, modality_label)
+    } else if (horizontal) {
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
       group_names[group_names == "hCRISPRa-v2"] <- "hCa-v2"
@@ -4439,23 +4498,25 @@ ManuscriptBars <- function(counts_mat,
                      horizontal,
                      use_colors,
                      modality_on_side = modality_on_side,
-                     modality_on_bottom = modality_on_bottom
+                     modality_on_bottom = modality_on_bottom,
+                     diagonal_labels = rename_libraries
                      )
   box(bty = "l")
 
   ## Annotate the bars with fractions (counts)
   if (one_row) {
+    bar_labels <- FormatThousands(bars_mat[1, ])
     if (horizontal) {
       text(y      = group_positions,
            x      = par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.045),
-           labels = bars_mat[1, ],
+           labels = bar_labels,
            adj    = c(0, 0.5),
            xpd    = NA
            )
     } else {
       text(x      = group_positions,
            y      = par("usr")[[4]] + ((par("usr")[[4]] - par("usr")[[3]]) * 0.1),
-           labels = bars_mat[1, ],
+           labels = bar_labels,
            xpd    = NA
            )
     }
@@ -4468,8 +4529,14 @@ ManuscriptBars <- function(counts_mat,
       dividends <- RoundSmallPercentages(counts_mat[1, ])
       divisors <- counts_mat[2, ]
     }
-
     line_widths <- strwidth(divisors)
+    if (is.integer(dividends)) {
+      dividends <- FormatThousands(dividends)
+    } else {
+      dividends <- FormatPlotMath(dividends)
+    }
+    divisors <- FormatThousands(divisors)
+
     if (horizontal) {
       x_position <- par("usr")[[2]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.15)
       y_fraction <- (par("usr")[[4]] - par("usr")[[3]]) * 0.055
@@ -4492,7 +4559,7 @@ ManuscriptBars <- function(counts_mat,
            )
     } else {
 
-      y_position <- par("usr")[[4]] + diff(grconvertY(c(0, 1.25), from = "lines", to = "user"))
+      y_position <- par("usr")[[4]] + diff(grconvertY(c(0, 1.05), from = "lines", to = "user"))
       y_fraction <- diff(grconvertY(c(0, 0.456), from = "lines", to = "user"))
       text(x      = group_positions,
            y      = y_position - y_fraction,
@@ -4540,18 +4607,17 @@ ManuscriptViolinBox <- function(plot_df,
   num_groups <- nlevels(plot_df[["Groups_factor"]])
   group_names <- levels(plot_df[["Group"]])
   if ("Brunello" %in% plot_df[["Group"]]) {
-    modality_label <- "CRISPRo"
+    modality_label <- "CRISPRko"
     use_colors <- CRISPRo_colors
     if (rename_libraries) {
-      group_names[group_names == "4sg"] <- "T.spiezzo"
+      group_names <- RenameLibraries(group_names, modality_label)
     }
   } else if ("Calabrese" %in% plot_df[["Group"]]) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
     if (rename_libraries) {
-      group_names[group_names == "4sg"] <- "T.gonfio"
-    }
-    if (horizontal) {
+      group_names <- RenameLibraries(group_names, modality_label)
+    } else if (horizontal) {
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
       group_names[group_names == "hCRISPRa-v2"] <- "hCa-v2"
@@ -4727,9 +4793,16 @@ ManuscriptViolinBox <- function(plot_df,
                      modality_on_bottom = modality_on_bottom
                      )
 
+  if (one_group) {
+    group_size_labels <- paste0("(", format(group_sizes[[1]], big.mark = "-"), ")")
+    group_size_labels <- FormatPlotMath(group_size_labels)
+  } else {
+    group_size_labels <- FormatThousands(group_sizes)
+  }
+
   text(x      = if (one_group) par("usr")[[2]] else group_positions,
-       y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.78), from = "lines", to = "user")),
-       labels = if (one_group) paste0("(", group_sizes[[1]], ")") else group_sizes,
+       y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.715), from = "lines", to = "user")),
+       labels = group_size_labels,
        adj    = if (one_group) c(1, 0.5) else 0.5,
        xpd    = NA
        )
@@ -4881,7 +4954,7 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
           } else {
             file_name <- paste0(file_name, " - absolute number")
             if (filter_genes) {
-              use_numeric_limits <- c(0, 1200)
+              use_numeric_limits <- c(0, 1250)
             } else {
               next
             }
@@ -4899,6 +4972,7 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
           pdf_width <- horizontal_width
           pdf_height <- horizontal_height
         }
+        pdf_height <- pdf_height + 0.1
         sub_folder <- paste0("Comparison - ", if (filter_genes) "filtered genes" else "all genes")
         if (make_PNGs) {
           png(file.path(use_folder, sub_folder, paste0(file_name, ".png")),
@@ -4927,8 +5001,9 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
           use_mai <- vertical_mai
           use_mai[[1]] <- use_mai[[1]] + PNG_increment
         } else {
-          use_mai <- NULL
+          use_mai <- vertical_mai
         }
+        use_mai[[1]] <- use_mai[[1]] + 0.1
 
         if (var_name %in% names(mat_list)) {
           ManuscriptBars(mat_list[[var_name]],
@@ -4996,10 +5071,17 @@ TSSHistogram <- function(distances_vec,
                          omit_outside_x_range = FALSE,
                          highlight_range      = c(-500, 500),
                          highlight_color      = brewer.pal(9, "Purples")[[2]],
+                         label_range          = TRUE,
                          modality_text        = "range for CRISPRoff",
                          make_plot            = TRUE,
                          use_y_max            = NULL,
-                         use_title            = NULL
+                         use_title            = NULL,
+                         draw_grid            = TRUE,
+                         hardcoded_x_axis     = TRUE,
+                         x_label_line         = 2.4,
+                         x_axis_mgp           = 0.7,
+                         y_axis_mgp           = 0.6,
+                         use_tcl              = 0.45
                          ) {
 
   are_NA <- is.na(distances_vec)
@@ -5030,12 +5112,7 @@ TSSHistogram <- function(distances_vec,
                  "histogram.\n"
                  ))
 
-  are_highlighted <- (distances_vec >= highlight_range[[1]]) &
-                     (distances_vec <= highlight_range[[2]])
-  fraction_highlighted <- sum(are_highlighted) / length(distances_vec)
-  highlight_label <- as.expression(bquote(plain(.(as.character(round(fraction_highlighted * 100, digits = 1))) *
-                                            "% of gRNAs lie within the " * .(modality_text)
-                                          )))
+
 
   hist_results <- hist(distances_vec,
                        breaks = use_breaks,
@@ -5064,16 +5141,22 @@ TSSHistogram <- function(distances_vec,
       title(use_title, cex.main = 1, line = 2.5)
     }
 
-    x_axis_pos <- seq(-1000, 1000, by = 200)
-    x_axis_labels <- sapply(as.character(x_axis_pos), as.expression)
-    if (!(omit_outside_x_range)) {
-      if (x_axis_pos[[1]] == x_range[[1]]) {
-        # x_axis_labels[[1]] <- bquote("" <= "\u2212" * .(as.character(abs(x_range[[1]]))))
-        x_axis_labels[[1]] <- bquote("" <= .(as.character(x_range[[1]])))
+
+    if (hardcoded_x_axis) {
+      x_axis_pos <- seq(-1000, 1000, by = 200)
+      x_axis_labels <- sapply(as.character(x_axis_pos), as.expression)
+      if (!(omit_outside_x_range)) {
+        if (x_axis_pos[[1]] == x_range[[1]]) {
+          # x_axis_labels[[1]] <- bquote("" <= "\u2212" * .(as.character(abs(x_range[[1]]))))
+          x_axis_labels[[1]] <- bquote("" <= .(as.character(x_range[[1]])))
+        }
+        if (x_axis_pos[[length(x_axis_pos)]] == x_range[[2]]) {
+          x_axis_labels[[length(x_axis_labels)]] <- bquote("" >= .(as.character(x_range[[2]])))
+        }
       }
-      if (x_axis_pos[[length(x_axis_pos)]] == x_range[[2]]) {
-        x_axis_labels[[length(x_axis_labels)]] <- bquote("" >= .(as.character(x_range[[2]])))
-      }
+    } else {
+      x_axis_pos <- axTicks(1)
+      x_axis_labels <- as.character(x_axis_pos)
     }
 
     rect(xleft   = highlight_range[[1]],
@@ -5084,39 +5167,44 @@ TSSHistogram <- function(distances_vec,
          col     = highlight_color,
          border  = NA
          )
-    text(x      = highlight_range[[1]] + ((highlight_range[[2]] - highlight_range[[1]]) / 2),
-         y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.8), from = "lines", to = "user")),
-         labels = highlight_label,
-         cex    = 0.8,
-         xpd    = NA
-         )
 
-    segments(y0   = par("usr")[[3]],
-             y1   = par("usr")[[4]],
-             x0   = x_axis_pos,
-             col  = "gray85",
-             lend = "butt",
-             xpd  = NA
-             )
+    if (label_range) {
+      are_highlighted <- (distances_vec >= highlight_range[[1]]) &
+                         (distances_vec <= highlight_range[[2]])
+      fraction_highlighted <- sum(are_highlighted) / length(distances_vec)
+      highlight_label <- as.expression(bquote(plain(.(as.character(round(fraction_highlighted * 100, digits = 1))) *
+                                                      "% of gRNAs lie within the " * .(modality_text)
+                                                    )))
+      text(x      = highlight_range[[1]] + ((highlight_range[[2]] - highlight_range[[1]]) / 2),
+           y      = par("usr")[[4]] + diff(grconvertY(c(0, 0.8), from = "lines", to = "user")),
+           labels = highlight_label,
+           cex    = 0.8,
+           xpd    = NA
+           )
+    }
 
-    between_distance <- (x_axis_pos[[2]] - x_axis_pos[[1]])
-    between_pos <- seq(from = x_axis_pos[[1]] + (between_distance / 2),
-                       to   = x_axis_pos[[length(x_axis_pos)]] - (between_distance / 2),
-                       by   = between_distance
-                       )
-    segments(y0   = par("usr")[[3]],
-             y1   = par("usr")[[4]],
-             x0   = between_pos,
-             col  = "gray85",
-             lend = "butt",
-             xpd  = NA
-             )
+    if (draw_grid) {
+      segments(y0   = par("usr")[[3]],
+               y1   = par("usr")[[4]],
+               x0   = x_axis_pos,
+               col  = "gray85",
+               lend = "butt",
+               xpd  = NA
+               )
 
-    axis(1, at = x_axis_pos, labels = x_axis_labels, mgp = c(3, 0.7, 0), tcl = -0.45)
-    axis(2, mgp = c(3, 0.6, 0), tcl = -0.45, las = 1)
-    box(bty = "l")
-    mtext("Position relative to the TSS", side = 1, line = 2.4)
-    mtext("Count (gRNAs)", side = 2, line = 3)
+      between_distance <- (x_axis_pos[[2]] - x_axis_pos[[1]])
+      between_pos <- seq(from = x_axis_pos[[1]] + (between_distance / 2),
+                         to   = x_axis_pos[[length(x_axis_pos)]] - (between_distance / 2),
+                         by   = between_distance
+                         )
+      segments(y0   = par("usr")[[3]],
+               y1   = par("usr")[[4]],
+               x0   = between_pos,
+               col  = "gray85",
+               lend = "butt",
+               xpd  = NA
+               )
+    }
 
     hist(distances_vec,
          breaks = use_breaks,
@@ -5128,6 +5216,12 @@ TSSHistogram <- function(distances_vec,
          ylab   = "",
          xpd    = NA
          )
+
+    axis(1, at = x_axis_pos, labels = x_axis_labels, mgp = c(3, x_axis_mgp, 0), tcl = -(use_tcl), lwd = par("lwd"))
+    axis(2, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl), las = 1, lwd = par("lwd"))
+    box(bty = "l")
+    mtext("Position relative to the TSS", side = 1, line = x_label_line, cex = par("cex"))
+    mtext("Count (gRNAs)", side = 2, line = 3, cex = par("cex"))
 
   }
 
@@ -5229,7 +5323,7 @@ TSSHistogramsForModality <- function(CRISPR_df,
                  )
   }
 
-  return(invisible(NULL))
+  return(invisible(shared_TSS_dist_df))
 }
 
 
