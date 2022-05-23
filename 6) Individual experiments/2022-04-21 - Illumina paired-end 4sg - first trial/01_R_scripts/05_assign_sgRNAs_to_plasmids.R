@@ -1,0 +1,328 @@
+### 2022-04-09
+
+
+
+# Load packages and source code -------------------------------------------
+
+CRISPR_root_directory <- "~/CRISPR"
+experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
+first_nanopore_dir <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
+source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "02_creating_histograms.R"))
+source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "06_assigning_sgRNAs_to_plasmids.R"))
+
+
+
+# Define paths ------------------------------------------------------------
+
+project_dir  <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 4sg - first trial")
+rdata_dir <- file.path(project_dir, "03_R_objects")
+
+
+
+# Load data ---------------------------------------------------------------
+
+load(file.path(rdata_dir, "03_disambiguate_CRISPRoff_library.RData"))
+load(file.path(rdata_dir, "04_look_up_sgRNAs_run1.RData"))
+load(file.path(rdata_dir, "04_look_up_sgRNAs_run2_chunk1.RData"))
+load(file.path(rdata_dir, "04_look_up_sgRNAs_run2_chunk2.RData"))
+
+
+
+
+# Define functions --------------------------------------------------------
+
+GetCounts2sg <- function(mapped_df,
+                         only_0MM = FALSE,
+                         no_template_switch = FALSE,
+                         choose_sample = NULL
+                         ) {
+
+  stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
+
+  are_selected <- rep(TRUE, nrow(mapped_df))
+
+  if (only_0MM) {
+    have_0MM <- (mapped_df[, "Num_MM_sg1"] %in% 0) &
+                (mapped_df[, "Num_MM_sg2"] %in% 0)
+    are_selected <- have_0MM
+  }
+  if (no_template_switch) {
+    have_no_switch <- (!(mapped_df[, "Has_template_switch"])) &
+                      (mapped_df[, "Num_matched_sgRNAs"] == 2L)
+    are_selected <- are_selected & have_no_switch
+  }
+  if (!(is.null(choose_sample))) {
+    are_this_sample <- mapped_df[, "Sample_number"] == choose_sample
+    are_selected <- are_selected & are_this_sample
+  }
+
+  sel_mapped_df <- mapped_df[are_selected, c("Plasmid_sg1", "Plasmid_sg2")]
+  row.names(sel_mapped_df) <- NULL
+  counts_vec <- GetCounts(sg_sequences_df[, "Plasmid_ID"], sel_mapped_df,
+                          sg_numbers = 1:2
+                          )
+  return(counts_vec)
+}
+
+
+AllSamplesCounts <- function(mapped_df, only_0MM = FALSE, no_template_switch = FALSE) {
+
+  sample_numbers <- unique(mapped_df[, "Sample_number"])
+  sample_names <- mapped_df[, "Sample_name"][match(sample_numbers, mapped_df[, "Sample_number"])]
+  short_names <- sub("before_off", "before", sample_names, fixed = TRUE)
+  short_names <- sub("2sg_", "", short_names, fixed = TRUE)
+
+  sample_counts_list <- lapply(seq_along(sample_numbers), function(x) {
+    message(paste0("Calculating counts for the sample: ", short_names[[x]], "..."))
+    GetCounts2sg(mapped_df, choose_sample = sample_numbers[[x]],
+                 only_0MM = only_0MM, no_template_switch = no_template_switch
+                 )
+  })
+  results_mat <- do.call(cbind, sample_counts_list)
+  colnames(results_mat) <- short_names
+  rownames(results_mat) <- NULL
+  return(results_mat)
+}
+
+
+
+
+# Create a combined matched_df --------------------------------------------
+
+matched_df <- rbind.data.frame(data.frame("Run" = 1L, run1_matched_df),
+                               data.frame("Run" = 2L, run2_chunk1_matched_df),
+                               data.frame("Run" = 2L, run2_chunk2_matched_df),
+                               stringsAsFactors = FALSE,
+                               make.row.names = FALSE
+                               )
+matched_df <- data.frame("Read_number" = seq_len(nrow(matched_df)),
+                         matched_df, stringsAsFactors = FALSE
+                         )
+
+
+
+# Explore sequences that feature mismatched bases -------------------------
+
+### Examine reads with "N" base calls
+
+have_N <- grepl("N", matched_df[, "Sequence_sg1"], fixed = TRUE) |
+          grepl("N", matched_df[, "Sequence_sg2"], fixed = TRUE)
+have_N_table <- table(have_N)
+have_N_table / nrow(matched_df)
+
+num_Ns_sg1 <- 19L - nchar(gsub("N", "", matched_df[, "Sequence_sg1"], fixed = TRUE))
+num_Ns_sg2 <- 19L - nchar(gsub("N", "", matched_df[, "Sequence_sg2"], fixed = TRUE))
+table(num_Ns_sg1)
+table(num_Ns_sg2)
+
+
+## Examine the proportion of reads featuring an sgRNA with a mismatched base
+
+have_0MM <- (matched_df[, "Num_MM_sg1"] %in% 0) &
+            (matched_df[, "Num_MM_sg2"] %in% 0)
+have_match <- (matched_df[, "Num_MM_sg1"] %in% c(0, 1)) &
+              (matched_df[, "Num_MM_sg2"] %in% c(0, 1))
+have_1MM <- have_match & !(have_0MM)
+
+have_0MM_table <- table(have_0MM)
+have_1MM_table <- table(have_1MM)
+have_0MM_table / nrow(matched_df)
+have_1MM_table / nrow(matched_df)
+
+
+
+# Prepare "filtered_matched_df" for the Assign_gRNAs function -------------
+
+names(matched_df)[names(matched_df) == "Sequence_sg1"] <- "Aligned_read_sg1"
+names(matched_df)[names(matched_df) == "Sequence_sg2"] <- "Aligned_read_sg2"
+
+
+
+
+# Prepare "sg_sequences_df" for the Assign_gRNAs function -----------------
+
+use_columns <- c("Plasmid_ID", "Entrez_ID", "Gene_symbol", c("protospacer_A", "protospacer_B"))
+sg_sequences_df <- CRISPRoff_df[, use_columns]
+names(sg_sequences_df)[4:5] <- paste0("Sequence_sg", 1:2)
+sg_sequences_df[, "Sequence_sg1"] <- substr(sg_sequences_df[, "Sequence_sg1"], 2, 20)
+sg_sequences_df[, "Sequence_sg2"] <- substr(sg_sequences_df[, "Sequence_sg2"], 2, 20)
+
+
+
+
+# Check whether sgRNAs from the library are found in the data -------------
+
+found_sg1 <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% matched_df[, "Correct_sgRNA_sg1"]
+found_sg2 <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% matched_df[, "Correct_sgRNA_sg2"]
+
+table(found_sg1, found_sg2)
+table(found_sg1)
+table(found_sg2)
+table(found_sg1 | found_sg2)
+table(found_sg1 & found_sg2)
+
+
+combined_sg1orsg2 <- unique(c(matched_df[, "Correct_sgRNA_sg1"], matched_df[, "Correct_sgRNA_sg2"]))
+found_sg1_either <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% combined_sg1orsg2
+found_sg2_either <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% combined_sg1orsg2
+
+table(found_sg1_either, found_sg2_either)
+table(found_sg1_either)
+table(found_sg2_either)
+table(found_sg1_either | found_sg2_either)
+table(found_sg1_either & found_sg2_either)
+
+
+
+
+# Check the GC content of missing sgRNAs ----------------------------------
+
+t.test(CRISPRoff_df[, "Num_GC_sg1"][found_sg1_either],
+       CRISPRoff_df[, "Num_GC_sg1"][!(found_sg1_either)]
+       )
+
+boxplot(CRISPRoff_df[, "Num_GC_sg1"][found_sg1_either],
+        CRISPRoff_df[, "Num_GC_sg1"][!(found_sg1_either)],
+        ylim = c(0, 20), yaxs = "i", axes = FALSE, pch = 16,
+        col = adjustcolor(brewer.pal(9, "Blues")[[4]]), cex = 0.8,
+        boxwex = 0.5
+        )
+box(bty = "l")
+axis(2, las = 1, tcl = -0.35, mgp = c(3, 0.5, 0))
+mtext("Number of GC bases", side = 2, line = 2)
+mtext(c("sgRNAs found\nin data", "sgRNAs absent\nfrom data"),
+      side = 1, at = 1:2, line = 1.5
+      )
+title("Does GC content affect recovery of sgRNAs?", cex.main = 1)
+
+
+
+
+# Create a data frame combining all relevant data -------------------------
+
+lumi_df <- Assign_gRNAs(sg_sequences_df, matched_df,
+                        sg_numbers = 1:2, include_columns = 2:6
+                        )
+lumi_df[, "Num_template_switches"] <- as.logical(lumi_df[, "Num_template_switches"])
+names(lumi_df)[names(lumi_df) == "Num_template_switches"] <- "Has_template_switch"
+
+
+
+
+# Examine the incidence of template switching -----------------------------
+
+## 90.4% of paired-end reads contained at least one sgRNA sequence
+## from the library (for either sg1 or sg2).
+## One mismatch within the sgRNA sequence was allowed, as long as there was an
+## unambiguous match to an sgRNA in the library.
+nrow(lumi_df) / nrow(matched_df)
+
+
+## 76.2% of paired-end reads contained two sgRNA sequences from the library.
+## In relative terms, 84.2% of reads with at least one sgRNA from the library
+## also contained a second sgRNA that was found in the library.
+sum(lumi_df[, "Num_matched_sgRNAs"] == 2) / nrow(matched_df)
+sum(lumi_df[, "Num_matched_sgRNAs"] == 2) / nrow(lumi_df)
+
+
+## 24.4% of reads (with two sgRNA sequences that are found in the library)
+## had a template switch, i.e., the two sgRNAs belong to different plasmids.
+have_2sg <- lumi_df[, "Num_matched_sgRNAs"] == 2
+sum(lumi_df[, "Has_template_switch"][have_2sg]) / sum(have_2sg)
+
+
+
+# Obtain read counts per plasmid -----------------------------------------
+
+either0or1_including_switch_counts_mat <- AllSamplesCounts(lumi_df,
+                                                           only_0MM = FALSE,
+                                                           no_template_switch = FALSE
+                                                           )
+only0MM_including_switch_counts_mat    <- AllSamplesCounts(lumi_df,
+                                                           only_0MM = TRUE,
+                                                           no_template_switch = FALSE
+                                                           )
+either0or1_without_switch_counts_mat   <- AllSamplesCounts(lumi_df,
+                                                           only_0MM = FALSE,
+                                                           no_template_switch = TRUE
+                                                           )
+only0MM_without_switch_counts_mat      <- AllSamplesCounts(lumi_df,
+                                                           only_0MM = TRUE,
+                                                           no_template_switch = TRUE
+                                                           )
+
+
+
+# Combine count data ------------------------------------------------------
+
+sample_names <- colnames(either0or1_including_switch_counts_mat)
+AddPrefix <- function(input_mat, add_prefix) {
+  stopifnot(identical(colnames(input_mat), sample_names))
+  colnames(input_mat) <- paste0(add_prefix, "_", colnames(input_mat))
+  return(input_mat)
+}
+
+counts_df <- data.frame(
+  sg_sequences_df[, c("Plasmid_ID", "Gene_symbol", "Entrez_ID")],
+  "Sum_MaySwitch_xMM" = rowSums(either0or1_including_switch_counts_mat),
+  "Sum_MaySwitch_0MM" = rowSums(only0MM_including_switch_counts_mat),
+  "Sum_NoSwitch_xMM"  = rowSums(either0or1_without_switch_counts_mat),
+  "Sum_NoSwitch_0MM"  = rowSums(only0MM_without_switch_counts_mat),
+  AddPrefix(either0or1_including_switch_counts_mat, "MaySwitch_xMM"),
+  AddPrefix(only0MM_including_switch_counts_mat,    "MaySwitch_0MM"),
+  AddPrefix(either0or1_without_switch_counts_mat,   "NoSwitch_xMM"),
+  AddPrefix(only0MM_without_switch_counts_mat,      "NoSwitch_0MM"),
+  stringsAsFactors = FALSE
+)
+
+
+
+
+# Examine sgRNAs that are not found in the sequencing data ----------------
+
+table(matched_df[, "Num_MM_sg1"], useNA = "ifany")
+
+are_found_sg1 <- matched_df[, "Num_MM_sg1"] %in% c(0, 1)
+altered_sg1_reads <- matched_df[, "Aligned_read_sg1"][!(are_found_sg1)]
+altered_sg1_reads <- altered_sg1_reads[!(altered_sg1_reads %in% toupper(sg_sequences_df[, "Sequence_sg2"]))]
+altered_sg1s_table <- table(altered_sg1_reads)
+
+are_found_sg2 <- matched_df[, "Num_MM_sg2"] %in% c(0, 1)
+altered_sg2_reads <- matched_df[, "Aligned_read_sg2"][!(are_found_sg2)]
+altered_sg2_reads <- altered_sg2_reads[!(altered_sg2_reads %in% toupper(sg_sequences_df[, "Sequence_sg1"]))]
+altered_sg2s_table <- table(altered_sg2_reads)
+
+table(altered_sg1s_table > 500)
+head(sort(altered_sg1s_table, decreasing = TRUE), 10)
+
+## Draw histograms
+
+DrawHistogram(counts_df[, "Sum_MaySwitch_xMM"], num_breaks = 100,
+              truncation_limit = 20000, x_axis_upper_limit = 20000)
+DrawHistogram(altered_sg1s_table[altered_sg1s_table > 500], num_breaks = 150,
+              truncation_limit = 20000, x_axis_upper_limit = 20000
+              )
+DrawHistogram(altered_sg1s_table, num_breaks = 150,
+              truncation_limit = 20000, x_axis_upper_limit = 20000
+              )
+
+hist(counts_df[, "Sum_MaySwitch_xMM"], breaks = 600, col = "black", xlim = c(0, 20000))
+hist(altered_sg1s_table[altered_sg1s_table > 500], breaks = 600, xlim = c(0, 20000), col = "black")
+hist(altered_sg1s_table, breaks = 600, xlim = c(0, 20000), col = "black")
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+save(list = "lumi_df",
+     file = file.path(rdata_dir, "05_assign_sgRNAs_to_plasmids__lumi_df.RData")
+     )
+
+save(list = "counts_df",
+     file = file.path(rdata_dir, "05_assign_sgRNAs_to_plasmids__counts_df.RData")
+     )
+
+
+
+
