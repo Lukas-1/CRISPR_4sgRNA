@@ -83,7 +83,8 @@ PlotBySharedSubsequence <- function(summary_df,
                                     grid_lwd        = 0.75,
                                     corr_line       = 0.75,
                                     bold_corr       = TRUE,
-                                    x_axis_label    = "Length of shared subsequence"
+                                    x_axis_label    = "Length of shared subsequence",
+                                    point_cex       = 0.4
                                     ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -197,7 +198,6 @@ PlotBySharedSubsequence <- function(summary_df,
           )
 
   set.seed(1)
-  point_cex <- 0.4
   beeswarm_df <- beeswarm(numeric_vec ~ shared_bp_fac,
                           priority = "random",
                           spacing  = use_spacing,
