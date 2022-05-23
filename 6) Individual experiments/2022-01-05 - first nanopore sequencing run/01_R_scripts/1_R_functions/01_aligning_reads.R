@@ -130,8 +130,18 @@ ParallelAlign <- function(use_reference, use_sequences, opening_penalty = 30, nu
 
 
 ParallelAlignInChunks <- function(all_reads) {
-  ## 'all_reads' is a ShortReadQ object
-  num_reads <- length(all_reads)
+
+  print(class(all_reads))
+
+  if ("data.frame" %in% class(all_reads)) {
+    reads_vec <- all_reads[, "Sequence"]
+    qual_vec <- all_reads[, "Quality"]
+  } else {
+    reads_vec <- as.character(ShortRead::sread(all_reads))
+    qual_vec <- as.character(as(Biostrings::quality(all_reads), "PhredQuality"))
+  }
+
+  num_reads <- length(reads_vec)
   reads_per_chunk <- 250000
   num_chunks <- ceiling(num_reads / reads_per_chunk)
   chunks_vec <- rep(seq_len(num_chunks), each = reads_per_chunk)[seq_len(num_reads)]
@@ -140,6 +150,8 @@ ParallelAlignInChunks <- function(all_reads) {
   last_vec  <- format(tapply(seq_len(num_reads), chunks_vec, function(x) x[[length(x)]]))
   chunk_numbers <- format(seq_len(num_chunks))
 
+  print(class(all_reads))
+
   for (i in seq_len(num_chunks)) {
     are_this_chunk <- chunks_vec == i
     message("Processing chunk #", chunk_numbers[[i]], " of ",
@@ -147,7 +159,7 @@ ParallelAlignInChunks <- function(all_reads) {
             first_vec[[i]], " to ", last_vec[[i]], ")..."
             )
     sub_df <- ParallelAlign(amplicon_ref,
-                            ShortRead::sread(all_reads)[are_this_chunk],
+                            reads_vec[are_this_chunk],
                             num_cores = number_of_cores # See https://github.com/NathanSkene/EWCE/issues/5#issuecomment-497616095
                             )
     chunks_list[[i]] <- sub_df
@@ -157,8 +169,8 @@ ParallelAlignInChunks <- function(all_reads) {
   data.table::setDF(alignments_df)
 
   alignments_df <- data.frame(
-    "Read_sequence" = as.character(ShortRead::sread(all_reads)),
-    "Read_quality" = as.character(as(Biostrings::quality(all_reads), "PhredQuality")),
+    "Read_sequence" = reads_vec,
+    "Read_quality" = qual_vec,
     alignments_df,
     stringsAsFactors = FALSE
   )
