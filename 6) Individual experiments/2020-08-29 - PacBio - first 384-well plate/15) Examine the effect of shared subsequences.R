@@ -140,20 +140,22 @@ axis_labels <- c(
 
 for (var in manuscript_vars) {
   pdf(file.path(manuscript_directory, paste0("Shared sub-sequences - ", var, ".pdf")),
-      width = 3.8, height = 2.4
+      width = 3.7, height = 2.2
       )
   par(cex = 0.7, lwd = 0.8, mai = rep(0.5, 4))
   PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]],
                           var,
-                          grid_light_gray = "gray85",
-                          grid_dark_gray  = "gray95",
-                          use_spacing     = 0.4,
+                          grid_dark_gray  = "gray85",
+                          grid_light_gray = "gray95",
+                          use_spacing     = 0.35,
                           use_boxwex      = 0.75,
                           grid_lwd        = 0.75,
                           y_axis_label    = axis_labels[[var]],
                           use_title       = "",
                           corr_line       = 1.3,
                           bold_corr       = FALSE,
+                          text_cex        = 1,
+                          point_cex       = 0.5,
                           x_axis_label    = "Longest shared subsequence (base pairs)"
                           )
   dev.off()
