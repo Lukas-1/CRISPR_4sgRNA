@@ -149,6 +149,41 @@ dev.off()
 
 
 
+TSS_distances_df <- TSSHistogramsForModality(merged_replaced_CRISPRa_df,
+                                             "CRISPRoff",
+                                             omit_outside_x_range = TRUE
+                                             )
+
+TSS_4sg_distances_vec <- FilterDistanceByGroup(TSS_distances_df, "4sg")
+
+
+pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
+              "Doughnut plot - CRISPRoff - window around TSS.pdf"
+              ),
+    width = 3.3, height = 2.3 # width = 3.4, height = 2.5
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd,
+    mai = c(0.4, 0.6, 0.2, 0.2)
+    )
+
+TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
+             use_breaks           = 200,
+             use_title            = "",
+             modality_text        = "",
+             highlight_range      = c(-500, 500),
+             highlight_color      = colorRampPalette(brewer.pal(9, "Blues")[c(2, 3)])(3)[[2]],
+             omit_outside_x_range = TRUE,
+             label_range          = FALSE,
+             draw_grid            = FALSE,
+             hardcoded_x_axis     = FALSE,
+             x_label_line         = 1.8,
+             x_axis_mgp           = 0.45,
+             y_axis_mgp           = 0.55,
+             use_tcl              = 0.4
+             )
+dev.off()
+
+
 
 # Draw plots describing the 4sg library as a whole ------------------------
 
