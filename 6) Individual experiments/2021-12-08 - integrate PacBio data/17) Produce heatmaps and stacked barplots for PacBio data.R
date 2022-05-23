@@ -74,9 +74,24 @@ Plot_eCDF(CRISPRa_summary_df, "Count_all_4_promoters")
 Plot_eCDF(CRISPRa_summary_df, "Num_reads_with_deletions_exceeding_20bp", flip_axis = TRUE)
 Plot_eCDF(CRISPRa_summary_df, "4_guides", flip_axis = TRUE)
 
+Plot_eCDF(CRISPRa_summary_df, "Num_reads_with_mutation_in_sg_only", flip_axis = TRUE)
+Plot_eCDF(CRISPRa_summary_df, "Num_reads_with_mutation_in_sg_or_cr", flip_axis = TRUE)
+Plot_eCDF(CRISPRa_summary_df, "Num_reads_with_sgRNA_deletion", flip_axis = TRUE)
+Plot_eCDF(CRISPRa_summary_df, "Num_contaminated_reads", flip_axis = TRUE)
+
+Plot_eCDF(CRISPRa_summary_df, "Mutations")
+
 
 
 # Look up quantiles for cutoffs, or values for specific quantiles ---------
+
+ValuesForQuantiles(CRISPRa_summary_df, "Num_reads_with_mutation_in_sg_only", 0.5)
+ValuesForQuantiles(CRISPRa_summary_df, "Num_reads_with_mutation_in_sg_or_cr", 0.5)
+
+ValuesForQuantiles(CRISPRko_summary_df, "Num_reads_with_mutation_in_sg_only", 0.5)
+ValuesForQuantiles(CRISPRko_summary_df, "Num_reads_with_mutation_in_sg_or_cr", 0.5)
+
+
 
 ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_1", 0.5)
 ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_2", 0.5)
@@ -88,6 +103,8 @@ ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_2", 0.05)
 ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_3", 0.05)
 ValuesForQuantiles(CRISPRa_summary_df, "Count_all_4",      0.05)
 
+
+ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_1", 0.5)
 
 ValuesForQuantiles(CRISPRa_summary_df, "Count_at_least_3", 0.5)
 ValuesForQuantiles(CRISPRa_summary_df, "Count_all_4", 0.5)
@@ -106,13 +123,31 @@ FractionsForCutoffs(CRISPRa_summary_df, "Count_all_4", 0.75)
 FractionsForCutoffs(CRISPRa_summary_df, "All4_sg_cr_pass", 0.75)
 
 
-median(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_tracrRNAs"))
-median(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_promoters"))
+mean(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_tracrRNAs"))
+
+
+mean(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_tracrRNAs"))
+mean(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_deletions_spanning_promoters"))
+
+mean(ColumnToCDFVec(CRISPRko_summary_df, "Num_reads_with_deletions_spanning_tracrRNAs"))
+mean(ColumnToCDFVec(CRISPRko_summary_df, "Num_reads_with_deletions_spanning_promoters"))
+
+combined_summary_df <- rbind.data.frame(CRISPRa_summary_df,
+                                        CRISPRko_summary_df,
+                                        stringsAsFactors = FALSE,
+                                        make.row.names = FALSE
+                                        )
+mean(ColumnToCDFVec(combined_summary_df, "Num_reads_with_deletions_spanning_tracrRNAs"))
+mean(ColumnToCDFVec(combined_summary_df, "Num_reads_with_deletions_spanning_promoters"))
+
+
+mean(ColumnToCDFVec(CRISPRa_summary_df, "Num_reads_with_sgRNA_deletion"))
+mean(ColumnToCDFVec(CRISPRko_summary_df, "Num_reads_with_sgRNA_deletion"))
+
 
 
 table(c(CRISPRa_summary_df[, "Count_total"], CRISPRko_summary_df[, "Count_total"]) >= 10) /
 (nrow(CRISPRa_summary_df) + nrow(CRISPRko_summary_df))
-
 
 ValuesForQuantiles(CRISPRko_summary_df, "Count_sg1_cr1", 0.5)
 ValuesForQuantiles(CRISPRko_summary_df, "Count_sg2_cr2", 0.5)
@@ -198,7 +233,7 @@ for (include_promoters in c(FALSE, TRUE)) {
     }
 
 
-    for (draw_figure in c("D", "E", "F")) {
+    for (draw_figure in c("D", "E", "F", "S4G")) {
 
       figure_prefix <- paste0(draw_figure, ") ")
       if (include_promoters) {
@@ -226,11 +261,15 @@ for (include_promoters in c(FALSE, TRUE)) {
         use_file_name <- paste0(figure_prefix, "eCDF - contaminations")
         column_combo <- "Contaminations"
         use_line_colors <- brewer.pal(9, "Blues")[[7]] # brewer.pal(9, "Set1")[[7]]
+      } else if (draw_figure == "S4G") {
+        use_file_name <- paste0(figure_prefix, "eCDF - mutations")
+        column_combo <- "Mutations"
+        use_line_colors <- c("#4E4073", brewer.pal(9, "Blues")[[6]])
       }
 
       use_file_name <- paste0(use_file_name, " - CRISPR", show_library, " library.pdf")
       pdf(file = file.path(manuscript_directory,
-                           if (include_promoters) "Fig. S4" else "Fig. 4",
+                           if (include_promoters || grepl("S4", draw_figure, fixed = TRUE)) "Fig. S4" else "Fig. 4",
                            "Individual plots",
                            use_file_name
                            ),
