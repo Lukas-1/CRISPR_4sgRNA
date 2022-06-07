@@ -72,6 +72,7 @@ BarPlot_Sources(merged_CRISPRko_df, "GuideScan_specificity",
                 )
 BarPlot_Sources(merged_CRISPRko_df, "Are_overlapping")
 
+BarPlot_Sources(merged_CRISPRko_df, "Have_homologies", filter_complete_genes = FALSE)
 
 
 
@@ -86,11 +87,11 @@ DrawAllManuscriptPlots(CRISPRko_figure_list, make_PNGs = TRUE)
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               "Histogram - size of expected deletions.pdf"
               ),
-    width = 2.4, height = 1.7 # width = 3.4, height = 2.5
+    width = 2.4, height = 1.75 # width = 3.4, height = 2.5
     )
 par(cex = manuscript_cex,
     lwd = manuscript_lwd,
-    mai = c(0.45, 0.47, 0.1, 0.32) # c(0.7, 1, 0.5, 0.15)
+    mai = c(0.4, 0.47, 0.2, 0.32) # c(0.7, 1, 0.5, 0.15)
     )
 hist_results <- DrawDeletionHistogram(sgRNAs_overview_df,
                                       use_title       = "",
@@ -102,6 +103,7 @@ hist_results <- DrawDeletionHistogram(sgRNAs_overview_df,
                                       use_y_max       = 600,
                                       abbreviate_1000 = TRUE
                                       )
+mtext(line = 0.25, "T.spiezzo library", cex = par("cex"))
 
 # text(x      = hist_results[["mids"]][which.max(hist_results[["counts"]])],
 #      y      = par("usr")[[4]] + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")),
