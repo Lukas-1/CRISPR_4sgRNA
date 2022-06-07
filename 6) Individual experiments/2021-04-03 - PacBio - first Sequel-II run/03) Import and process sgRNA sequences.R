@@ -223,7 +223,6 @@ ExportPlates(all_guides_df, sub_folder = "", file_name = "All_guides",
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "library_df",

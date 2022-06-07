@@ -122,12 +122,12 @@ mean(ColumnToCDFVec(use_summary_df, "Count_at_least_2"))
 mean(ColumnToCDFVec(use_summary_df, "Count_at_least_1"))
 
 
+
 # Remove unnecessary data -------------------------------------------------
 
 ccs3_df_list <- ccs3_df_list[c("original_summary_df", "individual_reads_df")]
 stopifnot(identical(ccs7_df_list[["original_summary_df"]], ccs7_df_list[["filtered_summary_df"]]))
 ccs7_df_list <- ccs7_df_list[names(ccs7_df_list) != "original_summary_df"]
-
 
 
 

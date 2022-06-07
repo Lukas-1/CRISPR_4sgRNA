@@ -3,7 +3,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 CRISPR_root_directory <- "~/CRISPR"
