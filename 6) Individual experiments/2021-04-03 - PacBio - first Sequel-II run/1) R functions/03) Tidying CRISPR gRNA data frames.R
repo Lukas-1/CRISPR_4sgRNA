@@ -10,22 +10,30 @@ TidySequencesDf <- function(CRISPR_df) {
   } else {
     ID_column <- "Combined_ID"
     CRISPR_df[["TSS_number"]] <- NA
+    CRISPR_df[["TSS_ID"]] <- NA
   }
   CRISPR_df[["Target_ID"]] <- CRISPR_df[[ID_column]]
-  use_columns <- c("Plate_string", "Well_number",
-                   "Rank", "sgRNA_sequence", "Target_ID", "Entrez_ID",
-                   "Gene_symbol", "TSS_number", "Modality", "Plate_number"
+  use_columns <- c("Plate_string", "Well_number", "Rank", "sgRNA_sequence",
+                   "Target_ID",
+                   "Entrez_ID", "Gene_symbol", "TSS_number", "TSS_ID",
+                   "Modality", "Plate_number"
                    )
   results_df <- CRISPR_df[, use_columns]
+  results_df[, "Gene_symbol"] <- ifelse(is.na(results_df[, "Gene_symbol"]),
+                                        CRISPR_df[, "Combined_ID"],
+                                        results_df[, "Gene_symbol"]
+                                        )
   results_df[["Well_4sg"]] <- results_df[["Well_number"]]
   results_df[["Plate_string"]] <- sub("_tf", "_", results_df[["Plate_string"]], fixed = TRUE)
   results_df[["Plate_string"]] <- sub("_sg[1-4]$", "", results_df[["Plate_string"]])
   results_df[["Plate_string"]] <- toupper(results_df[["Plate_string"]])
+  results_df[["Plate_string_4sg"]] <- results_df[["Plate_string"]]
   results_df[["Plate_string"]] <- sub("+", "plus", results_df[["Plate_string"]], fixed = TRUE)
   names(results_df) <- c("Plate_name", "Well_number", "Sg_number", "Sequence",
                          use_columns[5:(length(use_columns) - 1)],
-                         "Plate_4sg", "Well_4sg"
+                         "Plate_4sg", "Well_4sg", "Plate_string_4sg"
                          )
+  results_df <- results_df[, c(seq_len(ncol(results_df) - 3), ncol(results_df) - c(0, 2, 1))]
   results_df[["Sequence"]] <- toupper(results_df[["Sequence"]])
   return(results_df)
 }
