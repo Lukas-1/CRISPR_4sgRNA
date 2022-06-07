@@ -348,8 +348,6 @@ write.table(essential_export_df,
 
 
 
-
-
 # Categorize into four categories by essentiality -------------------------
 
 essential_fraction <- essential_df[["CRISPR_num_essential"]] /
