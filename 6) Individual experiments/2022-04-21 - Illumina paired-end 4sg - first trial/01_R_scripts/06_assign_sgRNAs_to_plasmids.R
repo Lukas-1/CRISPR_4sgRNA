@@ -152,8 +152,17 @@ sg_sequences_df[, "Sequence_sg2"] <- substr(sg_sequences_df[, "Sequence_sg2"], 2
 
 # Check whether sgRNAs from the library are found in the data -------------
 
-found_sg1 <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% matched_df[, "Correct_sgRNA_sg1"]
-found_sg2 <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% matched_df[, "Correct_sgRNA_sg2"]
+all_sg1_vec <- unique(ifelse(matched_df[, "Num_MM_sg1"] == 0,
+                             matched_df[, "Aligned_read_sg1"],
+                             matched_df[, "Correct_sgRNA_sg1"]
+                             ))
+all_sg2_vec <- unique(ifelse(matched_df[, "Num_MM_sg2"] == 0,
+                             matched_df[, "Aligned_read_sg2"],
+                             matched_df[, "Correct_sgRNA_sg2"]
+                             ))
+
+found_sg1 <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% all_sg1_vec
+found_sg2 <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% all_sg2_vec
 
 table(found_sg1, found_sg2)
 table(found_sg1)
@@ -162,7 +171,7 @@ table(found_sg1 | found_sg2)
 table(found_sg1 & found_sg2)
 
 
-combined_sg1orsg2 <- unique(c(matched_df[, "Correct_sgRNA_sg1"], matched_df[, "Correct_sgRNA_sg2"]))
+combined_sg1orsg2 <- unique(c(all_sg1_vec, all_sg2_vec))
 found_sg1_either <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% combined_sg1orsg2
 found_sg2_either <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% combined_sg1orsg2
 
@@ -172,6 +181,9 @@ table(found_sg2_either)
 table(found_sg1_either | found_sg2_either)
 table(found_sg1_either & found_sg2_either)
 
+
+table(!(found_sg1) & found_sg1_either)
+table(!(found_sg2) & found_sg2_either)
 
 
 
@@ -211,6 +223,10 @@ names(lumi_df)[names(lumi_df) == "Num_template_switches"] <- "Has_template_switc
 
 # Examine the incidence of template switching -----------------------------
 
+## There were 138'385'789 paired-end reads in total,
+## combined from both sequencing runs (37.6% from the first run, the rest from
+## the second.)
+
 ## 90.4% of paired-end reads contained at least one sgRNA sequence
 ## from the library (for either sg1 or sg2).
 ## One mismatch within the sgRNA sequence was allowed, as long as there was an
@@ -219,14 +235,16 @@ nrow(lumi_df) / nrow(matched_df)
 
 
 ## 76.2% of paired-end reads contained two sgRNA sequences from the library.
-## In relative terms, 84.2% of reads with at least one sgRNA from the library
-## also contained a second sgRNA that was found in the library.
+## (In relative terms, 84.2% of just those reads that contained one sgRNA from
+## the library also featured a second sgRNA from the library.)
 sum(lumi_df[, "Num_matched_sgRNAs"] == 2) / nrow(matched_df)
 sum(lumi_df[, "Num_matched_sgRNAs"] == 2) / nrow(lumi_df)
 
 
 ## 24.4% of reads (with two sgRNA sequences that are found in the library)
 ## had a template switch, i.e., the two sgRNAs belong to different plasmids.
+## (For the purpose of this statistic, I only considered reads for which both
+## sgRNAs were found in the library.)
 have_2sg <- lumi_df[, "Num_matched_sgRNAs"] == 2
 sum(lumi_df[, "Has_template_switch"][have_2sg]) / sum(have_2sg)
 
@@ -264,6 +282,8 @@ AddPrefix <- function(input_mat, add_prefix) {
 
 counts_df <- data.frame(
   sg_sequences_df[, c("Plasmid_ID", "Gene_symbol", "Entrez_ID")],
+  "Data_contains_sg1" = found_sg1,
+  "Data_contains_sg2" = found_sg2,
   "Sum_MaySwitch_xMM" = rowSums(either0or1_including_switch_counts_mat),
   "Sum_MaySwitch_0MM" = rowSums(only0MM_including_switch_counts_mat),
   "Sum_NoSwitch_xMM"  = rowSums(either0or1_without_switch_counts_mat),
@@ -274,6 +294,16 @@ counts_df <- data.frame(
   AddPrefix(only0MM_without_switch_counts_mat,      "NoSwitch_0MM"),
   stringsAsFactors = FALSE
 )
+
+
+counts_df <- data.frame(
+  counts_df[, 1:3],
+  "Data_contains_sg1" = found_sg1,
+  "Data_contains_sg2" = found_sg2,
+  counts_df[, 4:ncol(counts_df)],
+  stringsAsFactors = FALSE
+)
+
 
 
 
@@ -316,13 +346,11 @@ hist(altered_sg1s_table, breaks = 600, xlim = c(0, 20000), col = "black")
 # Save data ---------------------------------------------------------------
 
 save(list = "lumi_df",
-     file = file.path(rdata_dir, "05_assign_sgRNAs_to_plasmids__lumi_df.RData")
+     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__lumi_df.RData")
      )
 
 save(list = "counts_df",
-     file = file.path(rdata_dir, "05_assign_sgRNAs_to_plasmids__counts_df.RData")
+     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData")
      )
-
-
 
 

@@ -27,6 +27,8 @@ output_dir <- file.path(project_dir, "04_output_data", "Essential genes")
 essential_directory <- file.path(input_dir, "Essential genes")
 general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
 
+DepMap2020Q2_dir <- file.path(input_dir, "Essential genes", "Used for Nunez et al")
+
 
 
 # Load data ---------------------------------------------------------------
@@ -117,11 +119,14 @@ DEMETER2_samples_df <- ReadDepMapFile("sample_info", sub_folder = "DEMETER 2 Com
 
 
 
+# Read in the data used for Nunez et al., 2021 (Cell) ---------------------
+
+essentials_2020Q2_df     <- read.csv(file.path(DepMap2020Q2_dir, "DepMap_20Q2__common_essentials.csv"), stringsAsFactors = FALSE)
+non_essentials_2020Q2_df <- read.csv(file.path(DepMap2020Q2_dir, "DepMap_20Q2__nonessentials.csv"), stringsAsFactors = FALSE)
 
 
 
 # Create Entrez IDs for data of Blomen et al. (2015) ----------------------
-
 
 ### Essential genes ###
 
@@ -472,20 +477,42 @@ for (make_PNG in c(TRUE, FALSE)) {
 
 
 
+
+# Tidy the data used for Nunez et al., 2021 (Cell) ------------------------
+
+TidyDepMapGeneList <- function(input_df) {
+  splits_list <- strsplit(input_df[, 1], " (", fixed = TRUE)
+  results_df <- data.frame(
+    "Gene_symbol" = sapply(splits_list, "[[", 1),
+    "Entrez_ID"   = sub(")", "", sapply(splits_list, "[[", 2), fixed = TRUE),
+    stringsAsFactors = FALSE
+  )
+  results_df[, "Entrez_ID"] <- as.integer(results_df[, "Entrez_ID"])
+  return(results_df)
+}
+
+essentials_2020Q2_df <- TidyDepMapGeneList(essentials_2020Q2_df)
+non_essentials_2020Q2_df <- TidyDepMapGeneList(non_essentials_2020Q2_df)
+
+
+
+
 # Save data ---------------------------------------------------------------
 
+save(list = c("essentials_2020Q2_df", "non_essentials_2020Q2_df"),
+     file = file.path(rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData")
+     )
+
 save(list = "essential_df",
-     file = file.path(rdata_dir, "06_compile_data_on_essential_genes__essential_df.RData.RData")
+     file = file.path(rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData")
      )
 
 save(list = c("essential_datasets_list", "achilles_depend_df",
               "CRISPR_depend_df", "DEMETER2_combined_depend_df",
               "CRISPR_effects_df"
               ),
-     file = file.path(rdata_dir, "06_compile_data_on_essential_genes.RData")
+     file = file.path(rdata_dir, "05_compile_data_on_essential_genes__datasets.RData")
      )
-
-
 
 
 
