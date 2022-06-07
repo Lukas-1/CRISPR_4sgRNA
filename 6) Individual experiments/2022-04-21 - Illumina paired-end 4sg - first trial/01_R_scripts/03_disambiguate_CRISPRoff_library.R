@@ -47,6 +47,7 @@ FindAffectedGenes <- function(CRISPR_df, sg_number) {
   return(affected_df)
 }
 
+
 Disambiguate_IDs <- function(input_df, from_symbols_column, sg1_column, sg2_column) {
   from_symbols_splits <- strsplit(input_df[, from_symbols_column], ", ", fixed = TRUE)
   affected_sg1_splits <- strsplit(input_df[, sg1_column], "[,;] ")
@@ -62,11 +63,13 @@ Disambiguate_IDs <- function(input_df, from_symbols_column, sg1_column, sg2_colu
   return(results_vec)
 }
 
+
 GetGCcontent <- function(char_vec) {
+  char_vec <- toupper(char_vec)
   if (all(substr(char_vec, 1, 1) == "G")) {
     char_vec <- substr(char_vec, 2, nchar(char_vec))
   }
-  char_mat <- do.call(rbind, strsplit(toupper(char_vec), "", fixed = TRUE))
+  char_mat <- do.call(rbind, strsplit(char_vec, "", fixed = TRUE))
   are_GC_mat <- (char_mat == "G") | (char_mat == "C")
   num_GC_vec <- as.integer(rowSums(are_GC_mat))
   return(num_GC_vec)
@@ -144,6 +147,16 @@ CRISPRoff_df[, "Entrez_ID"][are_ambiguous] <- new_entrezs
 CRISPRoff_df[, "Num_GC_sg1"] <- GetGCcontent(CRISPRoff_df[, "protospacer_A"])
 CRISPRoff_df[, "Num_GC_sg2"] <- GetGCcontent(CRISPRoff_df[, "protospacer_B"])
 
+
+
+
+# Annotate plasmids that share sgRNAs with other plasmids -----------------
+
+sg1_vec <- toupper(CRISPRoff_df[, "protospacer_A"])
+sg2_vec <- toupper(CRISPRoff_df[, "protospacer_A"])
+num_occurrences_sg1 <- table(sg1_vec)[toupper(sg1_vec)]
+num_occurrences_sg2 <- table(sg2_vec)[toupper(sg2_vec)]
+CRISPRoff_df[, "Has_shared_sgRNA"] <- (num_occurrences_sg1 > 1) | (num_occurrences_sg2 > 1)
 
 
 
