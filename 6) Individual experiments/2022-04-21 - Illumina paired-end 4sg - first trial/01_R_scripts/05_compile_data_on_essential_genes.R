@@ -322,32 +322,17 @@ stopifnot(identical(all_entrezs, essential_df[["Entrez_ID"]]))
 
 
 
-
 # Export data -------------------------------------------------------------
 
-essential_export_df <- essential_df
-NA_empty_columns <- c("CRISPR_mean_probability",   "CRISPR_num_essential",   "CRISPR_num_cell_lines",
-                      "CRISPR_mean_effect",
-                      "Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines",
-                      "DEMETER2_mean_probability", "DEMETER2_num_essential", "DEMETER2_num_cell_lines"
-                      )
-for (column_name in NA_empty_columns) {
-  essential_export_df[, column_name] <- ifelse(is.na(essential_export_df[, column_name]),
-                                               "",
-                                               essential_export_df[, column_name]
-                                               )
-}
-
-essential_export_df <- essential_export_df[, !(names(essential_export_df) %in% c("Achilles_mean_probability", "Achilles_num_essential", "Achilles_num_cell_lines"))]
-
+essential_export_df <- ReplaceEssentialNAs(essential_df)
+not_export_columns <- c("Achilles_mean_probability", "Achilles_num_essential",
+                        "Achilles_num_cell_lines", "Four_categories"
+                        )
+essential_export_df <- essential_export_df[, !(names(essential_export_df) %in% not_export_columns)]
 write.table(essential_export_df,
             file = file.path(output_dir, "Essential_genes_CRISPRoff_2sg.tsv"),
-            sep = "\t", na = "N/A", quote = FALSE, row.names = FALSE
+            sep = "\t", quote = FALSE, row.names = FALSE
             )
-
-
-
-
 
 
 
@@ -381,7 +366,7 @@ categ_mat <- sapply(levels(essential_df[["Four_categories"]]), function(x) {
   are_this_category <- essential_df[["Four_categories"]] %in% x
   CRISPR_effects_df[["Entrez_ID"]] %in% essential_df[["Entrez_ID"]][are_this_category]
 })
-DrawEssentialityHistograms()
+DrawEssentialityHistograms(PNG_dir = output_dir)
 
 
 

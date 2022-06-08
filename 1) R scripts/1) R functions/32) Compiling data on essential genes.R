@@ -49,7 +49,7 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
   cell_line_matches <- match(data_df[[1]],#[, "DepMap_ID"],
                              cell_lines_df[["DepMap_ID"]]
                              )
-  stopifnot(!(anyNA(cell_line_matches)))
+  # stopifnot(!(anyNA(cell_line_matches)))
   colnames(data_mat) <- cell_lines_df[["stripped_cell_line_name"]][cell_line_matches]
   genes_df <- data.frame("gene" = row.names(data_mat),
                          stringsAsFactors = FALSE
@@ -61,6 +61,7 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
     "Mean" = rowMeans(data_mat, na.rm = TRUE),
     data_mat,
     stringsAsFactors = FALSE,
+    check.names = FALSE,
     row.names = NULL
   )
   return(results_df)
@@ -199,8 +200,11 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 # Functions for exporting data --------------------------------------------
 
 ReplaceEssentialNAs <- function(input_df) {
-  NA_columns <- c("Achilles_common", "CRISPR_common", "Hart_3_or_more_lines",
-                  "Hart_HeLa", "Blomen_HAP1_KBM7_intersect"
+
+  NA_columns <- c("Achilles_common", "CRISPR_common",
+                  "Hart_3_or_more_lines", "Hart_HeLa",
+                  "BlomenHart_intersect", "BlomenHart_intersect_DepMap",
+                  "Blomen_HAP1_KBM7_intersect"
                   )
   no_entrez <- is.na(input_df[["Entrez_ID"]])
   for (column_name in NA_columns) {
@@ -258,7 +262,7 @@ DrawHistogram <- function(numeric_vec,
 
 
 
-DrawEssentialityHistograms <- function(PNG_dir = output_dir) {
+DrawEssentialityHistograms <- function(PNG_dir = file_output_directory) {
 
   for (make_PNG in c(TRUE, FALSE)) {
 
