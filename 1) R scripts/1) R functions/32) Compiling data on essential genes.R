@@ -3,7 +3,7 @@
 
 
 
-# Define functions --------------------------------------------------------
+# Functions for processing the datasets from DepMap -----------------------
 
 ProcessAchillesGenesDf <- function(genes_df) {
   # genes_df is a single column in the format A1BG (1) {1 being the Entrez ID}
@@ -49,6 +49,7 @@ ProcessAchillesDataDf <- function(data_df, cell_lines_df) {
   cell_line_matches <- match(data_df[[1]],#[, "DepMap_ID"],
                              cell_lines_df[["DepMap_ID"]]
                              )
+  stopifnot(!(anyNA(cell_line_matches)))
   colnames(data_mat) <- cell_lines_df[["stripped_cell_line_name"]][cell_line_matches]
   genes_df <- data.frame("gene" = row.names(data_mat),
                          stringsAsFactors = FALSE
@@ -125,8 +126,6 @@ ProcessDEMETERDataDf <- function(data_df, check_replacements = TRUE) {
 
 
 
-
-
 GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 
   required_objects <- c("achilles_depend_df", "CRISPR_depend_df",
@@ -197,6 +196,8 @@ GetGeneEssentiality <- function(entrezs_vec, datasets_list) {
 
 
 
+# Functions for exporting data --------------------------------------------
+
 ReplaceEssentialNAs <- function(input_df) {
   NA_columns <- c("Achilles_common", "CRISPR_common", "Hart_3_or_more_lines",
                   "Hart_HeLa", "Blomen_HAP1_KBM7_intersect"
@@ -218,4 +219,97 @@ ReplaceEssentialNAs <- function(input_df) {
   return(input_df)
 }
 
+
+
+
+# Functions for creating gene essentiality histograms ---------------------
+
+DrawHistogram <- function(numeric_vec,
+                          add = FALSE,
+                          hist_color = brewer.pal(9, "Blues")[[8]],
+                          use_breaks = 1000
+                          ) {
+  points_alpha <- 0.5
+  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+  if (!(is.na(hist_color))) {
+    use_color <- paste0(hist_color, alpha_hex)
+  } else {
+    use_color <- NA
+  }
+  hist_results <- hist(numeric_vec,
+                       breaks = use_breaks,
+                       col    = use_color,
+                       border = NA,
+                       main   = "Depmap \u2013 all cell lines",
+                       xlab   = "CRISPR knockout fitness effect",
+                       mgp    = c(2.5, 0.5, 0),
+                       freq   = TRUE,
+                       add    = add,
+                       axes   = FALSE,
+                       ylab   = ""
+                       )
+  if (!(add)) {
+    box(bty = "l")
+    x_axis_pos <- pretty(par("usr")[c(1, 2)], n = 10)
+    axis(1, at = x_axis_pos, mgp = c(2.5, 0.55, 0), tcl = -0.45)
+  }
+  return(invisible(hist_results))
+}
+
+
+
+DrawEssentialityHistograms <- function(PNG_dir = output_dir) {
+
+  for (make_PNG in c(TRUE, FALSE)) {
+
+    if (make_PNG) {
+      png(filename = file.path(PNG_dir, "Histograms - gene effects.png"),
+          height = 6, width = 8, units = "in", res = 900
+          )
+    }
+
+    hist_breaks <- DrawHistogram(as.matrix(CRISPR_effects_df[, 4:ncol(CRISPR_effects_df)]),
+                                 hist_color = NA
+                                 )[["breaks"]]
+
+    abline(v = seq(-0.1, 0.1, by = 0.1), col = c("gray75", "gray50"), lty = "dashed")
+
+
+    DrawHistogram(as.matrix(CRISPR_effects_df[, 4:ncol(CRISPR_effects_df)]),
+                  hist_color = brewer.pal(9, "Greys")[[4]],
+                  add = TRUE, use_breaks = hist_breaks
+                  )
+
+
+    DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Non-essential"], 4:ncol(CRISPR_effects_df)]),
+                  add = TRUE, hist_color = brewer.pal(9, "Greens")[[8]], use_breaks = hist_breaks
+                  )
+
+    DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Intermediate"], 4:ncol(CRISPR_effects_df)]),
+                  add = TRUE, hist_color = "#aa6c39", use_breaks = hist_breaks
+                  )
+
+    DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Essential"], 4:ncol(CRISPR_effects_df)]),
+                  add = TRUE, hist_color = brewer.pal(9, "Reds")[[8]], use_breaks = hist_breaks
+                  )
+
+
+    legend("topleft",
+           legend     = c("All genes", "Non-essential", "Intermediate", "Essential"),
+           fill       = c(brewer.pal(9, "Greys")[[4]],
+                          brewer.pal(9, "Greens")[[8]],
+                          "#aa6c39",
+                          brewer.pal(9, "Reds")[[8]]
+                          ),
+           border    = NA,
+           bty       = "n",
+           y.intersp = 1.1
+           )
+
+    if (make_PNG) {
+      dev.off()
+    }
+  }
+  return(invisible(NULL))
+}
 

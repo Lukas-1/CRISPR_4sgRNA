@@ -34,9 +34,6 @@ DepMap2020Q2_dir <- file.path(input_dir, "Essential genes", "Used for Nunez et a
 # Load data ---------------------------------------------------------------
 
 load(file.path(general_RData_directory, "01) Extract gene annotation data from the org.Hs.eg.db Bioconductor database.RData"))
-load(file.path(general_RData_directory, "06) Collect Entrez IDs from various sources.RData"))
-load(file.path(general_RData_directory, "12) Divide the remaining genes into sublibraries according to hCRISPRa-v2 - sublibrary_df.RData"))
-
 load(file.path(rdata_dir, "03_disambiguate_CRISPRoff_library.RData"))
 
 
@@ -84,8 +81,6 @@ hart_df <- data.frame(read_excel(file.path(essential_directory,
                                  ),
                       stringsAsFactors = FALSE
                       )
-
-
 
 
 
@@ -386,95 +381,7 @@ categ_mat <- sapply(levels(essential_df[["Four_categories"]]), function(x) {
   are_this_category <- essential_df[["Four_categories"]] %in% x
   CRISPR_effects_df[["Entrez_ID"]] %in% essential_df[["Entrez_ID"]][are_this_category]
 })
-
-
-
-DrawHistogram <- function(numeric_vec,
-                          add = FALSE,
-                          hist_color = brewer.pal(9, "Blues")[[8]],
-                          use_breaks = 1000
-                          ) {
-  points_alpha <- 0.5
-  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
-  if (!(is.na(hist_color))) {
-    use_color <- paste0(hist_color, alpha_hex)
-  } else {
-    use_color <- NA
-  }
-  hist_results <- hist(numeric_vec,
-                       breaks = use_breaks,
-                       col    = use_color,
-                       border = NA,
-                       main   = "Depmap \u2013 all cell lines",
-                       xlab   = "CRISPR knockout fitness effect",
-                       mgp    = c(2.5, 0.5, 0),
-                       freq   = TRUE,
-                       add    = add,
-                       axes   = FALSE,
-                       ylab   = ""
-                       )
-  if (!(add)) {
-    box(bty = "l")
-    x_axis_pos <- pretty(par("usr")[c(1, 2)], n = 10)
-    axis(1, at = x_axis_pos, mgp = c(2.5, 0.55, 0), tcl = -0.45)
-  }
-  return(invisible(hist_results))
-}
-
-
-
-for (make_PNG in c(TRUE, FALSE)) {
-
-  if (make_PNG) {
-    png(filename = file.path(output_dir, "Histograms - gene effects.png"),
-        height = 6, width = 8, units = "in", res = 900
-        )
-  }
-
-  hist_breaks <- DrawHistogram(as.matrix(CRISPR_effects_df[, 4:ncol(CRISPR_effects_df)]),
-                               hist_color = NA
-                               )[["breaks"]]
-
-  abline(v = seq(-0.1, 0.1, by = 0.1), col = c("gray75", "gray50"), lty = "dashed")
-
-
-  DrawHistogram(as.matrix(CRISPR_effects_df[, 4:ncol(CRISPR_effects_df)]),
-                hist_color = brewer.pal(9, "Greys")[[4]],
-                add = TRUE, use_breaks = hist_breaks
-                )
-
-
-  DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Non-essential"], 4:ncol(CRISPR_effects_df)]),
-                add = TRUE, hist_color = brewer.pal(9, "Greens")[[8]], use_breaks = hist_breaks
-                )
-
-  DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Intermediate"], 4:ncol(CRISPR_effects_df)]),
-                add = TRUE, hist_color = "#aa6c39", use_breaks = hist_breaks
-                )
-
-  DrawHistogram(as.matrix(CRISPR_effects_df[categ_mat[, "Essential"], 4:ncol(CRISPR_effects_df)]),
-                add = TRUE, hist_color = brewer.pal(9, "Reds")[[8]], use_breaks = hist_breaks
-                )
-
-
-  legend("topleft",
-         legend     = c("All genes", "Non-essential", "Intermediate", "Essential"),
-         fill       = c(brewer.pal(9, "Greys")[[4]],
-                        brewer.pal(9, "Greens")[[8]],
-                        "#aa6c39",
-                        brewer.pal(9, "Reds")[[8]]
-                        ),
-         border    = NA,
-         bty       = "n",
-         y.intersp = 1.1
-         )
-
-  if (make_PNG) {
-    dev.off()
-  }
-
-}
-
+DrawEssentialityHistograms()
 
 
 
