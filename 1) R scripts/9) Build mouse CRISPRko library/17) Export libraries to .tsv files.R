@@ -11,7 +11,6 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory    <- "~/CRISPR"
@@ -133,10 +132,6 @@ merged_CRISPRko_df[["CRISPOR_Doench_efficacy"]][(are_top4 & violate_Graf) %in% T
 # Write CRISPRko sgRNA libraries to disk ----------------------------------
 
 DfToTSV(merged_CRISPRko_df, "CRISPRko_all_genes", remove_columns = omit_columns)
-
-
-
-
 
 
 

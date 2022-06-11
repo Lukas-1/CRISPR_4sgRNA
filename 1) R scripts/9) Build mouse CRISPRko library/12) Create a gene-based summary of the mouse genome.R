@@ -12,8 +12,6 @@ source(file.path(general_functions_directory, "16) Producing per-gene summaries 
 
 
 
-
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory    <- "~/CRISPR"
@@ -21,8 +19,6 @@ RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "6) Mouse - General")
 CRISPRko_RData_directory <- file.path(RData_directory, "8) Mouse - CRISPRko")
 file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "Mouse - CRISPRko")
-
-
 
 
 
@@ -35,13 +31,9 @@ load(file.path(CRISPRko_RData_directory, "11) Pick 4 guides per gene.RData"))
 
 
 
-
-
 # Create an empty SNP column ----------------------------------------------
 
 merged_CRISPRko_df[[preferred_AF_max_column]] <- NA_real_
-
-
 
 
 
@@ -54,14 +46,10 @@ sgRNAs_overview_df <- ProduceGenomeOverviewDf(merged_CRISPRko_df,
 
 
 
-
-
 # Count the number of genes without a full complement of sgRNAs -----------
 
 table(sgRNAs_overview_df[["Num_total"]] < 4)
 table(sgRNAs_overview_df[["Num_meeting_criteria"]] < 4)
-
-
 
 
 
@@ -85,13 +73,11 @@ WriteOverviewDfToDisk(sgRNAs_overview_df[are_targetable, columns_for_excel],
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save("sgRNAs_overview_df",
      file = file.path(CRISPRko_RData_directory, "12) Create a gene-based summary of the mouse genome - sgRNAs_overview_df.RData")
      )
-
 
 
 

@@ -99,14 +99,10 @@ ExportPlates(sg4_by_well_df,
 
 
 
-
-
 # Remove the empty SNP column ---------------------------------------------
 
 sg4_by_gene_df <- sg4_by_gene_df[, names(sg4_by_gene_df) != preferred_AF_max_column]
 sg4_by_well_df <- sg4_by_well_df[, names(sg4_by_well_df) != preferred_AF_max_column]
-
-
 
 
 
