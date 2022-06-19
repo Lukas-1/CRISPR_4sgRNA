@@ -34,6 +34,7 @@ load(file.path(rdata_dir, "04_look_up_sgRNAs_run2_chunk2.RData"))
 GetCounts2sg <- function(mapped_df,
                          only_0MM = FALSE,
                          no_template_switch = FALSE,
+                         no_template_switch_requires_both_sgRNAs = TRUE,
                          choose_sample = NULL
                          ) {
 
@@ -47,8 +48,10 @@ GetCounts2sg <- function(mapped_df,
     are_selected <- have_0MM
   }
   if (no_template_switch) {
-    have_no_switch <- (!(mapped_df[, "Has_template_switch"])) &
-                      (mapped_df[, "Num_matched_sgRNAs"] == 2L)
+    have_no_switch <- (!(mapped_df[, "Has_template_switch"]))
+    if (no_template_switch_requires_both_sgRNAs) {
+      have_no_switch <- have_no_switch & (mapped_df[, "Num_matched_sgRNAs"] == 2L)
+    }
     are_selected <- are_selected & have_no_switch
   }
   if (!(is.null(choose_sample))) {
@@ -98,7 +101,8 @@ matched_df <- rbind.data.frame(data.frame("Run" = 1L, run1_matched_df),
 matched_df <- data.frame("Read_number" = seq_len(nrow(matched_df)),
                          matched_df, stringsAsFactors = FALSE
                          )
-
+rm(list = c("run1_matched_df", "run2_chunk1_matched_df", "run2_chunk2_matched_df"))
+gc()
 
 
 # Explore sequences that feature mismatched bases -------------------------
@@ -209,7 +213,6 @@ title("Does GC content affect recovery of sgRNAs?", cex.main = 1)
 
 
 
-
 # Create a data frame combining all relevant data -------------------------
 
 lumi_df <- Assign_gRNAs(sg_sequences_df, matched_df,
@@ -271,6 +274,21 @@ only0MM_without_switch_counts_mat      <- AllSamplesCounts(lumi_df,
 
 
 
+# Obtain read counts while excluding only evident template switches -------
+
+## This is helpful for understanding cases where only one sgRNA out of the two
+## is represented in the library. Is the second sgRNA affected by a template
+## switch, or is it replaced by some other sequence?
+
+either0or1_no_evident_switch_vec <- GetCounts2sg(lumi_df,
+                                                 no_template_switch = TRUE,
+                                                 no_template_switch_requires_both_sgRNAs = FALSE
+                                                 )
+
+
+
+
+
 # Combine count data ------------------------------------------------------
 
 sample_names <- colnames(either0or1_including_switch_counts_mat)
@@ -282,28 +300,19 @@ AddPrefix <- function(input_mat, add_prefix) {
 
 counts_df <- data.frame(
   sg_sequences_df[, c("Plasmid_ID", "Gene_symbol", "Entrez_ID")],
-  "Data_contains_sg1" = found_sg1,
-  "Data_contains_sg2" = found_sg2,
-  "Sum_MaySwitch_xMM" = rowSums(either0or1_including_switch_counts_mat),
-  "Sum_MaySwitch_0MM" = rowSums(only0MM_including_switch_counts_mat),
-  "Sum_NoSwitch_xMM"  = rowSums(either0or1_without_switch_counts_mat),
-  "Sum_NoSwitch_0MM"  = rowSums(only0MM_without_switch_counts_mat),
+  "Data_contains_sg1"       = found_sg1,
+  "Data_contains_sg2"       = found_sg2,
+  "Sum_MaySwitch_xMM"       = rowSums(either0or1_including_switch_counts_mat),
+  "Sum_MaySwitch_0MM"       = rowSums(only0MM_including_switch_counts_mat),
+  "Sum_NoSwitch_xMM"        = rowSums(either0or1_without_switch_counts_mat),
+  "Sum_NoSwitch_0MM"        = rowSums(only0MM_without_switch_counts_mat),
+  "Sum_NoEvidentSwitch_xMM" = either0or1_no_evident_switch_vec,
   AddPrefix(either0or1_including_switch_counts_mat, "MaySwitch_xMM"),
   AddPrefix(only0MM_including_switch_counts_mat,    "MaySwitch_0MM"),
   AddPrefix(either0or1_without_switch_counts_mat,   "NoSwitch_xMM"),
   AddPrefix(only0MM_without_switch_counts_mat,      "NoSwitch_0MM"),
   stringsAsFactors = FALSE
 )
-
-
-counts_df <- data.frame(
-  counts_df[, 1:3],
-  "Data_contains_sg1" = found_sg1,
-  "Data_contains_sg2" = found_sg2,
-  counts_df[, 4:ncol(counts_df)],
-  stringsAsFactors = FALSE
-)
-
 
 
 
@@ -328,7 +337,8 @@ head(sort(altered_sg1s_table, decreasing = TRUE), 10)
 ## Draw histograms
 
 DrawHistogram(counts_df[, "Sum_MaySwitch_xMM"], num_breaks = 100,
-              truncation_limit = 20000, x_axis_upper_limit = 20000)
+              truncation_limit = 20000, x_axis_upper_limit = 20000
+              )
 DrawHistogram(altered_sg1s_table[altered_sg1s_table > 500], num_breaks = 150,
               truncation_limit = 20000, x_axis_upper_limit = 20000
               )
@@ -345,12 +355,14 @@ hist(altered_sg1s_table, breaks = 600, xlim = c(0, 20000), col = "black")
 
 # Save data ---------------------------------------------------------------
 
+save(list = "counts_df",
+     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData")
+     )
+
 save(list = "lumi_df",
      file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__lumi_df.RData")
      )
 
-save(list = "counts_df",
-     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData")
-     )
+
 
 
