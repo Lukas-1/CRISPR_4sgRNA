@@ -101,17 +101,6 @@ head(merged_CRISPRko_df[have_no_scores, check_columns])
 
 
 
-# Add GuideScan columns ---------------------------------------------------
-
-for (column_name in c("GuideScan_Num_2MM", "GuideScan_Num_3MM")) {
-  merged_CRISPRko_df[[column_name]] <- NA_integer_
-}
-for (column_name in c("GuideScan_efficiency", "GuideScan_specificity")) {
-  merged_CRISPRko_df[[column_name]] <- NA_real_
-}
-
-
-
 
 # Save data ---------------------------------------------------------------
 

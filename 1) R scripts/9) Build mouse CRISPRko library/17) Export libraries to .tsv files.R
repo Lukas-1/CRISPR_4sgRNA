@@ -105,9 +105,6 @@ omit_columns <- c("Combined_ID",
                   "Original_rank", "Best_combination_rank",
                   "Spacing", "Overlaps_tolerance",
 
-                  "GuideScan_specificity", "GuideScan_efficiency",
-                  "GuideScan_Num_2MM", "GuideScan_Num_3MM", "GuideScan_offtarget_category",
-
                   preferred_AF_max_column
                   )
 
