@@ -20,12 +20,12 @@ rdata_dir <- file.path(project_dir, "03_R_objects")
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(rdata_dir, "03_disambiguate_CRISPRoff_library.RData"))
 load(file.path(rdata_dir, "04_look_up_sgRNAs_run1.RData"))
 load(file.path(rdata_dir, "04_look_up_sgRNAs_run2_chunk1.RData"))
 load(file.path(rdata_dir, "04_look_up_sgRNAs_run2_chunk2.RData"))
 load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData"))
 load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__lumi_df.RData"))
-
 
 
 
@@ -45,7 +45,6 @@ gc()
 
 
 
-
 # Explore sequences that feature mismatched bases -------------------------
 
 ### Examine reads with "N" base calls
@@ -59,6 +58,7 @@ num_Ns_sg1 <- 19L - nchar(gsub("N", "", matched_df[, "Sequence_sg1"], fixed = TR
 num_Ns_sg2 <- 19L - nchar(gsub("N", "", matched_df[, "Sequence_sg2"], fixed = TRUE))
 table(num_Ns_sg1)
 table(num_Ns_sg2)
+
 
 
 ## Examine the proportion of reads featuring an sgRNA with a mismatched base
@@ -77,19 +77,29 @@ have_1MM_table / nrow(matched_df)
 
 
 
+# Create "sg_df" for convenience ------------------------------------------
+
+sg_df <- data.frame(
+  "sg1" = substr(toupper(CRISPRoff_df[, "protospacer_A"]), 2, 20),
+  "sg2" = substr(toupper(CRISPRoff_df[, "protospacer_B"]), 2, 20),
+  stringsAsFactors = FALSE
+)
+
+
+
 # Check whether sgRNAs from the library are found in the data -------------
 
 all_sg1_vec <- unique(ifelse(matched_df[, "Num_MM_sg1"] == 0,
-                             matched_df[, "Aligned_read_sg1"],
+                             matched_df[, "Sequence_sg1"],
                              matched_df[, "Correct_sgRNA_sg1"]
                              ))
 all_sg2_vec <- unique(ifelse(matched_df[, "Num_MM_sg2"] == 0,
-                             matched_df[, "Aligned_read_sg2"],
+                             matched_df[, "Sequence_sg2"],
                              matched_df[, "Correct_sgRNA_sg2"]
                              ))
 
-found_sg1 <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% all_sg1_vec
-found_sg2 <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% all_sg2_vec
+found_sg1 <- sg_df[, "sg1"] %in% all_sg1_vec
+found_sg2 <- sg_df[, "sg2"] %in% all_sg2_vec
 
 table(found_sg1, found_sg2)
 table(found_sg1)
@@ -99,8 +109,8 @@ table(found_sg1 & found_sg2)
 
 
 combined_sg1orsg2 <- unique(c(all_sg1_vec, all_sg2_vec))
-found_sg1_either <- toupper(sg_sequences_df[, "Sequence_sg1"]) %in% combined_sg1orsg2
-found_sg2_either <- toupper(sg_sequences_df[, "Sequence_sg2"]) %in% combined_sg1orsg2
+found_sg1_either <- sg_df[, "sg1"] %in% combined_sg1orsg2
+found_sg2_either <- sg_df[, "sg2"] %in% combined_sg1orsg2
 
 table(found_sg1_either, found_sg2_either)
 table(found_sg1_either)
@@ -136,7 +146,6 @@ title("Does GC content affect recovery of sgRNAs?", cex.main = 1)
 
 
 
-
 # Examine the incidence of template switching -----------------------------
 
 ## There were 138'385'789 paired-end reads in total,
@@ -166,19 +175,18 @@ sum(lumi_df[, "Has_template_switch"][have_2sg]) / sum(have_2sg)
 
 
 
-
 # Examine sgRNAs that are not found in the sequencing data ----------------
 
 table(matched_df[, "Num_MM_sg1"], useNA = "ifany")
 
 are_found_sg1 <- matched_df[, "Num_MM_sg1"] %in% c(0, 1)
-altered_sg1_reads <- matched_df[, "Aligned_read_sg1"][!(are_found_sg1)]
-altered_sg1_reads <- altered_sg1_reads[!(altered_sg1_reads %in% toupper(sg_sequences_df[, "Sequence_sg2"]))]
+altered_sg1_reads <- matched_df[, "Sequence_sg1"][!(are_found_sg1)]
+altered_sg1_reads <- altered_sg1_reads[!(altered_sg1_reads %in% sg_df[, "sg1"])]
 altered_sg1s_table <- table(altered_sg1_reads)
 
 are_found_sg2 <- matched_df[, "Num_MM_sg2"] %in% c(0, 1)
-altered_sg2_reads <- matched_df[, "Aligned_read_sg2"][!(are_found_sg2)]
-altered_sg2_reads <- altered_sg2_reads[!(altered_sg2_reads %in% toupper(sg_sequences_df[, "Sequence_sg1"]))]
+altered_sg2_reads <- matched_df[, "Sequence_sg2"][!(are_found_sg2)]
+altered_sg2_reads <- altered_sg2_reads[!(altered_sg2_reads %in% sg_df[, "sg2"])]
 altered_sg2s_table <- table(altered_sg2_reads)
 
 table(altered_sg1s_table > 500)
@@ -199,8 +207,6 @@ DrawHistogram(altered_sg1s_table, num_breaks = 150,
 hist(counts_df[, "Sum_MaySwitch_xMM"], breaks = 600, col = "black", xlim = c(0, 20000))
 hist(altered_sg1s_table[altered_sg1s_table > 500], breaks = 600, xlim = c(0, 20000), col = "black")
 hist(altered_sg1s_table, breaks = 600, xlim = c(0, 20000), col = "black")
-
-
 
 
 
