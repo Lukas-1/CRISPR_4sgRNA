@@ -22,7 +22,6 @@ library_path <- file.path(input_dir, "2021 - Genome-wide programmable transcript
 
 
 
-
 # Read in the CRISPR-off library ------------------------------------------
 
 CRISPRoff_df <- data.frame(read_excel(library_path, skip = 3), stringsAsFactors = FALSE)
