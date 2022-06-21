@@ -197,7 +197,7 @@ counts_df <- data.frame(
   "Sum_MaySwitch_0MM"       = rowSums(only0MM_including_switch_counts_mat),
   "Sum_NoSwitch_xMM"        = rowSums(either0or1_without_switch_counts_mat),
   "Sum_NoSwitch_0MM"        = rowSums(only0MM_without_switch_counts_mat),
-  "Sum_NoEvidentSwitch_xMM" = either0or1_no_evident_switch_vec,
+  "Sum_NoEvidentSwitch_xMM" = unname(either0or1_no_evident_switch_vec),
   AddPrefix(either0or1_including_switch_counts_mat, "MaySwitch_xMM"),
   AddPrefix(only0MM_including_switch_counts_mat,    "MaySwitch_0MM"),
   AddPrefix(either0or1_without_switch_counts_mat,   "NoSwitch_xMM"),
@@ -216,7 +216,5 @@ save(list = "counts_df",
 save(list = "lumi_df",
      file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__lumi_df.RData")
      )
-
-
 
 
