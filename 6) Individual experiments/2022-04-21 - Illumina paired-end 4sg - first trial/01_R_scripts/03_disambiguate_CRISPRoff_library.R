@@ -85,15 +85,13 @@ unique_sequences <- unique(substr(toupper(c(CRISPRoff_df[["protospacer_A"]], CRI
 
 stopifnot(all(nchar(unique_sequences) == 19))
 
-all_sequences_df <- FindSequences(unique_sequences, max.mismatch = 0)
+sequences_df <- FindSequences(unique_sequences, max.mismatch = 0)
 
 
 
 
 # Summarize sgRNA matches -------------------------------------------------
 
-sequences_df <- all_sequences_df[all_sequences_df[["Num_MM"]] == 0, ]
-row.names(sequences_df) <- NULL
 sequences_df[["PAM"]] <- GetNGGPAM(sequences_df)
 
 genome_search_df <- SummarizeFoundSequencesDf(sequences_df, all_sequences = unique_sequences)
