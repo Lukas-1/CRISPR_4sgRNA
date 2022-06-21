@@ -19,7 +19,7 @@ source(file.path(general_functions_directory, "32) Compiling data on essential g
 CRISPR_root_directory <- "~/CRISPR"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 
-project_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 4sg - first trial")
+project_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 input_dir <- file.path(project_dir, "02_input_data")
 rdata_dir <- file.path(project_dir, "03_R_objects")
 output_dir <- file.path(project_dir, "04_output_data", "Essential genes")

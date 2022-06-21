@@ -6,7 +6,7 @@
 CRISPR_root_directory <- "~/CRISPR"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 
-project_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 4sg - first trial")
+project_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 first_nanopore_dir <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
 source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "03_extracting_aligned_sgRNAs.R"))
 

@@ -12,11 +12,10 @@ source(file.path(general_functions_directory, "30) Finding overlapping genes and
 
 
 
-
 # Define paths ------------------------------------------------------------
 
 experiments_directory   <- file.path(CRISPR_root_directory, "6) Individual experiments")
-project_dir             <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 4sg - first trial")
+project_dir             <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 rdata_dir               <- file.path(project_dir, "03_R_objects")
 tables_dir              <- file.path(project_dir, "04_output_data", "Tables")
 general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")

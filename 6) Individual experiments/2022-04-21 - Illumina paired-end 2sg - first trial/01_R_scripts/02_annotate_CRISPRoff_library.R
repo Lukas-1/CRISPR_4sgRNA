@@ -14,7 +14,7 @@ source(file.path(general_functions_directory, "23) Translating between Ensembl I
 # Define folder paths -----------------------------------------------------
 
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
-project_dir  <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 4sg - first trial")
+project_dir  <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 rdata_dir    <- file.path(project_dir, "03_R_objects")
 input_dir    <- file.path(project_dir, "02_input_data")
 library_path <- file.path(input_dir, "2021 - Genome-wide programmable transcriptional memory by CRISPR-based epigenome editing - Table S3.xlsx")
