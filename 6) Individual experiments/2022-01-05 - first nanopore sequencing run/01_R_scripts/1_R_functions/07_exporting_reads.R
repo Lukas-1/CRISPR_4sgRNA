@@ -53,6 +53,7 @@ MakeQualityCategories <- function(reads_df, max_CCS = 11L) {
 }
 
 
+
 AbbreviateSymbols <- function(symbols_vec) {
   have_comma <- grepl(",", symbols_vec, fixed = TRUE)
   splits_list <- strsplit(symbols_vec[have_comma], ", ", fixed = TRUE)
@@ -150,6 +151,7 @@ IndicesForGene <- function(entrez_or_symbol, mapped_df) {
 }
 
 
+
 ExportReadsForGene <- function(entrez_or_symbol, reads_df, mapped_df, output_dir = fastq_dir) {
   gene_indices <- IndicesForGene(entrez_or_symbol, mapped_df)
   read_numbers <- mapped_df[, "Read_number"][gene_indices]
@@ -188,7 +190,6 @@ TidyCRISPRaDf <- function(sg_df) {
 
 
 
-
 ExportReferences <- function(gene_symbol) {
   stopifnot(all(c("CRISPRa_df", "plasmid_lines_list", "plasmid_gbk") %in% ls(envir = globalenv())))
   stopifnot(identical(nrow(CRISPRa_df), length(plasmid_lines_list)))
@@ -216,8 +217,6 @@ ExportReferences <- function(gene_symbol) {
                 )
   }
 }
-
-
 
 
 

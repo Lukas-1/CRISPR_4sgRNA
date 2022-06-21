@@ -67,6 +67,7 @@ FeaturesListToDf <- function(features_list) {
 }
 
 
+
 ExtractAlignedSequences <- function(align_df) {
 
   stopifnot(all(c("features_df", "features_indices_list") %in% ls(envir = globalenv())))
@@ -194,3 +195,5 @@ ExtractAlignedSgRNAs <- function(alignments_df) {
 
   return(extracted_df)
 }
+
+
