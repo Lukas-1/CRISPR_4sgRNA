@@ -311,9 +311,10 @@ essential_datasets_list <- list(
 
 # Process CRISPRoff 2sg library genes -------------------------------------
 
-all_entrezs <- CRISPRoff_df[, "Entrez_ID"]
-all_entrezs <- all_entrezs[!(is.na(all_entrezs))]
-all_entrezs <- as.integer(unlist(strsplit(all_entrezs, ", ", fixed = TRUE)))
+object_names <- c("achilles_depend_df", "CRISPR_depend_df",
+                  "CRISPR_effects_df", "DEMETER2_combined_depend_df"
+                  )
+all_entrezs <- unique(unlist(lapply(object_names, function(x) get(x)[, "Entrez_ID"])))
 
 essential_df <- GetGeneEssentiality(all_entrezs, essential_datasets_list)
 
@@ -330,7 +331,7 @@ not_export_columns <- c("Achilles_mean_probability", "Achilles_num_essential",
                         )
 essential_export_df <- essential_export_df[, !(names(essential_export_df) %in% not_export_columns)]
 write.table(essential_export_df,
-            file = file.path(output_dir, "Essential_genes_CRISPRoff_2sg.tsv"),
+            file = file.path(output_dir, "Essential_genes_all.tsv"),
             sep = "\t", quote = FALSE, row.names = FALSE
             )
 
@@ -405,6 +406,5 @@ save(list = c("essential_datasets_list", "achilles_depend_df",
               ),
      file = file.path(rdata_dir, "05_compile_data_on_essential_genes__datasets.RData")
      )
-
 
 
