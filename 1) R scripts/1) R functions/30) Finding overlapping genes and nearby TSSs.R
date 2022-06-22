@@ -768,7 +768,6 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
   by_gene_df <- by_gene_df[new_order, ]
   row.names(by_gene_df) <- NULL
 
-
   ## Create a summary data frame
   gene_ID_df <- AnalyzeGeneIDs(by_gene_df, ID_column)
   symbol_df <- AnalyzeGeneIDs(by_gene_df, "Affected_gene_symbols")
