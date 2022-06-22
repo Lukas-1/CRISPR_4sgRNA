@@ -5,8 +5,12 @@
 
 library("readxl")
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory       <- "~/CRISPR"
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
+experiments_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments")
+project_dir                 <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
+R_functions_dir             <- file.path(project_dir, "01_R_scripts", "R_functions")
+source(file.path(R_functions_dir, "03_disambiguating_and_annotating_guides.R"))
 source(file.path(general_functions_directory, "05) Mapping sequences to the human genome.R"))
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))
 source(file.path(general_functions_directory, "30) Finding overlapping genes and nearby TSSs.R"))
@@ -15,10 +19,7 @@ source(file.path(general_functions_directory, "30) Finding overlapping genes and
 
 # Define folder paths -----------------------------------------------------
 
-experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
-project_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
-rdata_dir   <- file.path(project_dir, "03_R_objects")
-
+rdata_dir <- file.path(project_dir, "03_R_objects")
 general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
 
 
@@ -30,63 +31,12 @@ load(file.path(general_RData_directory, "20) Compile all relevant TSSs for each 
 
 
 
-
-# Define functions --------------------------------------------------------
-
-FindAffectedGenes <- function(CRISPR_df, sg_number) {
-  use_columns <- c("Entrez_IDs", "Gene_symbols", paste0(c("Locations_0MM", "Num_0MM"), "_sg", sg_number))
-  input_df <- CRISPR_df[, use_columns]
-  names(input_df) <- c("Entrez_ID", "Gene_symbol", "Locations_0MM", "Num_0MM")
-  for (location_column in c("Chromosome", "Strand", "Start", "End")) {
-    input_df[, location_column] <- NA
-  }
-  input_df[, "Entrez_ID"] <- gsub(", ", "/", input_df[, "Entrez_ID"], fixed = TRUE)
-  nearby_list <- AlignSummaryDf(FindNearbyTSSs, input_df, all_TSS_df)
-  affected_df <- nearby_list[["summary_df"]][, c("Affected_Entrez_IDs", "Affected_gene_symbols")]
-  names(affected_df) <- paste0(names(affected_df), paste0("_sg", sg_number))
-  return(affected_df)
-}
-
-
-Disambiguate_IDs <- function(input_df, from_symbols_column, sg1_column, sg2_column) {
-  from_symbols_splits <- strsplit(input_df[, from_symbols_column], ", ", fixed = TRUE)
-  affected_sg1_splits <- strsplit(input_df[, sg1_column], "[,;] ")
-  affected_sg2_splits <- strsplit(input_df[, sg2_column], "[,;] ")
-  results_list <- mapply(function(x, y, z) {
-    results_vec <- intersect(x, c(y, z))
-    if (length(results_vec) == 0) {
-      results_vec <- x
-    }
-    return(results_vec)
-  }, from_symbols_splits, affected_sg1_splits, affected_sg2_splits, SIMPLIFY = FALSE)
-  results_vec <- sapply(results_list, "[[", 1)
-  return(results_vec)
-}
-
-
-GetGCcontent <- function(char_vec) {
-  char_vec <- toupper(char_vec)
-  if (all(substr(char_vec, 1, 1) == "G")) {
-    char_vec <- substr(char_vec, 2, nchar(char_vec))
-  }
-  char_mat <- do.call(rbind, strsplit(char_vec, "", fixed = TRUE))
-  are_GC_mat <- (char_mat == "G") | (char_mat == "C")
-  num_GC_vec <- as.integer(rowSums(are_GC_mat))
-  return(num_GC_vec)
-}
-
-
-
-
-
 # Search the human genome for matches to sgRNA sequences ------------------
 
 unique_sequences <- unique(substr(toupper(c(CRISPRoff_df[["protospacer_A"]], CRISPRoff_df[["protospacer_B"]])), 2, 20))
-
 stopifnot(all(nchar(unique_sequences) == 19))
 
 sequences_df <- FindSequences(unique_sequences, max.mismatch = 0)
-
 
 
 
@@ -139,7 +89,6 @@ CRISPRoff_df[, "Entrez_ID"][are_ambiguous] <- new_entrezs
 
 
 
-
 # Annotate with GC content ------------------------------------------------
 
 CRISPRoff_df[, "Num_GC_sg1"] <- GetGCcontent(CRISPRoff_df[, "protospacer_A"])
@@ -147,11 +96,10 @@ CRISPRoff_df[, "Num_GC_sg2"] <- GetGCcontent(CRISPRoff_df[, "protospacer_B"])
 
 
 
-
 # Annotate plasmids that share sgRNAs with other plasmids -----------------
 
 sg1_vec <- toupper(CRISPRoff_df[, "protospacer_A"])
-sg2_vec <- toupper(CRISPRoff_df[, "protospacer_A"])
+sg2_vec <- toupper(CRISPRoff_df[, "protospacer_B"])
 num_occurrences_sg1 <- table(sg1_vec)[toupper(sg1_vec)]
 num_occurrences_sg2 <- table(sg2_vec)[toupper(sg2_vec)]
 CRISPRoff_df[, "Has_shared_sgRNA"] <- (num_occurrences_sg1 > 1) | (num_occurrences_sg2 > 1)
@@ -164,17 +112,11 @@ CRISPRoff_df[, "Num_plasmids_for_Entrez"] <- table(CRISPRoff_df[, "Entrez_ID"])[
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = "CRISPRoff_df",
      file = file.path(rdata_dir, "03_disambiguate_CRISPRoff_library.RData")
      )
-
-
-
-
-
 
 
 
