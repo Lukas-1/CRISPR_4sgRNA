@@ -26,7 +26,7 @@ load(file.path(rdata_dir, "02_annotate_CRISPRoff_library.RData"))
 
 # Prepare data frames for input to the CheckGuides function ---------------------------------------
 
-extracted_df <- fastq_df[, paste0("Sequence_sg", 1:2)]
+extracted_df <- run1_fastq_df[, paste0("Sequence_sg", 1:2)]
 names(extracted_df) <- paste0("Aligned_read_sg", 1:2)
 
 sg_sequences_df <- CRISPRoff_df[, c("protospacer_A", "protospacer_B")]
@@ -43,12 +43,11 @@ extract_df_list <- lapply(1:2, function(x) {
   CheckGuides(extracted_df, x, large_chunk_size = 500000, small_chunk_size = 50000)
 })
 
-run1_matched_df <- do.call(data.frame, c(list(fastq_df[, !(names(fastq_df) %in% c("Quality_sg1", "Quality_sg2"))]),
+run1_matched_df <- do.call(data.frame, c(list(run1_fastq_df[, !(names(run1_fastq_df) %in% c("Quality_sg1", "Quality_sg2"))]),
                                          extract_df_list,
                                          stringsAsFactors = FALSE
                                          )
                            )
-
 
 
 
