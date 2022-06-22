@@ -78,6 +78,19 @@ CRISPRoff_df[grepl("," , CRISPRoff_df[, "Entrez_IDs"], fixed = TRUE), ]
 
 
 
+# Perform a manual fix in preparation for disambiguating Entrez IDs -------
+
+# The gene symbol for MEMO1 translates to the wrong Entrez ID.
+# Correcting this avoids an error resulting from a discrepancy between the
+# number of genes targeted analyzing gene symbols vs. Entrez IDs.
+
+are_to_replace <- (CRISPRoff_df[, "Entrez_IDs"] %in% "7795") &
+                  (CRISPRoff_df[, "Gene_symbols"] %in% "MEMO1")
+CRISPRoff_df[, "Entrez_IDs"][are_to_replace] <- "51072"
+
+
+
+
 # Save data ---------------------------------------------------------------
 
 save(list = "CRISPRoff_df",
