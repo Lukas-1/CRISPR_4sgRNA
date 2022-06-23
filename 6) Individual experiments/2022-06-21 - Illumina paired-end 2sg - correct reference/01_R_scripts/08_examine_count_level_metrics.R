@@ -31,7 +31,7 @@ hist(fraction_switch_vec, breaks = 200)
 
 # Check for plasmids that are not represented in the data -----------------
 
-## Out of a total of 21554 2sg CRISPRoff plasmids, fewer than 0.5% were
+## Out of a total of 21554 2sg CRISPRoff plasmids, fewer than 0.3% were
 ## not represented by any reads in the sequencing data (counts of zero
 ## in all samples). The exact proportions were:
 ## -- 29 (0.13%) when tolerating template switches and 1 base mismatch
@@ -86,8 +86,8 @@ fisher.test(table(are_essential, contain_either))
 
 #### When considering just the “Tbefore” timepoint, 6 out of 2022 essential
 #### genes were missing (0.30%), whereas 23 out of 17420 non-essential genes
-#### were missing (0.13%); this different did NOT reach significance
-#### (odds ratio 2.3, p value = 0.12).
+#### were missing (0.13%); this difference did NOT reach statistical
+#### significance (odds ratio 2.3, p value = 0.12).
 #### For this analysis, template switches and 1 base mismatch were tolerated.
 are_present <- rowSums(counts_df[, c("MaySwitch_xMM_Tbefore_R1", "MaySwitch_xMM_Tbefore_R1")]) != 0
 fisher.test(table(are_essential, are_present))
