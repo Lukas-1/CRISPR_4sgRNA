@@ -54,6 +54,9 @@ round(table(counts_df[, "Sum_NoSwitch_0MM"] == 0) / nrow(counts_df), digits = 3)
 ## the template-switched plasmids always lose the same sgRNA. This may indicate
 ## that a low number of cells were infected, or that the template switches
 ## are correlated, so that many virions are produced with the same switch.
+## UPDATE: The true explanation has been found: A different version of the
+## library was used, where the sgRNA selection for a minority of plasmids
+## has changed.
 
 table(counts_df[, "Data_contains_sg1"])
 table(counts_df[, "Data_contains_sg2"])
@@ -83,7 +86,6 @@ hist(fraction_switch_vec, breaks = 200)
 
 
 # Explore the essentiality scores of missing sgRNAs -----------------------
-
 
 ## Examine all genes for which essentiality data is available from DepMap:
 
@@ -128,7 +130,7 @@ present_entrezs <- setdiff(present_entrezs, common_entrezs)
 ## Of the plasmids that were present in the sequencing data, 588 were essential
 ## and 740 were non-essential (i.e., only 43.5% were essential).
 ## This corresponds to an odds ratio of 33.5 (p < 10^-142, Fisher's exact test).
-## In other
+
 are_missing <- ifelse(counts_df[, "Entrez_ID"] %in% missing_entrezs,
                       "Missing",
                       ifelse(counts_df[, "Entrez_ID"] %in% present_entrezs, "Present", NA)
