@@ -37,7 +37,6 @@ sg_sequences_df[, "Sequence_sg2"] <- substr(sg_sequences_df[, "Sequence_sg2"], 2
 
 
 
-
 # Look up aligned sgRNAs --------------------------------------------------
 
 extract_df_list <- lapply(1:2, function(x) {
@@ -49,7 +48,6 @@ run2_chunk2_matched_df <- do.call(data.frame, c(list(run2_chunk2_fastq_df[, !(na
                                                 stringsAsFactors = FALSE
                                                 )
                                   )
-
 
 
 

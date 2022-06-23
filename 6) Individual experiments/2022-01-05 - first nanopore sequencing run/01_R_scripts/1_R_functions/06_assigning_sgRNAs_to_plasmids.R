@@ -9,7 +9,6 @@ source(file.path(R_functions_directory, "02) Analyzing reads.R"))
 
 
 
-
 # Define functions --------------------------------------------------------
 
 Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NULL) {
@@ -188,8 +187,7 @@ Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NU
     "Read_number" = read_numbers,
     match_df[have_guide, include_columns],
     have_guide_mat, qualities_mat, num_MM_mat,
-    plasmids_mat,
-    symbols_mat, entrezs_mat,
+    plasmids_mat, symbols_mat, entrezs_mat,
     "Num_matched_sgRNAs"    = as.integer(rowSums(!(is.na(have_guide_mat)))),
     "Num_targeted_plasmids" = lengths(unique_list),
     "Num_template_switches" = lengths(rle_list) - 1L,
@@ -209,8 +207,6 @@ Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NU
   }
   return(results_df)
 }
-
-
 
 
 
@@ -286,12 +282,5 @@ MakeCountsDf <- function(sg_df, mapped_df) {
   )
   return(counts_df)
 }
-
-
-
-
-
-
-
 
 

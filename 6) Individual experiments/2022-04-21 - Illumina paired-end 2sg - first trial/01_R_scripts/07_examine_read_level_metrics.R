@@ -13,7 +13,7 @@ source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "02_creati
 
 # Define paths ------------------------------------------------------------
 
-project_dir  <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
+project_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 rdata_dir <- file.path(project_dir, "03_R_objects")
 
 
