@@ -354,13 +354,13 @@ ViolinPlotEssentialDf <- function(essent_df,
                                   ...
                                   ) {
   old_mar <- par(mar = c(4, 4.3, 4, 2.1))
-  show_list <- split(essent_df[, "Mean_log2FC"], essent_df[, "Is_essential"])
+  show_list <- split(essent_df[, "Mean_log2FC"], !(essent_df[, "Is_essential"]))
   if (show_phenotype_score) {
     show_list <- lapply(show_list, function(x) x / num_cell_divisions)
   }
   BeeViolinPlot(show_list,
-                violin_colors = c("#c7e7c0", brewer.pal(9, "Purples")[[3]]),
-                point_colors  = c("#3b6d4c", "#645a7c"),
+                violin_colors = c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"),
+                point_colors  = c("#645a7c", "#3b6d4c"),
                 point_cex     = 0.35,
                 use_spacing   = 0.6,
                 wex           = 0.95,
