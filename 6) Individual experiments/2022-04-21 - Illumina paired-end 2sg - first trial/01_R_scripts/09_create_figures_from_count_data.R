@@ -91,39 +91,6 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 
 
-# Calculate log2FCs -------------------------------------------------------
-
-counts_df[, "Log2FC_MaySwitch_xMM"] <- GetLog2FC(counts_df, allow_switch = TRUE,  allow_1MM = TRUE)[, "Log2FC"]
-counts_df[, "Log2FC_MaySwitch_0MM"] <- GetLog2FC(counts_df, allow_switch = TRUE,  allow_1MM = FALSE)[, "Log2FC"]
-counts_df[, "Log2FC_NoSwitch_xMM"]  <- GetLog2FC(counts_df, allow_switch = FALSE, allow_1MM = TRUE)[, "Log2FC"]
-counts_df[, "Log2FC_NoSwitch_0MM"]  <- GetLog2FC(counts_df, allow_switch = FALSE, allow_1MM = FALSE)[, "Log2FC"]
-
-for (ri in 1:2) {
-  counts_df[, paste0("Log2FC_MaySwitch_xMM_R", ri)] <- GetLog2FC(
-    counts_df, allow_switch = TRUE, allow_1MM = TRUE, choose_rep = ri
-  )[, "Log2FC"]
-}
-
-for (ri in 1:2) {
-  counts_df[, paste0("Log2FC_MaySwitch_0MM_R", ri)] <- GetLog2FC(
-    counts_df, allow_switch = TRUE, allow_1MM = FALSE, choose_rep = ri
-  )[, "Log2FC"]
-}
-
-for (ri in 1:2) {
-  counts_df[, paste0("Log2FC_NoSwitch_xMM_R", ri)] <- GetLog2FC(
-    counts_df, allow_switch = FALSE, allow_1MM = TRUE, choose_rep = ri
-  )[, "Log2FC"]
-}
-
-for (ri in 1:2) {
-  counts_df[, paste0("Log2FC_NoSwitch_0MM_R", ri)] <- GetLog2FC(
-    counts_df, allow_switch = FALSE, allow_1MM = FALSE, choose_rep = ri
-  )[, "Log2FC"]
-}
-
-
-
 # Draw ROC curves for the identification of essential genes ---------------
 
 essential_entrezs     <- GetAvailableGenes(essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
