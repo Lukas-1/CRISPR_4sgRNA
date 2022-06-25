@@ -35,7 +35,7 @@ DrawHistogram <- function(numeric_vec,
     y_axis_upper_limit <- max(c(hist_results[["counts"]], y_axis_limits[[2]]))
   }
   if (is.null(y_axis_limits)) {
-    y_axis_limits <- c(y_axis_upper_limit * (-0.03), y_upper_limit * 1.03)
+    y_axis_limits <- c(y_axis_upper_limit * (-0.03), y_axis_upper_limit * 1.03)
   }
   y_axis_ticks <- pretty(c(0, y_axis_upper_limit), n = 6)
   if (all(y_axis_ticks[-1] >= 10^5)) {
