@@ -6,10 +6,10 @@
 
 library("readxl")
 
-CRISPR_root_directory <- "~/CRISPR"
-experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
-project_dir           <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
-R_functions_dir       <- file.path(project_dir, "01_R_scripts", "R_functions")
+CRISPR_root_directory    <- "~/CRISPR"
+experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
+first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
+R_functions_dir          <- file.path(first_illumina_trial_dir, "01_R_scripts", "R_functions")
 
 source(file.path(R_functions_dir, "01_violin_swarm_plots.R"))
 source(file.path(R_functions_dir, "02_ROC_curves.R"))
@@ -19,20 +19,21 @@ source(file.path(R_functions_dir, "05_creating_figures_from_count_data.R")) # Fo
 
 # Define paths ------------------------------------------------------------
 
-input_dir         <- file.path(project_dir, "02_input_data")
+project_dir       <- file.path(experiments_directory, "2022-06-21 - Illumina paired-end 2sg - correct reference")
 rdata_dir         <- file.path(project_dir, "03_R_objects")
 figures_dir       <- file.path(project_dir, "04_output_data", "Figures")
 PDFs_dir          <- file.path(figures_dir, "PDFs")
 recreate_figs_dir <- file.path(PDFs_dir, "Re-create figures of Nunez et al")
-library_path      <- file.path(input_dir, "2021 - Genome-wide programmable transcriptional memory by CRISPR-based epigenome editing - Table S3.xlsx")
+library_path      <- file.path(first_illumina_trial_dir, "02_input_data", "2021 - Genome-wide programmable transcriptional memory by CRISPR-based epigenome editing - Table S3.xlsx")
+first_rdata_dir   <- file.path(first_illumina_trial_dir, "03_R_objects")
 
 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "03_disambiguate_CRISPRoff_library.RData"))
-load(file.path(rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
-load(file.path(rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
+load(file.path(first_rdata_dir, "03_disambiguate_CRISPRoff_library.RData"))
+load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
+load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
 
 
 
@@ -279,20 +280,20 @@ for (create_PDF in c(FALSE, TRUE)) {
       "Rep2_data" = Nunez_df[, "CRISPRoff_Rep2"],
       stringsAsFactors = FALSE
     )
-    ReplicateScatterPlot(scatter_df, show_phenotype_score = TRUE,
-                         use_title = "CRISPRoff",
-                         highlight_NT = highlight_NT,
-                         highlight_essential = highlight_essential,
-                         embed_PNG = create_PDF
-                         )
-    scatter_df[, "Rep1_data"] <- Nunez_df[, "CRISPRoff_mut_Rep1"]
-    scatter_df[, "Rep2_data"] <- Nunez_df[, "CRISPRoff_mut_Rep2"]
-    ReplicateScatterPlot(scatter_df, show_phenotype_score = TRUE,
-                         use_title = "CRISPRoff mutant",
-                         highlight_NT = highlight_NT,
-                         highlight_essential = highlight_essential,
-                         embed_PNG = create_PDF
-                         )
+    for (show_mutant in c(FALSE, TRUE)) {
+      if (show_mutant) {
+        scatter_df[, "Rep1_data"] <- Nunez_df[, "CRISPRoff_mut_Rep1"]
+        scatter_df[, "Rep2_data"] <- Nunez_df[, "CRISPRoff_mut_Rep2"]
+      }
+      ReplicateScatterPlot(scatter_df,
+                           show_phenotype_score = TRUE,
+                           use_title            = if (show_mutant) "CRISPRoff mutant" else "CRISPRoff",
+                           highlight_NT         = highlight_NT,
+                           highlight_essential  = highlight_essential,
+                           embed_PNG            = create_PDF
+                           )
+    }
+    rm(scatter_df)
     if (create_PDF) {
       dev.off()
     }
