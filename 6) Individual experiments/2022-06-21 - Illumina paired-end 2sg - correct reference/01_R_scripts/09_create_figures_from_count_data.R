@@ -6,11 +6,13 @@
 CRISPR_root_directory    <- "~/CRISPR"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
+first_nanopore_dir       <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
 R_functions_dir          <- file.path(first_illumina_trial_dir, "01_R_scripts", "R_functions")
 
 source(file.path(R_functions_dir, "01_violin_swarm_plots.R"))
 source(file.path(R_functions_dir, "02_ROC_curves.R"))
 source(file.path(R_functions_dir, "05_creating_figures_from_count_data.R"))
+source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "02_creating_histograms.R"))
 
 
 
@@ -313,11 +315,129 @@ for (allow_switch in c(FALSE, TRUE)) {
 
 
 
+# Create scatter plots ----------------------------------------------------
+
+Log2FCScatterPlot(baseline_indices = 1:2, intervention_indices = 5:6,
+                  allow_switch = FALSE,
+                  highlight_NT = TRUE, highlight_essential = FALSE,
+                  show_phenotype_score = TRUE
+                  )
+
+for (allow_switch in c(FALSE, TRUE)) {
+  if (allow_switch) {
+    use_dir <- file.path(PDFs_dir, "Including template switch")
+  } else {
+    use_dir <- file.path(PDFs_dir, "Excluding template switch")
+  }
+  for (create_PDF in c(FALSE, TRUE)) {
+    for (highlight_option in c("none", "essential", "NT")) {
+      if (highlight_option == "none") {
+        highlight_NT <- FALSE
+        highlight_essential <- FALSE
+        file_postfix <- "plain"
+        use_width <- 4.37
+      } else if (highlight_option == "essential") {
+        highlight_NT <- FALSE
+        highlight_essential <- TRUE
+        use_width <- 5.45
+        file_postfix <- "essential genes highlighted"
+      } else if (highlight_option == "NT") {
+        highlight_NT <- TRUE
+        highlight_essential <- FALSE
+        use_width <- 5.45
+        file_postfix <- "NT controls highlighted"
+      }
+
+      if (create_PDF) {
+        pdf(file.path(use_dir, paste0("Scatter plots - ", file_postfix, ".pdf")),
+            width = use_width, height = 4.7
+            )
+      }
+      args_list <- list(allow_switch        = FALSE,
+                        highlight_NT        = highlight_NT,
+                        highlight_essential = highlight_essential,
+                        embed_PNG           = create_PDF
+                        )
+      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 3:4, intervention_indices = 5:6, use_title = T0vT12_title)))
+      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 1:2, intervention_indices = 5:6, use_title = BvT12_title)))
+      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 1:2, intervention_indices = 3:4, use_title = BvT0_title)))
+      if (create_PDF) {
+        dev.off()
+      }
+    }
+  }
+}
+
+
+
+
+# Draw histograms ---------------------------------------------------------
+
+columns_vec <- c(
+  paste0("NoSwitch_xMM_Tbefore_R", 1:2),
+  paste0("NoSwitch_xMM_T0_R", 1:2),
+  paste0("NoSwitch_xMM_T12_R", 1:2)
+)
+columns_list <- list(
+  "All samples and timepoints" = columns_vec,
+  "Tbefore (both replicates)"  = columns_vec[1:2],
+  "T0 (both replicates)"       = columns_vec[3:4],
+  "T12 (both replicates)"      = columns_vec[5:6],
+  "Tbefore replicate 1"        = columns_vec[[1]],
+  "Tbefore replicate 2"        = columns_vec[[2]],
+  "T0 replicate 1"             = columns_vec[[3]],
+  "T0 replicate 2"             = columns_vec[[4]],
+  "T12 replicate 1"            = columns_vec[[5]],
+  "T12 replicate 2"            = columns_vec[[6]]
+)
+
+DrawHistogram(counts_df[, "Sum_MaySwitch_xMM"] / 6,
+              truncation_limit = 5000,
+              num_breaks = 150,
+              x_axis_label = "Mean read count",
+              y_axis_label = "Number of plasmids"
+              )
+
+for (allow_switch in c(FALSE, TRUE)) {
+  if (allow_switch) {
+    use_dir <- file.path(PDFs_dir, "Including template switch")
+  } else {
+    use_dir <- file.path(PDFs_dir, "Excluding template switch")
+  }
+  for (create_PDF in c(FALSE, TRUE)) {
+    if (create_PDF) {
+      pdf(file.path(use_dir, paste0("Histograms - read counts.pdf")),
+          width = 5, height = 4
+          )
+    }
+    old_mar <- par(mar = c(4.25, 4.1, 3.25, 2.1))
+    for (use_title in names(columns_list)) {
+      use_columns <- columns_list[[use_title]]
+      if (allow_switch) {
+        use_columns <- sub("^NoSwitch_", "MaySwitch_", use_columns)
+      }
+      DrawHistogram(numeric_vec      = rowMeans(as.matrix(counts_df[, use_columns, drop = FALSE])),
+                    truncation_limit = 5000L,
+                    num_breaks       = 150L,
+                    title_text       = use_title,
+                    x_axis_label     = if (length(use_columns) == 1) "Read count" else "Mean read count",
+                    y_axis_label     = "Number of plasmids",
+                    y_axis_limits    = c(-20, 1600)
+                    )
+    }
+    par(old_mar)
+    if (create_PDF) {
+      dev.off()
+    }
+  }
+}
+
+
+
 
 # Display individual genes ------------------------------------------------
 
 PlotCountsForPlasmid("HNRNPK")
-
 
 
 
