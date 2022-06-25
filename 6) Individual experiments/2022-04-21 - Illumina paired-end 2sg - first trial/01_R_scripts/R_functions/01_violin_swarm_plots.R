@@ -12,7 +12,7 @@ library("sm")
 
 # General functions for plotting ------------------------------------------
 
-SetUpEmptyPlot <- function(num_groups, data_range, use_y_limits = NULL, draw_axis = TRUE, indicate_zero = FALSE) {
+SetUpBoxPlot <- function(num_groups, data_range, use_y_limits = NULL, draw_axis = TRUE, indicate_zero = FALSE) {
 
   ## Determine group positions
   group_positions <- seq_len(num_groups)
@@ -176,6 +176,80 @@ SingleViolin <- function(numeric_vec,
 
 
 
+BringWithinLimits <- function(numeric_vec, lower_bound = NULL, upper_bound = NULL) {
+
+  stopifnot(!(anyNA(numeric_vec)))
+
+  are_finite <- is.finite(numeric_vec)
+  data_range <- range(numeric_vec[are_finite])
+  if (any(!(are_finite))) {
+    numeric_vec[!(are_finite)] <- ifelse(numeric_vec[!(are_finite)] < 0,
+                                         if (is.null(lower_bound)) data_range[[1]] else lower_bound - 1,
+                                         if (is.null(upper_bound)) data_range[[2]] else upper_bound + 1
+                                         )
+    message(paste0(sum(!(are_finite)), " values were not finite (i.e. Inf or ",
+                   "-Inf) and were replaced by either the upper or lower ",
+                   "bounds (if given) or the maximum or minimum values in the ",
+                   "data, respectively."
+                   ))
+  }
+  if ((!(is.null(upper_bound))) || (!(is.null(lower_bound)))) {
+    if (is.null(upper_bound)) {
+      upper_bound <- Inf
+    }
+    if (is.null(lower_bound)) {
+      lower_bound <- -Inf
+    }
+    exceed_lower <- numeric_vec < lower_bound
+    exceed_upper <- numeric_vec > upper_bound
+    exceed_bounds <- exceed_lower | exceed_upper
+    numeric_vec[exceed_bounds] <- ifelse(numeric_vec[exceed_bounds] < lower_bound,
+                                         lower_bound, upper_bound
+                                         )
+    message(paste0(sum(exceed_bounds), " values lay outside of the given ",
+                   "upper or lower bounds and were truncated."
+                   ))
+    lower_bound_enforced <- any(exceed_lower)
+    upper_bound_enforced <- any(exceed_upper)
+  } else {
+    lower_bound_enforced <- FALSE
+    upper_bound_enforced <- FALSE
+  }
+
+  results_list <- list(
+    "curtailed_vec"        = numeric_vec,
+    "lower_bound_enforced" = lower_bound_enforced,
+    "upper_bound_enforced" = upper_bound_enforced
+  )
+  return(results_list)
+}
+
+
+
+CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
+                                lower_bound_enforced, upper_bound_enforced
+                                ) {
+  plain_axis_labels <- format(tick_positions, trim = TRUE)
+  axis_labels <- lapply(plain_axis_labels, function(x) as.expression(bquote(""[.(x)])))
+  axis_labels <- sapply(axis_labels, function(x) x)
+  if (lower_bound_enforced && (abs(lower_bound - tick_positions[[1]]) < 1e-15)) {
+    axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(.(if (tick_positions[[1]] < 0) "" else " "))
+                                              * .(plain_axis_labels[[1]])]
+    ))
+  }
+  if (upper_bound_enforced) {
+    num_ticks <- length(tick_positions)
+    if (abs(upper_bound - tick_positions[[num_ticks]]) < 1e-15) {
+      axis_labels[num_ticks] <- as.expression(bquote(""["" >= scriptscriptstyle(" ") *
+                                                          .(plain_axis_labels[[num_ticks]])]
+      ))
+    }
+  }
+  return(axis_labels)
+}
+
+
+
 BeeViolinPlot <- function(input_list,
                           groups_vec    = NULL,
                           gap_ratio     = 1.25,
@@ -214,44 +288,18 @@ BeeViolinPlot <- function(input_list,
     line_colors <- rep(line_colors, num_groups)
   }
 
-  numeric_vec <- unlist(input_list, use.names = FALSE)
   group_indices <- rep(seq_along(input_list), lengths(input_list))
 
-  stopifnot(!(anyNA(numeric_vec)))
+  numeric_vec <- unlist(input_list, use.names = FALSE)
   are_finite <- is.finite(numeric_vec)
-  data_range <- range(numeric_vec[are_finite])
-  if (any(!(are_finite))) {
-    numeric_vec[!(are_finite)] <- ifelse(numeric_vec[!(are_finite)] < 0,
-                                         if (is.null(lower_bound)) data_range[[1]] else lower_bound - 1,
-                                         if (is.null(upper_bound)) data_range[[2]] else upper_bound + 1
-                                         )
-    message(paste0(sum(!(are_finite)), " values were not finite (i.e. Inf or ",
-                   "-Inf) and were replaced by either the upper or lower ",
-                   "bounds (if given) or the maximum or minimum values in the ",
-                   "data, respectively."
-                   ))
-  }
-  if ((!(is.null(upper_bound))) || (!(is.null(lower_bound)))) {
-    if (is.null(upper_bound)) {
-      upper_bound <- Inf
-    }
-    if (is.null(lower_bound)) {
-      lower_bound <- -Inf
-    }
-    exceed_lower <- numeric_vec < lower_bound
-    exceed_upper <- numeric_vec > upper_bound
-    exceed_bounds <- exceed_lower | exceed_upper
-    numeric_vec[exceed_bounds] <- ifelse(numeric_vec[exceed_bounds] < lower_bound,
-                                         lower_bound, upper_bound
-                                         )
-    message(paste0(sum(exceed_bounds), " values lay outside of the given ",
-                   "upper or lower bounds and were truncated."
-                   ))
-    data_range <- range(numeric_vec)
-  } else {
-    exceed_bounds <- FALSE
-  }
-
+  curtailed_list <- BringWithinLimits(numeric_vec,
+                                      lower_bound = lower_bound,
+                                      upper_bound = upper_bound
+                                      )
+  numeric_vec <- curtailed_list[["curtailed_vec"]]
+  lower_bound_enforced <- curtailed_list[["lower_bound_enforced"]]
+  upper_bound_enforced <- curtailed_list[["upper_bound_enforced"]]
+  assign("delete_curtailed_list", curtailed_list, envir = globalenv())
   numeric_list <- split(numeric_vec, group_indices)
   are_finite_list <- split(are_finite, group_indices)
 
@@ -261,26 +309,20 @@ BeeViolinPlot <- function(input_list,
     x_positions <- RepositionByGroups(groups_vec, gap_ratio = gap_ratio)
   }
 
-  SetUpEmptyPlot(num_groups,
-                 data_range = data_range,
-                 use_y_limits = y_limits,
-                 draw_axis = FALSE,
-                 indicate_zero = indicate_zero
-                 )
+  SetUpBoxPlot(num_groups,
+               data_range = range(numeric_vec),
+               use_y_limits = y_limits,
+               draw_axis = FALSE,
+               indicate_zero = indicate_zero
+               )
 
   axis_ticks <- axTicks(2)
-  plain_axis_labels <- format(axis_ticks, trim = TRUE)
-  axis_labels <- lapply(plain_axis_labels, function(x) as.expression(bquote(""[.(x)])))
-  axis_labels <- sapply(axis_labels, function(x) x)
-  if (any(exceed_bounds)) {
-    if (any(exceed_lower) && (abs(lower_bound - axis_ticks[[1]]) < 1e-15)) {
-      axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(.(if (axis_ticks[[1]] < 0) "" else " ")) * .(plain_axis_labels[[1]])]))
-    }
-    num_ticks <- length(axis_ticks)
-    if (any(exceed_upper) && (abs(upper_bound - axis_ticks[[num_ticks]]) < 1e-15)) {
-      axis_labels[num_ticks] <- as.expression(bquote(""["" >= scriptscriptstyle(" ") * .(plain_axis_labels[[num_ticks]])]))
-    }
-  }
+  axis_labels <- CurtailedAxisLabels(axis_ticks,
+                                     lower_bound          = lower_bound,
+                                     upper_bound          = upper_bound,
+                                     lower_bound_enforced = lower_bound_enforced,
+                                     upper_bound_enforced = upper_bound_enforced
+                                     )
   axis(2,
        at       = axis_ticks,
        labels   = axis_labels,
