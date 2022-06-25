@@ -1,6 +1,11 @@
 ## 2022-05-23
 
 
+# Import packages and source code -----------------------------------------
+
+library("png")
+
+
 
 # Functions for data normalization ----------------------------------------
 
@@ -417,7 +422,7 @@ PlotCounts <- function(numeric_vec,
   point_colors <- vapply(group_colors, function(x) brewer.pal(9, x)[[9]], "")
 
   ## Set up the plot canvas
-  SetUpEmptyPlot(nlevels(groups_fac), range(numeric_vec, na.rm = TRUE))
+  SetUpBoxPlot(nlevels(groups_fac), range(numeric_vec, na.rm = TRUE))
 
   group_positions <- seq_len(nlevels(groups_fac))
   mtext(group_labels, at = group_positions, side = 1, line = 0.5, cex = par("cex"))
@@ -518,3 +523,349 @@ PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with C
   par(old_mar)
   return(invisible(NULL))
 }
+
+
+
+
+# Helper functions (required by ReplicateScatterPlot) ---------------------
+
+ConcatenateExpressions <- function(expression_list, my_sep = "  \u2013  ") {
+  literal_strings <- vapply(expression_list, StripExpression, "")
+  combined_string <- paste0(literal_strings, collapse = paste0(" * \"", my_sep, "\" * "))
+  results_expression <- parse(text = combined_string)
+  return(results_expression)
+}
+
+
+VerticalAdjust <- function(use_expression) {
+  my_list <- list(expression(phantom("gh")), use_expression, expression(phantom("gh")))
+  return(ConcatenateExpressions(my_list, my_sep = ""))
+}
+
+
+StripExpression <- function(my_expression) {
+  if (is.character(my_expression)) {
+    literal_string <- paste0("\"", capture.output(cat(my_expression)), "\"")
+  } else {
+    literal_string <- paste0(capture.output(my_expression), collapse = "")
+    if (substr(literal_string, 1L, 11L) == "expression(") {
+      literal_string <- substr(literal_string, 12L, nchar(literal_string) - 1L)
+    }
+  }
+  return(literal_string)
+}
+
+
+
+DrawSideLegend <- function(labels_list,
+                           use_colors,
+                           border_colors        = NULL,
+                           use_pch              = 16,
+                           use_point_size       = 1.2,
+                           lines_x_start        = 0.75,
+                           y_mid                = 0.5,
+                           small_gap_size       = 1.25,
+                           large_gap_multiplier = 1.75,
+                           point_x_start        = 0.15
+                           ) {
+
+  ## Perform checks
+  stopifnot(identical(length(labels_list), length(use_colors)))
+
+  ## Prepare for drawing legend
+  small_gap <- diff(grconvertY(c(0, small_gap_size), from = "char", to = "npc"))
+  medium_gap <- small_gap * 1.25
+  large_gap <- small_gap * large_gap_multiplier
+
+  if (all(lengths(labels_list) == 1)) {
+    gaps_vec <- rep(medium_gap, length(labels_list))
+    are_first <- rep(TRUE, length(labels_list))
+  } else {
+    are_first <- unlist(lapply(labels_list, function(x) {
+      c(TRUE, rep(FALSE, length(x) - 1))
+    }))
+    gaps_vec <- ifelse(are_first, large_gap, small_gap)
+  }
+  gaps_vec[[1]] <- 0
+  total_span <- sum(gaps_vec)
+  start_y <- y_mid + (total_span / 2)
+  y_sequence <- start_y - cumsum(gaps_vec)
+  y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
+
+  x_text  <- 1 + diff(grconvertX(c(0, lines_x_start), from = "lines", to = "npc"))
+  x_point <- 1 + diff(grconvertX(c(0, lines_x_start + point_x_start), from = "lines", to = "npc"))
+
+  ## Draw legend
+  text(x      = grconvertX(x = x_text, from = "npc", to = "user"),
+       y      = y_pos,
+       cex    = 1,
+       labels = sapply(unlist(labels_list), VerticalAdjust),
+       adj    = c(0, 0.5),
+       xpd    = NA
+       )
+  groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
+  points(x   = rep(grconvertX(x = x_point, from = "npc", to = "user"), length(labels_list)),
+         y   = tapply(y_pos, groups_vec, mean),
+         cex = use_point_size,
+         pch = use_pch,
+         col = if (!(is.null(border_colors))) border_colors else use_colors,
+         bg  = use_colors,
+         xpd = NA
+         )
+
+  return(invisible(NULL))
+}
+
+
+
+
+
+
+# Functions for creating replicate scatter plots --------------------------
+
+ReplicateScatterPlot <- function(input_df,
+                                 show_phenotype_score = FALSE,
+                                 lower_bound          = -8 * (if (show_phenotype_score) 0.1 else 1),
+                                 upper_bound          = 8  * (if (show_phenotype_score) 0.1 else 1),
+                                 axis_limits          = c(lower_bound, upper_bound),
+                                 highlight_essential  = TRUE,
+                                 use_blomen_hart      = TRUE,
+                                 highlight_NT         = TRUE,
+                                 use_title            = NULL,
+                                 embed_PNG            = FALSE
+                                 ) {
+
+  required_objects <- c("essential_df", "essentials_2020Q2_df",
+                        "non_essentials_2020Q2_df"
+                        )
+  stopifnot(all(required_objects %in% ls(envir = globalenv())))
+  xy_mat <- as.matrix(input_df[, c("Rep1_data", "Rep2_data")])
+
+  ## Remove NaN values (0 divided by 0)
+  have_NaN <- rowSums(is.nan(xy_mat)) != 0
+  xy_mat <- xy_mat[!(have_NaN), ]
+  highlight_genes <- highlight_NT || highlight_essential
+  if (highlight_genes) {
+    entrezs_vec <- input_df[, "Entrez_ID"][!(have_NaN)]
+    are_NT <- input_df[, "Is_NT"][!(have_NaN)]
+  }
+  message(paste0(sum(have_NaN), " plasmids had NaN Log2FC values (i.e. 0 divided",
+                 " by 0) in one or both replicate experiments and were excluded."
+                 ))
+
+  ## Adjust axis limits
+  xy_list <- lapply(1:2, function(x) {
+    BringWithinLimits(xy_mat[, x], lower_bound = lower_bound, upper_bound = upper_bound)
+  })
+  xy_mat <- cbind(xy_list[[1]][["curtailed_vec"]], xy_list[[2]][["curtailed_vec"]])
+  xy_range <- range(xy_mat[is.finite(xy_mat)])
+  if (is.null(axis_limits)) {
+    axis_limits <- xy_range
+  }
+  xy_space <- (axis_limits[[2]] - axis_limits[[1]]) * 0.025
+  xy_lim <- c(axis_limits[[1]] - xy_space, axis_limits[[2]] + xy_space)
+
+  ## Prepare axis tick labels
+  tick_locations <- pretty(axis_limits, n = 6)
+  tick_labels_list <- lapply(1:2, function(i) {
+    CurtailedAxisLabels(tick_locations,
+                        lower_bound          = lower_bound,
+                        upper_bound          = upper_bound,
+                        lower_bound_enforced = xy_list[[i]][["lower_bound_enforced"]],
+                        upper_bound_enforced = xy_list[[i]][["lower_bound_enforced"]]
+                        )
+  })
+  ## Prepare axis labels
+  if (show_phenotype_score) {
+    axis_labels_list <- list(
+      expression("Phenotype score (" * gamma * ") \u2013 replicate 1"),
+      expression("Phenotype score (" * gamma * ") \u2013 replicate 1")
+    )
+  } else {
+    axis_labels_list <- list(
+      expression("Log"[2] * " fold change \u2013 replicate 1"),
+      expression("Log"[2] * " fold change \u2013 replicate 2")
+    )
+  }
+
+  ## Prepare points that should be highlighted
+  if (highlight_genes) {
+    AddSum <- function(logical_vec) paste0("(", sum(logical_vec), ")")
+    if (highlight_essential) {
+      if (use_blomen_hart) {
+        highlight_mat <- cbind(
+          "is_essential"     = entrezs_vec %in% essentials_2020Q2_df[, "Entrez_ID"],
+          "is_non_essential" = entrezs_vec %in% non_essentials_2020Q2_df[, "Entrez_ID"]
+        )
+        highlight_colors <- c("#6810c6", "#18a008")
+        labels_list <- list(
+          "essential" = c("Essential", "genes", AddSum(highlight_mat[, "is_essential"])),
+          "non-essential" = c("Non-essential", "genes", AddSum(highlight_mat[, "is_non_essential"]))
+        )
+      } else {
+        matches_vec <- match(entrezs_vec, essential_df[, "Entrez_ID"])
+        are_essential <- essential_df[, "CRISPR_common"][matches_vec] %in% "Essential"
+        highlight_mat <- cbind("is_essential" = are_essential)
+        highlight_colors <- "#6810c6"
+        labels_list <- list("essential" = c("Essential", "genes", AddSum(are_essential)))
+      }
+    } else {
+      labels_list <- c()
+      highlight_colors <- c()
+    }
+    if (highlight_NT) {
+      if (highlight_essential) {
+        highlight_mat <- cbind(highlight_mat, "is_NT" = are_NT)
+      } else {
+        highlight_mat <- cbind("is_NT" = are_NT)
+      }
+      highlight_colors <- c(highlight_colors, "#004ec2")
+      labels_list <- c(labels_list, list("NT" = c("Non-targeting", "controls", AddSum(are_NT))))
+    }
+    stopifnot(!(any(rowSums(highlight_mat) > 1)))
+    are_highlighted <- rowSums(highlight_mat) == 1
+    set.seed(1)
+    scrambled_indices <- sample(which(are_highlighted))
+    are_highlighted_mat <- highlight_mat[scrambled_indices, , drop = FALSE]
+    highlighted_xy_mat <- xy_mat[scrambled_indices, ]
+    point_colors <- adjustcolor(highlight_colors, alpha.f = 0.7)
+    colors_vec <- vapply(seq_len(nrow(are_highlighted_mat)),
+                         function(x) point_colors[[which(are_highlighted_mat[x, ])]],
+                         ""
+                         )
+  } else {
+    are_highlighted <- rep(FALSE, nrow(xy_mat))
+  }
+
+  ## Prepare plot margins
+  if (highlight_genes) {
+    use_mar <- c(3.75, 3.75, 3.75, 7.5)
+  } else {
+    use_mar <- c(3.75, 3.75, 3.75, 2.1)
+  }
+  old_mar <- par(mar = use_mar)
+
+  if (embed_PNG) {
+    PDF_mar <- par("mar")
+    PDF_device <- dev.cur()
+    temp_path <- file.path(figures_dir, "temp.png")
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "transparent"
+        )
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
+    par(mar = rep(0, 4))
+  }
+
+  ## Set up plot canvas
+  plot(1, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i", type = "n",
+       axes = FALSE, ann = FALSE
+       )
+  abline(v = 0, h = 0, col = "gray85", lend = "butt")
+
+  ## Draw points
+  points(xy_mat[!(are_highlighted), ],
+         pch = 16,
+         cex = 0.3,
+         col = adjustcolor("black", alpha.f = 0.35),
+         xpd = NA
+         )
+  if (highlight_genes) {
+    points(highlighted_xy_mat,
+           pch = 16,
+           cex = 0.3,
+           col = colors_vec,
+           xpd = NA
+           )
+  }
+
+  if (embed_PNG) {
+    dev.off()
+    raster_array <- png::readPNG(temp_path)
+    file.remove(temp_path)
+    dev.set(PDF_device)
+    par(PDF_mar)
+    plot(1, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i", type = "n",
+         axes = FALSE, ann = FALSE
+         )
+    rasterImage(raster_array,
+                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
+                )
+  }
+
+  ## Annotate plot
+  mtext(axis_labels_list[[1]], side = 1, line = 2)
+  mtext(axis_labels_list[[1]], side = 2, line = 2.3)
+  if (!(is.null(use_title))) {
+    title(use_title, cex.main = par("cex"))
+  }
+
+  ## Draw axes
+  tick_locations <- pretty(axis_limits, n = 6)
+  for (i in 1:2) {
+    axis(i,
+         at       = tick_locations,
+         labels   = tick_labels_list[[i]],
+         mgp      = c(3, if (i == 1) 0.4 else 0.55, 0),
+         tcl      = -0.375,
+         las      = 1,
+         lwd      = par("lwd"),
+         cex.axis = par("cex") / 0.7
+         )
+  }
+  box()
+  if (highlight_genes) {
+    DrawSideLegend(labels_list,
+                   use_colors = adjustcolor(highlight_colors, alpha.f = 0.85),
+                   use_point_size = 1, point_x_start = 0.2, lines_x_start = 0.6
+                   )
+  }
+  par(old_mar)
+  return(invisible(NULL))
+}
+
+
+
+Log2FCScatterPlot <- function(allow_switch         = FALSE,
+                              allow_1MM            = TRUE,
+                              baseline_indices     = 3:4,
+                              intervention_indices = 5:6,
+                              show_phenotype_score = FALSE,
+                              num_cell_divisions   = 10L,
+                              ...
+                              ) {
+
+  stopifnot(all(c("counts_df", "CRISPRoff_df") %in% ls(envir = globalenv())))
+
+  use_args <- list(input_df             = counts_df,
+                   baseline_indices     = baseline_indices,
+                   intervention_indices = intervention_indices,
+                   allow_switch         = allow_switch,
+                   allow_1MM            = allow_1MM
+                   )
+  R1_df <- do.call(GetLog2FC, c(use_args, list(choose_rep = 1L)))
+  R2_df <- do.call(GetLog2FC, c(use_args, list(choose_rep = 2L)))
+
+  stopifnot(identical(counts_df[, "Plasmid_ID"], CRISPRoff_df[, "Plasmid_ID"]))
+
+  replicates_df <- data.frame(
+    counts_df[, c("Plasmid_ID", "Entrez_ID", "Gene_symbol")],
+    "Is_NT" = CRISPRoff_df[, "gene"] == "negative_control",
+    "Rep1_data" = if (show_phenotype_score) (R1_df[, "Log2FC"] / num_cell_divisions) else R1_df[, "Log2FC"],
+    "Rep2_data" = if (show_phenotype_score) (R2_df[, "Log2FC"] / num_cell_divisions) else R2_df[, "Log2FC"],
+    stringsAsFactors = FALSE
+  )
+
+  ReplicateScatterPlot(replicates_df, show_phenotype_score = show_phenotype_score, ...)
+}
+
+
+
