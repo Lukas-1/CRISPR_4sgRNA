@@ -13,6 +13,7 @@ R_functions_dir       <- file.path(project_dir, "01_R_scripts", "R_functions")
 
 source(file.path(R_functions_dir, "01_violin_swarm_plots.R"))
 source(file.path(R_functions_dir, "02_ROC_curves.R"))
+source(file.path(R_functions_dir, "05_creating_figures_from_count_data.R")) # For scatter plots
 
 
 
@@ -31,6 +32,7 @@ library_path      <- file.path(input_dir, "2021 - Genome-wide programmable trans
 
 load(file.path(rdata_dir, "03_disambiguate_CRISPRoff_library.RData"))
 load(file.path(rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
+load(file.path(rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
 
 
 
@@ -163,7 +165,6 @@ for (create_PDF in c(FALSE, TRUE)) {
   if (create_PDF) {
     dev.off()
   }
-
 }
 
 
@@ -244,6 +245,59 @@ for (create_PDF in c(FALSE, TRUE)) {
 }
 
 
+
+
+# Create scatter plots ----------------------------------------------------
+
+for (create_PDF in c(FALSE, TRUE)) {
+  for (highlight_option in c("none", "essential", "NT")) {
+    if (highlight_option == "none") {
+      highlight_NT <- FALSE
+      highlight_essential <- FALSE
+      file_postfix <- "plain"
+      use_width <- 4.37
+    } else if (highlight_option == "essential") {
+      highlight_NT <- FALSE
+      highlight_essential <- TRUE
+      use_width <- 5.45
+      file_postfix <- "essential genes highlighted"
+    } else if (highlight_option == "NT") {
+      highlight_NT <- TRUE
+      highlight_essential <- FALSE
+      use_width <- 5.45
+      file_postfix <- "NT controls highlighted"
+    }
+    if (create_PDF) {
+      pdf(file.path(recreate_figs_dir, paste0("Scatter plots - ", file_postfix, ".pdf")),
+          width = use_width, height = 4.7
+          )
+    }
+    scatter_df <- data.frame(
+      Nunez_df[, c("Entrez_ID", "Gene_symbol")],
+      "Is_NT" = Nunez_df[, "gene"] == "non-targeting",
+      "Rep1_data" = Nunez_df[, "CRISPRoff_Rep1"],
+      "Rep2_data" = Nunez_df[, "CRISPRoff_Rep2"],
+      stringsAsFactors = FALSE
+    )
+    ReplicateScatterPlot(scatter_df, show_phenotype_score = TRUE,
+                         use_title = "CRISPRoff",
+                         highlight_NT = highlight_NT,
+                         highlight_essential = highlight_essential,
+                         embed_PNG = create_PDF
+                         )
+    scatter_df[, "Rep1_data"] <- Nunez_df[, "CRISPRoff_mut_Rep1"]
+    scatter_df[, "Rep2_data"] <- Nunez_df[, "CRISPRoff_mut_Rep2"]
+    ReplicateScatterPlot(scatter_df, show_phenotype_score = TRUE,
+                         use_title = "CRISPRoff mutant",
+                         highlight_NT = highlight_NT,
+                         highlight_essential = highlight_essential,
+                         embed_PNG = create_PDF
+                         )
+    if (create_PDF) {
+      dev.off()
+    }
+  }
+}
 
 
 
