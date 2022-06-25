@@ -15,7 +15,9 @@ DrawHistogram <- function(numeric_vec,
                           title_text         = "",
                           x_axis_label       = "",
                           y_axis_label       = "Count",
-                          x_axis_upper_limit = NULL
+                          x_axis_upper_limit = NULL,
+                          y_axis_upper_limit = NULL,
+                          y_axis_limits      = NULL
                           ) {
 
   if (!(is.null(truncation_limit))) {
@@ -25,13 +27,27 @@ DrawHistogram <- function(numeric_vec,
                           )
   }
 
-  ## Draw the histogram
+  ## Calculate histogram
   hist_results <- hist(numeric_vec, breaks = num_breaks, plot = FALSE)
-  y_max <- max(hist_results[["counts"]])
-  y_axis_limits <- c(y_max * (-0.03), y_max * 1.03)
+
+  ## Prepare axes
+  if (is.null(y_axis_upper_limit)) {
+    y_axis_upper_limit <- max(c(hist_results[["counts"]], y_axis_limits[[2]]))
+  }
+  if (is.null(y_axis_limits)) {
+    y_axis_limits <- c(y_axis_upper_limit * (-0.03), y_upper_limit * 1.03)
+  }
+  y_axis_ticks <- pretty(c(0, y_axis_upper_limit), n = 6)
+  if (all(y_axis_ticks[-1] >= 10^5)) {
+    y_axis_labels <- paste0(y_axis_ticks / 1000, "k")
+  } else {
+    y_axis_labels <- format(y_axis_ticks)
+  }
   if (is.null(x_axis_upper_limit)) {
     x_axis_upper_limit <- max(numeric_vec)
   }
+
+  ## Draw histogram
   plot(1, type = "n", ann = FALSE, axes = FALSE,
        xlim = c(0, x_axis_upper_limit), ylim = y_axis_limits,
        xaxs = "i", yaxs = "i"
@@ -49,7 +65,7 @@ DrawHistogram <- function(numeric_vec,
        xpd     = NA
        )
 
-  ## Draw the x axis
+  ## Draw x axis
   x_axis_ticks <- axTicks(1)
   x_axis_labels <- format(x_axis_ticks)
   if (is.null(truncation_limit)) {
@@ -61,19 +77,12 @@ DrawHistogram <- function(numeric_vec,
                             )
   }
 
-
   axis(1, mgp = c(2.6, 0.5, 0), tcl = -0.35,
        at = x_axis_ticks, labels = x_axis_labels
        )
   mtext(x_axis_label, side = 1, line = 2.2)
 
-  ## Draw the y axis
-  y_axis_ticks <- axTicks(2)
-  if (all(y_axis_ticks[-1] >= 10^5)) {
-    y_axis_labels <- paste0(y_axis_ticks / 1000, "k")
-  } else {
-    y_axis_labels <- format(y_axis_ticks)
-  }
+  ## Draw y axis
   axis(2, las = 1, mgp = c(2.6, 0.5, 0), tcl = -0.35,
        at = y_axis_ticks, labels = y_axis_labels
        )
