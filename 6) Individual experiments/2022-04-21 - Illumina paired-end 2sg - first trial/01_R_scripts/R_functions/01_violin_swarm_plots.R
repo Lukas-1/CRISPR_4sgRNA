@@ -12,7 +12,13 @@ library("sm")
 
 # General functions for plotting ------------------------------------------
 
-SetUpBoxPlot <- function(num_groups, data_range, use_y_limits = NULL, draw_axis = TRUE, indicate_zero = FALSE) {
+SetUpBoxPlot <- function(num_groups,
+                         data_range,
+                         use_y_limits  = NULL,
+                         draw_axis     = TRUE,
+                         draw_box      = TRUE,
+                         indicate_zero = FALSE
+                         ) {
 
   ## Determine group positions
   group_positions <- seq_len(num_groups)
@@ -54,7 +60,9 @@ SetUpBoxPlot <- function(num_groups, data_range, use_y_limits = NULL, draw_axis 
          )
   }
 
-  box(bty = "l", lwd = par("lwd"))
+  if (draw_box) {
+    box(bty = "l", lwd = par("lwd"))
+  }
 
   return(invisible(NULL))
 }
