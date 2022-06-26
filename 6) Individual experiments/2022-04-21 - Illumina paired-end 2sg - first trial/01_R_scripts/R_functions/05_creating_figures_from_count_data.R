@@ -4,6 +4,8 @@
 # Import packages and source code -----------------------------------------
 
 library("png")
+library("pBrackets")
+
 
 
 
@@ -619,8 +621,6 @@ DrawSideLegend <- function(labels_list,
 
 
 
-
-
 # Functions for creating replicate scatter plots --------------------------
 
 ReplicateScatterPlot <- function(input_df,
@@ -867,5 +867,99 @@ Log2FCScatterPlot <- function(allow_switch         = FALSE,
   ReplicateScatterPlot(replicates_df, show_phenotype_score = show_phenotype_score, ...)
 }
 
+
+
+
+# Functions for creating bar charts for missing plasmids ------------------
+
+FormatPercentages <- function(percentages_vec) {
+  percentages_strings <- rep(NA, length(percentages_vec))
+  percentages_strings[percentages_vec < 1] <- signif(percentages_vec[percentages_vec < 1], digits = 2)
+  are_single_digit <- (percentages_vec < 10) & (percentages_vec >= 1)
+  percentages_strings[are_single_digit] <- format(percentages_vec[are_single_digit], digits = 2)
+  percentages_strings[percentages_vec > 10] <- round(percentages_vec[percentages_vec > 10], digits = 1)
+  percentages_strings[percentages_vec > 99] <- round(percentages_vec[percentages_vec > 99], digits = 2)
+  return(percentages_strings)
+}
+
+
+FourBars <- function(bar_values,
+                     min_count    = 20L,
+                     use_y_limits = NULL,
+                     library_size = NULL,
+                     title_text   = NULL
+                     ) {
+
+  stopifnot("columns_list" %in% ls(envir = globalenv()))
+  stopifnot(length(bar_values) == 4)
+
+  ## Prepare for drawing bar plots
+  color_scheme <- c(brewer.pal(9, "Greys")[[5]], brewer.pal(9, "Blues")[[7]])
+  bar_colors <- color_scheme[c(1, 2, 1, 2)]
+
+  top_labels <- bar_values
+  if (!(is.null(library_size))) {
+    percentages_vec <- FormatPercentages((bar_values / library_size) * 100)
+    top_labels <- paste0(top_labels, " (", percentages_vec, "%)")
+  }
+  reads_labels <- c(
+    expression("" > "0 reads"),
+    as.expression(bquote("" >= .(as.character(min_count)) * " reads"))
+  )
+  reads_labels <- sapply(bottom_labels, VerticalAdjust)
+  x_positions <- RepositionByGroups(c(1, 1, 2, 2))
+
+  ## Set up plot canvas
+  old_mar <- par(mar = c(5.6, 4.1, 3.7, 2.1))
+  SetUpBoxPlot(num_groups = 4L,
+               data_range = range(bar_values, na.rm = TRUE),
+               draw_box = FALSE,
+               use_y_limits = use_y_limits
+               )
+  mtext(expression("Number of absent" * scriptstyle(" ") * "/" *
+                   scriptscriptstyle(" ") * "scarce plasmids"
+                   ),
+        side = 2, line = 2.4
+        )
+  if (!(is.null(title_text))) {
+    title(title_text, cex.main = 1)
+  }
+
+  ## Draw bars
+  bar_width <- 0.6
+  rect(xleft   = x_positions - (bar_width / 2),
+       xright  = x_positions + (bar_width / 2),
+       ybottom = 0,
+       ytop    = bar_values,
+       col     = bar_colors,
+       border  = NA,
+       xpd     = NA
+       )
+  box(bty = "l")
+
+  ## Annotate x axis
+  mtext("Both sgRNAs required", side = 1, line = 1.4)
+  mtext(rep(c("No", "Yes"), 2), at = x_positions, side = 1, line = 0.15)
+  line_y <- par("usr")[[3]] - diff(grconvertY(c(0, 3), from = "lines", to = "user"))
+  for (i in 1:2) {
+    brackets(x1 = x_positions[[c(1, 3)[[i]]]] - (bar_width / 2), y1 = line_y,
+             x2 = x_positions[[c(2, 4)[[i]]]] + (bar_width / 2), y2 = line_y,
+             h = -(diff(grconvertY(c(0, 0.5), from = "lines", to = "user"))),
+             curvature = 0.3, xpd = NA
+             )
+  }
+  mtext(reads_labels, at = c(mean(x_positions[1:2]), mean(x_positions[3:4])),
+        side = 1, line = 3.8
+        )
+
+  ## Annotate bars
+  text(x = x_positions,
+       y = bar_values + diff(grconvertY(c(0, 0.3), from = "lines", to = "user")),
+       labels = top_labels, cex = 0.4, col = "gray80", xpd = NA
+       )
+
+  par(old_mar)
+  return(invisible(NULL))
+}
 
 

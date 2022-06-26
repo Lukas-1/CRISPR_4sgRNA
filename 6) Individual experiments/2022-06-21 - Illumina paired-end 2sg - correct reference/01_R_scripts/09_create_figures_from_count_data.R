@@ -353,7 +353,7 @@ for (allow_switch in c(FALSE, TRUE)) {
             width = use_width, height = 4.7
             )
       }
-      args_list <- list(allow_switch        = FALSE,
+      args_list <- list(allow_switch        = allow_switch,
                         highlight_NT        = highlight_NT,
                         highlight_essential = highlight_essential,
                         embed_PNG           = create_PDF
@@ -432,6 +432,40 @@ for (allow_switch in c(FALSE, TRUE)) {
   }
 }
 
+
+
+# Create bar plots --------------------------------------------------------
+
+use_min_count <- 20L
+four_metrics_list <- lapply(columns_list, function(noswitch_columns) {
+  mayswitch_columns <- sub("^NoSwitch_", "MaySwitch_", noswitch_columns)
+  c("mayswitch_zero_reads" = sum(rowMeans(as.matrix(counts_df[, mayswitch_columns])) == 0),
+    "noswitch_zero_reads"  = sum(rowMeans(as.matrix(counts_df[, noswitch_columns])) == 0),
+    "mayswitch_below_min"  = sum(rowMeans(as.matrix(counts_df[, mayswitch_columns])) < use_min_count),
+    "noswitch_below_min"   = sum(rowMeans(as.matrix(counts_df[, noswitch_columns])) < use_min_count)
+    )
+})
+
+FourBars(four_metrics_list[[1]], library_size = nrow(counts_df), title_text = "All samples")
+
+for (create_PDF in c(FALSE, TRUE)) {
+  if (create_PDF) {
+    pdf(file.path(PDFs_dir, paste0("Bar charts - missing plasmids.pdf")),
+        width = 4, height = 4.5
+        )
+  }
+  for (use_title in names(columns_list)) {
+    FourBars(four_metrics_list[[use_title]],
+             use_y_limits = c(0, 300),
+             title_text = sub(" (both replicates)", " (mean of both replicates)", use_title, fixed = TRUE),
+             library_size = nrow(counts_df)
+             )
+  }
+  par(old_mar)
+  if (create_PDF) {
+    dev.off()
+  }
+}
 
 
 
