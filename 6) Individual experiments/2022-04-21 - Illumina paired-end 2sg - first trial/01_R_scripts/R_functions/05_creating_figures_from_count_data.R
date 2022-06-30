@@ -679,7 +679,7 @@ ReplicateScatterPlot <- function(input_df,
   if (show_phenotype_score) {
     axis_labels_list <- list(
       expression("Phenotype score (" * gamma * ") \u2013 replicate 1"),
-      expression("Phenotype score (" * gamma * ") \u2013 replicate 1")
+      expression("Phenotype score (" * gamma * ") \u2013 replicate 2")
     )
   } else {
     axis_labels_list <- list(
@@ -803,7 +803,7 @@ ReplicateScatterPlot <- function(input_df,
 
   ## Annotate plot
   mtext(axis_labels_list[[1]], side = 1, line = 2)
-  mtext(axis_labels_list[[1]], side = 2, line = 2.3)
+  mtext(axis_labels_list[[2]], side = 2, line = 2.3)
   if (!(is.null(use_title))) {
     title(use_title, cex.main = par("cex"))
   }
@@ -906,7 +906,7 @@ FourBars <- function(bar_values,
     expression("" > "0 reads"),
     as.expression(bquote("" >= .(as.character(min_count)) * " reads"))
   )
-  reads_labels <- sapply(bottom_labels, VerticalAdjust)
+  reads_labels <- sapply(reads_labels, VerticalAdjust)
   x_positions <- RepositionByGroups(c(1, 1, 2, 2))
 
   ## Set up plot canvas
