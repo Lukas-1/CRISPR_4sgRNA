@@ -358,9 +358,9 @@ for (allow_switch in c(FALSE, TRUE)) {
                         highlight_essential = highlight_essential,
                         embed_PNG           = create_PDF
                         )
-      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 3:4, intervention_indices = 5:6, use_title = T0vT12_title)))
-      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 1:2, intervention_indices = 5:6, use_title = BvT12_title)))
-      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 1:2, intervention_indices = 3:4, use_title = BvT0_title)))
+      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 3:4, intervention_indices = 5:6, use_title = T0vT12_title, show_phenotype_score = TRUE)))
+      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 1:2, intervention_indices = 5:6, use_title = BvT12_title, show_phenotype_score = TRUE)))
+      do.call(Log2FCScatterPlot, c(args_list, list(baseline_indices = 1:2, intervention_indices = 3:4, use_title = BvT0_title, show_phenotype_score = TRUE)))
       if (create_PDF) {
         dev.off()
       }
