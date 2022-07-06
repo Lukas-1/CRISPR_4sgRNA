@@ -167,7 +167,9 @@ for (var in manuscript_vars) {
 PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Count_all_4")
 
 
-
+PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_reads_with_sgRNA_deletion")
+PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_reads_with_deletions_exceeding_20bp")
+PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_under_2kb")
 
 
 

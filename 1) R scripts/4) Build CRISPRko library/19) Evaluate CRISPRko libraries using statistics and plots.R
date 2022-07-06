@@ -81,7 +81,9 @@ BarPlot_Sources(merged_CRISPRko_df, "Have_homologies", filter_complete_genes = F
 
 DrawAllManuscriptPlots(CRISPRko_figure_list, rename_libraries = TRUE)
 DrawAllManuscriptPlots(CRISPRko_figure_list, make_PNGs = TRUE)
-
+DrawAllManuscriptPlots(CRISPRko_figure_list, make_EMFs = TRUE,
+                       rename_libraries = TRUE, line_breaks = FALSE
+                       )
 
 ## Draw the deletion histogram
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",

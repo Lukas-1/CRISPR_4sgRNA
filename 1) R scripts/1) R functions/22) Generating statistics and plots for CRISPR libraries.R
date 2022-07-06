@@ -4244,7 +4244,7 @@ ManuscriptGrid <- function(horizontal = TRUE) {
 }
 
 
-RenameLibraries <- function(group_names, modality) {
+RenameLibraries <- function(group_names, modality, line_breaks = TRUE) {
   if (modality == "CRISPRko") {
     rename_vec <- c(
       "4sg"         = "T.spiezzo",
@@ -4262,6 +4262,10 @@ RenameLibraries <- function(group_names, modality) {
   }
   rename_vec <- c(rename_vec, c("GPP" = "CRISPick"))
   results_vec <- unname(rename_vec[group_names])
+  if (!(line_breaks)) {
+    results_vec <- sub("\n-", "", results_vec, fixed = TRUE)
+    results_vec <- sub("\n", "", results_vec, fixed = TRUE)
+  }
   return(results_vec)
 }
 
@@ -4315,7 +4319,8 @@ ManuscriptBars <- function(counts_mat,
                            expected_SNP_percent = TRUE,
                            CRISPRa_colors       = manuscript_CRISPRa_colors,
                            CRISPRo_colors       = manuscript_CRISPRo_colors,
-                           rename_libraries     = FALSE
+                           rename_libraries     = FALSE,
+                           line_breaks          = TRUE
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -4324,13 +4329,13 @@ ManuscriptBars <- function(counts_mat,
     modality_label <- "CRISPRko"
     use_colors <- manuscript_CRISPRo_colors
     if (rename_libraries) {
-      group_names <- RenameLibraries(group_names, modality_label)
+      group_names <- RenameLibraries(group_names, modality_label, line_breaks)
     }
   } else if ("Calabrese" %in% colnames(counts_mat)) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
     if (rename_libraries) {
-      group_names <- RenameLibraries(group_names, modality_label)
+      group_names <- RenameLibraries(group_names, modality_label, line_breaks)
     } else if (horizontal) {
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
@@ -4600,7 +4605,8 @@ ManuscriptViolinBox <- function(plot_df,
                                 modality_on_bottom   = FALSE,
                                 CRISPRa_colors       = manuscript_CRISPRa_colors,
                                 CRISPRo_colors       = manuscript_CRISPRo_colors,
-                                rename_libraries     = FALSE
+                                rename_libraries     = FALSE,
+                                line_breaks          = TRUE
                                 ) {
 
   ## Prepare colors and labels
@@ -4610,13 +4616,13 @@ ManuscriptViolinBox <- function(plot_df,
     modality_label <- "CRISPRko"
     use_colors <- CRISPRo_colors
     if (rename_libraries) {
-      group_names <- RenameLibraries(group_names, modality_label)
+      group_names <- RenameLibraries(group_names, modality_label, line_breaks)
     }
   } else if ("Calabrese" %in% plot_df[["Group"]]) {
     modality_label <- "CRISPRa"
     use_colors <- CRISPRa_colors
     if (rename_libraries) {
-      group_names <- RenameLibraries(group_names, modality_label)
+      group_names <- RenameLibraries(group_names, modality_label, line_breaks)
     } else if (horizontal) {
       group_names[group_names == "hCRISPRa-v2"] <- "hCRISPRa\n-v2"
     } else {
@@ -4900,7 +4906,12 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
 
 
 
-DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_libraries = FALSE) {
+DrawAllManuscriptPlots <- function(df_mat_list,
+                                   make_PNGs        = FALSE,
+                                   make_EMFs        = FALSE,
+                                   rename_libraries = FALSE,
+                                   line_breaks      = TRUE
+                                   ) {
 
   labels_list <- list(
     "Num_genes"                        = "Number of genes in library",
@@ -4929,10 +4940,11 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
     vertical_mai <- PNG_vertical_mai
     wide_mai <- PNG_wide_mai
     manuscript_CRISPRa_colors <- PNG_CRISPRa_colors
+  } else if (make_EMFs) {
+    use_folder <- file.path(use_folder, "EMFs")
+    manuscript_CRISPRa_colors <- PNG_CRISPRa_colors
   }
 
-  print(make_PNGs)
-  print(pdf_width)
   original_PDF_height <- pdf_height
 
   for (var_name in names(labels_list)) {
@@ -4981,6 +4993,12 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
               units  = "in",
               res    = 900
               )
+        } else if (make_EMFs) {
+          print(file.path(use_folder, sub_folder))
+          emf(file.path(use_folder, sub_folder, paste0(file_name, ".emf")),
+              width = pdf_width,
+              height = pdf_height + 0.2
+              )
         } else {
           pdf(file.path(use_folder, sub_folder,  paste0(file_name, ".pdf")),
               width = pdf_width,
@@ -5000,6 +5018,9 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
         } else if (make_PNGs) {
           use_mai <- vertical_mai
           use_mai[[1]] <- use_mai[[1]] + PNG_increment
+        } else if (make_EMFs) {
+          use_mai <- vertical_mai
+          use_mai[[1]] <- use_mai[[1]] + 0.2
         } else {
           use_mai <- vertical_mai
         }
@@ -5020,7 +5041,8 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
                          use_lwd              = manuscript_lwd,
                          CRISPRa_colors       = manuscript_CRISPRa_colors,
                          CRISPRo_colors       = manuscript_CRISPRo_colors,
-                         rename_libraries     = rename_libraries
+                         rename_libraries     = rename_libraries,
+                         line_breaks          = line_breaks
                          )
         } else if (var_name %in% names(df_list)) {
           ManuscriptViolinBox(df_list[[var_name]],
@@ -5035,7 +5057,8 @@ DrawAllManuscriptPlots <- function(df_mat_list, make_PNGs = FALSE, rename_librar
                               use_lwd              = manuscript_lwd,
                               CRISPRa_colors       = manuscript_CRISPRa_colors,
                               CRISPRo_colors       = manuscript_CRISPRo_colors,
-                              rename_libraries     = rename_libraries
+                              rename_libraries     = rename_libraries,
+                              line_breaks          = line_breaks
                               )
         }
         dev.off()

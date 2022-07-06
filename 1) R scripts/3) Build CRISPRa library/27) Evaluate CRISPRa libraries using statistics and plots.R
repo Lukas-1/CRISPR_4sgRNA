@@ -87,6 +87,9 @@ save(list = "CRISPRa_figure_list",
 
 DrawAllManuscriptPlots(CRISPRa_figure_list, rename_libraries = TRUE)
 DrawAllManuscriptPlots(CRISPRa_figure_list, make_PNGs = TRUE)
+DrawAllManuscriptPlots(CRISPRa_figure_list, make_EMFs = TRUE,
+                       rename_libraries = TRUE, line_breaks = FALSE
+                       )
 
 
 ## Draw the TSS doughnut plot
