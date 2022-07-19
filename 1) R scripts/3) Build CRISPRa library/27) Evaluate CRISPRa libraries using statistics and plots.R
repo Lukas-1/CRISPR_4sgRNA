@@ -44,6 +44,13 @@ merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
 # Show some example plots -------------------------------------------------
 
 BarPlot_Sources(merged_replaced_CRISPRa_df,
+                "all22_SNP_AF_max_Kaviar",
+                show_sublibraries = FALSE,
+                filter_top4       = TRUE,
+                use_cutoff        = 0.1
+                )
+
+BarPlot_Sources(merged_replaced_CRISPRa_df,
                 "Expected_all22_SNP_AF_max_Kaviar",
                 show_sublibraries = FALSE,
                 filter_top4       = TRUE
@@ -82,7 +89,6 @@ save(list = "CRISPRa_figure_list",
 
 
 
-
 # Export plots for the manuscript -----------------------------------------
 
 DrawAllManuscriptPlots(CRISPRa_figure_list, rename_libraries = TRUE)
@@ -90,6 +96,7 @@ DrawAllManuscriptPlots(CRISPRa_figure_list, make_PNGs = TRUE)
 DrawAllManuscriptPlots(CRISPRa_figure_list, make_EMFs = TRUE,
                        rename_libraries = TRUE, line_breaks = FALSE
                        )
+
 
 
 ## Draw the TSS doughnut plot

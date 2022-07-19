@@ -6,6 +6,7 @@
 
 library("rcartocolor")
 library("png")
+library("devEMF")
 library("vioplot")
 library("eulerr")
 library("gridExtra") # For grid.arrange
@@ -4825,6 +4826,7 @@ manuscript_barplot_vars <- c(
   "Are_overlapping",
   "all22_SNP_AF_max_Kaviar",
   "Expected_all22_SNP_AF_max_Kaviar",
+  "Minor_allele_all22_SNP_AF_max_Kaviar",
   "Affects_any_unintended_gene",
   "Affects_any_genes_at_other_loci",
   "Have_homologies"
@@ -4842,28 +4844,16 @@ manuscript_violin_vars <- c(
 
 PrepareManuscriptPlots <- function(CRISPR_df) {
 
-  mat_list_filtered <- sapply(
-    manuscript_barplot_vars,
-    function(x) {
+  mat_list_list <- lapply(c(TRUE, FALSE), function(do_filter) {
+    sapply(manuscript_barplot_vars, function(x) {
       BarPlot_Sources(CRISPR_df,
-                      x,
+                      sub("^Minor_allele_", "", x),
                       filter_top4           = TRUE,
                       show_sublibraries     = FALSE,
-                      filter_complete_genes = TRUE
+                      filter_complete_genes = TRUE,
+                      use_cutoff            = if (grepl("^Minor_allele_", x)) 0.5 else NULL
                       )[["counts_mat"]]
-    }, simplify = FALSE
-  )
-  mat_list_unfiltered <- sapply(
-    manuscript_barplot_vars,
-    function(x) {
-      BarPlot_Sources(CRISPR_df,
-                      x,
-                      filter_top4           = TRUE,
-                      show_sublibraries     = FALSE,
-                      filter_complete_genes = FALSE
-                      )[["counts_mat"]]
-    }, simplify = FALSE
-  )
+    }, simplify = FALSE)})
 
   df_list_filtered <- sapply(
     manuscript_violin_vars,
@@ -4891,8 +4881,8 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
   )
 
   num_genes_mat <- NumGenesInLibrary()
-  mat_list_filtered   <- c(list("Num_genes" = num_genes_mat), mat_list_filtered)
-  mat_list_unfiltered <- c(list("Num_genes" = num_genes_mat), mat_list_unfiltered)
+  mat_list_filtered   <- c(list("Num_genes" = num_genes_mat), mat_list_list[[1]])
+  mat_list_unfiltered <- c(list("Num_genes" = num_genes_mat), mat_list_list[[2]])
 
   results_list <- list(
     "mat_list_filtered"   = mat_list_filtered,
@@ -4914,17 +4904,18 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                                    ) {
 
   labels_list <- list(
-    "Num_genes"                        = "Number of genes in library",
-    "Are_overlapping"                  = expression("Spacing" < "50 bp"),
-    "all22_SNP_AF_max_Kaviar"          = "Target polymorphism > 0.1%",
-    "Expected_all22_SNP_AF_max_Kaviar" = "Expected to hit alternate allele",
-    "Affects_any_unintended_gene"      = "Affect unintended gene",
-    "Affects_any_genes_at_other_loci"  = "Affect off-site gene",
-    "GuideScan_specificity"            = "GuideScan specificity score",
-    "CRISPOR_Doench_efficacy"          = "Efficacy score (Rule Set 2)",
-    "Have_homologies"                  = expression("Share subsequences" >= "8 bp"),
-    "CRISPOR_3MM_specificity"          = "CRISPOR 3MM specificity",
-    "CRISPOR_4MM_specificity"          = "CRISPOR 4MM specificity"
+    "Num_genes"                            = "Number of genes in library",
+    "Are_overlapping"                      = expression("Spacing" < "50 bp"),
+    "all22_SNP_AF_max_Kaviar"              = "Target polymorphism > 0.1%",
+    "Expected_all22_SNP_AF_max_Kaviar"     = "Expected to hit alternate allele",
+    "Minor_allele_all22_SNP_AF_max_Kaviar" = "Target minor allele",
+    "Affects_any_unintended_gene"          = "Affect unintended gene",
+    "Affects_any_genes_at_other_loci"      = "Affect off-site gene",
+    "GuideScan_specificity"                = "GuideScan specificity score",
+    "CRISPOR_Doench_efficacy"              = "Efficacy score (Rule Set 2)",
+    "Have_homologies"                      = expression("Share subsequences" >= "8 bp"),
+    "CRISPOR_3MM_specificity"              = "CRISPOR 3MM specificity",
+    "CRISPOR_4MM_specificity"              = "CRISPOR 4MM specificity"
   )
 
   use_folder <- file.path(output_plots_directory, "Manuscript")

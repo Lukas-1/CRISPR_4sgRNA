@@ -64,6 +64,13 @@ save(list = "CRISPRko_figure_list",
 
 # Show some example plots -------------------------------------------------
 
+BarPlot_Sources(merged_CRISPRko_df,
+                "all22_SNP_AF_max_Kaviar",
+                show_sublibraries = FALSE,
+                filter_top4       = TRUE,
+                use_cutoff        = 50
+                )
+
 ViolinBox_Sources(merged_CRISPRko_df, "CRISPOR_4MM_specificity",
                   aggregate_scores = TRUE
                   )
@@ -84,6 +91,7 @@ DrawAllManuscriptPlots(CRISPRko_figure_list, make_PNGs = TRUE)
 DrawAllManuscriptPlots(CRISPRko_figure_list, make_EMFs = TRUE,
                        rename_libraries = TRUE, line_breaks = FALSE
                        )
+
 
 ## Draw the deletion histogram
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
