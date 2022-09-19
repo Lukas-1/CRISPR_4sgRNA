@@ -130,6 +130,7 @@ do.call(TSSDonutBar,
 dev.off()
 
 
+
 ## Draw the plasmid doughnut plot
 
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
@@ -156,6 +157,7 @@ do.call(SummaryDonutBar,
           )
         )
 dev.off()
+
 
 
 
@@ -218,7 +220,6 @@ MakeScatterPlots(merged_replaced_CRISPRa_df)
 
 
 
-
 # Plot categorical data ---------------------------------------------------
 
 UniqueSequencesBarPlots(merged_replaced_CRISPRa_df)
@@ -234,8 +235,6 @@ SourcesBarPlots(merged_replaced_CRISPRa_df)
 UniquePointsBoxPlots(merged_replaced_CRISPRa_df)
 
 SourcesBoxPlots(merged_replaced_CRISPRa_df)
-
-
 
 
 
