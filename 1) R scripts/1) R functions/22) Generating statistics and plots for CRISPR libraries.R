@@ -7,7 +7,6 @@
 library("rcartocolor")
 library("png")
 library("devEMF")
-library("vioplot")
 library("eulerr")
 library("gridExtra") # For grid.arrange
 library("ggplot2")
@@ -83,11 +82,15 @@ unintended_target_labels <- c(
   "Affects_unintended_protein_gene"        = "Affect an unintended protein-coding gene",
   "Affects_any_genes_at_other_loci"        = "Affect an unintended gene at another locus",
   "Affects_protein_genes_at_other_loci"    = "Affect an unintended protein-coding gene at another locus",
+  "Affects_on_site_off_target"             = "Affect an unintended gene at the same locus",
+  "Affects_on_site_off_target_protein"     = "Affect an unintended protein-coding gene at the same locus",
 
   "Affects_unintended_main_TSS"            = "Affect a gene other than the intended gene (only main TSS)",
   "Affects_unintended_protein_main_TSS"    = "Affect an unintended protein-coding gene (only main TSS)",
   "Affects_main_TSS_at_other_loci"         = "Affect an unintended gene at another locus (only main TSS)",
-  "Affects_protein_main_TSS_at_other_loci" = "Affect an unintended protein-coding gene at another locus (only main TSS)"
+  "Affects_protein_main_TSS_at_other_loci" = "Affect an unintended protein-coding gene at another locus (only main TSS)",
+  "Affects_on_site_main_TSS"               = "Affect an unintended gene at the same locus",
+  "Affects_on_site_protein_main_TSS"       = "Affect an unintended protein-coding gene at the same locus"
 )
 
 
@@ -109,7 +112,9 @@ TSS_columns <- c(
   "Affects_unintended_main_TSS",
   "Affects_unintended_protein_main_TSS",
   "Affects_main_TSS_at_other_loci",
-  "Affects_protein_main_TSS_at_other_loci"
+  "Affects_protein_main_TSS_at_other_loci",
+  "Affects_on_site_main_TSS",
+  "Affects_on_site_protein_main_TSS"
 )
 
 
@@ -279,6 +284,9 @@ AddOtherTargetBooleans <- function(CRISPR_df,
 
   CRISPR_df[["Does_not_affect_intended_gene"]]         <- !(all_genes_df[["Affects_intended_gene"]])
 
+  CRISPR_df[["Affects_on_site_off_target"]]            <- all_genes_df[["Affects_unintended_gene"]] & (!(all_genes_df[["Affects_genes_at_other_loci"]]))
+  CRISPR_df[["Affects_on_site_off_target_protein"]]    <- protein_genes_df[["Affects_unintended_gene"]] & (!(protein_genes_df[["Affects_genes_at_other_loci"]]))
+
   CRISPR_df[["Affects_any_unintended_gene"]]           <- all_genes_df[["Affects_unintended_gene"]]
   CRISPR_df[["Affects_unintended_protein_gene"]]       <- protein_genes_df[["Affects_unintended_gene"]]
 
@@ -290,6 +298,8 @@ AddOtherTargetBooleans <- function(CRISPR_df,
     CRISPR_df[["Affects_unintended_protein_main_TSS"]]    <- protein_genes_main_TSS_df[["Affects_unintended_gene"]]
     CRISPR_df[["Affects_main_TSS_at_other_loci"]]         <- all_genes_main_TSS_df[["Affects_genes_at_other_loci"]]
     CRISPR_df[["Affects_protein_main_TSS_at_other_loci"]] <- protein_genes_main_TSS_df[["Affects_genes_at_other_loci"]]
+    CRISPR_df[["Affects_on_site_main_TSS"]]               <- all_genes_main_TSS_df[["Affects_unintended_gene"]] & (!(all_genes_main_TSS_df[["Affects_genes_at_other_loci"]]))
+    CRISPR_df[["Affects_on_site_protein_main_TSS"]]       <- protein_genes_main_TSS_df[["Affects_unintended_gene"]] & (!(protein_genes_main_TSS_df[["Affects_genes_at_other_loci"]]))
   }
 
   return(CRISPR_df)
@@ -318,6 +328,7 @@ GetTSSWindow <- function(is_CRISPRa) {
 }
 
 
+
 TSSWindowString <- function(is_CRISPRa) {
   TSS_window <- GetTSSWindow(is_CRISPRa)
   TSS_strings <- formatC(TSS_window, format = "d", flag = "+")
@@ -326,7 +337,6 @@ TSSWindowString <- function(is_CRISPRa) {
                           )
   return(result_string)
 }
-
 
 
 
@@ -1180,16 +1190,16 @@ PlotViolin <- function(plot_df,
     alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
 
     ## Draw the violin plots
-    vioplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
-            add      = TRUE,
-            at       = x_positions,
-            pchMed   = NA,
-            drawRect = FALSE,
-            col      = colors_df[["Medium"]],
-            border   = NA,
-            wex      = 0.75,
-            axes     = FALSE
-            )
+    numeric_list <- split(plot_df[["Numeric_data"]], plot_df[["Groups_factor"]])
+    for (i in seq_along(x_positions)) {
+      SingleViolin(numeric_list[[i]],
+                   at             = x_positions[[i]],
+                   wex            = 0.75 / 1.25,
+                   violin_color   = colors_df[["Medium"]][[i]],
+                   show_quantiles = NULL,
+                   use_sm_density = TRUE
+                   )
+    }
 
     ## Draw the jittered points
     points(x   = jittered_vec,
@@ -4255,7 +4265,7 @@ RenameLibraries <- function(group_names, modality, line_breaks = TRUE) {
   } else if (modality == "CRISPRa") {
     rename_vec <- c(
       "4sg"         = "T.gonfio",
-      "Calabrese"   = "Calab\n-rese",
+      "Calabrese"   = "Cala-\nbrese",
       "hCRISPRa-v2" = "hCRISP\nRa-v2"
     )
   } else {
@@ -4264,6 +4274,7 @@ RenameLibraries <- function(group_names, modality, line_breaks = TRUE) {
   rename_vec <- c(rename_vec, c("GPP" = "CRISPick"))
   results_vec <- unname(rename_vec[group_names])
   if (!(line_breaks)) {
+    results_vec <- sub("-\n", "", results_vec, fixed = TRUE)
     results_vec <- sub("\n-", "", results_vec, fixed = TRUE)
     results_vec <- sub("\n", "", results_vec, fixed = TRUE)
   }
@@ -4710,18 +4721,16 @@ ManuscriptViolinBox <- function(plot_df,
   axis_ticks <- ManuscriptGrid(horizontal)
 
   ## Draw the violin plots
-  vioplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
-          add        = TRUE,
-          at         = group_positions,
-          pchMed     = NA,
-          drawRect   = FALSE,
-          col        = colorRampPalette(use_colors)(9)[[2]],
-          border     = NA,
-          wex        = 1.1,
-          axes       = FALSE,
-          horizontal = horizontal
-          )
-
+  numeric_list <- split(plot_df[["Numeric_data"]], plot_df[["Groups_factor"]])
+  for (i in seq_along(group_positions)) {
+    SingleViolin(numeric_list[[i]],
+                 at             = group_positions[[i]],
+                 wex            = 1.1 / 1.25,
+                 violin_color   = colorRampPalette(use_colors)(9)[[2]],
+                 show_quantiles = NULL,
+                 use_sm_density = TRUE
+                 )
+  }
 
   ## Draw the jittered points
   points(x   = if (horizontal) plot_df[["Numeric_data"]] else jittered_vec,
@@ -4829,6 +4838,8 @@ manuscript_barplot_vars <- c(
   "Minor_allele_all22_SNP_AF_max_Kaviar",
   "Affects_any_unintended_gene",
   "Affects_any_genes_at_other_loci",
+  "Affects_on_site_off_target",
+  "Affects_on_site_protein_main_TSS",
   "Have_homologies"
 )
 
@@ -4844,14 +4855,20 @@ manuscript_violin_vars <- c(
 
 PrepareManuscriptPlots <- function(CRISPR_df) {
 
+  if ("TSS_ID" %in% names(CRISPR_df)) {
+    use_barplot_vars <- manuscript_barplot_vars
+  } else {
+    use_barplot_vars <- setdiff(manuscript_barplot_vars, TSS_columns)
+  }
+
   mat_list_list <- lapply(c(TRUE, FALSE), function(do_filter) {
-    sapply(manuscript_barplot_vars, function(x) {
+    sapply(use_barplot_vars, function(x) {
       BarPlot_Sources(CRISPR_df,
                       sub("^Minor_allele_", "", x),
                       filter_top4           = TRUE,
                       show_sublibraries     = FALSE,
                       filter_complete_genes = TRUE,
-                      use_cutoff            = if (grepl("^Minor_allele_", x)) 0.5 else NULL
+                      use_cutoff            = if (grepl("^Minor_allele_", x)) 50 else NULL
                       )[["counts_mat"]]
     }, simplify = FALSE)})
 
@@ -4911,6 +4928,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
     "Minor_allele_all22_SNP_AF_max_Kaviar" = "Target minor allele",
     "Affects_any_unintended_gene"          = "Affect unintended gene",
     "Affects_any_genes_at_other_loci"      = "Affect off-site gene",
+    "Affects_on_site_off_target"           = "Affect on-site gene",
+    "Affects_on_site_protein_main_TSS"     = "On-site protein, main TSS",
     "GuideScan_specificity"                = "GuideScan specificity score",
     "CRISPOR_Doench_efficacy"              = "Efficacy score (Rule Set 2)",
     "Have_homologies"                      = expression("Share subsequences" >= "8 bp"),
@@ -4938,7 +4957,9 @@ DrawAllManuscriptPlots <- function(df_mat_list,
 
   original_PDF_height <- pdf_height
 
-  for (var_name in names(labels_list)) {
+  all_vars <- intersect(names(labels_list), unlist(lapply(df_mat_list, names)))
+
+  for (var_name in all_vars) {
     for (SNP_as_percent in c(TRUE, FALSE)) {
       if (SNP_as_percent && (var_name != "Expected_all22_SNP_AF_max_Kaviar")) {
         next
@@ -4985,10 +5006,10 @@ DrawAllManuscriptPlots <- function(df_mat_list,
               res    = 900
               )
         } else if (make_EMFs) {
-          print(file.path(use_folder, sub_folder))
           emf(file.path(use_folder, sub_folder, paste0(file_name, ".emf")),
               width = pdf_width,
-              height = pdf_height + 0.2
+              height = pdf_height + 0.2,
+              emfPlus = FALSE
               )
         } else {
           pdf(file.path(use_folder, sub_folder,  paste0(file_name, ".pdf")),
@@ -5385,6 +5406,98 @@ CreateAllTSSHistograms <- function(CRISPR_df) {
 }
 
 
+
+
+
+# Functions for creating customized violin plots --------------------------
+
+SingleViolin <- function(numeric_vec,
+                         at,
+                         wex            = 0.8,
+                         show_quantiles = c(0.25, 0.5, 0.75),
+                         quantiles_lty  = ifelse(show_quantiles == 0.5, "longdash", "dashed"),
+                         trim           = TRUE,
+                         show_quartiles = TRUE,
+                         use_sm_density = FALSE,
+                         adjust         = 1,
+                         violin_color   = "#9ECAE1",
+                         line_color     = "black"
+                         ) {
+
+  if (length(quantiles_lty) == 1) {
+    quantiles_lty <- rep(quantiles_lty, length(show_quantiles))
+  }
+
+  are_NA <- is.na(numeric_vec)
+  numeric_vec <- numeric_vec[!(are_NA)]
+
+  data_limits <- range(numeric_vec)
+  draw_lines <- length(show_quantiles) != 0
+  if (draw_lines) {
+    lines_vec <- quantile(numeric_vec, probs = show_quantiles)
+  }
+  if (use_sm_density) {
+    use_args <- list(x = numeric_vec, display = "none")
+    if (trim) {
+      use_args <- c(use_args, list(xlim = data_limits))
+    }
+    sm_output_polygon <- do.call(sm::sm.density, use_args)
+    estimates_vec <- sm_output_polygon[["estimate"]]
+    eval_points_vec <- sm_output_polygon[["eval.points"]]
+    if (draw_lines) {
+      sm_output_lines <- do.call(sm::sm.density, c(use_args, list(eval.points = lines_vec)))
+      line_estimates_vec <- sm_output_lines[["estimate"]]
+    }
+  } else {
+    density_output <- density(numeric_vec, adjust = adjust)
+    estimates_vec <- density_output[["y"]]
+    eval_points_vec <- density_output[["x"]]
+    if (draw_lines) {
+      dens_vec <- cumsum(estimates_vec) / sum(estimates_vec)
+      ecdf_Function <- stats::approxfun(dens_vec, eval_points_vec, ties = "ordered")
+      ys <- ecdf_Function(show_quantiles) # these are all the y-values for quantiles
+      ys <- quantile(numeric_vec, show_quantiles)
+      # Get the violin bounds for the requested quantiles.
+      line_estimates_vec <- (stats::approxfun(eval_points_vec, estimates_vec))(ys)
+    }
+    if (trim) {
+      are_within_bounds <- (eval_points_vec >= data_limits[[1]]) &
+                           (eval_points_vec <= data_limits[[2]])
+      eval_points_vec <- eval_points_vec[are_within_bounds]
+      estimates_vec <- estimates_vec[are_within_bounds]
+    }
+  }
+
+  h_scale <- 0.5 / max(estimates_vec) * wex
+  heights_vec <- estimates_vec * h_scale
+  x_vec <- c(at - heights_vec, rev(at + heights_vec))
+  y_vec <- c(eval_points_vec, rev(eval_points_vec))
+  polygon(x_vec, y_vec, col = violin_color, border = NA, xpd = NA)
+
+  if (draw_lines) {
+    line_heights_vec <- line_estimates_vec * h_scale - GetHalfLineWidth()
+    for (i in seq_along(show_quantiles)) {
+      lines(x    = c(at - line_heights_vec[[i]], at + line_heights_vec[[i]]),
+            y    = rep(lines_vec[[i]], 2),
+            lty  = quantiles_lty[[i]],
+            col  = line_color,
+            lend = "butt",
+            xpd  = NA
+            )
+    }
+  }
+  return(invisible(NULL))
+}
+
+
+
+GetHalfLineWidth <- function(y_axis = FALSE) {
+  if (y_axis) {
+    diff(grconvertY(c(0, par("lwd") / 96), from = "inches", to = "user")) / 2
+  } else {
+    diff(grconvertX(c(0, par("lwd") / 96), from = "inches", to = "user")) / 2
+  }
+}
 
 
 
