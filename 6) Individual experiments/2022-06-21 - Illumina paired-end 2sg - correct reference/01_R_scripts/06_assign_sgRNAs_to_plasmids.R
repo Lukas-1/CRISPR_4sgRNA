@@ -71,6 +71,14 @@ names(lumi_df)[names(lumi_df) == "Num_template_switches"] <- "Has_template_switc
 
 
 
+
+# Count the number of mapped reads per sample -----------------------------
+
+num_mapped_df <- NumMappedReads(lumi_df)
+
+
+
+
 # Obtain read counts per plasmid -----------------------------------------
 
 either0or1_including_switch_counts_mat <- AllSamplesCounts(lumi_df,
@@ -150,10 +158,12 @@ counts_df <- data.frame(
 
 # Save data ---------------------------------------------------------------
 
+save(list = "num_mapped_df",
+     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__num_mapped_reads.RData")
+     )
 save(list = "counts_df",
      file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData")
      )
-
 save(list = "lumi_df",
      file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__lumi_df.RData")
      )
