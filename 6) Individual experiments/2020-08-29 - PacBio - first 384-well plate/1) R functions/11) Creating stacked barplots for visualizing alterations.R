@@ -479,14 +479,18 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
   use_height <- 4
   use_cex <- 0.7
   use_lwd <- 0.8
-  for (use_PDF in TRUE) {
+  for (use_device in c("pdf", "emf")) {
     file_name <- paste0(use_prefix,
-                        " - alterations barplot - CCS7 (filtered) - SmrtLink 7",
-                        ".pdf"
+                        " - alterations barplot - CCS7 (filtered) - SmrtLink 7"
                         )
-    if (use_PDF) {
-      pdf(file = file.path(manuscript_directory, file_name),
+    if (use_device == "pdf") {
+      pdf(file = file.path(manuscript_directory, paste0(file_name, ".pdf")),
           width = use_width, height = use_height
+          )
+    } else if (use_device == "emf") {
+      emf(file = file.path(manuscript_directory, paste0(file_name, ".emf")),
+          width = use_width, height = use_height,
+          emfPlus = FALSE
           )
     }
     par(lwd = use_lwd, cex = use_cex)
@@ -507,7 +511,7 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
                           exclude_blocks     = 2,
                           sparse_ticks       = FALSE
                           )
-    if (use_PDF) {
+    if (use_device != "none") {
       dev.off()
     }
   }
