@@ -2,7 +2,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 CRISPR_root_directory <- "~/CRISPR"
@@ -90,6 +89,56 @@ ViolinBoxAllCutoffs(summary_list_list, "Num_reads_with_deletions_exceeding_20bp"
 ViolinBoxAllCutoffs(summary_list_list, "Num_reads_with_deletions_spanning_tracrRNAs", "All plates (second run)")
 ViolinBoxAllCutoffs(summary_list_list, "Count_no_contam_sg4_cr4", "All plates (second run)")
 
+
+
+# # Export .emf files for selected plots ----------------------------------
+
+library("devEMF")
+
+use_lwd <- 0.8
+use_cex <- 0.8
+thesis_dir <- file.path(s2r2_directory, "5) Output", "Figures", "Thesis")
+
+
+devEMF::emf(file = file.path(thesis_dir, paste0("Quality cutoffs - 1) Single colony-derived controls.emf")),
+            width = 7.1, height = 3.8, emfPlus = FALSE
+            )
+par(mai = c(0.8, 0.8, 0.6, 0.3), lwd = use_lwd, cex = use_cex)
+ViolinBoxAllCutoffs(summary_list_list,
+                    "Count_all_4",
+                    "Colony-picked (second run)",
+                    custom_title     = "Single colony-derived controls",
+                    y_axis_label     = "All 4 sgRNAs and tracrRNAs correct",
+                    title_line       = 1.4,
+                    large_gap_lines  = 2.5,
+                    bold_read_counts = TRUE,
+                    set_mar          = FALSE,
+                    embed_PNG        = TRUE,
+                    transparent_PNG  = FALSE,
+                    brewer_palette   = "Purples"
+                    )
+dev.off()
+
+
+
+
+devEMF::emf(file = file.path(thesis_dir, paste0("Quality cutoffs - 2) APPEAL plasmids.emf")),
+            width = 7.1, height = 3.8, emfPlus = FALSE
+            )
+par(mai = c(0.8, 0.8, 0.6, 0.3), lwd = use_lwd, cex = use_cex)
+ViolinBoxAllCutoffs(summary_list_list,
+                    "Count_all_4",
+                    "All plates (second run)",
+                    custom_title     = "Plasmids cloned by APPEAL",
+                    y_axis_label     = "All 4 sgRNAs and tracrRNAs correct",
+                    title_line       = 1.4,
+                    large_gap_lines  = 2.5,
+                    bold_read_counts = TRUE,
+                    set_mar          = FALSE,
+                    embed_PNG        = TRUE,
+                    transparent_PNG  = FALSE
+                    )
+dev.off()
 
 
 
