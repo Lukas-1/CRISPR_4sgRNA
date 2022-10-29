@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-
+library("devEMF")
 CRISPR_root_directory <- "~/CRISPR"
 file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory <- file.path(file_directory, "1) R functions")
@@ -139,9 +139,20 @@ axis_labels <- c(
 
 
 for (var in manuscript_vars) {
-  pdf(file.path(manuscript_directory, paste0("Shared sub-sequences - ", var, ".pdf")),
-      width = 3.7, height = 2.2
-      )
+  file_name <- paste0("Shared sub-sequences - ", var)
+  for (use_device in c("pdf", "emf")) {
+    if (use_device == "emf") {
+      emf(file.path(manuscript_directory, paste0(file_name, ".emf")),
+          width = 3.7, height = 2.2,
+          emfPlus = FALSE
+          )
+    } else {
+      pdf(file.path(manuscript_directory, paste0(file_name, ".pdf")),
+          width = 3.7, height = 2.2
+          )
+    }
+  }
+
   par(cex = 0.7, lwd = 0.8, mai = rep(0.5, 4))
   PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]],
                           var,
@@ -169,8 +180,6 @@ PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Count_all_4"
 
 PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_reads_with_sgRNA_deletion")
 PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_reads_with_deletions_exceeding_20bp")
-PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_under_2kb")
-
 
 
 
