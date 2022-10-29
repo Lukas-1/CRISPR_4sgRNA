@@ -25,15 +25,18 @@ PDFs_dir        <- file.path(figures_dir, "PDFs")
 with_switch_dir <- file.path(PDFs_dir, "Including template switch")
 no_switch_dir   <- file.path(PDFs_dir, "Excluding template switch")
 first_rdata_dir <- file.path(first_illumina_trial_dir, "03_R_objects")
+manuscript_dir  <- file.path(PDFs_dir, "Manuscript")
 
 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "03_disambiguate_dJR072_CRISPRoff_library.RData"))
-load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
+load(file.path(rdata_dir, "03_disambiguate_dJR072_CRISPRoff_library.RData"))
+load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__counts_df.RData"))
+load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__num_mapped_reads.RData"))
+load(file.path(rdata_dir, "11_compute_read_quality_metrics.RData"))
 
 
 
@@ -100,6 +103,12 @@ for (create_PDF in c(FALSE, TRUE)) {
 essential_entrezs     <- GetAvailableGenes(essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
 non_essential_entrezs <- GetAvailableGenes(non_essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
 
+# rdata_dir_4sg <- file.path(experiments_directory, "2022-09-02 - Illumina 4sg sequencing", "03_R_objects")
+# load(file.path(rdata_dir_4sg, "10_identify_genes_present_in_both_libraries.RData"))
+# essential_entrezs     <- intersect_essential_entrezs
+# non_essential_entrezs <- intersect_non_essential_entrezs
+
+
 T0vT12_title <- expression(bold("CRISPRoff:" ~ bolditalic("T0")      ~ "vs." ~ bolditalic("T12")))
 BvT12_title  <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ bolditalic("T12")))
 BvT0_title   <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ bolditalic("T0")))
@@ -156,6 +165,18 @@ for (allow_switch in c(FALSE, TRUE)) {
   }
   par(old_oma)
 }
+
+
+use_df <- ROC_df_list_list[[1]][["ROC_BvT12_df"]]
+pdf(file.path(manuscript_dir, "2sg ROC curve BvT12.pdf"),
+    width = 1.75, height = 1.75
+    )
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+PlotROCDf(use_df, flip = TRUE, xlab_line = 1.6, ylab_line = 2.1, ROC_lwd = 1.5)
+title("CRISPRoff library", cex.main = 1, font.main = 1, line = 0.7)
+par(old_par)
+dev.off()
+
 
 
 
@@ -228,6 +249,36 @@ for (allow_switch in c(FALSE, TRUE)) {
     }
   }
 }
+
+
+
+
+pdf(file.path(manuscript_dir, "2sg violin plots BvT12.pdf"),
+    width = 1.95, height = 1.95
+    )
+old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9)
+
+RepEssentialViolins(1:2, 5:6,
+                    use_title        = expression(bold("CRISPRoff library")),
+                    lower_bound      = -0.6,
+                    upper_bound      = 0.25,
+                    y_limits         = custom_y_limits,
+                    allow_switch     = FALSE,
+                    use_mar          = c(3, 4, 4, 1),
+                    y_axis_label     = expression("Phenotype (" * gamma * ")"),
+                    y_label_line     = 2.1,
+                    rep_label_line   = 0.4,
+                    genes_label_line = 0.6,
+                    axis_cex_factor  = 1 / 0.45,
+                    draw_groups_n    = FALSE,
+                    point_cex        = 0.2,
+                    title_line       = 3.3,
+                    draw_border      = TRUE
+                    )
+par(old_par)
+dev.off()
+
+
 
 
 
@@ -417,12 +468,13 @@ for (allow_switch in c(FALSE, TRUE)) {
         use_columns <- sub("^NoSwitch_", "MaySwitch_", use_columns)
       }
       DrawHistogram(numeric_vec      = rowMeans(as.matrix(counts_df[, use_columns, drop = FALSE])),
-                    truncation_limit = 5000L,
+                    truncation_limit = 5000,
                     num_breaks       = 150L,
                     title_text       = use_title,
                     x_axis_label     = if (length(use_columns) == 1) "Read count" else "Mean read count",
                     y_axis_label     = "Number of plasmids",
-                    y_axis_limits    = c(-20, 1600)
+                    y_axis_limits    = c(-20, 1600),
+                    x_axis_space     = 1 / 100
                     )
     }
     par(old_mar)
@@ -472,6 +524,99 @@ for (create_PDF in c(FALSE, TRUE)) {
 # Display individual genes ------------------------------------------------
 
 PlotCountsForPlasmid("HNRNPK")
+
+
+
+
+# Create QC plots ---------------------------------------------------------
+
+## Prepare read-level statistics
+num_reads_mat <- rbind(
+  "Unmapped" = samples_df[, "Num_reads"] - num_mapped_df[, "Num_both_reads_mapped"],
+  "Mapped"   = num_mapped_df[, "Num_both_reads_mapped"]
+)
+num_reads_detailed_mat <- rbind(
+  "Unmapped_both" = samples_df[, "Num_reads"] - num_mapped_df[, "Num_either_read_mapped"],
+  "Unmapped_sg1"  = num_mapped_df[, "Num_unmapped_read1_only"],
+  "Unmapped_sg2"  = num_mapped_df[, "Num_unmapped_read2_only"],
+  "Mapped"        = num_mapped_df[, "Num_both_reads_mapped"]
+)
+percentages_vec <- num_mapped_df[, "Num_template_switch"] / num_mapped_df[, "Num_both_reads_mapped"]
+
+
+## Prepare count data
+counts_mat <- GetCountsMat(counts_df,
+                           allow_switch = FALSE,
+                           allow_1MM    = TRUE,
+                           normalization_columns = c(1:2, 5:6),
+                           normalize = TRUE
+                           )
+raw_counts_mat <- GetCountsMat(counts_df,
+                               allow_switch = FALSE,
+                               allow_1MM    = TRUE,
+                               normalization_columns = c(1:2, 5:6),
+                               normalize = FALSE
+                               )
+
+
+for (all_timepoints in c(TRUE, FALSE)) {
+
+  file_name <- "QC plots - "
+  if (all_timepoints) {
+    use_timepoints <- 1:3
+    file_name <- paste0(file_name, "all timepoints")
+  } else {
+    use_timepoints <- c(1, 3)
+    file_name <- paste0(file_name, "without T0")
+  }
+
+  for (make_PDF in c(FALSE, TRUE)) {
+
+    if ((!(make_PDF) && (!(all_timepoints)))) {
+      next
+    }
+
+    if (make_PDF) {
+      pdf(file.path(no_switch_dir, paste0(file_name, ".pdf")),
+          width = use_width, height = 4.7
+          )
+    }
+
+    ## Display read-level data
+    TwoDensities(show_GC = TRUE, semitransparent_lines = make_PDF, include_timepoints = use_timepoints)
+    PerBaseQuality(base_qual_mat, semitransparent_lines = make_PDF, include_timepoints = use_timepoints)
+    TwoDensities(show_GC = FALSE, semitransparent_lines = make_PDF, include_timepoints = use_timepoints)
+    MappedReadsBarPlot(num_reads_detailed_mat, include_timepoints = use_timepoints)
+    old_mar <- par(mar = c(4, 4, 3.75, 2.1))
+    PercentageBarPlot(percentages_vec, include_timepoints = use_timepoints)
+
+    ## Display count-level data
+    RawCountsHistogram(raw_counts_mat,
+                       y_axis_upper_limit = 3000,
+                       fixed_y_upper_limit = TRUE
+                       )
+    CountBoxPlot(counts_mat, include_timepoints = use_timepoints, embed_PNG = TRUE)
+    CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints)
+    CountBarPlot(raw_counts_mat, include_timepoints = use_timepoints)
+    par(old_par)
+
+    Log2FCScatterPlot(baseline_indices     = 1:2,
+                      intervention_indices = 5:6,
+                      allow_switch         = FALSE,
+                      highlight_NT         = TRUE,
+                      highlight_essential  = FALSE,
+                      show_phenotype_score = TRUE,
+                      use_title            = "Replicate scatter plot",
+                      title_font           = 1,
+                      use_mar              = c(4, 4, 3.5, 7.5),
+                      embed_PNG            = TRUE
+                      )
+
+    if (make_PDF) {
+      dev.off()
+    }
+  }
+}
 
 
 
