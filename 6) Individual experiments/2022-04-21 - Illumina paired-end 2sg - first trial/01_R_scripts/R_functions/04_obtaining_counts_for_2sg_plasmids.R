@@ -63,3 +63,22 @@ AllSamplesCounts <- function(mapped_df, only_0MM = FALSE, no_template_switch = F
 
 
 
+NumMappedReads <- function(use_lumi_df, sg_numbers = 1:2) {
+  samples_fac <- factor(use_lumi_df[, "Sample_name"],
+                        levels = unique(use_lumi_df[, "Sample_name"])
+                        )
+  results_df <- data.frame(
+    "Sample_name"             = levels(samples_fac),
+    "Num_either_read_mapped"  = tabulate(samples_fac),
+    "Num_both_reads_mapped"   = tapply(use_lumi_df[, "Num_matched_sgRNAs"] == 2, samples_fac, sum),
+    "Num_unmapped_read1_only" = tapply(is.na(use_lumi_df[, paste0("Plasmid_sg", sg_numbers[[1]])]), samples_fac, sum),
+    "Num_unmapped_read2_only" = tapply(is.na(use_lumi_df[, paste0("Plasmid_sg", sg_numbers[[2]])]), samples_fac, sum),
+    "Num_template_switch"     = tapply(use_lumi_df[, "Has_template_switch"], samples_fac, sum),
+    stringsAsFactors = FALSE,
+    row.names = NULL
+  )
+  return(results_df)
+}
+
+
+
