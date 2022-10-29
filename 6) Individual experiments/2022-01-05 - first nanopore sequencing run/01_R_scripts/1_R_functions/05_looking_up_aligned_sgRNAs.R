@@ -12,9 +12,9 @@ library("stringdist")
 
 # Define functions --------------------------------------------------------
 
-AllowOneMismatch <- function(query_sequence, template_vec) {
+AllowOneMismatch <- function(query_sequence, template_vec, use_method = "lv") {
 
-  distance_mat <- stringdistmatrix(query_sequence, template_vec, method = "lv")
+  distance_mat <- stringdistmatrix(query_sequence, template_vec, method = use_method)
 
   have_match_mat <- distance_mat <= 1
   stopifnot(!(any(distance_mat == 0)))
@@ -51,7 +51,12 @@ MakeChunks <- function(n_total, n_per_chunk = 1000) {
 }
 
 
-CheckGuides <- function(extract_df, sg_number = 1, large_chunk_size = 100000, small_chunk_size = 10000) {
+CheckGuides <- function(extract_df,
+                        sg_number = 1,
+                        large_chunk_size = 100000,
+                        small_chunk_size = 10000,
+                        distance_method = "lv"
+                        ) {
 
   aligned_vec <- extracted_df[, paste0("Aligned_read_sg", sg_number)]
   template_vec <- toupper(sg_sequences_df[, paste0("Sequence_sg", sg_number)])
@@ -107,7 +112,8 @@ CheckGuides <- function(extract_df, sg_number = 1, large_chunk_size = 100000, sm
   cl <- parallel::makeCluster(num_cores)
   parallel::clusterExport(cl,
                           varlist = c("template_vec", "remaining_vec",
-                                      "AllowOneMismatch", "stringdistmatrix"
+                                      "AllowOneMismatch", "stringdistmatrix",
+                                      "distance_method"
                                       ),
                           envir = environment()
                           )
@@ -132,7 +138,7 @@ CheckGuides <- function(extract_df, sg_number = 1, large_chunk_size = 100000, sm
     #   AllowOneMismatch(remaining_vec[x], template_vec)
     # })
     sg_df_list <- parallel::parLapply(cl, small_chunks_list, function(x) {
-      AllowOneMismatch(remaining_vec[x], template_vec)
+      AllowOneMismatch(remaining_vec[x], template_vec, use_method = distance_method)
     })
     sg_df <- do.call(rbind.data.frame, c(sg_df_list, stringsAsFactors = FALSE, make.row.names = FALSE))
     multiple_matches[are_this_chunk] <- sg_df[, "Has_multiple_matches"]
