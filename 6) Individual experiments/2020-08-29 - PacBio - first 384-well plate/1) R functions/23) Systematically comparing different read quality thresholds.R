@@ -143,7 +143,14 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
                                 filter_cross_plate  = FALSE,
                                 use_y_limits        = c(0, 1),
                                 set_mar             = TRUE,
-                                embed_PNG           = FALSE
+                                embed_PNG           = FALSE,
+                                transparent_PNG     = TRUE,
+                                custom_title        = NULL,
+                                brewer_palette      = "Blues",
+                                large_gap_lines     = 2,
+                                title_line          = 2,
+                                y_axis_label        = NULL,
+                                bold_read_counts    = FALSE
                                 ) {
 
   set.seed(1) # For reproducible jitter
@@ -208,16 +215,18 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
     PDF_mar <- par("mar")
     PDF_device <- dev.cur()
     temp_path <- file.path(file_output_directory, "temp.png")
-    cur_mai <- par("mar") * 0.2
-    temp_width <- use_width - sum(cur_mai[c(2, 4)])
-    temp_height <- use_height - sum(cur_mai[c(1, 3)])
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
     png(filename = temp_path,
         width    = temp_width,
         height   = temp_height,
         units    = "in",
         res      = 900,
-        bg       = "transparent"
+        bg       = if (transparent_PNG) "transparent" else "white"
         )
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
     par(mar = rep(0, 4))
   }
 
@@ -242,7 +251,7 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
             at       = group_positions,
             pchMed   = NA,
             drawRect = FALSE,
-            col      = brewer.pal(9, "Blues")[[4]],
+            col      = brewer.pal(9, brewer_palette)[[4]],
             border   = NA,
             wex      = use_wex,
             add      = TRUE,
@@ -254,30 +263,27 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
   ## Draw the jittered points
   jittered_vec  <- group_positions[rep(seq_along(metric_list), lengths(metric_list))] +
                    rnorm(n = length(metric_unlisted), mean = 0, sd = 0.05)
-  points_alpha <- 0.2
-  alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
   points(x   = jittered_vec,
          y   = metric_unlisted,
          cex = 0.4,
-         col = paste0(brewer.pal(9, "Blues")[[8]], alpha_hex),
+         col = adjustcolor(brewer.pal(9, brewer_palette)[[8]], alpha.f = 0.2),
          pch = 16
          )
 
   if (embed_PNG) {
     dev.off()
-    raster_array <- readPNG(temp_path)
+    raster_array <- png::readPNG(temp_path)
     file.remove(temp_path)
     dev.set(PDF_device)
     par(PDF_mar)
-    plot(1,
-       xlim = group_limits,
-       ylim = final_y_limits,
-       xaxs = "i",
-       yaxs = "i",
-       type = "n",
-       axes = FALSE,
-       ann  = FALSE
-       )
+    plot(NA,
+         xlim = group_limits,
+         ylim = final_y_limits,
+         xaxs = "i",
+         yaxs = "i",
+         axes = FALSE,
+         ann  = FALSE
+         )
     rasterImage(raster_array,
                 xleft = par("usr")[[1]], xright = par("usr")[[2]],
                 ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
@@ -297,8 +303,8 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
             whisklwd   = 0,
             staplelty  = 0,
             medlwd     = par("lwd") * 3,
-            col        = brewer.pal(9, "Blues")[[2]],
-            border     = brewer.pal(9, "Blues")[[9]],
+            col        = brewer.pal(9, brewer_palette)[[2]],
+            border     = brewer.pal(9, brewer_palette)[[9]],
             add        = TRUE,
             axes       = FALSE,
             lwd        = 1
@@ -316,16 +322,21 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
        las      = 1
        )
 
-  y_axis_label <- titles_list[[use_column]]
-  mtext(text = y_axis_label, side = 2, line = 3)
-
+  if (is.null(y_axis_label)) {
+    y_axis_label <- titles_list[[use_column]]
+  }
+  mtext(text = y_axis_label, side = 2, line = 3, cex = par("cex"))
 
   ## Draw the title
-  title(plates_list[["title"]], cex.main = 1.1, font.main = 1, line = 2)
+  if (is.null(custom_title)) {
+    use_title <- plates_list[["title"]]
+  } else {
+    use_title <- custom_title
+  }
+  title(use_title, cex.main = 1.1, font.main = 1, line = title_line)
 
 
   ## Draw the x axis labels
-  large_gap_lines <- 2
   start_line <- 0.7
 
   group_numbers <- formatC(group_n, big.mark = "'")
@@ -338,15 +349,17 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
           side = 1,
           cex  = x_label_cex
           )
-
     mtext(text = VerticalAdjust(quality_labels[[i]]),
           at   = group_positions[[i]],
           line = start_line + (large_gap_lines / 2),
           side = 1,
           cex  = x_label_cex
           )
-
-    mtext(text = VerticalAdjust(group_numbers[[i]]),
+    read_count_text <- group_numbers[[i]]
+    if (bold_read_counts) {
+      read_count_text <- as.expression(bquote(bold(.(read_count_text))))
+    }
+    mtext(text = VerticalAdjust(read_count_text),
           at   = group_positions[[i]],
           line = start_line + (large_gap_lines),
           side = 1,
@@ -355,7 +368,9 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
           )
   }
 
-  par(old_mar)
+  if (set_mar) {
+    par(old_mar)
+  }
   return(invisible(NULL))
 }
 
