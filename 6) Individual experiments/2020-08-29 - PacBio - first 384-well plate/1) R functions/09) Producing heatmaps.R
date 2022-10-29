@@ -8,7 +8,7 @@
 library("RColorBrewer")
 library("squash")
 library("scales")
-
+library("devEMF")
 
 
 
@@ -659,16 +659,34 @@ GetHalfLineWidth <- function(y_axis = FALSE) {
 DrawOuterBox <- function(use_lwd = 1, fill = FALSE) {
   half_lwd_x <- GetHalfLineWidth() * use_lwd
   half_lwd_y <- GetHalfLineWidth(y_axis = TRUE) * use_lwd
-  rect(xleft   = par("usr")[[1]] - half_lwd_x,
-       xright  = par("usr")[[2]] + half_lwd_x,
-       ybottom = par("usr")[[3]] - half_lwd_y,
-       ytop    = par("usr")[[4]] + half_lwd_y,
-       xpd     = NA,
-       lwd     = use_lwd * par("lwd"),
-       ljoin   = "mitre",
-       lmitre  = 30,
-       col     = if (fill) "black" else NA
-       )
+  segments(x0 = par("usr")[[1]] - half_lwd_x * 1.5,
+           x1 = par("usr")[[2]] + half_lwd_x * 1.5,
+           y0 =  par("usr")[[3]] - half_lwd_y,
+           lwd = use_lwd * par("lwd"),
+           lend = "butt",
+           xpd = NA
+           )
+  segments(x0 = par("usr")[[1]] - half_lwd_x * 1.5,
+           x1 = par("usr")[[2]] + half_lwd_x * 1.5,
+           y0 =  par("usr")[[4]] + half_lwd_y,
+           lwd = use_lwd * par("lwd"),
+           lend = "butt",
+           xpd = NA
+           )
+  segments(x0 = par("usr")[[1]] - half_lwd_x,
+           y0 = par("usr")[[3]] - half_lwd_y,
+           y1 = par("usr")[[4]] + half_lwd_y,
+           lwd = use_lwd * par("lwd"),
+           lend = "butt",
+           xpd = NA
+           )
+  segments(x0 = par("usr")[[2]] + half_lwd_x,
+           y0 = par("usr")[[3]] - half_lwd_y,
+           y1 = par("usr")[[4]] + half_lwd_y,
+           lwd = use_lwd * par("lwd"),
+           lend = "butt",
+           xpd = NA
+           )
 }
 
 
@@ -1136,16 +1154,25 @@ ExportFiguresForManuscript <- function(summary_df, use_prefix) {
   use_lwd <- 0.8
   use_cex <- 0.7
 
-  for (use_PDF in TRUE) {
+  for (use_device in c("pdf", "emf", "png")) {
 
     file_name <- paste0(use_prefix,
-                        " - stacked barplot - CCS7 (filtered) - SmrtLink 7",
-                        ".pdf"
+                        " - stacked barplot - CCS7 (filtered) - SmrtLink 7"
                         )
 
-    if (use_PDF) {
-      pdf(file = file.path(manuscript_directory, file_name),
+    if (use_device == "pdf") {
+      pdf(file = file.path(manuscript_directory, paste0(file_name, ".pdf")),
           width = use_width, height = use_height
+          )
+    } else if (use_device == "emf") {
+      emf(file = file.path(manuscript_directory, paste0(file_name, ".emf")),
+          width = use_width, height = use_height,
+          emfPlus = FALSE
+          )
+    } else if (use_device == "png") {
+      png(file = file.path(manuscript_directory, paste0(file_name, ".png")),
+          width = use_width, height = use_height,
+          units = "in", res = 600
           )
     }
     par(mai = c(0.4, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)
@@ -1160,17 +1187,26 @@ ExportFiguresForManuscript <- function(summary_df, use_prefix) {
                                                  (use_height - sum(par("mai")[c(1, 3)]))
                               )
 
-    if (use_PDF) {
+    if (use_device != "none") {
       dev.off()
     }
 
     file_name <- paste0(use_prefix,
-                        " - heatmap - CCS7 (filtered) - SmrtLink 7",
-                        ".pdf"
+                        " - heatmap - CCS7 (filtered) - SmrtLink 7"
                         )
-    if (use_PDF) {
-      pdf(file = file.path(manuscript_directory, file_name),
+    if (use_device == "pdf") {
+      pdf(file = file.path(manuscript_directory, paste0(file_name, ".pdf")),
           width = use_width, height = use_height
+          )
+    } else if (use_device == "emf") {
+      emf(file = file.path(manuscript_directory, paste0(file_name, ".emf")),
+          width = use_width, height = use_height,
+          emfPlus = FALSE
+          )
+    } else if (use_device == "png") {
+      png(file = file.path(manuscript_directory, paste0(file_name, ".png")),
+          width = use_width, height = use_height,
+          units = "in", res = 600
           )
     }
     par(mai = c(0.4, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)
@@ -1182,13 +1218,13 @@ ExportFiguresForManuscript <- function(summary_df, use_prefix) {
                 trapezoid_start_x     = 0.75,
                 trapezoid_end_x       = 1,
                 add_percent           = FALSE,
-                accuracy_label        = "Accuracy (%)",
+                accuracy_label        = "% correct",
                 accuracy_label_cex    = 1,
                 label_y_factor        = 1.15,
                 use_lwd               = 0.75,
                 bold_percentages      = FALSE
                 )
-    if (use_PDF) {
+    if (use_device != "none") {
       dev.off()
     }
   }
@@ -1801,13 +1837,6 @@ DrawBarplotsAndHeatmapsForAllPlates <- function(export_PNGs = TRUE) {
   }
   return(invisible(NULL))
 }
-
-
-
-
-
-
-
 
 
 
