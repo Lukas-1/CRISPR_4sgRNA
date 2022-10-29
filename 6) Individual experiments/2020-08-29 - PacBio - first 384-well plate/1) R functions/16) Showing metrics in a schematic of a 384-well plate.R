@@ -133,12 +133,13 @@ BeeBarSubPlot <- function(summary_df,
 WellLayoutBarplot <- function(summary_df,
                               show_column,
                               sg_df,
-                              indicate_homologies   = FALSE,
-                              number_wells          = FALSE,
-                              gap_fraction          = 0.25,
-                              show_low_read_numbers = FALSE,
-                              outline_few_reads     = FALSE,
-                              few_reads_cutoff      = 20L
+                              indicate_homologies     = FALSE,
+                              number_wells            = FALSE,
+                              gap_fraction            = 0.25,
+                              show_low_read_numbers   = FALSE,
+                              outline_few_reads       = FALSE,
+                              few_reads_cutoff        = 20L,
+                              label_rows_with_letters = TRUE
                               ) {
 
   MakeEmptyPlot()
@@ -194,7 +195,7 @@ WellLayoutBarplot <- function(summary_df,
 
   text(x      = -(x_gap),
        y      = y_starts[seq_len(16)] + (well_height / 2),
-       labels = rev(seq_len(16)),
+       labels = rev(if (label_rows_with_letters) LETTERS[1:16] else 1:16),
        xpd    = NA,
        cex    = 0.5,
        font   = 2,
