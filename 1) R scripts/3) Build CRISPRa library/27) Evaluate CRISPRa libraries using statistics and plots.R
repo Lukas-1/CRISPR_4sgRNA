@@ -160,21 +160,19 @@ dev.off()
 
 
 
-
 TSS_distances_df <- TSSHistogramsForModality(merged_replaced_CRISPRa_df,
                                              "CRISPRoff",
                                              omit_outside_x_range = TRUE
                                              )
-
 TSS_4sg_distances_vec <- FilterDistanceByGroup(TSS_distances_df, "4sg")
 
 
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
-              "Doughnut plot - CRISPRoff - window around TSS.pdf"
+              "Histogram - CRISPRoff - window around TSS.pdf"
               ),
-    width = 3.3, height = 2.3 # width = 3.4, height = 2.5
+    width = 2.1, height = 2 # width = 3.4, height = 2.5
     )
-par(cex = manuscript_cex, lwd = manuscript_lwd,
+par(cex = 0.6, lwd = 0.8,
     mai = c(0.4, 0.6, 0.2, 0.2)
     )
 
@@ -191,8 +189,11 @@ TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
              x_label_line         = 1.8,
              x_axis_mgp           = 0.45,
              y_axis_mgp           = 0.55,
+             y_label_line         = 2.7,
              use_tcl              = 0.4
              )
+title("T.gonfio library", cex.main = 1, font.main = 1, line = 0.5)
+
 dev.off()
 
 
