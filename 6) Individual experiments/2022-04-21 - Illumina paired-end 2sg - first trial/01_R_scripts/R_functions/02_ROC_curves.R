@@ -60,7 +60,9 @@ PlotROCDf <- function(use_ROC_df,
                       add        = FALSE,
                       line_color = RColorBrewer::brewer.pal(9, "Blues")[[7]],
                       show_AUC   = !(add),
-                      use_title  = "Gene essentiality with CRISPRoff"
+                      xlab_line  = 1.8,
+                      ylab_line  = 2.3,
+                      ROC_lwd    = 2
                       ) {
 
   ROC_mat <- GetROCMat(use_ROC_df)
@@ -81,16 +83,16 @@ PlotROCDf <- function(use_ROC_df,
     plot(1, type = "n", ann = FALSE, axes = FALSE,
          xlim = axis_limits, ylim = axis_limits, xaxs = "i", yaxs = "i"
          )
-    axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl)
-    mtext("False positive rate", side = 1, line = 1.8, cex = par("cex"))
-    axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1)
-    mtext("True positive rate", side = 2, line = 2.3, cex = par("cex"))
+    axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
+    mtext("False positive rate", side = 1, line = xlab_line, cex = par("cex"))
+    axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
+    mtext("True positive rate", side = 2, line = ylab_line, cex = par("cex"))
     abline(a = 0, b = 1, col = "gray78", lty = "dashed")
     box()
   }
 
   lines(1 - ROC_mat[, "Specificity"], ROC_mat[, "Sensitivity"],
-        lwd = 2, col = line_color, xpd = NA
+        lwd = ROC_lwd, col = line_color, xpd = NA
         )
 
   if (show_AUC) {
