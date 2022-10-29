@@ -137,8 +137,10 @@ Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NU
     }))
     return(results_mat)
   }
+  message("... using HUGO gene symbols...")
   symbols_mat <- MakeGenesMat("Gene_symbol")
   colnames(symbols_mat) <- paste0("Symbol_sg", sg_numbers)
+  message("... using Entrez gene IDs...")
   entrezs_mat <- MakeGenesMat("Entrez_ID")
   colnames(entrezs_mat) <- paste0("Entrez_sg", sg_numbers)
 
