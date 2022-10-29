@@ -56,7 +56,6 @@ ExportFiguresForManuscript(use_summary_df, "Colony-picked controls")
 
 
 
-
 # Set up loop -------------------------------------------------------------
 
 AllSmrtLinkVersionsForOnePlate(DrawAccuracyHeatmap,
