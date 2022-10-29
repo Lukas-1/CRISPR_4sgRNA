@@ -43,7 +43,6 @@ use_plate_numbers <- plates_df[["Plate_number"]][order(plates_df[["Plate_rank"]]
 
 DrawBarplotsAndHeatmapsForAllPlates()
 
-gooo
 
 
 
