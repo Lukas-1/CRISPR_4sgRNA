@@ -10,14 +10,21 @@ library("RColorBrewer")
 # Define functions --------------------------------------------------------
 
 DrawHistogram <- function(numeric_vec,
-                          truncation_limit   = NULL,
-                          num_breaks         = 200L,
-                          title_text         = "",
-                          x_axis_label       = "",
-                          y_axis_label       = "Count",
-                          x_axis_upper_limit = NULL,
-                          y_axis_upper_limit = NULL,
-                          y_axis_limits      = NULL
+                          truncation_limit    = NULL,
+                          num_breaks          = 200L,
+                          title_text          = "",
+                          x_axis_label        = "",
+                          y_axis_label        = "Count",
+                          x_axis_upper_limit  = NULL,
+                          y_axis_upper_limit  = NULL,
+                          fixed_y_upper_limit = FALSE,
+                          y_axis_limits       = NULL,
+                          x_axis_limits       = NULL,
+                          x_axis_space        = 0.03,
+                          y_axis_space        = 0.03,
+                          hist_color          = brewer.pal(9, "Blues")[[7]],
+                          title_font          = 2,
+                          draw_box            = TRUE
                           ) {
 
   if (!(is.null(truncation_limit))) {
@@ -35,7 +42,12 @@ DrawHistogram <- function(numeric_vec,
     y_axis_upper_limit <- max(c(hist_results[["counts"]], y_axis_limits[[2]]))
   }
   if (is.null(y_axis_limits)) {
-    y_axis_limits <- c(y_axis_upper_limit * (-0.03), y_axis_upper_limit * 1.03)
+    y_axis_lower_limit <- y_axis_upper_limit * (-y_axis_space)
+    if (fixed_y_upper_limit) {
+      y_axis_limits <- c(y_axis_lower_limit, y_axis_upper_limit)
+    } else {
+      y_axis_limits <- c(y_axis_upper_limit * (-y_axis_space), y_axis_upper_limit * (1 + y_axis_space))
+    }
   }
   y_axis_ticks <- pretty(c(0, y_axis_upper_limit), n = 6)
   if (all(y_axis_ticks[-1] >= 10^5)) {
@@ -46,10 +58,15 @@ DrawHistogram <- function(numeric_vec,
   if (is.null(x_axis_upper_limit)) {
     x_axis_upper_limit <- max(numeric_vec)
   }
+  if (is.null(x_axis_limits)) {
+    x_axis_gap <- (x_axis_upper_limit - min(numeric_vec)) * x_axis_space
+    x_axis_lower_limit <- min(0, min(numeric_vec) - x_axis_gap)
+    x_axis_limits <- c(x_axis_lower_limit, x_axis_upper_limit)
+  }
 
   ## Draw histogram
-  plot(1, type = "n", ann = FALSE, axes = FALSE,
-       xlim = c(0, x_axis_upper_limit), ylim = y_axis_limits,
+  plot(NA, ann = FALSE, axes = FALSE,
+       xlim = x_axis_limits, ylim = y_axis_limits,
        xaxs = "i", yaxs = "i"
        )
   half_width <- (hist_results[["mids"]][[2]] - hist_results[["mids"]][[1]]) / 2
@@ -59,7 +76,7 @@ DrawHistogram <- function(numeric_vec,
        xright  = mids_vec + half_width,
        ybottom = 0,
        ytop    = hist_results[["counts"]][are_not_zero],
-       col     = brewer.pal(9, "Blues")[[7]],
+       col     = hist_color,
        border  = NA,
        lwd     = 0.5,
        xpd     = NA
@@ -89,8 +106,10 @@ DrawHistogram <- function(numeric_vec,
   mtext(y_axis_label, side = 2, line = 2.9)
 
   ## Final steps
-  title(title_text, cex.main = 1)
-  box(bty = "l")
+  title(title_text, cex.main = 1, font.main = title_font)
+  if (draw_box) {
+    box(bty = "l")
+  }
 
   return(invisible(NULL))
 }
@@ -190,5 +209,36 @@ ExportCountHistograms <- function(use_counts_df, title_postfix = "") {
   }
   return(invisible(NULL))
 }
+
+
+
+
+RawCountsHistogram <- function(raw_mat, ...) {
+  DrawHistogram(log10(raw_mat[, 1:2] + 1),
+                num_breaks          = 100,
+                x_axis_upper_limit  = 4,
+                x_axis_label        = expression("Log"[10] ~ "(raw count + 1)"),
+                y_axis_label        = "Frequency",
+                title_text          = "Plasmid count at baseline",
+                title_font          = 1,
+                hist_color          = brewer.pal(9, "Blues")[[8]],
+                draw_box            = FALSE,
+                ...
+                )
+  ## Draw the mean
+  mean_count <- mean(raw_mat[, 1:2])
+  mean_transf <- log10(mean_count + 1)
+  abline(v = mean_transf, col = brewer.pal(9, "Reds")[[6]], lwd = 1.5)
+  box(bty = "l")
+  text(x      = mean_transf + diff(grconvertX(c(0, 0.75), from = "lines", to = "user")),
+       y      = par("usr")[[4]] - diff(grconvertY(c(0, 0.5), from = "lines", to = "user")),
+       labels = paste0("Mean: ", round(mean_count / 10) * 10),
+       adj    = c(0, 0.5),
+       xpd    = NA
+       )
+  return(invisible(NULL))
+}
+
+
 
 
