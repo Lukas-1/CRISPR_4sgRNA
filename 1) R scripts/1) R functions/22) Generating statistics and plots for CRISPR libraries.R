@@ -5115,6 +5115,7 @@ TSSHistogram <- function(distances_vec,
                          hardcoded_x_axis     = TRUE,
                          x_label_line         = 2.4,
                          x_axis_mgp           = 0.7,
+                         y_label_line         = 3,
                          y_axis_mgp           = 0.6,
                          use_tcl              = 0.45
                          ) {
@@ -5252,11 +5253,13 @@ TSSHistogram <- function(distances_vec,
          xpd    = NA
          )
 
-    axis(1, at = x_axis_pos, labels = x_axis_labels, mgp = c(3, x_axis_mgp, 0), tcl = -(use_tcl), lwd = par("lwd"))
+    axis(1, at = x_axis_pos, labels = x_axis_labels, mgp = c(3, x_axis_mgp, 0),
+         tcl = -(use_tcl), lwd = par("lwd"), gap.axis = 0.5
+         )
     axis(2, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl), las = 1, lwd = par("lwd"))
     box(bty = "l")
     mtext("Position relative to the TSS", side = 1, line = x_label_line, cex = par("cex"))
-    mtext("Count (gRNAs)", side = 2, line = 3, cex = par("cex"))
+    mtext("Count (gRNAs)", side = 2, line = y_label_line, cex = par("cex"))
 
   }
 
