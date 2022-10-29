@@ -81,7 +81,8 @@ ThreeSetsVenn <- function(use_factor,
                           positions_list  = NULL,
                           line_positions  = NULL,
                           shift_x         = 0,
-                          shift_y         = 0
+                          shift_y         = 0,
+                          embed_PNG       = FALSE
                           ) {
 
   x_range <- x_limits[[2]] - x_limits[[1]]
@@ -143,12 +144,32 @@ ThreeSetsVenn <- function(use_factor,
           )
   })
 
-  plot.new()
-  par(mar = rep(0, 4), omi = rep(0.1, 4))
+  if (embed_PNG) {
+    PDF_device <- dev.cur()
+    temp_path <- file.path(file_output_directory, "temp.png")
+    par(mar = rep(0, 4), omi = rep(0.1, 4))
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "white"
+        )
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
+    plot.new()
+    par(mar = rep(0, 4))
+  } else {
+    plot.new()
+    par(mar = rep(0, 4), omi = rep(0.1, 4))
+  }
   plot.window(x_limits, y_limits, "", asp = 1)
 
 
-  # plot all circles
+  # Plot all circles
   for (i in seq_along(circles_mat_list)) {
     polygon(circles_mat_list[[i]][, "x"],
             circles_mat_list[[i]][, "y"],
@@ -185,6 +206,21 @@ ThreeSetsVenn <- function(use_factor,
   new_tmp <- gIntersection(tmp, p3)
   mixed_color <- MixColors(use_colors)
   plot(new_tmp, add = TRUE, col = mixed_color, border = NA)
+
+
+  if (embed_PNG) {
+    dev.off()
+    raster_array <- png::readPNG(temp_path)
+    file.remove(temp_path)
+    dev.set(PDF_device)
+    plot.new()
+    par(mar = rep(0, 4), omi = rep(0.1, 4))
+    plot.window(x_limits, y_limits, "", asp = 1)
+    rasterImage(raster_array,
+                xleft = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+                )
+  }
 
 
   if (!(is.null(positions_list))) {
@@ -400,7 +436,6 @@ ThreeSetsVenn(CRISPRa_fac, flip_vertical = TRUE, rotate_by = 188,
 dev.off()
 
 
-
 pdf(file.path(file_output_directory, paste0("CRISPRko Venn diagram", ".pdf")),
     width = horizontal_width, height = horizontal_height
     )
@@ -416,5 +451,30 @@ dev.off()
 
 
 
+library("devEMF")
+
+emf(file.path(file_output_directory, paste0("CRISPRa Venn diagram", ".emf")),
+    width = horizontal_width, height = horizontal_height, emfPlus = FALSE
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+ThreeSetsVenn(CRISPRa_fac, flip_vertical = TRUE, rotate_by = 188,
+              scale_by = length(CRISPRa_fac) / length(CRISPRko_fac),
+              positions_list = CRISPRa_number_labels_list,
+              line_positions = CRISPRa_line_positions,
+              shift_x = -0.08, shift_y = -0.015,
+              embed_PNG = TRUE
+              )
+dev.off()
 
 
+emf(file.path(file_output_directory, paste0("CRISPRko Venn diagram", ".emf")),
+    width = horizontal_width, height = horizontal_height, emfPlus = FALSE
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+ThreeSetsVenn(CRISPRko_fac, rotate_by = 170,
+              positions_list = CRISPRko_number_labels_list,
+              line_positions = CRISPRko_line_positions,
+              shift_x = -0.05,
+              embed_PNG = TRUE
+              )
+dev.off()
