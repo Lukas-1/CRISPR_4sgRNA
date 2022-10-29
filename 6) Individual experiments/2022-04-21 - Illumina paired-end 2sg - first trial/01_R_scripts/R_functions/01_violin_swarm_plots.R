@@ -114,7 +114,9 @@ SingleViolin <- function(numeric_vec,
                          use_sm_density = FALSE,
                          adjust         = 1,
                          violin_color   = "#9ECAE1",
-                         line_color     = "black"
+                         line_color     = "black",
+                         border_color   = line_color,
+                         draw_border    = FALSE
                          ) {
 
   if (length(quantiles_lty) == 1) {
@@ -165,7 +167,9 @@ SingleViolin <- function(numeric_vec,
   heights_vec <- estimates_vec * h_scale
   x_vec <- c(at - heights_vec, rev(at + heights_vec))
   y_vec <- c(eval_points_vec, rev(eval_points_vec))
-  polygon(x_vec, y_vec, col = violin_color, border = NA, xpd = NA)
+  polygon(x_vec, y_vec, col = violin_color,
+          border = if (draw_border) border_color else NA, xpd = NA
+          )
 
   if (draw_lines) {
     line_heights_vec <- line_estimates_vec * h_scale - GetHalfLineWidth()
@@ -259,23 +263,28 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
 
 
 BeeViolinPlot <- function(input_list,
-                          groups_vec    = NULL,
-                          gap_ratio     = 1.25,
-                          brewer_pals   = c("Blues", "Reds", "Purples",
-                                            "Greens", "Oranges", "Greys"
-                                            ),
-                          point_colors  = NULL,
-                          violin_colors = NULL,
-                          line_colors   = NULL,
-                          point_cex     = 0.4,
-                          use_spacing   = 0.8,
-                          y_limits      = NULL,
-                          lower_bound   = NULL,
-                          upper_bound   = NULL,
-                          indicate_zero = TRUE,
-                          draw_groups_n = TRUE,
-                          draw_points   = TRUE,
-                          use_swarm     = TRUE,
+                          groups_vec      = NULL,
+                          gap_ratio       = 1.25,
+                          brewer_pals     = c("Blues", "Reds", "Purples",
+                                              "Greens", "Oranges", "Greys"
+                                              ),
+                          point_colors    = NULL,
+                          violin_colors   = NULL,
+                          line_colors     = NULL,
+                          border_colors   = NULL,
+                          point_cex       = 0.4,
+                          use_spacing     = 0.8,
+                          y_limits        = NULL,
+                          lower_bound     = NULL,
+                          upper_bound     = NULL,
+                          indicate_zero   = TRUE,
+                          draw_groups_n   = TRUE,
+                          draw_points     = TRUE,
+                          use_swarm       = TRUE,
+                          axis_cex_factor = 1 / 0.7,
+                          cloud_alpha     = 0.2,
+                          cloud_sd        = 0.04,
+                          embed_PNG       = FALSE,
                           ...
                           ) {
 
@@ -294,6 +303,11 @@ BeeViolinPlot <- function(input_list,
     line_colors <- point_colors
   } else if (length(line_colors) == 1) {
     line_colors <- rep(line_colors, num_groups)
+  }
+  if (is.null(border_colors)) {
+    border_colors <- line_colors
+  } else if (length(border_colors) == 1) {
+    border_colors <- rep(border_colors, num_groups)
   }
 
   group_indices <- rep(seq_along(input_list), lengths(input_list))
@@ -317,35 +331,39 @@ BeeViolinPlot <- function(input_list,
     x_positions <- RepositionByGroups(groups_vec, gap_ratio = gap_ratio)
   }
 
+  if (embed_PNG) {
+    PDF_mar <- par("mar")
+    PDF_device <- dev.cur()
+    temp_path <- file.path(figures_dir, "temp.png")
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "transparent"
+        )
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
+    par(mar = rep(0, 4))
+  }
+
   SetUpBoxPlot(num_groups,
-               data_range = range(numeric_vec),
-               use_y_limits = y_limits,
-               draw_axis = FALSE,
+               data_range    = range(numeric_vec),
+               use_y_limits  = y_limits,
+               draw_axis     = FALSE,
+               draw_box      = !(embed_PNG),
                indicate_zero = indicate_zero
                )
-
-  axis_ticks <- axTicks(2)
-  axis_labels <- CurtailedAxisLabels(axis_ticks,
-                                     lower_bound          = lower_bound,
-                                     upper_bound          = upper_bound,
-                                     lower_bound_enforced = lower_bound_enforced,
-                                     upper_bound_enforced = upper_bound_enforced
-                                     )
-  axis(2,
-       at       = axis_ticks,
-       labels   = axis_labels,
-       mgp      = c(3, 0.5, 0),
-       tcl      = -0.35,
-       las      = 1,
-       lwd      = par("lwd"),
-       cex.axis = par("cex") / 0.7
-       )
 
   for (i in seq_along(numeric_list)) {
     SingleViolin(numeric_list[[i]][are_finite_list[[i]]],
                  at            = x_positions[[i]],
                  violin_color  = violin_colors[[i]],
                  line_color    = line_colors[[i]],
+                 border_color  = border_colors[[i]],
                  quantiles_lty = c("21", "52", "21"),
                  ...
                  )
@@ -373,16 +391,50 @@ BeeViolinPlot <- function(input_list,
 
     } else {
       x_vec <- rep(x_positions, lengths(numeric_list))
-      x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.04)
-      cloud_colors <- adjustcolor(point_colors, alpha.f = 0.2)
+      x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = cloud_sd)
+      cloud_colors <- adjustcolor(point_colors, alpha.f = cloud_alpha)
       points(x = x_vec, y = unlist(numeric_list),
              col = cloud_colors[rep(seq_along(numeric_list), lengths(numeric_list))],
              cex = point_cex, pch = 16, xpd = NA
              )
     }
-
   }
 
+  if (embed_PNG) {
+    dev.off()
+    raster_array <- png::readPNG(temp_path)
+    file.remove(temp_path)
+    dev.set(PDF_device)
+    par(PDF_mar)
+    SetUpBoxPlot(num_groups,
+                 data_range    = range(numeric_vec),
+                 use_y_limits  = y_limits,
+                 draw_axis     = FALSE,
+                 indicate_zero = FALSE
+                 )
+    rasterImage(raster_array,
+                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
+                )
+  }
+
+  ## Annotate plot
+  axis_ticks <- axTicks(2)
+  axis_labels <- CurtailedAxisLabels(axis_ticks,
+                                     lower_bound          = lower_bound,
+                                     upper_bound          = upper_bound,
+                                     lower_bound_enforced = lower_bound_enforced,
+                                     upper_bound_enforced = upper_bound_enforced
+                                     )
+  axis(2,
+       at       = axis_ticks,
+       labels   = axis_labels,
+       mgp      = c(3, 0.5, 0),
+       tcl      = -0.35,
+       las      = 1,
+       lwd      = par("lwd"),
+       cex.axis = par("cex") * axis_cex_factor
+       )
   if (draw_groups_n) {
     mtext(lengths(numeric_list), at = x_positions, side = 1, line = -0.45,
           cex = par("cex") * 0.3, col = "gray70", padj = 0
