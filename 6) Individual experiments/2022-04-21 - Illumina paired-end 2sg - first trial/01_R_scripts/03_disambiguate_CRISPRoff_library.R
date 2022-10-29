@@ -3,8 +3,6 @@
 
 # Load packages and source code -------------------------------------------
 
-library("readxl")
-
 CRISPR_root_directory       <- "~/CRISPR"
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
 experiments_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments")
