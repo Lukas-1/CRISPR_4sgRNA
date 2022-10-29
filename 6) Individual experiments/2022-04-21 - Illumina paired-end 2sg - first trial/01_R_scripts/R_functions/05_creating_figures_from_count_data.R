@@ -5,6 +5,7 @@
 
 library("png")
 library("pBrackets")
+library("DescTools")
 
 
 
@@ -89,10 +90,9 @@ GetCountsMat <- function(use_counts_df,
 
 GetAvailableGenes <- function(entrezs_vec, count_column = "NoSwitch_xMM", min_count = 200) {
 
-  stopifnot(all(c("counts_df", "CRISPRoff_df") %in% ls(envir = globalenv())))
+  stopifnot(all("CRISPRoff_df" %in% ls(envir = globalenv())))
   stopifnot(is.numeric(entrezs_vec))
   stopifnot(!(any(duplicated(entrezs_vec))))
-  stopifnot(identical(CRISPRoff_df[, "Entrez_ID"], counts_df[, "Entrez_ID"]))
 
   matches_vec <- match(entrezs_vec, CRISPRoff_df[, "Entrez_ID"])
   message(paste0("\nOf the ", length(entrezs_vec), " Entrez gene IDs, ",
@@ -108,13 +108,13 @@ GetAvailableGenes <- function(entrezs_vec, count_column = "NoSwitch_xMM", min_co
                  "was chosen for each gene.\n"
                  ))
 
-  # sample_names <- c("T0_R1", "T0_R2")
-  sample_names <- c("Tbefore_R1", "Tbefore_R2")
-  column_names <- paste0(count_column, "_", sample_names)
-  counts_mat <- as.matrix(counts_df[, column_names])
-  total_counts_vec <- rowSums(counts_mat[matches_vec, ])
-
   if ((!(is.null(min_count))) && (min_count > 0)) {
+    stopifnot(identical(CRISPRoff_df[, "Entrez_ID"], counts_df[, "Entrez_ID"]))
+    sample_names <- c("Tbefore_R1", "Tbefore_R2")
+    column_names <- paste0(count_column, "_", sample_names)
+    counts_mat <- as.matrix(counts_df[, column_names])
+    total_counts_vec <- rowSums(counts_mat[matches_vec, ])
+    stopifnot("counts_mat" %in% ls(envir = globalenv()))
     too_few_counts <- total_counts_vec < min_count
     message(paste0(sum(too_few_counts), " plasmids were represented by fewer ",
                    "than ", min_count, " reads across both replicates at the ",
@@ -188,6 +188,14 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                 allow_1MM             = TRUE,
                                 show_phenotype_score  = TRUE,
                                 num_cell_divisions    = 10L,
+                                use_mar               = c(2.75, 4.3, 5.7, 2),
+                                y_axis_label          = NULL,
+                                y_label_line          = 2.75,
+                                rep_label_line        = 0.7,
+                                genes_label_line      = 0.65,
+                                title_line            = 4.2,
+                                point_cex             = 0.3,
+                                write_rep             = FALSE,
                                 ...
                                 ) {
 
@@ -206,22 +214,29 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                 split(R2_df[, "Mean_log2FC"], !(R2_df[, "Is_essential"]))
                 )[c(1, 3, 2, 4)]
 
-  old_mar <- par(mar = c(2.75, 4.3, 5.7, 2))
+  old_mar <- par(mar = use_mar)
 
   if (show_phenotype_score) {
     rep_list <- lapply(rep_list, function(x) x / num_cell_divisions)
   }
 
-  x_positions <- BeeViolinPlot(rep_list, point_cex = 0.3, use_spacing = 0.5, wex = 0.85,
+  assign("delete_rep_list", rep_list, envir = globalenv())
+
+  x_positions <- BeeViolinPlot(rep_list, point_cex = point_cex, use_spacing = 0.5, wex = 0.85,
                                violin_colors = rep(c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"), each = 2),
                                point_colors  = rep(c("#7c7198", "#5b8669"), each = 2),
+                               border_colors = rep(c("#d1cddb", "#bfd4c6"), each = 2),
                                ...
                                )
-  if (show_phenotype_score) {
-    mtext(expression("Phenotype (" * gamma * ") = (log"[2] ~ "fold change) / 10"), side = 2, line = 2.75)
-  } else {
-    mtext(expression("Log"[2] ~ "fold change"), side = 2, line = 2.75)
+  if (is.null(y_axis_label)) {
+    if (show_phenotype_score) {
+      y_axis_label <- expression("Phenotype (" * gamma * ") = (log"[2] ~ "fold change) / 10")
+    } else {
+      y_axis_label <- expression("Log"[2] ~ "fold change")
+    }
   }
+  mtext(y_axis_label, side = 2, line = y_label_line, cex = par("cex"))
+
 
   segments(x0  = x_positions[c(1, 3)] - 0.25,
            x1  = x_positions[c(2, 4)] + 0.25,
@@ -231,12 +246,14 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
            )
   mtext(c("Essential\ngenes", "Non-essential\ngenes"),
         at = c(mean(x_positions[1:2]), mean(x_positions[3:4])),
-        line = 0.65, padj = 0, cex = par("cex")
+        line = genes_label_line, padj = 0, cex = par("cex")
         )
 
-  mtext(text = rep(c("R1", "R2"), 2), at = x_positions, side = 1, line = 0.7, cex = par("cex"))
+  mtext(text = rep(paste0(if (write_rep) "Rep" else "R", 1:2), 2),
+        at = x_positions, side = 1, line = rep_label_line, cex = par("cex")
+        )
 
-  title(as.expression(use_title), cex.main = par("cex"), line = 4.2)
+  title(as.expression(use_title), cex.main = 1, line = title_line)
   par(old_mar)
   return(invisible(NULL))
 }
@@ -517,7 +534,7 @@ PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with C
 
   old_mar <- par(mar = c(3.7, 3.95, 4.1, 1.75))
 
-  PlotROCDf(use_ROC_df, use_title = use_title, flip = TRUE)
+  PlotROCDf(use_ROC_df, flip = TRUE)
 
   title(as.expression(use_title), cex.main = par("cex"), line = 2.5)
   mtext(numbers_text, line = 0.75, cex = par("cex") * 0.75, adj = 0.5)
@@ -618,6 +635,29 @@ DrawSideLegend <- function(labels_list,
   return(invisible(NULL))
 }
 
+CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
+                                lower_bound_enforced, upper_bound_enforced
+                                ) {
+  plain_axis_labels <- format(tick_positions, trim = TRUE)
+  axis_labels <- lapply(plain_axis_labels, function(x) as.expression(bquote(""[.(x)])))
+  axis_labels <- sapply(axis_labels, function(x) x)
+  if (lower_bound_enforced && (abs(lower_bound - tick_positions[[1]]) < 1e-15)) {
+    axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(.(if (tick_positions[[1]] < 0) "" else " "))
+                                              * .(plain_axis_labels[[1]])]
+    ))
+  }
+  if (upper_bound_enforced) {
+    num_ticks <- length(tick_positions)
+    if (abs(upper_bound - tick_positions[[num_ticks]]) < 1e-15) {
+      axis_labels[num_ticks] <- as.expression(bquote(""["" >= scriptscriptstyle(" ") *
+                                                          .(plain_axis_labels[[num_ticks]])]
+      ))
+    }
+  }
+  return(axis_labels)
+}
+
+
 
 
 
@@ -632,7 +672,9 @@ ReplicateScatterPlot <- function(input_df,
                                  use_blomen_hart      = TRUE,
                                  highlight_NT         = TRUE,
                                  use_title            = NULL,
-                                 embed_PNG            = FALSE
+                                 title_font           = 2,
+                                 embed_PNG            = FALSE,
+                                 use_mar              = NULL
                                  ) {
 
   required_objects <- c("essential_df", "essentials_2020Q2_df",
@@ -678,13 +720,13 @@ ReplicateScatterPlot <- function(input_df,
   ## Prepare axis labels
   if (show_phenotype_score) {
     axis_labels_list <- list(
-      expression("Phenotype score (" * gamma * ") \u2013 replicate 1"),
-      expression("Phenotype score (" * gamma * ") \u2013 replicate 2")
+      expression("Replicate 1 phenotype (" * gamma * ")"),
+      expression("Replicate 2 phenotype (" * gamma * ")")
     )
   } else {
     axis_labels_list <- list(
-      expression("Log"[2] * " fold change \u2013 replicate 1"),
-      expression("Log"[2] * " fold change \u2013 replicate 2")
+      expression("Replicate 1 log"[2] * " fold change"),
+      expression("Replicate 2 log"[2] * " fold change")
     )
   }
 
@@ -709,8 +751,10 @@ ReplicateScatterPlot <- function(input_df,
         highlight_colors <- "#6810c6"
         labels_list <- list("essential" = c("Essential", "genes", AddSum(are_essential)))
       }
+      label_colors <- highlight_colors
     } else {
-      labels_list <- c()
+      labels_list <- list("all" = c("All", "genes", paste0("(", length(entrezs_vec), ")")))
+      label_colors <- adjustcolor("black", alpha.f = 0.7)
       highlight_colors <- c()
     }
     if (highlight_NT) {
@@ -719,8 +763,12 @@ ReplicateScatterPlot <- function(input_df,
       } else {
         highlight_mat <- cbind("is_NT" = are_NT)
       }
-      highlight_colors <- c(highlight_colors, "#004ec2")
-      labels_list <- c(labels_list, list("NT" = c("Non-targeting", "controls", AddSum(are_NT))))
+      NT_color <- "#004ec2"
+      highlight_colors <- c(highlight_colors, NT_color)
+      label_colors <- c(label_colors, NT_color)
+      labels_list <- c(labels_list,
+                       list("NT" = c("Non-targeting", "controls", AddSum(are_NT)))
+                       )
     }
     stopifnot(!(any(rowSums(highlight_mat) > 1)))
     are_highlighted <- rowSums(highlight_mat) == 1
@@ -728,7 +776,7 @@ ReplicateScatterPlot <- function(input_df,
     scrambled_indices <- sample(which(are_highlighted))
     are_highlighted_mat <- highlight_mat[scrambled_indices, , drop = FALSE]
     highlighted_xy_mat <- xy_mat[scrambled_indices, ]
-    point_colors <- adjustcolor(highlight_colors, alpha.f = 0.7)
+    point_colors <- adjustcolor(highlight_colors, alpha.f = if (highlight_essential) 0.7 else 0.85)
     colors_vec <- vapply(seq_len(nrow(are_highlighted_mat)),
                          function(x) point_colors[[which(are_highlighted_mat[x, ])]],
                          ""
@@ -738,10 +786,12 @@ ReplicateScatterPlot <- function(input_df,
   }
 
   ## Prepare plot margins
-  if (highlight_genes) {
-    use_mar <- c(3.75, 3.75, 3.75, 7.5)
-  } else {
-    use_mar <- c(3.75, 3.75, 3.75, 2.1)
+  if (is.null(use_mar)) {
+    if (highlight_genes) {
+      use_mar <- c(3.75, 3.75, 3.75, 7.5)
+    } else {
+      use_mar <- c(3.75, 3.75, 3.75, 2.1)
+    }
   }
   old_mar <- par(mar = use_mar)
 
@@ -765,22 +815,24 @@ ReplicateScatterPlot <- function(input_df,
   }
 
   ## Set up plot canvas
-  plot(1, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i", type = "n",
+  plot(NA, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i",
        axes = FALSE, ann = FALSE
        )
   abline(v = 0, h = 0, col = "gray85", lend = "butt")
+  abline(a = 0, b = 1, col = "gray85", lend = "butt")
+  abline(a = 0, b = -1, col = "gray85", lend = "butt")
 
   ## Draw points
   points(xy_mat[!(are_highlighted), ],
          pch = 16,
-         cex = 0.3,
+         cex = 0.4,
          col = adjustcolor("black", alpha.f = 0.35),
          xpd = NA
          )
   if (highlight_genes) {
     points(highlighted_xy_mat,
            pch = 16,
-           cex = 0.3,
+           cex = 0.4,
            col = colors_vec,
            xpd = NA
            )
@@ -792,7 +844,7 @@ ReplicateScatterPlot <- function(input_df,
     file.remove(temp_path)
     dev.set(PDF_device)
     par(PDF_mar)
-    plot(1, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i", type = "n",
+    plot(NA, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i",
          axes = FALSE, ann = FALSE
          )
     rasterImage(raster_array,
@@ -805,7 +857,7 @@ ReplicateScatterPlot <- function(input_df,
   mtext(axis_labels_list[[1]], side = 1, line = 2)
   mtext(axis_labels_list[[2]], side = 2, line = 2.3)
   if (!(is.null(use_title))) {
-    title(use_title, cex.main = par("cex"))
+    title(use_title, cex.main = par("cex"), font.main = title_font)
   }
 
   ## Draw axes
@@ -824,7 +876,7 @@ ReplicateScatterPlot <- function(input_df,
   box()
   if (highlight_genes) {
     DrawSideLegend(labels_list,
-                   use_colors = adjustcolor(highlight_colors, alpha.f = 0.85),
+                   use_colors = adjustcolor(label_colors, alpha.f = 0.85),
                    use_point_size = 1, point_x_start = 0.2, lines_x_start = 0.6
                    )
   }
@@ -961,5 +1013,680 @@ FourBars <- function(bar_values,
   par(old_mar)
   return(invisible(NULL))
 }
+
+
+
+
+# Helper functions for plotting QC data -----------------------------------
+
+PlotBarplotMat <- function(barplot_mat,
+                           colors_vec,
+                           positions_vec = seq_len(ncol(barplot_mat)),
+                           bar_width = 2/3
+                           ) {
+
+  num_stacks <- nrow(barplot_mat)
+  stopifnot(length(colors_vec) == num_stacks)
+
+  barplot_mat <- barplot_mat[rev(seq_len(nrow(barplot_mat))), , drop = FALSE] # The first row should be on top
+
+  lower_borders_vec_list <- lapply(seq_len(num_stacks), function(x) {
+    if (x == 1) {
+      rep(0, ncol(barplot_mat))
+    } else {
+      colSums(barplot_mat[seq_len(x - 1), , drop = FALSE])
+    }
+  })
+
+  upper_borders_vec_list <- lapply(seq_len(num_stacks), function(x) {
+    colSums(barplot_mat[seq_len(x), , drop = FALSE])
+  })
+
+  for (i in seq_len(ncol(barplot_mat))) {
+    for (j in seq_len(num_stacks)) {
+      rect(xleft   = positions_vec[[i]] - (bar_width / 2),
+           xright  = positions_vec[[i]] + (bar_width / 2),
+           ybottom = lower_borders_vec_list[[j]][[i]],
+           ytop    = upper_borders_vec_list[[j]][[i]],
+           col     = colors_vec[[j]],
+           border  = NA,
+           xpd     = NA
+           )
+    }
+  }
+  return(invisible(NULL))
+}
+
+
+DrawBottomLabels <- function(x_positions, groups_vec, are_included) {
+  mtext(text = rep(paste0("R", 1:2), times = 3)[are_included],
+        at = x_positions, side = 1, line = 0.3, cex = par("cex")
+        )
+  are_rep1 <- rep(c(TRUE, FALSE), times = 3)[are_included]
+  segments(x0  = x_positions[are_rep1] - 0.25,
+           x1  = x_positions[!(are_rep1)] + 0.25,
+           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.45), from = "lines", to = "user")),
+           col = "black",
+           xpd = NA
+           )
+  mtext(text = c("Baseline", "T0", "Endpoint")[are_included[are_rep1]],
+        at   = tapply(x_positions, groups_vec[are_included], mean),
+        side = 1,
+        line = 1.7,
+        cex  = par("cex")
+        )
+  return(invisible(NULL))
+}
+
+
+
+
+
+# Functions for displaying count-level QC data ----------------------------
+
+CountBarPlot <- function(use_counts_mat,
+                         include_timepoints = 1:3,
+                         gini_index = FALSE,
+                         lollipop   = FALSE,
+                         bar_color  = brewer.pal(9, "Blues")[[8]],
+                         stem_color = brewer.pal(9, "Blues")[[4]],
+                         use_title  = NULL,
+                         show_title = TRUE
+                         ) {
+
+  ## Prepare the timepoints included
+  all_timepoints_vec <- rep(1:3, each = 2)
+  are_included <- all_timepoints_vec %in% include_timepoints
+  use_counts_mat <- use_counts_mat[, are_included]
+
+  ## Determine bar positions
+  bar_positions <- RepositionByGroups(all_timepoints_vec[are_included], gap_ratio = 1.5)
+  num_bars <- length(bar_positions)
+  bar_width <- 0.55
+  final_width <- bar_width * ((max(bar_positions) - min(bar_positions)) / (num_bars - 1))
+  group_limits <- c((min(bar_positions) - 0.5) - (num_bars * 0.04),
+                     max(bar_positions) + 0.5  + (num_bars * 0.04)
+                    )
+
+  ## Prepare the data axis
+  if (gini_index) {
+    bars_vec <- vapply(seq_len(ncol(use_counts_mat)),
+                       function(x) DescTools::Gini(use_counts_mat[, x]),
+                       numeric(1)
+                       )
+    if (show_title && is.null(use_title)) {
+      use_title <- "Plasmid count inequality"
+    }
+    if (show_title && isTRUE(grepl("count", use_title, ignore.case = TRUE))) {
+      y_axis_label <- "Gini index"
+    } else {
+      y_axis_label <- "Gini index (count)"
+    }
+  } else {
+    bars_vec <- colSums(use_counts_mat == 0)
+    use_title <- "Absent plasmids"
+    y_axis_label <- "Number of missed plasmids"
+  }
+
+  use_numeric_limits <- c(0, max(bars_vec) * 1.00)
+  numeric_axis_pos <- pretty(use_numeric_limits)
+  numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
+
+  plot(NA,
+       xlim = group_limits,
+       ylim = numeric_limits,
+       xaxs = "i",
+       yaxs = "i",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+  if (lollipop) {
+    segments(x0  = bar_positions,
+             y0  = 0,
+             y1  = bars_vec,
+             col = stem_color,
+             xpd = NA,
+             lwd = par("lwd") * 2
+             )
+    points(x   = bar_positions,
+           y   = bars_vec,
+           col = bar_color,
+           cex = par("cex") * 1.5,
+           pch = 16,
+           xpd = NA
+           )
+  } else {
+    PlotBarplotMat(t(bars_vec),
+                   colors_vec    = bar_color,
+                   positions_vec = bar_positions,
+                   bar_width     = bar_width
+                   )
+  }
+
+  ## Draw the y axis
+  axis(2,
+       las    = 2,
+       mgp    = c(3, 0.55, 0),
+       tcl    = -0.375
+       )
+  mtext(VerticalAdjust(y_axis_label),
+        side = 2,
+        line = 2.35,
+        cex  = par("cex")
+        )
+
+  ## Draw the bar labels
+  DrawBottomLabels(bar_positions, all_timepoints_vec, are_included)
+
+  ## Final steps
+  if (show_title) {
+    title(use_title, font.main = 1, cex.main = 1)
+  }
+  box(bty = "l")
+
+  return(invisible(NULL))
+}
+
+
+
+CountBoxPlot <- function(use_counts_mat,
+                         include_timepoints = 1:3,
+                         embed_PNG = FALSE,
+                         use_title = "Plasmid count"
+                         ) {
+
+  ## Prepare the timepoints included
+  all_timepoints_vec <- rep(1:3, each = 2)
+  are_included <- all_timepoints_vec %in% include_timepoints
+  group_positions <- RepositionByGroups(all_timepoints_vec[are_included])
+  numeric_mat <- log10(use_counts_mat[, are_included] + 1)
+
+  BeeViolinPlot(as.list(data.frame(numeric_mat)),
+                groups_vec    = all_timepoints_vec[are_included],
+                use_swarm     = FALSE,
+                cloud_alpha   = 0.08,
+                cloud_sd      = 0.04,
+                draw_border   = TRUE,
+                violin_colors = brewer.pal(9, "Blues")[[3]],
+                line_colors   = brewer.pal(9, "Blues")[[8]],
+                border_colors = "#5e91c5",
+                point_colors  = "#518dc2",
+                # upper_bound   = 4,
+                embed_PNG     = embed_PNG,
+                draw_groups_n = FALSE
+                )
+
+  mtext(VerticalAdjust(expression("Log"[10] ~ "normalized count")),
+        side = 2,
+        line = 1.8,
+        cex = par("cex")
+        )
+  DrawBottomLabels(group_positions, all_timepoints_vec, are_included)
+  if (!(is.null(use_title))) {
+    title(use_title, font.main = 1, cex.main = 1)
+  }
+  return(invisible(NULL))
+}
+
+
+
+
+
+# Functions for displaying read-level QC data -----------------------------
+
+MappedReadsBarPlot <- function(num_reads_mat,
+                               include_timepoints = 1:3,
+                               use_colors = NULL,
+                               use_title = "All sequencing reads"
+                               ) {
+
+  if (is.null(use_colors)) {
+    use_colors <- colorRampPalette(brewer.pal(9, "Blues")[3:8])(nrow(num_reads_mat))
+    if (nrow(num_reads_mat) == 4) {
+      use_colors <- use_colors[c(1, 3, 2, 4)]
+    }
+  }
+
+  ## Prepare the timepoints included
+  all_timepoints_vec <- rep(1:3, each = 2)
+  are_included <- all_timepoints_vec %in% include_timepoints
+  numeric_mat <- num_reads_mat[, are_included]
+
+  ## Determine bar positions
+  bar_positions <- RepositionByGroups(all_timepoints_vec[are_included])
+  num_bars <- length(bar_positions)
+  bar_width <- 2/3
+  final_width <- bar_width * ((max(bar_positions) - min(bar_positions)) / (num_bars - 1))
+  group_limits <- c((min(bar_positions) - 0.5) - (num_bars * 0.04),
+                     max(bar_positions) + 0.5  + (num_bars * 0.04)
+                    )
+
+  ## Prepare the data axis
+  use_numeric_limits <- c(0, max(colSums(numeric_mat)) * 1.00)
+  numeric_axis_pos <- pretty(use_numeric_limits)
+  numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
+
+  ## Draw the barplot
+  old_mar <- par(mar = c(4, 3.75, 3.75, 6.5))
+  plot(NA,
+       xlim = group_limits,
+       ylim = numeric_limits,
+       xaxs = "i",
+       yaxs = "i",
+       axes = FALSE,
+       ann  = FALSE
+       )
+  PlotBarplotMat(numeric_mat,
+                 colors_vec    = use_colors,
+                 positions_vec = bar_positions,
+                 bar_width     = bar_width
+                 )
+
+  ## Draw the y axis
+  tick_pos <- axTicks(2)
+  axis(2,
+       at     = tick_pos,
+       labels = paste0(tick_pos / 10^6, "M"),
+       las    = 2,
+       mgp    = c(3, 0.5, 0),
+       tcl    = -0.375
+       )
+  mtext(VerticalAdjust("Number of reads"),
+        side = 2,
+        line = 2.35,
+        cex  = par("cex")
+        )
+
+  ## Draw the bar labels
+  DrawBottomLabels(bar_positions, all_timepoints_vec, are_included)
+
+  ## Draw the legend
+  DrawSideLegend(list(c("Both reads", "unmapped"),
+                      c("Read 1", "unmapped"),
+                      c("Read 2", "unmapped"),
+                      c("Mapped", "reads")
+                      ),
+                 use_colors    = rev(use_colors),
+                 border_colors = "gray50",
+                 use_pch       = 22,
+                 point_x_start = 0.2,
+                 lines_x_start = 0.6,
+                 )
+
+  ## Final steps
+  if (!(is.null(use_title))) {
+    title(use_title, font.main = 1, cex.main = 1)
+  }
+  box(bty = "l")
+  par(mar = old_mar)
+  return(invisible(NULL))
+}
+
+
+
+
+PercentageBarPlot <- function(percentages_vec,
+                              include_timepoints = 1:3,
+                              dark_color         = brewer.pal(9, "Blues")[[8]],
+                              light_color        = brewer.pal(9, "Blues")[[3]],
+                              use_title          = "Template switch"
+                              ) {
+
+  ## Prepare the timepoints included
+  all_timepoints_vec <- rep(1:3, each = 2)
+  are_included <- all_timepoints_vec %in% include_timepoints
+  percentages_vec <- percentages_vec[are_included]
+
+  ## Determine bar positions
+  bar_positions <- RepositionByGroups(all_timepoints_vec[are_included])
+  num_bars <- length(bar_positions)
+  bar_width <- 2/3
+  final_width <- bar_width * ((max(bar_positions) - min(bar_positions)) / (num_bars - 1))
+  group_limits <- c((min(bar_positions) - 0.5) - (num_bars * 0.04),
+                     max(bar_positions) + 0.5  + (num_bars * 0.04)
+                    )
+
+  ## Prepare the data axis
+  if (isTRUE(grepl("template switch", use_title, ignore.case = TRUE))) {
+    y_axis_label <- "% mapped reads"
+  } else {
+    y_axis_label <- "Template switch"
+  }
+  y_ticks_pos <- seq(0, 1, by = 0.2)
+
+  plot(NA,
+       xlim = group_limits,
+       ylim = c(0, 1),
+       xaxs = "i",
+       yaxs = "i",
+       axes = FALSE,
+       ann  = FALSE
+       )
+
+  PlotBarplotMat(rbind(1 - percentages_vec, percentages_vec),
+                 colors_vec    = c(dark_color, light_color),
+                 positions_vec = bar_positions,
+                 bar_width     = bar_width
+                 )
+
+  ## Draw the y axis
+  axis(2,
+       at     = y_ticks_pos,
+       labels = paste0(y_ticks_pos * 100, "%"),
+       las    = 2,
+       mgp    = c(3, 0.5, 0),
+       tcl    = -0.375
+       )
+  mtext(VerticalAdjust(y_axis_label),
+        side = 2,
+        line = 2.5,
+        cex  = par("cex")
+        )
+
+  ## Draw the bar labels
+  DrawBottomLabels(bar_positions, all_timepoints_vec, are_included)
+
+  ## Final steps
+  if (!(is.null(use_title))) {
+    title(use_title, font.main = 1, cex.main = 1)
+  }
+  box(bty = "l")
+
+  return(invisible(NULL))
+}
+
+
+
+MakeEmptyPlot <- function(x_limits = c(0, 1), y_limits = c(0, 1)) {
+  plot(NA,
+       xlim = x_limits,
+       ylim = y_limits,
+       xaxs = "i",
+       yaxs = "i",
+       axes = FALSE,
+       ann  = FALSE
+       )
+}
+
+
+
+TwoDensities <- function(show_GC = TRUE,
+                         include_timepoints = 1:3,
+                         semitransparent_lines = TRUE,
+                         show_title = TRUE,
+                         use_title = NULL
+                         ) {
+
+  if (show_GC) {
+    density_object <- "GC_content_densities"
+  } else {
+    density_object <- "sequence_qual_densities"
+  }
+  stopifnot(density_object %in% ls(envir = globalenv()))
+  density_list <- get(density_object)[c("Read 1", "Read 2")]
+
+  ## Prepare the timepoints included
+  timepoint_labels <- c("Baseline", "T0", "Endpoint")[include_timepoints]
+  all_timepoints_vec <- rep(1:3, each = 2)
+  are_included <- all_timepoints_vec %in% include_timepoints
+  timepoint_colors <- c(
+    brewer.pal(9, "Blues")[[8]],
+    brewer.pal(9, "Purples")[[8]],
+    brewer.pal(9, "Reds")[[8]]
+  )[include_timepoints]
+  if (semitransparent_lines) {
+    timepoint_colors <- adjustcolor(timepoint_colors, alpha.f = 0.6)
+  }
+  colors_vec <- rep(timepoint_colors, each = 2)
+  density_list <- lapply(density_list, function(x) x[are_included])
+
+  ## Prepare the x axis
+  x_range <- range(unlist(lapply(density_list, function(x) sapply(x, "[[", "x"))))
+  x_ticks <- pretty(x_range)
+  x_limits <- range(x_ticks)
+  x_grid <- pretty(x_limits, n = 10)
+  x_grid <- x_grid[x_grid != 0]
+  if (show_GC) {
+    x_axis_label <- "GC content"
+    x_tick_labels <- paste0(x_ticks * 100, "%")
+    if (is.null(use_title)) {
+      use_title <- "Density (all reads)"
+    }
+  } else {
+    x_axis_label <- "Mean sequence quality"
+    x_tick_labels <- x_ticks
+    if (is.null(use_title)) {
+      use_title <- "Density (all reads)"
+    }
+  }
+
+  ## Prepare the y axis
+  y_max <- max(unlist(lapply(density_list, function(x) sapply(x, "[[", "y"))))
+  y_limits <- c(0, y_max * 1.04)
+
+  ## Additional preparations
+  grid_color <- "gray84"
+  layout_mat <- rbind(
+    c(1, 1, 1),
+    c(3, 6, 4),
+    c(3, 5, 4),
+    c(3, 7, 4),
+    c(2, 2, 2)
+  )
+
+  ## Set up the plot layout
+  layout(layout_mat,
+         widths  = c(1, 8, 1),
+         heights = c(1.2, 3.4, 0.25, 3.4, 1.75)
+         )
+  old_mar <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
+  MakeEmptyPlot()
+  if (show_title) {
+    text(x = 0.5, y = 0.5, labels = use_title)
+  }
+  for (i in 1:4) {
+    MakeEmptyPlot()
+  }
+
+  ## Draw the two density plots
+  for (i in 1:2) {
+    MakeEmptyPlot(x_limits, y_limits)
+
+    ## Draw the grid
+    if (i == 1) {
+      abline(v = x_grid[-c(1:2)], col = grid_color)
+      if (length(include_timepoints) == 2) {
+        grid_top <- 0.5
+      } else {
+        grid_top <- 1/3
+      }
+      segments(x0   = x_grid[1:2],
+               y0   = par("usr")[[3]],
+               y1   = grconvertY(grid_top, from = "npc", to = "user"),
+               col  = grid_color,
+               lend = "butt"
+               )
+    } else {
+      abline(v = x_grid, col = grid_color)
+    }
+    box(col = grid_color)
+
+    ## Draw the density lines
+    for (j in seq_along(density_list[[i]])) {
+      lines(density_list[[i]][[j]],
+            col = colors_vec[[j]],
+            lwd = 2,
+            xpd = NA
+            )
+    }
+
+    ## Draw the y axis
+    mtext(paste0("Read ", i),
+          side = 2,
+          line = 0.5,
+          cex  = par("cex")
+          )
+
+    if (i == 1) {
+      ## Draw the legend
+      x_start <- par("usr")[[1]] + diff(grconvertX(c(0, 1), from = "lines", to = "user"))
+      y_start <- par("usr")[[4]] - diff(grconvertY(c(0, 1), from = "lines", to = "user"))
+      timepoints_seq <- seq_along(timepoint_colors) - 1L
+      y_vec <- y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq
+      segments(x0  = x_start,
+               x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
+               y0  = y_vec,
+               col = timepoint_colors,
+               lwd = par("lwd") * 2,
+               xpd = NA
+               )
+      text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
+           y      = y_vec,
+           labels = timepoint_labels,
+           adj    = c(0, 0.5),
+           xpd    = NA
+           )
+    } else if (i == 2) {
+      ## Draw the x axis
+      axis(1,
+           at     = x_ticks,
+           labels = x_tick_labels,
+           mgp    = c(3, 0.375, 0.3),
+           tcl    = -0.375
+           )
+      mtext(x_axis_label,
+            side = 1,
+            line = 2.1,
+            cex  = par("cex")
+            )
+    }
+  }
+
+  ## Final steps
+  par(old_mar)
+  layout(1)
+  return(invisible(NULL))
+}
+
+
+
+
+PerBaseQuality <- function(qual_mat,
+                           include_timepoints = 1:3,
+                           semitransparent_lines = TRUE,
+                           show_title = TRUE
+                           ) {
+
+  ## Prepare the timepoints included
+  timepoint_labels <- c("Baseline", "T0", "Endpoint")[include_timepoints]
+  all_timepoints_vec <- rep(1:3, each = 2)
+  are_included <- all_timepoints_vec %in% include_timepoints
+  timepoint_colors <- c(
+    brewer.pal(9, "Blues")[[8]],
+    brewer.pal(9, "Purples")[[8]],
+    brewer.pal(9, "Reds")[[8]]
+  )[include_timepoints]
+  colors_vec <- rep(timepoint_colors, each = 2)
+  if (semitransparent_lines) {
+    colors_vec <- adjustcolor(colors_vec, alpha.f = 0.6)
+    timepoint_colors <- adjustcolor(timepoint_colors, alpha.f = 0.9) # For the legend
+  }
+  assign("delete_colors_vec", colors_vec, envir = globalenv())
+
+  ## Set up the plot layout
+  layout_mat <- rbind(
+    c(1, 1, 1, 1, 1),
+    c(3, 6, 5, 7, 4),
+    c(2, 2, 2, 2, 2)
+  )
+  layout(layout_mat,
+         widths  = c(1.5, 3.725, 0.55, 3.725, 0.5),
+         heights = c(1.2, 7.05, 1.75)
+         )
+  old_mar <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
+  MakeEmptyPlot()
+  if (show_title) {
+    text(x = 0.5, y = 0.5, labels = "Per-base quality (all reads)")
+  }
+  for (i in 1:4) {
+    MakeEmptyPlot()
+  }
+
+  ## Draw the two line graphs
+  for (i in 1:2) {
+    MakeEmptyPlot(x_limits = c(0, 21), y_limits = c(0, 40))
+
+    ## Determine the sample indices
+    are_this_read <- grepl(paste0("_read", i), colnames(qual_mat), fixed = TRUE)
+    use_indices <- which(are_this_read)[are_included]
+
+    ## Draw the lines
+    for (j in seq_along(use_indices)) {
+      lines(x   = seq_len(nrow(qual_mat)),
+            y   = qual_mat[, use_indices[[j]]],
+            col = colors_vec[[j]],
+            xpd = NA
+            )
+    }
+
+    ## Draw the x axis
+    axis(1,
+         mgp = c(3, 0.375, 0),
+         tcl = -0.375
+         )
+    mtext(paste0("Read ", i, " (base)"),
+          side = 1,
+          line = 1.9,
+          cex  = par("cex")
+          )
+
+    if (i == 1) {
+      ## Draw the y axis
+      axis(2,
+           las = 2,
+           mgp = c(3, 0.55, 0),
+           tcl = -0.375,
+           )
+      mtext("Mean quality",
+            side = 2,
+            line = 2.3,
+            cex  = par("cex")
+            )
+      segments(x0 = par("usr")[[1]], x1 = 20,
+               y0 = par("usr")[[4]], xpd = NA
+               )
+    } else if (i == 2) {
+      box(bty = "]")
+      ## Draw the legend
+      x_start <- par("usr")[[2]] -
+                 max(strwidth(timepoint_labels)) -
+                 diff(grconvertX(c(0, 2.5), from = "lines", to = "user"))
+      y_start <- par("usr")[[3]] + diff(grconvertY(c(0, 3), from = "lines", to = "user"))
+      timepoints_seq <- seq_along(timepoint_colors) - 1L
+      y_vec <- rev(y_start + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq)
+      segments(x0  = x_start,
+               x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
+               y0  = y_vec,
+               col = timepoint_colors,
+               lwd = par("lwd") * 2,
+               xpd = NA
+               )
+      text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
+           y      = y_vec,
+           labels = timepoint_labels,
+           adj    = c(0, 0.5),
+           xpd    = NA
+           )
+    }
+  }
+
+  ## Final steps
+  par(old_mar)
+  layout(1)
+  return(invisible(NULL))
+}
+
+
 
 
