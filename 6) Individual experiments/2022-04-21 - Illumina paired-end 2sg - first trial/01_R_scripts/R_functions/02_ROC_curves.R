@@ -99,7 +99,7 @@ PlotROCDf <- function(use_ROC_df,
     space_in_lines <- 1.1
     text(x      = par("usr")[[2]] - diff(grconvertY(c(0, space_in_lines), from = "lines", to = "user")),
          y      = par("usr")[[3]] + diff(grconvertY(c(0, space_in_lines), from = "lines", to = "user")),
-         labels = paste0("AUC = ", round(AUC_value, digits = 2)),
+         labels = paste0("AUC = ", format(round(AUC_value, digits = 2), nsmall = 2)),
          adj    = c(1, 0),
          xpd    = NA
          )
