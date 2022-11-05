@@ -5083,7 +5083,6 @@ DrawAllManuscriptPlots <- function(df_mat_list,
 
 
 
-
 # Functions for plotting the position relative to the TSS -----------------
 
 AreGenesOutsideTSSRange <- function(input_df, x_range = c(-1000, 1000)) {
