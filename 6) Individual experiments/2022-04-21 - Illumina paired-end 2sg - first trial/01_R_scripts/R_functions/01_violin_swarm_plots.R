@@ -17,12 +17,15 @@ SetUpBoxPlot <- function(num_groups,
                          use_y_limits  = NULL,
                          draw_axis     = TRUE,
                          draw_box      = TRUE,
-                         indicate_zero = FALSE
+                         indicate_zero = FALSE,
+                         zero_lty      = "dotted",
+                         zero_lwd      = 1,
+                         zero_color    = "gray80",
+                         side_gap      = 0.5
                          ) {
 
   ## Determine group positions
   group_positions <- seq_len(num_groups)
-  side_gap <- 0.5
   group_limits <- c((min(group_positions) - side_gap) - (num_groups * 0.04),
                      max(group_positions) + side_gap  + (num_groups * 0.04)
                     )
@@ -48,7 +51,7 @@ SetUpBoxPlot <- function(num_groups,
        )
 
   if (indicate_zero && (use_y_limits[[1]] < 0)) {
-    abline(h = 0, lty = "dotted", col = "gray80")
+    abline(h = 0, lty = zero_lty, col = zero_color, lwd = par("lwd") * zero_lwd)
   }
 
   if (draw_axis) {
@@ -116,7 +119,8 @@ SingleViolin <- function(numeric_vec,
                          violin_color   = "#9ECAE1",
                          line_color     = "black",
                          border_color   = line_color,
-                         draw_border    = FALSE
+                         draw_border    = FALSE,
+                         use_lwd        = 1
                          ) {
 
   if (length(quantiles_lty) == 1) {
@@ -168,7 +172,9 @@ SingleViolin <- function(numeric_vec,
   x_vec <- c(at - heights_vec, rev(at + heights_vec))
   y_vec <- c(eval_points_vec, rev(eval_points_vec))
   polygon(x_vec, y_vec, col = violin_color,
-          border = if (draw_border) border_color else NA, xpd = NA
+          border = if (draw_border) border_color else NA,
+          lwd = use_lwd * par("lwd"),
+          xpd = NA
           )
 
   if (draw_lines) {
@@ -179,6 +185,7 @@ SingleViolin <- function(numeric_vec,
             lty  = quantiles_lty[[i]],
             col  = line_color,
             lend = "butt",
+            lwd  = use_lwd * par("lwd"),
             xpd  = NA
             )
     }
@@ -265,6 +272,7 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
 BeeViolinPlot <- function(input_list,
                           groups_vec      = NULL,
                           gap_ratio       = 1.25,
+                          side_gap        = 0.5,
                           brewer_pals     = c("Blues", "Reds", "Purples",
                                               "Greens", "Oranges", "Greys"
                                               ),
@@ -278,6 +286,9 @@ BeeViolinPlot <- function(input_list,
                           lower_bound     = NULL,
                           upper_bound     = NULL,
                           indicate_zero   = TRUE,
+                          zero_lty        = "dotted",
+                          zero_lwd        = 1,
+                          zero_color      = "gray80",
                           draw_groups_n   = TRUE,
                           draw_points     = TRUE,
                           use_swarm       = TRUE,
@@ -285,6 +296,7 @@ BeeViolinPlot <- function(input_list,
                           cloud_alpha     = 0.2,
                           cloud_sd        = 0.04,
                           embed_PNG       = FALSE,
+                          png_res         = 900,
                           ...
                           ) {
 
@@ -342,7 +354,7 @@ BeeViolinPlot <- function(input_list,
         width    = temp_width,
         height   = temp_height,
         units    = "in",
-        res      = 900,
+        res      = png_res,
         bg       = "transparent"
         )
     par(lwd = current_par[["lwd"]])
@@ -353,9 +365,13 @@ BeeViolinPlot <- function(input_list,
   SetUpBoxPlot(num_groups,
                data_range    = range(numeric_vec),
                use_y_limits  = y_limits,
+               side_gap      = side_gap,
                draw_axis     = FALSE,
                draw_box      = !(embed_PNG),
-               indicate_zero = indicate_zero
+               indicate_zero = indicate_zero,
+               zero_lty      = zero_lty,
+               zero_lwd      = zero_lwd,
+               zero_color    = zero_color
                )
 
   for (i in seq_along(numeric_list)) {
@@ -409,6 +425,7 @@ BeeViolinPlot <- function(input_list,
     SetUpBoxPlot(num_groups,
                  data_range    = range(numeric_vec),
                  use_y_limits  = y_limits,
+                 side_gap      = side_gap,
                  draw_axis     = FALSE,
                  indicate_zero = FALSE
                  )
