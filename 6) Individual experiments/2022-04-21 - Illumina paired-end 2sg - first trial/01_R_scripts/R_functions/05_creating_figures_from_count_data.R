@@ -178,6 +178,36 @@ AllSamplesLog2FC <- function(entrezs_vec, normalize_to_reps = 1:2, ...) {
 
 
 
+StandardLog2FCDf <- function(input_counts_df) {
+  stopifnot(identical(input_counts_df[, "Entrez_ID"], CRISPRoff_df[, "Entrez_ID"]))
+  results_df <- GetLog2FC(input_counts_df,
+                          baseline_indices = 1:2,
+                          allow_switch = FALSE
+                          )[, c("Count_baseline", "Count_intervention", "Log2FC")]
+  names(results_df) <- paste0("Mean_",
+                              substr(tolower(names(results_df)), 1, 1),
+                              substr(names(results_df), 2, nchar(names(results_df)))
+                              )
+  results_df <- data.frame(
+    input_counts_df[, c("Plasmid_ID", "Gene_symbol", "Entrez_ID")],
+    "Is_NT" = CRISPRoff_df[, "gene"] == "negative_control",
+    results_df,
+    "Log2FC_rep1" = GetLog2FC(input_counts_df,
+                              baseline_indices = 1:2,
+                              allow_switch = FALSE,
+                              choose_rep = 1
+                              )[, "Log2FC"],
+    "Log2FC_rep2" = GetLog2FC(input_counts_df,
+                              baseline_indices = 1:2,
+                              allow_switch = FALSE,
+                              choose_rep = 2
+                              )[, "Log2FC"]
+  )
+  return(results_df)
+}
+
+
+
 # Functions for drawing violin + swarm plots for essential genes ----------
 
 RepEssentialViolins <- function(baseline_indices      = 3:4,
@@ -196,6 +226,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                 title_line            = 4.2,
                                 point_cex             = 0.3,
                                 write_rep             = FALSE,
+                                wex                   = 0.85,
                                 ...
                                 ) {
 
@@ -210,8 +241,8 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                    )
   R1_df <- do.call(GetEssentialROCDf, c(use_args, list(choose_rep = 1L)))
   R2_df <- do.call(GetEssentialROCDf, c(use_args, list(choose_rep = 2L)))
-  rep_list <- c(split(R1_df[, "Mean_log2FC"], !(R1_df[, "Is_essential"])),
-                split(R2_df[, "Mean_log2FC"], !(R2_df[, "Is_essential"]))
+  rep_list <- c(split(R1_df[, "Log2FC"], !(R1_df[, "Is_essential"])),
+                split(R2_df[, "Log2FC"], !(R2_df[, "Is_essential"]))
                 )[c(1, 3, 2, 4)]
 
   old_mar <- par(mar = use_mar)
@@ -222,7 +253,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
 
   assign("delete_rep_list", rep_list, envir = globalenv())
 
-  x_positions <- BeeViolinPlot(rep_list, point_cex = point_cex, use_spacing = 0.5, wex = 0.85,
+  x_positions <- BeeViolinPlot(rep_list, point_cex = point_cex, use_spacing = 0.5, wex = wex,
                                violin_colors = rep(c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"), each = 2),
                                point_colors  = rep(c("#7c7198", "#5b8669"), each = 2),
                                border_colors = rep(c("#d1cddb", "#bfd4c6"), each = 2),
@@ -378,7 +409,7 @@ ViolinPlotEssentialDf <- function(essent_df,
                                   ...
                                   ) {
   old_mar <- par(mar = c(4, 4.3, 4, 2.1))
-  show_list <- split(essent_df[, "Mean_log2FC"], !(essent_df[, "Is_essential"]))
+  show_list <- split(essent_df[, "Log2FC"], !(essent_df[, "Is_essential"]))
   if (show_phenotype_score) {
     show_list <- lapply(show_list, function(x) x / num_cell_divisions)
   }
@@ -478,7 +509,6 @@ PlotCounts <- function(numeric_vec,
 
 
 
-
 # Functions for plotting ROC curves (for gene essentiality) ---------------
 
 GetEssentialROCDf <- function(essential_genes,
@@ -495,9 +525,9 @@ GetEssentialROCDf <- function(essential_genes,
     stringsAsFactors = FALSE
   )
   log2fc_df <- Log2FCForGenes(ROC_df[, "Entrez_ID"], ...)
-  ROC_df[, "Mean_log2FC"] <- log2fc_df[, "Log2FC"]
+  ROC_df[, "Log2FC"] <- log2fc_df[, "Log2FC"]
 
-  are_nan <- is.nan(ROC_df[, "Mean_log2FC"])
+  are_nan <- is.nan(ROC_df[, "Log2FC"])
   message(paste0(sum(are_nan), " genes had a read count of zero in both ",
                      "conditions and had to be excluded."
                  ))
@@ -516,11 +546,11 @@ GetEssentialROCDf <- function(essential_genes,
   message(paste0(sum(are_included), " genes remained."))
 
   ROC_df <- ROC_df[are_included, ]
-  new_order <- order(ROC_df[, "Mean_log2FC"])
+  new_order <- order(ROC_df[, "Log2FC"])
   ROC_df <- ROC_df[new_order, ]
   row.names(ROC_df) <- NULL
 
-  ROC_df <- MakeROCDf(ROC_df, "Mean_log2FC")
+  ROC_df <- MakeROCDf(ROC_df, "Log2FC")
   return(ROC_df)
 }
 
@@ -543,6 +573,40 @@ PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with C
   return(invisible(NULL))
 }
 
+
+
+MakeROCDfListList <- function(choose_rep = NULL) {
+  ROC_df_list_list <- lapply(c(FALSE, TRUE), function(allow_switch) {
+    list(
+      ROC_T0vT12 = GetEssentialROCDf(essential_entrezs,
+                                     non_essential_entrezs,
+                                     baseline_indices      = 3:4,
+                                     intervention_indices  = 5:6,
+                                     min_count_at_baseline = 0L,
+                                     allow_switch          = allow_switch,
+                                     choose_rep            = choose_rep
+                                     ),
+      ROC_BvT12  = GetEssentialROCDf(essential_entrezs,
+                                     non_essential_entrezs,
+                                     baseline_indices      = 1:2,
+                                     intervention_indices  = 5:6,
+                                     min_count_at_baseline = 0L,
+                                     allow_switch          = allow_switch,
+                                     choose_rep            = choose_rep
+                                     ),
+      ROC_BvT0   = GetEssentialROCDf(essential_entrezs,
+                                     non_essential_entrezs,
+                                     baseline_indices      = 1:2,
+                                     intervention_indices  = 3:4,
+                                     min_count_at_baseline = 0L,
+                                     allow_switch          = allow_switch,
+                                     choose_rep            = choose_rep
+                                     )
+      )
+  })
+  names(ROC_df_list_list) <- c("Template switch excluded", "Template switch allowed")
+  return(ROC_df_list_list)
+}
 
 
 
@@ -617,7 +681,6 @@ DrawSideLegend <- function(labels_list,
   ## Draw legend
   text(x      = grconvertX(x = x_text, from = "npc", to = "user"),
        y      = y_pos,
-       cex    = 1,
        labels = sapply(unlist(labels_list), VerticalAdjust),
        adj    = c(0, 0.5),
        xpd    = NA
@@ -634,6 +697,8 @@ DrawSideLegend <- function(labels_list,
 
   return(invisible(NULL))
 }
+
+
 
 CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
                                 lower_bound_enforced, upper_bound_enforced
@@ -659,8 +724,6 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
 
 
 
-
-
 # Functions for creating replicate scatter plots --------------------------
 
 ReplicateScatterPlot <- function(input_df,
@@ -674,7 +737,20 @@ ReplicateScatterPlot <- function(input_df,
                                  use_title            = NULL,
                                  title_font           = 2,
                                  embed_PNG            = FALSE,
-                                 use_mar              = NULL
+                                 use_mar              = NULL,
+                                 axis_labels_list     = NULL,
+                                 essential_colors     = c("#6810c6", "#18a008"),
+                                 point_cex            = 0.4,
+                                 axis_cex_factor      = 1 / 0.7,
+                                 x_axis_label_line    = 2,
+                                 y_axis_label_line    = 2.3,
+                                 sparse_x_axis_labels = FALSE,
+                                 use_tcl              = 0.375,
+                                 x_axis_mgp           = 0.4,
+                                 y_axis_mgp           = 0.55,
+                                 legend_point_x_start = 0.2,
+                                 legend_lines_x_start = 0.6,
+                                 abbreviate_NT        = FALSE
                                  ) {
 
   required_objects <- c("essential_df", "essentials_2020Q2_df",
@@ -718,16 +794,18 @@ ReplicateScatterPlot <- function(input_df,
                         )
   })
   ## Prepare axis labels
-  if (show_phenotype_score) {
-    axis_labels_list <- list(
-      expression("Replicate 1 phenotype (" * gamma * ")"),
-      expression("Replicate 2 phenotype (" * gamma * ")")
-    )
-  } else {
-    axis_labels_list <- list(
-      expression("Replicate 1 log"[2] * " fold change"),
-      expression("Replicate 2 log"[2] * " fold change")
-    )
+  if (is.null(axis_labels_list)) {
+    if (show_phenotype_score) {
+      axis_labels_list <- list(
+        expression("Replicate 1 phenotype (" * gamma * ")"),
+        expression("Replicate 2 phenotype (" * gamma * ")")
+      )
+    } else {
+      axis_labels_list <- list(
+        expression("Replicate 1 log"[2] * " fold change"),
+        expression("Replicate 2 log"[2] * " fold change")
+      )
+    }
   }
 
   ## Prepare points that should be highlighted
@@ -739,7 +817,7 @@ ReplicateScatterPlot <- function(input_df,
           "is_essential"     = entrezs_vec %in% essentials_2020Q2_df[, "Entrez_ID"],
           "is_non_essential" = entrezs_vec %in% non_essentials_2020Q2_df[, "Entrez_ID"]
         )
-        highlight_colors <- c("#6810c6", "#18a008")
+        highlight_colors <- essential_colors
         labels_list <- list(
           "essential" = c("Essential", "genes", AddSum(highlight_mat[, "is_essential"])),
           "non-essential" = c("Non-essential", "genes", AddSum(highlight_mat[, "is_non_essential"]))
@@ -763,11 +841,14 @@ ReplicateScatterPlot <- function(input_df,
       } else {
         highlight_mat <- cbind("is_NT" = are_NT)
       }
-      NT_color <- "#004ec2"
+      NT_color <- "#297eff"
       highlight_colors <- c(highlight_colors, NT_color)
       label_colors <- c(label_colors, NT_color)
       labels_list <- c(labels_list,
-                       list("NT" = c("Non-targeting", "controls", AddSum(are_NT)))
+                       list("NT" = c(if (abbreviate_NT) "NT" else "Non-targeting",
+                                     "controls", AddSum(are_NT)
+                                     )
+                            )
                        )
     }
     stopifnot(!(any(rowSums(highlight_mat) > 1)))
@@ -825,14 +906,14 @@ ReplicateScatterPlot <- function(input_df,
   ## Draw points
   points(xy_mat[!(are_highlighted), ],
          pch = 16,
-         cex = 0.4,
+         cex = point_cex,
          col = adjustcolor("black", alpha.f = 0.35),
          xpd = NA
          )
   if (highlight_genes) {
     points(highlighted_xy_mat,
            pch = 16,
-           cex = 0.4,
+           cex = point_cex,
            col = colors_vec,
            xpd = NA
            )
@@ -854,30 +935,37 @@ ReplicateScatterPlot <- function(input_df,
   }
 
   ## Annotate plot
-  mtext(axis_labels_list[[1]], side = 1, line = 2)
-  mtext(axis_labels_list[[2]], side = 2, line = 2.3)
+  mtext(axis_labels_list[[1]], side = 1, line = x_axis_label_line, cex = par("cex"))
+  mtext(axis_labels_list[[2]], side = 2, line = y_axis_label_line, cex = par("cex"))
   if (!(is.null(use_title))) {
-    title(use_title, cex.main = par("cex"), font.main = title_font)
+    title(use_title, cex.main = 1, font.main = title_font)
   }
 
   ## Draw axes
-  tick_locations <- pretty(axis_limits, n = 6)
   for (i in 1:2) {
+    tick_labels <- tick_labels_list[[i]]
+    if ((i == 1) && sparse_x_axis_labels) {
+      tick_labels <- ifelse(rep(c(TRUE, FALSE), length.out = length(tick_labels)),
+                            tick_labels,
+                            ""
+                            )
+    }
     axis(i,
          at       = tick_locations,
-         labels   = tick_labels_list[[i]],
-         mgp      = c(3, if (i == 1) 0.4 else 0.55, 0),
-         tcl      = -0.375,
+         labels   = tick_labels,
+         mgp      = c(3, if (i == 1) x_axis_mgp else y_axis_mgp, 0),
+         tcl      = -(use_tcl),
          las      = 1,
          lwd      = par("lwd"),
-         cex.axis = par("cex") / 0.7
+         cex.axis = par("cex") * axis_cex_factor
          )
   }
   box()
   if (highlight_genes) {
     DrawSideLegend(labels_list,
                    use_colors = adjustcolor(label_colors, alpha.f = 0.85),
-                   use_point_size = 1, point_x_start = 0.2, lines_x_start = 0.6
+                   use_point_size = 1, point_x_start = legend_point_x_start,
+                   lines_x_start = legend_lines_x_start
                    )
   }
   par(old_mar)
@@ -918,7 +1006,6 @@ Log2FCScatterPlot <- function(allow_switch         = FALSE,
 
   ReplicateScatterPlot(replicates_df, show_phenotype_score = show_phenotype_score, ...)
 }
-
 
 
 
@@ -1058,6 +1145,7 @@ PlotBarplotMat <- function(barplot_mat,
 }
 
 
+
 DrawBottomLabels <- function(x_positions, groups_vec, are_included) {
   mtext(text = rep(paste0("R", 1:2), times = 3)[are_included],
         at = x_positions, side = 1, line = 0.3, cex = par("cex")
@@ -1077,7 +1165,6 @@ DrawBottomLabels <- function(x_positions, groups_vec, are_included) {
         )
   return(invisible(NULL))
 }
-
 
 
 
@@ -1132,14 +1219,7 @@ CountBarPlot <- function(use_counts_mat,
   numeric_axis_pos <- pretty(use_numeric_limits)
   numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
 
-  plot(NA,
-       xlim = group_limits,
-       ylim = numeric_limits,
-       xaxs = "i",
-       yaxs = "i",
-       axes = FALSE,
-       ann  = FALSE
-       )
+  MakeEmptyPlot(x_limits = group_limits, y_limits = numeric_limits)
 
   if (lollipop) {
     segments(x0  = bar_positions,
@@ -1166,9 +1246,10 @@ CountBarPlot <- function(use_counts_mat,
 
   ## Draw the y axis
   axis(2,
-       las    = 2,
-       mgp    = c(3, 0.55, 0),
-       tcl    = -0.375
+       las = 2,
+       mgp = c(3, 0.55, 0),
+       tcl = -0.375,
+       lwd = par("lwd")
        )
   mtext(VerticalAdjust(y_axis_label),
         side = 2,
@@ -1185,7 +1266,8 @@ CountBarPlot <- function(use_counts_mat,
   }
   box(bty = "l")
 
-  return(invisible(NULL))
+  names(bars_vec) <- colnames(use_counts_mat)[are_included]
+  return(invisible(bars_vec))
 }
 
 
@@ -1229,6 +1311,118 @@ CountBoxPlot <- function(use_counts_mat,
   return(invisible(NULL))
 }
 
+
+
+GammaBoxPlot <- function(use_counts_df,
+                         baseline_indices     = 1:2,
+                         intervention_indices = 5:6,
+                         both_timepoints      = TRUE,
+                         num_cell_divisions   = 10L,
+                         use_title            = "All genes",
+                         cloud_alpha          = 0.15,
+                         cloud_sd             = 0.025,
+                         y_label_line         = 2.35,
+                         ...
+                         ) {
+
+  if (both_timepoints) {
+    logfc_1_vec <- GetLog2FC(use_counts_df,
+                             choose_rep = 1,
+                             baseline_indices = 1:2,
+                             intervention_indices = 5:6,
+                             allow_switch = FALSE
+                             )[, "Log2FC"]
+    logfc_2_vec <- GetLog2FC(use_counts_df,
+                             choose_rep = 2,
+                             baseline_indices = 1:2,
+                             intervention_indices = 5:6,
+                             allow_switch = FALSE
+                             )[, "Log2FC"]
+    logfc_3_vec <- GetLog2FC(use_counts_df,
+                             choose_rep = 1,
+                             baseline_indices = 3:4,
+                             intervention_indices = 5:6,
+                             allow_switch = FALSE
+                             )[, "Log2FC"]
+    logfc_4_vec <- GetLog2FC(use_counts_df,
+                             choose_rep = 2,
+                             baseline_indices = 3:4,
+                             intervention_indices = 5:6,
+                             allow_switch = FALSE
+                             )[, "Log2FC"]
+    logfc_list <- list(logfc_1_vec, logfc_2_vec, logfc_3_vec, logfc_4_vec)
+    groups_vec <- c(1, 1, 2, 2)
+    group_positions <- RepositionByGroups(groups_vec)
+  } else {
+    logfc_1_vec <- GetLog2FC(use_counts_df,
+                             choose_rep = 1,
+                             baseline_indices = baseline_indices,
+                             intervention_indices = intervention_indices,
+                             allow_switch = FALSE
+                             )[, "Log2FC"]
+    logfc_2_vec <- GetLog2FC(use_counts_df,
+                             choose_rep = 2,
+                             baseline_indices = baseline_indices,
+                             intervention_indices = intervention_indices,
+                             allow_switch = FALSE
+                             )[, "Log2FC"]
+    logfc_list <- list(logfc_1_vec, logfc_2_vec)
+    groups_vec <- 1:2
+  }
+
+  logfc_list <- lapply(logfc_list, function(x) x[!(is.nan(x))])
+  gamma_list <- lapply(logfc_list, function(x) x / num_cell_divisions)
+
+  BeeViolinPlot(gamma_list,
+                groups_vec,
+                lower_bound   = -0.8,
+                upper_bound   = 0.4,
+                use_swarm     = FALSE,
+                cloud_alpha   = cloud_alpha,
+                cloud_sd      = cloud_sd,
+                draw_border   = TRUE,
+                violin_colors = brewer.pal(9, "Blues")[[3]],
+                line_colors   = brewer.pal(9, "Blues")[[8]],
+                border_colors = brewer.pal(9, "Blues")[[8]],
+                point_colors  = "#518dc2",
+                draw_groups_n = FALSE,
+                ...
+                )
+
+  mtext(VerticalAdjust(expression("Phenotype (" * gamma * ")")),
+        side = 2,
+        line = y_label_line,
+        cex = par("cex")
+        )
+
+  if (both_timepoints) {
+    mtext(text = paste0("R", rep(1:2, 2)),
+          at = group_positions, side = 1, line = 0.3, cex = par("cex")
+          )
+    segments(x0  = group_positions[c(1, 3)] - 0.25,
+             x1  = group_positions[c(2, 4)] + 0.25,
+             y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.45), from = "lines", to = "user")),
+             col = "black",
+             xpd = NA
+             )
+    mtext(text = c("Baseline vs. endpoint", "T0 vs. endpoint"),
+          at   = c(mean(group_positions[1:2]), mean(group_positions[3:4])),
+          side = 1,
+          line = 1.7,
+          cex  = par("cex")
+          )
+  } else {
+    mtext(text = paste0("R", 1:2),
+          at = 1:2, side = 1, line = 0.3, cex = par("cex")
+          )
+  }
+
+  if (!(is.null(use_title))) {
+    title(use_title, font.main = 1, cex.main = 1)
+  }
+
+  return(invisible(NULL))
+}
 
 
 
@@ -1290,7 +1484,8 @@ MappedReadsBarPlot <- function(num_reads_mat,
        labels = paste0(tick_pos / 10^6, "M"),
        las    = 2,
        mgp    = c(3, 0.5, 0),
-       tcl    = -0.375
+       tcl    = -0.375,
+       lwd    = par("lwd")
        )
   mtext(VerticalAdjust("Number of reads"),
         side = 2,
@@ -1376,7 +1571,8 @@ PercentageBarPlot <- function(percentages_vec,
        labels = paste0(y_ticks_pos * 100, "%"),
        las    = 2,
        mgp    = c(3, 0.5, 0),
-       tcl    = -0.375
+       tcl    = -0.375,
+       lwd    = par("lwd")
        )
   mtext(VerticalAdjust(y_axis_label),
         side = 2,
@@ -1411,11 +1607,12 @@ MakeEmptyPlot <- function(x_limits = c(0, 1), y_limits = c(0, 1)) {
 
 
 
-TwoDensities <- function(show_GC = TRUE,
-                         include_timepoints = 1:3,
+TwoDensities <- function(show_GC               = TRUE,
+                         include_timepoints    = 1:3,
                          semitransparent_lines = TRUE,
-                         show_title = TRUE,
-                         use_title = NULL
+                         show_title            = TRUE,
+                         use_title             = NULL,
+                         include_zero          = TRUE
                          ) {
 
   if (show_GC) {
@@ -1443,6 +1640,10 @@ TwoDensities <- function(show_GC = TRUE,
 
   ## Prepare the x axis
   x_range <- range(unlist(lapply(density_list, function(x) sapply(x, "[[", "x"))))
+  if (include_zero) {
+    x_range[[1]] <- min(0, x_range[[1]])
+  }
+
   x_ticks <- pretty(x_range)
   x_limits <- range(x_ticks)
   x_grid <- pretty(x_limits, n = 10)
@@ -1475,7 +1676,7 @@ TwoDensities <- function(show_GC = TRUE,
     c(2, 2, 2)
   )
 
-  ## Set up the plot layout
+  ## Set up the multi-plot layout
   layout(layout_mat,
          widths  = c(1, 8, 1),
          heights = c(1.2, 3.4, 0.25, 3.4, 1.75)
@@ -1515,9 +1716,9 @@ TwoDensities <- function(show_GC = TRUE,
     ## Draw the density lines
     for (j in seq_along(density_list[[i]])) {
       lines(density_list[[i]][[j]],
-            col = colors_vec[[j]],
-            lwd = 2,
-            xpd = NA
+            col  = colors_vec[[j]],
+            lwd  = par("lwd") * 2,
+            xpd  = NA
             )
     }
 
@@ -1553,7 +1754,8 @@ TwoDensities <- function(show_GC = TRUE,
            at     = x_ticks,
            labels = x_tick_labels,
            mgp    = c(3, 0.375, 0.3),
-           tcl    = -0.375
+           tcl    = -0.375,
+           lwd    = par("lwd")
            )
       mtext(x_axis_label,
             side = 1,
@@ -1594,7 +1796,7 @@ PerBaseQuality <- function(qual_mat,
   }
   assign("delete_colors_vec", colors_vec, envir = globalenv())
 
-  ## Set up the plot layout
+  ## Set up the multi-plot layout
   layout_mat <- rbind(
     c(1, 1, 1, 1, 1),
     c(3, 6, 5, 7, 4),
@@ -1623,17 +1825,20 @@ PerBaseQuality <- function(qual_mat,
 
     ## Draw the lines
     for (j in seq_along(use_indices)) {
-      lines(x   = seq_len(nrow(qual_mat)),
-            y   = qual_mat[, use_indices[[j]]],
-            col = colors_vec[[j]],
-            xpd = NA
+      lines(x    = seq_len(nrow(qual_mat)),
+            y    = qual_mat[, use_indices[[j]]],
+            col  = colors_vec[[j]],
+            lwd  = par("lwd") * 2,
+            lend = "butt",
+            xpd  = NA
             )
     }
 
     ## Draw the x axis
     axis(1,
          mgp = c(3, 0.375, 0),
-         tcl = -0.375
+         tcl = -0.375,
+         lwd = par("lwd")
          )
     mtext(paste0("Read ", i, " (base)"),
           side = 1,
