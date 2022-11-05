@@ -108,38 +108,13 @@ non_essential_entrezs <- GetAvailableGenes(non_essentials_2020Q2_df[, "Entrez_ID
 # essential_entrezs     <- intersect_essential_entrezs
 # non_essential_entrezs <- intersect_non_essential_entrezs
 
-
 T0vT12_title <- expression(bold("CRISPRoff:" ~ bolditalic("T0")      ~ "vs." ~ bolditalic("T12")))
 BvT12_title  <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ bolditalic("T12")))
 BvT0_title   <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ bolditalic("T0")))
 
-
-ROC_df_list_list <- lapply(c(FALSE, TRUE), function(x) {
-  list(
-    ROC_T0vT12_df = GetEssentialROCDf(essential_entrezs,
-                                      non_essential_entrezs,
-                                      baseline_indices      = 3:4,
-                                      intervention_indices  = 5:6,
-                                      min_count_at_baseline = 0L,
-                                      allow_switch          = x
-                                      ),
-    ROC_BvT12_df  = GetEssentialROCDf(essential_entrezs,
-                                      non_essential_entrezs,
-                                      baseline_indices      = 1:2,
-                                      intervention_indices  = 5:6,
-                                      min_count_at_baseline = 0L,
-                                      allow_switch          = x
-                                      ),
-    ROC_BvT0_df   = GetEssentialROCDf(essential_entrezs,
-                                      non_essential_entrezs,
-                                      baseline_indices      = 1:2,
-                                      intervention_indices  = 3:4,
-                                      min_count_at_baseline = 0L,
-                                      allow_switch          = x
-                                      )
-  )
-})
-
+both_reps_ROC_df_list_list <- MakeROCDfListList()
+rep1_ROC_df_list_list <- MakeROCDfListList(choose_rep = 1)
+rep2_ROC_df_list_list <- MakeROCDfListList(choose_rep = 2)
 
 for (allow_switch in c(FALSE, TRUE)) {
 
@@ -152,13 +127,31 @@ for (allow_switch in c(FALSE, TRUE)) {
   old_oma <- par(oma = rep(0.3, 4))
   for (create_PDF in c(FALSE, TRUE)) {
     if (create_PDF) {
-      pdf(file.path(use_dir, "ROC curves.pdf"),
+      pdf(file.path(use_dir, "ROC curves - both replicates.pdf"),
           width = 3 + 1.14, height = 3 + 1.56
           )
     }
-    PlotEssentialROCDf(ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12_df"]], use_title = T0vT12_title)
-    PlotEssentialROCDf(ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12_df"]],  use_title = BvT12_title)
-    PlotEssentialROCDf(ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0_df"]],   use_title = BvT0_title)
+    PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = T0vT12_title)
+    PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title)
+    PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = BvT0_title)
+    if (create_PDF) {
+      dev.off()
+      pdf(file.path(use_dir, "ROC curves - replicate 1.pdf"),
+          width = 3 + 1.14, height = 3 + 1.56
+          )
+    }
+    PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 1)")))
+    PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 1)")))
+    PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 1)")))
+    if (create_PDF) {
+      dev.off()
+      pdf(file.path(use_dir, "ROC curves - replicate 2.pdf"),
+          width = 3 + 1.14, height = 3 + 1.56
+          )
+    }
+    PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 2)")))
+    PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 2)")))
+    PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 2)")))
     if (create_PDF) {
       dev.off()
     }
@@ -167,7 +160,7 @@ for (allow_switch in c(FALSE, TRUE)) {
 }
 
 
-use_df <- ROC_df_list_list[[1]][["ROC_BvT12_df"]]
+use_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12_df"]]
 pdf(file.path(manuscript_dir, "2sg ROC curve BvT12.pdf"),
     width = 1.75, height = 1.75
     )
@@ -176,7 +169,6 @@ PlotROCDf(use_df, flip = TRUE, xlab_line = 1.6, ylab_line = 2.1, ROC_lwd = 1.5)
 title("CRISPRoff library", cex.main = 1, font.main = 1, line = 0.7)
 par(old_par)
 dev.off()
-
 
 
 
@@ -201,9 +193,9 @@ for (allow_switch in c(FALSE, TRUE)) {
           )
     }
     for (draw_points in c(TRUE)) {
-      do.call(ViolinPlotEssentialDf, c(list(ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12_df"]], use_title = T0vT12_title, draw_points = draw_points), custom_args))
-      do.call(ViolinPlotEssentialDf, c(list(ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12_df"]],  use_title = BvT12_title,  draw_points = draw_points), custom_args))
-      do.call(ViolinPlotEssentialDf, c(list(ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0_df"]],   use_title = BvT0_title,   draw_points = draw_points), custom_args))
+      do.call(ViolinPlotEssentialDf, c(list(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = T0vT12_title, draw_points = draw_points), custom_args))
+      do.call(ViolinPlotEssentialDf, c(list(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title,  draw_points = draw_points), custom_args))
+      do.call(ViolinPlotEssentialDf, c(list(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = BvT0_title,   draw_points = draw_points), custom_args))
     }
     if (create_PDF) {
       dev.off()
@@ -252,7 +244,6 @@ for (allow_switch in c(FALSE, TRUE)) {
 
 
 
-
 pdf(file.path(manuscript_dir, "2sg violin plots BvT12.pdf"),
     width = 1.95, height = 1.95
     )
@@ -271,14 +262,13 @@ RepEssentialViolins(1:2, 5:6,
                     genes_label_line = 0.6,
                     axis_cex_factor  = 1 / 0.45,
                     draw_groups_n    = FALSE,
-                    point_cex        = 0.2,
+                    point_cex        = 0.175,
                     title_line       = 3.3,
-                    draw_border      = TRUE
+                    draw_border      = TRUE,
+                    wex              = 0.88
                     )
 par(old_par)
 dev.off()
-
-
 
 
 
@@ -421,7 +411,6 @@ for (allow_switch in c(FALSE, TRUE)) {
 
 
 
-
 # Draw histograms ---------------------------------------------------------
 
 columns_vec <- c(
@@ -467,7 +456,7 @@ for (allow_switch in c(FALSE, TRUE)) {
       if (allow_switch) {
         use_columns <- sub("^NoSwitch_", "MaySwitch_", use_columns)
       }
-      DrawHistogram(numeric_vec      = rowMeans(as.matrix(counts_df[, use_columns, drop = FALSE])),
+      DrawHistogram(rowMeans(as.matrix(counts_df[, use_columns, drop = FALSE])),
                     truncation_limit = 5000,
                     num_breaks       = 150L,
                     title_text       = use_title,
@@ -527,7 +516,6 @@ PlotCountsForPlasmid("HNRNPK")
 
 
 
-
 # Create QC plots ---------------------------------------------------------
 
 ## Prepare read-level statistics
@@ -559,7 +547,7 @@ raw_counts_mat <- GetCountsMat(counts_df,
                                )
 
 
-for (all_timepoints in c(TRUE, FALSE)) {
+for (all_timepoints in c(FALSE, TRUE)) {
 
   file_name <- "QC plots - "
   if (all_timepoints) {
@@ -595,10 +583,18 @@ for (all_timepoints in c(TRUE, FALSE)) {
                        y_axis_upper_limit = 3000,
                        fixed_y_upper_limit = TRUE
                        )
+    RawCountsHistogram(raw_counts_mat,
+                       y_axis_upper_limit = 1600,
+                       fixed_y_upper_limit = TRUE,
+                       show_replicates = TRUE,
+                       semitransparent_lines = make_PDF
+                       )
     CountBoxPlot(counts_mat, include_timepoints = use_timepoints, embed_PNG = TRUE)
-    CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints)
+    gini_indices <- CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints)
     CountBarPlot(raw_counts_mat, include_timepoints = use_timepoints)
     par(old_par)
+
+    GammaBoxPlot(counts_df, embed_PNG = TRUE)
 
     Log2FCScatterPlot(baseline_indices     = 1:2,
                       intervention_indices = 5:6,
@@ -617,6 +613,80 @@ for (all_timepoints in c(TRUE, FALSE)) {
     }
   }
 }
+
+
+
+# Export QC plots for the manuscript --------------------------------------
+
+pdf(file.path(manuscript_dir, "2sg - Fig. S7A - count histograms.pdf"),
+    width = 2.1, height = 1.75
+    )
+ManuscriptRawCountsHistogram(raw_counts_mat, "CRISPRoff library")
+dev.off()
+
+
+use_mai <- c(0.7, 0.8, 0.4, 1.4)
+use_cex <- 0.6
+base_height <- 1.15
+pdf(file.path(manuscript_dir, "2sg - Fig. S7C - scatter plot.pdf"),
+    width  = base_height + (sum(use_mai[c(2, 4)] * use_cex)),
+    height = base_height + (sum(use_mai[c(1, 3)]) * use_cex)
+    )
+old_par <- par(cex = 0.6, lwd = 0.8)
+Log2FCScatterPlot(baseline_indices     = 1:2,
+                  intervention_indices = 5:6,
+                  allow_switch         = FALSE,
+                  highlight_NT         = TRUE,
+                  highlight_essential  = FALSE,
+                  show_phenotype_score = TRUE,
+                  use_title            = "CRISPRoff library",
+                  title_font           = 1,
+                  use_mar              = use_mai * 5,
+                  axis_cex_factor      = 1 / 0.45,
+                  embed_PNG            = TRUE,
+                  x_axis_label_line    = 1.8,
+                  y_axis_label_line    = 2.5,
+                  sparse_x_axis_labels = TRUE,
+                  use_tcl              = 0.3,
+                  x_axis_mgp           = 0.35,
+                  y_axis_mgp           = 0.5,
+                  point_cex            = 0.45,
+                  legend_lines_x_start = 0.4,
+                  legend_point_x_start = 0.3,
+                  abbreviate_NT        = TRUE
+                  )
+dev.off()
+
+
+pdf(file.path(manuscript_dir, "2sg - Fig. S7D - phenotype violin plots.pdf"),
+    width = 1.4, height = 1.75
+    )
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
+             axis_cex_factor = 1 / 0.45, use_title = "CRISPRoff library",
+             cloud_alpha = 0.2, cloud_sd = 0.015, point_cex = 0.2,
+             use_lwd = 0.6,
+             zero_lty = "solid", zero_lwd = 0.6, zero_color = "gray70",
+             y_label_line = 2.1,
+             png_res = 1200, wex = 0.85, side_gap = 0.525
+             )
+dev.off()
+
+
+
+# Save data ---------------------------------------------------------------
+
+logfc_CRISPRoff_df <- StandardLog2FCDf(counts_df)
+logfc_CRISPRoff_df <- data.frame("sgID" = CRISPRoff_df[, "sgID_AB"],
+                                 logfc_CRISPRoff_df, stringsAsFactors = FALSE
+                                 )
+logfc_CRISPRoff_df[, "Entrez_ID"] <- as.integer(logfc_CRISPRoff_df[, "Entrez_ID"])
+
+gini_indices_CRISPRoff <- gini_indices
+
+save(list = c("logfc_CRISPRoff_df", "gini_indices_CRISPRoff"),
+     file = file.path(rdata_dir, "09_create_figures_from_count_data.RData")
+     )
 
 
 

@@ -44,6 +44,67 @@ Nunez_df <- data.frame(readxl::read_excel(library_path, skip = 3, sheet = 2),
                        )
 
 
+
+# Define functions --------------------------------------------------------
+
+ROCDfForColumn <- function(input_df, use_column) {
+  new_order <- order(input_df[, use_column])
+  results_df <- input_df[new_order, ]
+  results_df <- MakeROCDf(results_df, numeric_column = use_column)
+  return(results_df)
+}
+
+
+RocOffvMutant <- function(CRISPRoff_ROC_df,
+                          mutant_ROC_df,
+                          title_text = expression(bold("Original data of Nu\u00f1ez" ~ bolditalic("et al."))),
+                          num_digits_AUC = 2
+                          ) {
+
+  line_colors <- c("#6daca0", "#c9944a")
+
+  old_mar <- par(mar = c(3.7, 3.95, 3.6, 1.75))
+
+  CRISPRoff_AUC <- PlotROCDf(CRISPRoff_ROC_df, line_color = "#6daca0",
+                             show_AUC = FALSE, flip = TRUE
+                             )
+  mutant_AUC <- PlotROCDf(mutant_ROC_df, line_color = "#c9944a", add = TRUE,
+                          show_AUC = FALSE, flip = TRUE
+                          )
+
+  legend_vec <- c(
+    as.expression(bquote("CRISPRoff" ~ scriptstyle("(AUC" ~
+                         .(format(round(CRISPRoff_AUC, digits = num_digits_AUC), nsmall = num_digits_AUC)) * ")"))),
+    as.expression(bquote("CRISPRoff mutant" ~ scriptstyle("(AUC" ~
+                         .(format(round(mutant_AUC, digits = num_digits_AUC), nsmall = num_digits_AUC)) * ")")))
+  )
+
+  y_start <- diff(grconvertY(c(0, 0.7), from = "lines", to = "user"))
+  y_pos_vec <- y_start + c(diff(grconvertY(c(0, 1), from = "lines", to = "user")), 0)
+
+  text(x      = grconvertX(0.3, from = "npc", to = "user"),
+       y      = y_pos_vec,
+       labels = legend_vec,
+       adj    = c(0, 0.5),
+       xpd    = NA
+       )
+
+  segments(x0   = grconvertX(0.245, from = "npc", to = "user"),
+           x1   = grconvertX(0.285, from = "npc", to = "user"),
+           y0   = y_pos_vec,
+           col  = line_colors,
+           lend = "butt",
+           lwd  = 2
+           )
+
+  title(title_text, cex.main = par("cex"), line = 1.7)
+
+  par(old_mar)
+  return(invisible(NULL))
+}
+
+
+
 # Tidy data ---------------------------------------------------------------
 
 names(Nunez_df) <- gsub("[- ]", "_", names(Nunez_df))
@@ -72,7 +133,6 @@ Nunez_df[, "Gene_symbol"] <- CRISPRoff_df[, "Gene_symbol"][matches_vec]
 
 
 
-
 # Check for the availability of essential and non-essential genes ---------
 
 essential_entrezs     <- intersect(essentials_2020Q2_df[, "Entrez_ID"], Nunez_df[, "Entrez_ID"])
@@ -92,7 +152,9 @@ are_essential <- ifelse(Nunez_df[, "Entrez_ID"] %in% essential_entrezs,
 Nunez_df[, "Is_essential"] <- are_essential
 
 ROC_columns <- c(
-  "Entrez_ID", "Gene_symbol", "Is_essential", "CRISPRoff_average", "mutant_average"
+  "Entrez_ID", "Gene_symbol", "Is_essential",
+  "CRISPRoff_average", "mutant_average",
+  "CRISPRoff_Rep1", "CRISPRoff_Rep2", "CRISPRoff_mut_Rep1", "CRISPRoff_mut_Rep2"
 )
 
 ROC_df <- Nunez_df[!(is.na(are_essential)), ROC_columns]
@@ -102,20 +164,17 @@ row.names(ROC_df) <- NULL
 
 
 
-
 # Draw ROC curves ---------------------------------------------------------
 
-ROCDfForColumn <- function(input_df, use_column) {
-  new_order <- order(input_df[, use_column])
-  results_df <- input_df[new_order, ]
-  results_df <- MakeROCDf(results_df, numeric_column = use_column)
-  return(results_df)
-}
+CRISPRoff_both_reps_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_average")
+mutant_both_reps_ROC_df <- ROCDfForColumn(ROC_df, "mutant_average")
 
-CRISPRoff_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_average")
-mutant_ROC_df <- ROCDfForColumn(ROC_df, "mutant_average")
+CRISPRoff_rep1_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_Rep1")
+mutant_rep1_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_mut_Rep1")
 
-line_colors <- c("#6daca0", "#c9944a")
+CRISPRoff_rep2_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_Rep2")
+mutant_rep2_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_mut_Rep2")
+
 
 for (create_PDF in c(FALSE, TRUE)) {
 
@@ -125,50 +184,20 @@ for (create_PDF in c(FALSE, TRUE)) {
         )
   }
 
-  old_mar <- par(mar = c(3.7, 3.95, 3.6, 1.75))
-
-  CRISPRoff_AUC <- PlotROCDf(CRISPRoff_ROC_df, line_color = "#6daca0",
-                             show_AUC = FALSE, flip = TRUE
-                             )
-  mutant_AUC <- PlotROCDf(mutant_ROC_df, line_color = "#c9944a", add = TRUE,
-                          show_AUC = FALSE, flip = TRUE
-                          )
-
-  legend_vec <- c(
-    as.expression(bquote("CRISPRoff" ~ scriptstyle("(AUC" ~ .(round(CRISPRoff_AUC, digits = 2)) * ")"))),
-    as.expression(bquote("CRISPRoff mutant" ~ scriptstyle("(AUC" ~ .(round(mutant_AUC, digits = 2)) * ")")))
-  )
-
-  y_start <- diff(grconvertY(c(0, 0.7), from = "lines", to = "user"))
-  y_pos_vec <- y_start + c(diff(grconvertY(c(0, 1), from = "lines", to = "user")), 0)
-
-  text(x      = grconvertX(0.3, from = "npc", to = "user"),
-       y      = y_pos_vec,
-       labels = legend_vec,
-       adj    = c(0, 0.5),
-       xpd    = NA
-       )
-
-  segments(x0   = grconvertX(0.245, from = "npc", to = "user"),
-           x1   = grconvertX(0.285, from = "npc", to = "user"),
-           y0   = y_pos_vec,
-           col  = line_colors,
-           lend = "butt",
-           lwd  = 2
-           )
-
-  title(expression(bold("Original data of Nu\u00f1ez" ~ bolditalic("et al."))),
-        cex.main = par("cex"), line = 1.7
-        )
-
-  par(old_mar)
+  RocOffvMutant(CRISPRoff_both_reps_ROC_df, mutant_both_reps_ROC_df)
+  RocOffvMutant(CRISPRoff_rep1_ROC_df, mutant_rep1_ROC_df,
+                title_text = expression(bold("Nu\u00f1ez" ~ bolditalic("et al.") ~ bold("\u2013 replicate 1"))),
+                num_digits_AUC = 4
+                )
+  RocOffvMutant(CRISPRoff_rep2_ROC_df, mutant_rep2_ROC_df,
+                title_text = expression(bold("Nu\u00f1ez" ~ bolditalic("et al.") ~ bold("\u2013 replicate 2"))),
+                num_digits_AUC = 4
+                )
 
   if (create_PDF) {
     dev.off()
   }
 }
-
-
 
 
 
@@ -247,7 +276,6 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 
 
-
 # Create scatter plots ----------------------------------------------------
 
 for (create_PDF in c(FALSE, TRUE)) {
@@ -299,6 +327,25 @@ for (create_PDF in c(FALSE, TRUE)) {
     }
   }
 }
+
+
+
+
+# Save data ---------------------------------------------------------------
+
+logfc_original_df <- data.frame(
+  Nunez_df[, c("sgID", "Gene_symbol")],
+  "Entrez_ID" = as.integer(Nunez_df[, "Entrez_ID"]),
+  "Mean_log2FC" = rowMeans(Nunez_df[, c("CRISPRoff_Rep1", "CRISPRoff_Rep2")]) * 10,
+  "Log2FC_rep1" = Nunez_df[, "CRISPRoff_Rep1"] * 10,
+  "Log2FC_rep2" = Nunez_df[, "CRISPRoff_Rep2"] * 10,
+  "Is_NT" = Nunez_df[, "gene"] == "non-targeting",
+  stringsAsFactors = FALSE
+)
+
+save(list = "logfc_original_df",
+     file = file.path(rdata_dir, "10_recreate_figures_of_Nunez_et_al.RData")
+     )
 
 
 
