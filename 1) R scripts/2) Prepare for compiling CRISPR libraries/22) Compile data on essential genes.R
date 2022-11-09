@@ -308,10 +308,11 @@ essential_datasets_list <- list(
 
 # Process protein-coding genes --------------------------------------------
 
-all_entrezs <- union(collected_entrez_IDs,
-                     unlist(sublibraries_all_entrezs_list, use.names = FALSE)
-                     )
-all_entrezs <- sort(as.integer(all_entrezs))
+object_names <- c("achilles_depend_df", "CRISPR_depend_df",
+                  "CRISPR_effects_df", "DEMETER2_combined_depend_df"
+                  )
+all_entrezs <- unique(unlist(lapply(object_names, function(x) get(x)[, "Entrez_ID"])))
+all_entrezs <- sort(all_entrezs)
 
 essential_df <- GetGeneEssentiality(all_entrezs, essential_datasets_list)
 
