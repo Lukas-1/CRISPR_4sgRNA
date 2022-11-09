@@ -252,7 +252,7 @@ essential_columns <- setdiff(names(essential_df),
                                "Achilles_mean_probability",
                                "DEMETER2_mean_probability", "CRISPR_mean_probability",
                                "BlomenHart_intersect", "BlomenHart_intersect_DepMap",
-                               "Three_categories", "Four_categories",
+                               "Four_categories",
                                names(all_4sg_df)
                                )
                              )
