@@ -39,6 +39,10 @@ load(file.path(off_4sg_rdata_dir, "09_create_figures_from_count_data.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
 
+load(file.path(CRISPR_root_directory, "3) RData files", "1) General",
+               "24) Enumerate pairs of genes at bidirectional promoters.RData"
+               ))
+
 
 
 # Define functions --------------------------------------------------------
@@ -81,6 +85,7 @@ ThreeScatterPlots <- function(logfc_1_df,
                               logfc_2_df,
                               library_1_label,
                               library_2_label,
+                              add_rep_to_label     = FALSE,
                               choose_rep           = NULL,
                               show_phenotype_score = TRUE,
                               num_cell_divisions   = 10L,
@@ -130,15 +135,21 @@ ThreeScatterPlots <- function(logfc_1_df,
   })
 
   ## Prepare axis labels
+  library_1_label <- paste0(library_1_label, " (")
+  library_2_label <- paste0(library_2_label, " (")
+  if ((!(is.null(choose_rep))) && add_rep_to_label) {
+    library_1_label <- paste0(library_1_label, "R", choose_rep, " ")
+    library_2_label <- paste0(library_2_label, "R", choose_rep, " ")
+  }
   if (show_phenotype_score) {
     axis_labels_list <- list(
-      ConcatenateExpressions(list(library_1_label, expression("(" * gamma * ")")), my_sep = " "),
-      ConcatenateExpressions(list(library_2_label, expression("(" * gamma * ")")), my_sep = " ")
+      ConcatenateExpressions(list(library_1_label, expression("" * gamma * ")")), my_sep = ""),
+      ConcatenateExpressions(list(library_2_label, expression("" * gamma * ")")), my_sep = "")
     )
   } else {
     axis_labels_list <- list(
-      ConcatenateExpressions(list(library_1_label, expression("log"[2] * "FC")), my_sep = " "),
-      ConcatenateExpressions(list(library_2_label, expression("log"[2] * "FC")), my_sep = " "),
+      ConcatenateExpressions(list(library_1_label, expression("log"[2] * "FC")), my_sep = ""),
+      ConcatenateExpressions(list(library_2_label, expression("log"[2] * "FC")), my_sep = ""),
     )
   }
 
@@ -171,10 +182,6 @@ ThreeScatterPlots <- function(logfc_1_df,
          heights = layout_heights
          )
   old_par <- par(mar = rep(0, 4), cex = original_cex)
-
-  print(par("cex"))
-  print(par("lwd"))
-
 
   for (i in 1:5) {
     MakeEmptyPlot()
@@ -341,7 +348,6 @@ CompareGinis <- function(gini_vec,
 
 
 
-
 # Compare Gini indices at baseline ----------------------------------------
 
 CompareGinis(c(gini_indices_CRISPRoff[c(1, 2)], gini_indices_4sg[c(1, 2)]))
@@ -356,7 +362,6 @@ CompareGinis(c(gini_indices_CRISPRoff[c(1, 2)], gini_indices_4sg[c(1, 2)]),
              )
 title("Count heterogeneity", cex.main = 1, font.main = 1)
 dev.off()
-
 
 
 
@@ -535,24 +540,6 @@ for (make_PDF in c(FALSE, TRUE)) {
 
 
 
-pdf(file = file.path(manuscript_dir, "Scatter plots - CRISPRoff vs. T.gonfio.pdf"),
-    width = PDF_width, height = PDF_height
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_4sg_df,
-                  logfc_CRISPRoff_df,
-                  "T.gonfio",
-                  "CRISPRoff",
-                  layout_widths = use_widths,
-                  layout_heights = use_heights,
-                  embed_PNG = TRUE,
-                  axis_cex_factor = 1 / 0.45
-                  )
-dev.off()
-
-
-
-
 # Export scatter plots for the manuscript ---------------------------------
 
 PDF_height <- 1.15 / sum((use_heights[[2]] / sum(use_heights)))
@@ -563,7 +550,7 @@ use_widths <- c(left_gap, 0.26, 0.045, 0.26, 0.045, 0.26, 0.02 + (0.11 - left_ga
 plot_height <- PDF_height * (use_heights[[2]] / sum(use_heights))
 PDF_width <- (plot_height * 3) + ((sum(use_widths[c(1, 3, 5, 7)]) / use_widths[[2]]) * plot_height)
 
-pdf(file = file.path(manuscript_dir, "Scatter plots - CRISPRoff vs. T.gonfio.pdf"),
+pdf(file = file.path(manuscript_dir, "Scatter plots - CRISPRoff vs. T.gonfio - both replicates.pdf"),
     width = PDF_width, height = PDF_height
     )
 par(cex = 0.6, lwd = 0.8)
@@ -571,14 +558,54 @@ ThreeScatterPlots(logfc_4sg_df,
                   logfc_CRISPRoff_df,
                   "T.gonfio",
                   "CRISPRoff",
-                  layout_widths = use_widths,
-                  layout_heights = use_heights,
-                  embed_PNG = TRUE,
-                  axis_cex_factor = 1 / 0.45,
-                  y_axis_label_line = 2.5
+                  y_axis_label_line = 2.5,
+                  axis_cex_factor   = 1 / 0.45,
+                  layout_widths     = use_widths,
+                  layout_heights    = use_heights,
+                  embed_PNG         = TRUE
                   )
 dev.off()
 
+
+
+pdf(file = file.path(manuscript_dir, "Scatter plots - CRISPRoff vs. T.gonfio - replicate 2.pdf"),
+    width = PDF_width, height = PDF_height
+    )
+par(cex = 0.6, lwd = 0.8)
+ThreeScatterPlots(logfc_4sg_df,
+                  logfc_CRISPRoff_df,
+                  "T.gonfio",
+                  "CRISPRoff",
+                  choose_rep           = 2,
+                  add_rep_to_label     = TRUE,
+                  show_remaining_genes = TRUE,
+                  y_axis_label_line    = 2.5,
+                  axis_cex_factor      = 1 / 0.45,
+                  layout_widths        = use_widths,
+                  layout_heights       = use_heights,
+                  embed_PNG            = TRUE
+                  )
+dev.off()
+
+
+
+
+# Examine bidirectional promoters -----------------------------------------
+
+common_genes <- intersect(logfc_CRISPRoff_df[, "Entrez_ID"], logfc_4sg_df[, "Entrez_ID"])
+
+common_logfc_CRISPRoff_df <- logfc_CRISPRoff_df[logfc_CRISPRoff_df[, "Entrez_ID"] %in% common_genes, ]
+row.names(common_logfc_CRISPRoff_df) <- NULL
+
+common_logfc_4sg_df <- logfc_4sg_df[logfc_4sg_df[, "Entrez_ID"] %in% common_genes, ]
+row.names(common_logfc_4sg_df) <- NULL
+
+BidirectionalViolins(bidirectional_df, common_logfc_CRISPRoff_df, max_distance = 20000,
+                     num_controls = 30L, compare_across = FALSE
+                     )
+BidirectionalViolins(bidirectional_df, common_logfc_4sg_df, max_distance = 20000,
+                     num_controls = 30L, compare_across = FALSE
+                     )
 
 
 
