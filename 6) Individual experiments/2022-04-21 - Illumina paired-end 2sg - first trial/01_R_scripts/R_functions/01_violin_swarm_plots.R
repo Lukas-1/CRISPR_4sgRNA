@@ -301,6 +301,9 @@ BeeViolinPlot <- function(input_list,
                           ) {
 
   num_groups <- length(input_list)
+  if (length(brewer_pals) == 1) {
+    brewer_pals <- rep(brewer_pals, num_groups)
+  }
   if (is.null(violin_colors)) {
     violin_colors <- vapply(brewer_pals, function(x) brewer.pal(9, x)[[3]], "")
   } else if (length(violin_colors) == 1) {
