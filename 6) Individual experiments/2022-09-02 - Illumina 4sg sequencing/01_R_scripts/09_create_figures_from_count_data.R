@@ -38,6 +38,11 @@ load(file.path(rdata_dir, "11_compute_read_quality_metrics.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
 
+load(file.path(CRISPR_root_directory, "3) RData files", "1) General",
+               "24) Enumerate pairs of genes at bidirectional promoters.RData"
+               ))
+
+
 
 
 # Prepare R objects -------------------------------------------------------
@@ -123,9 +128,6 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 # Draw ROC curves for the identification of essential genes ---------------
 
-essential_entrezs     <- GetAvailableGenes(essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
-non_essential_entrezs <- GetAvailableGenes(non_essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
-
 T0vT12_title <- expression(bold("CRISPRoff:" ~ bolditalic("T0")      ~ "vs." ~ bolditalic("T12")))
 BvT12_title  <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ bolditalic("T12")))
 BvT0_title   <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ bolditalic("T0")))
@@ -133,6 +135,10 @@ BvT0_title   <- expression(bold("CRISPRoff:" ~ bolditalic("Tbefore") ~ "vs." ~ b
 both_reps_ROC_df_list_list <- MakeROCDfListList()
 rep1_ROC_df_list_list <- MakeROCDfListList(choose_rep = 1)
 rep2_ROC_df_list_list <- MakeROCDfListList(choose_rep = 2)
+
+both_reps_more_genes_ROC_df_list_list <- MakeROCDfListList(use_blomen_hart = FALSE)
+rep1_ROC_more_genes_df_list_list <- MakeROCDfListList(choose_rep = 1, use_blomen_hart = FALSE)
+rep2_ROC_more_genes_df_list_list <- MakeROCDfListList(choose_rep = 2, use_blomen_hart = FALSE)
 
 for (allow_switch in c(FALSE, TRUE)) {
 
@@ -152,6 +158,9 @@ for (allow_switch in c(FALSE, TRUE)) {
     PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = T0vT12_title)
     PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title)
     PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = BvT0_title)
+    PlotEssentialROCDf(both_reps_more_genes_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = T0vT12_title)
+    PlotEssentialROCDf(both_reps_more_genes_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title)
+    PlotEssentialROCDf(both_reps_more_genes_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = BvT0_title)
     if (create_PDF) {
       dev.off()
       pdf(file.path(use_dir, "ROC curves - replicate 1.pdf"),
@@ -161,6 +170,9 @@ for (allow_switch in c(FALSE, TRUE)) {
     PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 1)")))
     PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 1)")))
     PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 1)")))
+    PlotEssentialROCDf(rep1_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 1)")))
+    PlotEssentialROCDf(rep1_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 1)")))
+    PlotEssentialROCDf(rep1_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 1)")))
     if (create_PDF) {
       dev.off()
       pdf(file.path(use_dir, "ROC curves - replicate 2.pdf"),
@@ -170,6 +182,9 @@ for (allow_switch in c(FALSE, TRUE)) {
     PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 2)")))
     PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 2)")))
     PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 2)")))
+    PlotEssentialROCDf(rep2_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 2)")))
+    PlotEssentialROCDf(rep2_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 2)")))
+    PlotEssentialROCDf(rep2_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 2)")))
     if (create_PDF) {
       dev.off()
     }
@@ -242,18 +257,20 @@ for (allow_switch in c(FALSE, TRUE)) {
       pdf(file.path(use_dir, "Violin plots - R1 and R2.pdf"), width = 5, height = 4.5)
     }
     for (draw_points in c(TRUE)) {
-      RepEssentialViolins(3:4, 5:6, use_title = T0vT12_title,draw_points = draw_points,
-                          lower_bound = -0.6, upper_bound = 0.25, y_limits = custom_y_limits,
-                          allow_switch = allow_switch
-                          )
-      RepEssentialViolins(1:2, 5:6, use_title = BvT12_title, draw_points = draw_points,
-                          lower_bound = -0.6, upper_bound = 0.25, y_limits = custom_y_limits,
-                          allow_switch = allow_switch
-                          )
-      RepEssentialViolins(1:2, 3:4, use_title = BvT0_title, draw_points = draw_points,
-                          lower_bound = -0.6, upper_bound = 0.25, y_limits = custom_y_limits,
-                          allow_switch = allow_switch
-                          )
+      for (use_blomen_hart in c(TRUE, FALSE)) {
+        RepEssentialViolins(3:4, 5:6, use_title = T0vT12_title,draw_points = draw_points,
+                            lower_bound = -0.6, upper_bound = 0.25, y_limits = custom_y_limits,
+                            allow_switch = allow_switch, use_blomen_hart = use_blomen_hart
+                            )
+        RepEssentialViolins(1:2, 5:6, use_title = BvT12_title, draw_points = draw_points,
+                            lower_bound = -0.6, upper_bound = 0.25, y_limits = custom_y_limits,
+                            allow_switch = allow_switch, use_blomen_hart = use_blomen_hart
+                            )
+        RepEssentialViolins(1:2, 3:4, use_title = BvT0_title, draw_points = draw_points,
+                            lower_bound = -0.6, upper_bound = 0.25, y_limits = custom_y_limits,
+                            allow_switch = allow_switch, use_blomen_hart = use_blomen_hart
+                            )
+      }
     }
     if (create_PDF) {
       dev.off()
@@ -292,6 +309,9 @@ dev.off()
 
 
 # Draw violin plots showing all samples -----------------------------------
+
+essential_entrezs     <- GetAvailableGenes(essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
+non_essential_entrezs <- GetAvailableGenes(non_essentials_2020Q2_df[, "Entrez_ID"], min_count = 0)
 
 for (allow_switch in c(FALSE, TRUE)) {
 
@@ -706,12 +726,25 @@ GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
 dev.off()
 
 
-
-# Save data ---------------------------------------------------------------
+# Compile log2FC data -----------------------------------------------------
 
 sg_CRISPRoff_df <- CRISPRoff_df
 logfc_4sg_df <- StandardLog2FCDf(counts_df)
 gini_indices_4sg <- gini_indices
+
+
+
+# Examine bidirectional promoters -----------------------------------------
+
+BidirectionalViolins(bidirectional_df, logfc_4sg_df, max_distance = 10000)
+BidirectionalViolins(bidirectional_df, logfc_4sg_df, max_distance = 15000)
+BidirectionalViolins(bidirectional_df, logfc_4sg_df, max_distance = 20000,
+                     num_controls = 30L
+                     )
+
+
+
+# Save data ---------------------------------------------------------------
 
 save(list = c("sg_CRISPRoff_df", "logfc_4sg_df", "gini_indices_4sg"),
      file = file.path(rdata_dir, "09_create_figures_from_count_data.RData")

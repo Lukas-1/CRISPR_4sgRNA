@@ -88,25 +88,34 @@ GetCountsMat <- function(use_counts_df,
 
 
 
-GetAvailableGenes <- function(entrezs_vec, count_column = "NoSwitch_xMM", min_count = 200) {
+GetAvailableGenes <- function(entrezs_vec,
+                              count_column = "NoSwitch_xMM",
+                              min_count = 200,
+                              verbose = TRUE
+                              ) {
 
   stopifnot(all("CRISPRoff_df" %in% ls(envir = globalenv())))
   stopifnot(is.numeric(entrezs_vec))
   stopifnot(!(any(duplicated(entrezs_vec))))
 
   matches_vec <- match(entrezs_vec, CRISPRoff_df[, "Entrez_ID"])
-  message(paste0("\nOf the ", length(entrezs_vec), " Entrez gene IDs, ",
-                 sum(is.na(matches_vec)), " were not available in the library.\n"
-                 ))
+  if (verbose) {
+    message(paste0("\nOf the ", length(entrezs_vec), " Entrez gene IDs, ",
+                   sum(is.na(matches_vec)), " were not available in the library.\n"
+                   ))
+  }
+
   entrezs_vec <- entrezs_vec[!(is.na(matches_vec))]
   matches_vec <- matches_vec[!(is.na(matches_vec))]
 
   have_multiple_plasmids <- CRISPRoff_df[, "Num_plasmids_for_Entrez"][matches_vec] >= 2
-  message(paste0(sum(have_multiple_plasmids),
-                 " genes were represented by multiple ",
-                 "plasmids (targeting multiple TSSs).\nOnly the first plasmid ",
-                 "was chosen for each gene.\n"
-                 ))
+  if (verbose) {
+    message(paste0(sum(have_multiple_plasmids),
+                   " genes were represented by multiple ",
+                   "plasmids (targeting multiple TSSs).\nOnly the first plasmid ",
+                   "was chosen for each gene.\n"
+                   ))
+  }
 
   if ((!(is.null(min_count))) && (min_count > 0)) {
     stopifnot(identical(CRISPRoff_df[, "Entrez_ID"], counts_df[, "Entrez_ID"]))
@@ -116,14 +125,46 @@ GetAvailableGenes <- function(entrezs_vec, count_column = "NoSwitch_xMM", min_co
     total_counts_vec <- rowSums(counts_mat[matches_vec, ])
     stopifnot("counts_mat" %in% ls(envir = globalenv()))
     too_few_counts <- total_counts_vec < min_count
-    message(paste0(sum(too_few_counts), " plasmids were represented by fewer ",
-                   "than ", min_count, " reads across both replicates at the ",
-                   "T0 timepoint,\nand were excluded from the analysis. ",
-                   sum(!(too_few_counts)), " genes remained.\n"
-                   ))
+    if (verbose) {
+      message(paste0(sum(too_few_counts), " plasmids were represented by fewer ",
+                     "than ", min_count, " reads across both replicates at the ",
+                     "T0 timepoint,\nand were excluded from the analysis. ",
+                     sum(!(too_few_counts)), " genes remained.\n"
+                     ))
+    }
     entrezs_vec <- entrezs_vec[!(too_few_counts)]
   }
   return(entrezs_vec)
+}
+
+
+
+GetEssentialGenes <- function(use_blomen_hart = TRUE) {
+  required_objects <- c("essential_df", "essentials_2020Q2_df",
+                        "non_essentials_2020Q2_df"
+                        )
+  stopifnot(all(required_objects %in% ls(envir = globalenv())))
+  if (use_blomen_hart) {
+    essential_entrezs <- GetAvailableGenes(
+      essentials_2020Q2_df[, "Entrez_ID"], min_count = 0, verbose = FALSE
+    )
+    non_essential_entrezs <- GetAvailableGenes(
+      non_essentials_2020Q2_df[, "Entrez_ID"], min_count = 0, verbose = FALSE
+    )
+  } else {
+    essential_entrezs <- GetAvailableGenes(
+      essential_df[, "Entrez_ID"][essential_df[, "Three_categories"] %in% "Essential"],
+      min_count = 0, verbose = FALSE
+    )
+    non_essential_entrezs <- GetAvailableGenes(
+      essential_df[, "Entrez_ID"][essential_df[, "Three_categories"] %in% "Non-essential"],
+      min_count = 0, verbose = FALSE
+    )
+  }
+  results_list <- list("essential_entrezs" = essential_entrezs,
+                       "non_essential_entrezs" = non_essential_entrezs
+                       )
+  return(results_list)
 }
 
 
@@ -227,12 +268,14 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                 point_cex             = 0.3,
                                 write_rep             = FALSE,
                                 wex                   = 0.85,
+                                use_blomen_hart       = TRUE,
                                 ...
                                 ) {
 
-  stopifnot(all(c("essential_entrezs", "non_essential_entrezs") %in% ls(envir = globalenv())))
-  use_args <- list(essential_genes       = essential_entrezs,
-                   non_essential_genes   = non_essential_entrezs,
+  essential_list <- GetEssentialGenes(use_blomen_hart)
+
+  use_args <- list(essential_genes       = essential_list[["essential_entrezs"]],
+                   non_essential_genes   = essential_list[["non_essential_entrezs"]],
                    baseline_indices      = baseline_indices,
                    intervention_indices  = intervention_indices,
                    min_count_at_baseline = min_count_at_baseline,
@@ -257,6 +300,8 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                violin_colors = rep(c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"), each = 2),
                                point_colors  = rep(c("#7c7198", "#5b8669"), each = 2),
                                border_colors = rep(c("#d1cddb", "#bfd4c6"), each = 2),
+                               use_swarm = use_blomen_hart,
+                               cloud_alpha = 0.2, cloud_sd = 0.04,
                                ...
                                )
   if (is.null(y_axis_label)) {
@@ -509,6 +554,282 @@ PlotCounts <- function(numeric_vec,
 
 
 
+
+# Functions for analyzing bidirectional promoters with violin plots -------
+
+FilterRepeatedEntrezs <- function(bidirect_df, max_distance = 10000L) {
+  bidirect_df <- bidirect_df[bidirect_df[, "Distance"] <= max_distance, ]
+  all_entrezs <- c(bidirect_df[, "Entrez_ID_1"], bidirect_df[, "Entrez_ID_2"])
+  num_occurrences <- table(all_entrezs)[as.character(unique(all_entrezs))]
+  repeated_entrezs <- as.integer(names(num_occurrences)[num_occurrences >= 2])
+  are_valid <- (!(bidirect_df[, "Entrez_ID_1"] %in% repeated_entrezs)) &
+               (!(bidirect_df[, "Entrez_ID_2"] %in% repeated_entrezs))
+  bidirect_df <- bidirect_df[are_valid, ]
+  return(bidirect_df)
+}
+
+
+BidirectionalSets <- function(bidirect_df, max_distance = 10000L) {
+  bidirect_df <- FilterRepeatedEntrezs(bidirect_df, max_distance)
+  are_discordant <- bidirect_df[, "Combination"] %in% "Discordant"
+  are_concordant <- bidirect_df[, "Combination"] %in% "Both non-essential"
+  essential_entrezs <- c(
+    bidirect_df[, "Entrez_ID_1"][are_discordant & (bidirect_df[, "Essentiality_1"] %in% "Essential")],
+    bidirect_df[, "Entrez_ID_2"][are_discordant & (bidirect_df[, "Essentiality_2"] %in% "Essential")]
+  )
+  discordant_entrezs <- c(
+    bidirect_df[, "Entrez_ID_1"][are_discordant & (bidirect_df[, "Essentiality_1"] %in% "Non-essential")],
+    bidirect_df[, "Entrez_ID_2"][are_discordant & (bidirect_df[, "Essentiality_2"] %in% "Non-essential")]
+  )
+  concordant_entrezs <- bidirect_df[, "Entrez_ID_1"][are_concordant]
+  results_list <- list(
+    "essential next to non-essential"     = essential_entrezs,
+    "non-essential next to essential"     = discordant_entrezs,
+    "non-essential next to non-essential" = concordant_entrezs
+  )
+  return(results_list)
+}
+
+
+
+IntegrateData <- function(entrezs_vec,
+                          bidirect_df,
+                          logfc_df,
+                          max_distance = 10000L,
+                          only_complete_pairs = TRUE,
+                          choose_rep = NULL
+                          ) {
+  bidirect_df <- FilterRepeatedEntrezs(bidirect_df, max_distance)
+  matches_vec <- match(entrezs_vec, bidirect_df[, "Entrez_ID_1"])
+  matches_vec <- ifelse(is.na(matches_vec),
+                        match(entrezs_vec, bidirect_df[, "Entrez_ID_2"]),
+                        matches_vec
+                        )
+  results_df <- data.frame(
+    "Entrez_ID" = entrezs_vec,
+    bidirect_df[matches_vec, ],
+    stringsAsFactors = FALSE
+  )
+  matches_vec <- match(results_df[, "Entrez_ID"], logfc_df[, "Entrez_ID"])
+  if (is.null(choose_rep)) {
+    logfc_column <- "Mean_log2FC"
+  } else {
+    logfc_column <- paste0("Log2FC_rep", choose_rep)
+  }
+  logfc_vec <- logfc_df[, logfc_column][matches_vec]
+  if (only_complete_pairs) {
+    logfc_1_vec <- logfc_df[, logfc_column][match(results_df[, "Entrez_ID_1"], logfc_df[, "Entrez_ID"])]
+    logfc_2_vec <- logfc_df[, logfc_column][match(results_df[, "Entrez_ID_2"], logfc_df[, "Entrez_ID"])]
+    are_valid <- (!(is.na(logfc_1_vec))) & (!(is.na(logfc_2_vec)))
+  } else {
+    are_valid <- !(is.na(logfc_vec))
+  }
+
+  results_df <- data.frame(
+    results_df[are_valid, ],
+    "Log2FC" = logfc_vec[are_valid],
+    row.names = NULL
+  )
+  new_order <- order(results_df[, "Entrez_ID_1"])
+  results_df <- results_df[new_order, ]
+  row.names(results_df) <- NULL
+  return(results_df)
+}
+
+
+
+SplitByDistance <- function(pairs_df, distance_cutoff = 1000L) {
+  split(pairs_df[, "Log2FC"], pairs_df[, "Distance"] >= distance_cutoff)
+}
+
+
+
+PrettyScientific <- function(input_number, digits = 0, scientific = 4) {
+  scientific_split <- strsplit(formatC(input_number, format = "e", digits = digits),
+                               "e", fixed = TRUE
+                               )[[1]]
+  power_of_10 <- as.integer(scientific_split[[2]])
+  if (abs(power_of_10) <= scientific) {
+    result_text <- as.expression(formatC(input_number, digits = max(digits, 1) , format = "fg"))
+  } else {
+    result_text <- as.expression(bquote(.(scientific_split[[1]]) %*% 10^.(power_of_10)))
+  }
+  return(result_text)
+}
+
+
+
+IndicatePValue <- function(x_1, x_2, vec_1, vec_2, paired = FALSE, y_pos_adj = 0) {
+
+  ## Draw brackets to indicate between-group comparison
+  y_pos <- par("usr")[[4]] + diff(grconvertY(c(0, 0.5), from = "lines", to = "user"))
+  y_pos_line <- y_pos + diff(grconvertY(c(0, y_pos_adj), from = "lines", to = "user"))
+  segments(x0  = x_1,
+           x1  = x_2,
+           y0  = y_pos_line,
+           col = "gray50",
+           xpd = NA
+           )
+  segments(x0  = c(x_1, x_2),
+           y0  = y_pos_line,
+           y1  = y_pos_line - diff(grconvertY(c(0, 0.25), from = "lines", to = "user")),
+           col = "gray50",
+           xpd = NA
+           )
+
+  ## Show p values
+  p_val <- t.test(vec_1, vec_2, paired = paired)[["p.value"]]
+  p_value_label <- PrettyScientific(p_val)
+  p_value_label <- ConcatenateExpressions(list(expression(italic("p")), p_value_label), my_sep = " = ")
+  y_text_pos <- y_pos + diff(grconvertY(c(0, 0.5), from = "lines", to = "user"))
+  text(x      = mean(c(x_1, x_2)),
+       y      = y_text_pos,
+       labels = VerticalAdjust(p_value_label),
+       cex    = par("cex") * 0.7,
+       xpd    = NA
+       )
+
+  return(invisible(NULL))
+}
+
+
+BidirectionalViolins <- function(bidirect_df,
+                                 logfc_df,
+                                 max_distance         = 10000L,
+                                 distance_cutoff      = 1000L,
+                                 show_phenotype_score = TRUE,
+                                 num_cell_divisions   = 10L,
+                                 y_limits             = if (show_phenotype_score) c(-0.55, 0.2) else c(-5.5, 0.2),
+                                 lower_bound          = if (show_phenotype_score) -0.5 else -5,
+                                 num_controls         = NULL,
+                                 choose_rep           = NULL,
+                                 compare_across       = TRUE
+                                 ) {
+
+  ## Assemble data
+  entrezs_vec_list <- BidirectionalSets(bidirect_df, max_distance)
+  pairs_df_list <- lapply(entrezs_vec_list,
+                          function(x) IntegrateData(x,
+                                                    bidirect_df,
+                                                    logfc_df,
+                                                    max_distance = max_distance,
+                                                    choose_rep = choose_rep
+                                                    )
+                          )
+
+  ## Split data into near and far subgroups
+  set.seed(1)
+  if (is.null(num_controls)) {
+    random_indices <- sample(seq_len(nrow(pairs_df_list[[3]])), nrow(pairs_df_list[[1]]))
+  } else {
+    are_near <- pairs_df_list[[3]][, "Distance"] >= distance_cutoff
+    near_indices <- which(are_near)
+    far_indices <- which(!(are_near))
+    if (sum(are_near) >= num_controls) {
+      near_indices <- sample(near_indices, num_controls)
+    }
+    if (sum(!(are_near)) >= num_controls) {
+      far_indices <- sample(far_indices, num_controls)
+    }
+    random_indices <- c(near_indices, far_indices)
+  }
+  numeric_list <- c(SplitByDistance(pairs_df_list[[1]], distance_cutoff),
+                    SplitByDistance(pairs_df_list[[2]], distance_cutoff),
+                    SplitByDistance(pairs_df_list[[3]][random_indices, ], distance_cutoff)
+                    )
+  if (show_phenotype_score) {
+    numeric_list <- lapply(numeric_list, function(x) x / num_cell_divisions)
+  }
+  groups_vec <- rep(1:3, each = 2)
+
+  ## Draw violin plots
+  old_mar <- par("mar" = c(6, 4, 3, 1.5))
+  x_positions <- BeeViolinPlot(numeric_list,
+                               groups_vec,
+                               y_limits      = y_limits,
+                               lower_bound   = lower_bound,
+                               gap_ratio     = 1.35,
+                               point_cex     = 0.5,
+                               use_spacing   = 0.9,
+                               violin_colors = rep(c(brewer.pal(9, "Purples")[[3]], "#cbdde7", "#c7e7c0"), each = 2),
+                               point_colors  = rep(c("#8f83af", "#7690ad", "#689c79"), each = 2),
+                               line_colors   = rep(c("#7c7198", "#617b98", "#5b8669"), each = 2),
+                               border_colors = rep(c("#d1cddb", "#c5d3dd", "#bfd4c6"), each = 2),
+                               draw_border   = TRUE,
+                               draw_groups_n = FALSE
+                               )
+
+  ## Draw y axis label
+  if (is.null(choose_rep)) {
+    ylab_prefix <- "Mean"
+  } else {
+    ylab_prefix <- paste0("Replicate ", choose_rep)
+  }
+  if (show_phenotype_score) {
+    y_axis_label <- bquote(.(ylab_prefix) ~ "phenotype (" * gamma * ")")
+  } else {
+    y_axis_label <- bquote(.(ylab_prefix) ~ "log"[2] ~ "fold change")
+  }
+  mtext(y_axis_label, side = 2, line = 2.5, cex = par("cex"))
+
+  ## Indicate the number of observations
+  mtext(lengths(numeric_list), at = x_positions, side = 1, line = -0.97,
+        cex = par("cex") * 0.4, col = "gray60", padj = 0
+        )
+
+  ## Draw x axis labels
+  label_positions <- tapply(x_positions, groups_vec, mean)
+  mtext(rep(c(as.expression(bquote("" <= .(distance_cutoff / 1000) * scriptscriptstyle(" ") * "kb")),
+              as.expression(bquote("1\u2013" * .(max_distance / 1000) * scriptscriptstyle(" ") * "kb"))
+              ), 3),
+        side = 1, at = x_positions, line = 0.1, cex = par("cex") * 0.7
+        )
+  segments(x0  = label_positions - 0.7,
+           x1  = label_positions + 0.7,
+           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.3), from = "lines", to = "user")),
+           col = "gray50",
+           xpd = NA
+           )
+  old_lheight <- par("lheight" = 1.15)
+  mtext(c("Essential genes\nwith a non-essential\ngene nearby",
+          "Non-essential genes\nwith an essential\ngene nearby",
+          "Non-essential genes\nwith a non-essential\ngene nearby"
+          ),
+        side = 1, at = label_positions, line = 0.9, padj = 1,
+        cex = par("cex") * 0.7
+        )
+  par(old_lheight)
+
+  ## Draw brackets to indicate between-group comparisons
+  numeric_list <- lapply(numeric_list, function(x) BringWithinLimits(x, lower_bound = lower_bound)[["curtailed_vec"]])
+  x_space <- 0.05
+  if (compare_across) {
+    IndicatePValue(x_positions[[1]],
+                   x_positions[[3]] - x_space,
+                   numeric_list[[1]],
+                   numeric_list[[3]],
+                   paired = TRUE
+                   )
+    IndicatePValue(x_positions[[3]] + x_space,
+                   x_positions[[5]],
+                   numeric_list[[3]],
+                   numeric_list[[5]]
+                   )
+  } else {
+    IndicatePValue(x_positions[[3]],
+                   x_positions[[4]],
+                   numeric_list[[3]],
+                   numeric_list[[4]],
+                   y_pos_adj = -0.2
+                   )
+  }
+
+  par(old_mar)
+  return(invisible(NULL))
+}
+
+
+
 # Functions for plotting ROC curves (for gene essentiality) ---------------
 
 GetEssentialROCDf <- function(essential_genes,
@@ -575,34 +896,31 @@ PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with C
 
 
 
-MakeROCDfListList <- function(choose_rep = NULL) {
+MakeROCDfListList <- function(choose_rep = NULL, use_blomen_hart = TRUE) {
+  essential_list <- GetEssentialGenes(use_blomen_hart)
+  args_list <- list(essential_genes       = essential_list[["essential_entrezs"]],
+                    non_essential_genes   = essential_list[["non_essential_entrezs"]],
+                    min_count_at_baseline = 0L,
+                    choose_rep            = choose_rep
+                    )
   ROC_df_list_list <- lapply(c(FALSE, TRUE), function(allow_switch) {
     list(
-      ROC_T0vT12 = GetEssentialROCDf(essential_entrezs,
-                                     non_essential_entrezs,
-                                     baseline_indices      = 3:4,
-                                     intervention_indices  = 5:6,
-                                     min_count_at_baseline = 0L,
-                                     allow_switch          = allow_switch,
-                                     choose_rep            = choose_rep
-                                     ),
-      ROC_BvT12  = GetEssentialROCDf(essential_entrezs,
-                                     non_essential_entrezs,
-                                     baseline_indices      = 1:2,
-                                     intervention_indices  = 5:6,
-                                     min_count_at_baseline = 0L,
-                                     allow_switch          = allow_switch,
-                                     choose_rep            = choose_rep
-                                     ),
-      ROC_BvT0   = GetEssentialROCDf(essential_entrezs,
-                                     non_essential_entrezs,
-                                     baseline_indices      = 1:2,
-                                     intervention_indices  = 3:4,
-                                     min_count_at_baseline = 0L,
-                                     allow_switch          = allow_switch,
-                                     choose_rep            = choose_rep
-                                     )
-      )
+      ROC_T0vT12 = do.call(GetEssentialROCDf, c(args_list, list(
+        baseline_indices      = 3:4,
+        intervention_indices  = 5:6,
+        allow_switch          = allow_switch
+      ))),
+      ROC_BvT12  = do.call(GetEssentialROCDf, c(args_list, list(
+        baseline_indices      = 1:2,
+        intervention_indices  = 5:6,
+        allow_switch          = allow_switch
+      ))),
+      ROC_BvT0 = do.call(GetEssentialROCDf, c(args_list, list(
+        baseline_indices      = 1:2,
+        intervention_indices  = 3:4,
+        allow_switch          = allow_switch
+      )))
+    )
   })
   names(ROC_df_list_list) <- c("Template switch excluded", "Template switch allowed")
   return(ROC_df_list_list)
@@ -621,7 +939,7 @@ ConcatenateExpressions <- function(expression_list, my_sep = "  \u2013  ") {
 
 
 VerticalAdjust <- function(use_expression) {
-  my_list <- list(expression(phantom("gh")), use_expression, expression(phantom("gh")))
+  my_list <- list(expression(""^phantom("gh")), use_expression, expression(""[phantom("gh")]))
   return(ConcatenateExpressions(my_list, my_sep = ""))
 }
 
