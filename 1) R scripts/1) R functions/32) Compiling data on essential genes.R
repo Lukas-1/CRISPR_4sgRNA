@@ -207,7 +207,7 @@ ReplaceEssentialNAs <- function(input_df) {
                   "Blomen_HAP1_KBM7_intersect"
                   )
   no_entrez <- is.na(input_df[["Entrez_ID"]])
-  for (column_name in NA_columns) {
+  for (column_name in intersect(NA_columns, names(input_df))) {
     input_df[, column_name] <- ifelse(is.na(input_df[, column_name]),
                                       ifelse(no_entrez, "", "N/A"),
                                       as.character(input_df[, column_name])
