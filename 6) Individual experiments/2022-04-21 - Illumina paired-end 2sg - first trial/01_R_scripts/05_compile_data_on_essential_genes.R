@@ -355,7 +355,13 @@ essential_vec <- ifelse(essential_fraction == 0,
 essential_fac <- factor(essential_vec,
                         levels = c("Non-essential", "Intermediate", "Essential", "Other")
                         )
-
+essential_df[["Three_categories"]] <- ifelse(essential_fraction == 0,
+                                             "Non-essential",
+                                             ifelse(essential_fraction > 0.5,
+                                                    "Essential",
+                                                    "Other"
+                                                    )
+                                             )
 essential_df[["Four_categories"]] <- essential_fac
 
 
