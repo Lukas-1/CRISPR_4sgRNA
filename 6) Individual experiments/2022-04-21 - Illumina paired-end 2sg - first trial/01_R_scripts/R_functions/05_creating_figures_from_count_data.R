@@ -820,7 +820,7 @@ BidirectionalViolins <- function(bidirect_df,
                    x_positions[[4]],
                    numeric_list[[3]],
                    numeric_list[[4]],
-                   y_pos_adj = -0.2
+                   y_pos_adj = -0.1
                    )
   }
 
