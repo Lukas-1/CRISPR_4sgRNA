@@ -5,7 +5,6 @@
 
 CRISPR_root_directory <- "~/CRISPR"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
-
 project_dir <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
 source(file.path(project_dir, "01_R_scripts", "1_R_functions", "06_assigning_sgRNAs_to_plasmids.R"))
 
@@ -38,7 +37,8 @@ counts_df <- MakeCountsDf(sg_sequences_df, nano_df)
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("nano_df", "counts_df"),
+total_num_reads <- nrow(matched_df)
+save(list = c("nano_df", "counts_df", "total_num_reads"),
      file = file.path(rdata_dir, "08_assign_sgRNAs_to_plasmids.RData")
      )
 

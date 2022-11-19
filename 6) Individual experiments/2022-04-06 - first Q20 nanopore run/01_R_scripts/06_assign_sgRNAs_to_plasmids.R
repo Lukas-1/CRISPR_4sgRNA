@@ -39,7 +39,8 @@ counts_df <- MakeCountsDf(sg_sequences_df, nano_df)
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("nano_df", "counts_df"),
+total_num_reads <- nrow(matched_df)
+save(list = c("nano_df", "counts_df", "total_num_reads"),
      file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids.RData")
      )
 
