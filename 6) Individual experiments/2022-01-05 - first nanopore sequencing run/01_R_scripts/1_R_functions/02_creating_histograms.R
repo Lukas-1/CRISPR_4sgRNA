@@ -46,6 +46,7 @@ MakeHistogramPolygons <- function(hist_results) {
 DrawHistogram <- function(numeric_input,
                           truncation_limit    = NULL,
                           num_breaks          = 200L,
+                          use_exact_breaks    = FALSE,
                           title_text          = "",
                           x_axis_label        = "",
                           y_axis_label        = "Count",
@@ -91,10 +92,15 @@ DrawHistogram <- function(numeric_input,
   }
 
   ## Calculate histogram
+  if (use_exact_breaks) {
+    data_range <- range(unlist(numeric_list))
+    use_breaks <- seq(from = data_range[[1]], to = data_range[[2]], length.out = num_breaks)
+  } else {
+    use_breaks <- num_breaks
+  }
   hist_list <- lapply(numeric_list, function(x) {
-    hist(x, breaks = num_breaks, plot = FALSE)
+    hist(x, breaks = use_breaks, plot = FALSE)
   })
-  assign("delete_hist_list", hist_list, envir = globalenv())
 
   ## Prepare axes
   counts_max <- max(vapply(hist_list, function(x) max(x[["counts"]]), integer(1)))
