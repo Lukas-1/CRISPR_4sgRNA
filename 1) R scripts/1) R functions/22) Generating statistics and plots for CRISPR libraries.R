@@ -4703,7 +4703,6 @@ ManuscriptViolinBox <- function(plot_df,
       bg       = "transparent"
       )
 
-
   ## Prepare the plot for the raster device
   old_par <- par(mai = rep(0, 4), cex = use_cex)
   plot(1,
