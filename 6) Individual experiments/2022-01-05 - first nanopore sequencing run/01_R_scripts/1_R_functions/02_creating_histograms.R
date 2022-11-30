@@ -68,7 +68,8 @@ DrawHistogram <- function(numeric_input,
                           x_axis_label_line   = 2.2,
                           y_axis_label_line   = 2.9,
                           x_axis_mgp          = 0.5,
-                          y_axis_mgp          = 0.5
+                          y_axis_mgp          = 0.5,
+                          show_y_axis         = TRUE
                           ) {
 
   if (!(is.list(numeric_input))) {
@@ -101,6 +102,7 @@ DrawHistogram <- function(numeric_input,
   hist_list <- lapply(numeric_list, function(x) {
     hist(x, breaks = use_breaks, plot = FALSE)
   })
+  assign("delete_numeric_list", numeric_list, envir = globalenv())
 
   ## Prepare axes
   counts_max <- max(vapply(hist_list, function(x) max(x[["counts"]]), integer(1)))
@@ -181,22 +183,25 @@ DrawHistogram <- function(numeric_input,
   mtext(x_axis_label, side = 1, line = x_axis_label_line, cex = par("cex"))
 
   ## Draw y axis
-  axis(2, las = 1, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl),
-       at = y_axis_ticks, labels = y_axis_labels, lwd = par("lwd")
-       )
-  mtext(y_axis_label, side = 2, line = y_axis_label_line, cex = par("cex"))
+  if (show_y_axis) {
+    axis(2, las = 1, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl),
+         at = y_axis_ticks, labels = y_axis_labels, lwd = par("lwd")
+         )
+    mtext(y_axis_label, side = 2, line = y_axis_label_line, cex = par("cex"))
+    if (draw_box) {
+      box(bty = "l")
+    }
+  } else if (draw_box) {
+    segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = par("usr")[[3]],
+             xpd = NA
+             )
+  }
 
   ## Final steps
   title(title_text, cex.main = 1, font.main = title_font)
-  if (draw_box) {
-    box(bty = "l")
-  }
 
   return(invisible(NULL))
 }
-
-
-
 
 
 
@@ -219,6 +224,7 @@ ReadLengthsHistogram <- function(read_lengths,
 
 
 
+
 ExportCountHistograms <- function(use_counts_df, title_postfix = "") {
 
   use_width <- 5
@@ -233,24 +239,22 @@ ExportCountHistograms <- function(use_counts_df, title_postfix = "") {
           )
     }
 
-
     if (use_device == "png") {
       png(file.path(figures_dir, "PNGs", "Histogram - reads per plasmid - unfiltered.png"),
           width = use_width, height = use_height, units = "in", res = use_res
           )
     }
     DrawHistogram(use_counts_df[, "Count_unfiltered"],
-                  truncation_limit = 800,
+                  truncation_limit   = 800,
                   x_axis_upper_limit = 800,
-                  num_breaks = 200,
-                  x_axis_label = "Number of reads per plasmid",
-                  y_axis_label = "Plasmid count",
-                  title_text = paste0("Unfiltered reads", title_postfix)
+                  num_breaks         = 200,
+                  x_axis_label       = "Number of reads per plasmid",
+                  y_axis_label       = "Plasmid count",
+                  title_text         = paste0("Unfiltered reads", title_postfix)
                   )
     if (use_device == "png") {
       dev.off()
     }
-
 
     if (use_device == "png") {
       png(file.path(figures_dir, "PNGs", "Histogram - reads per plasmid - 2) sg2 and sg3.png"),
@@ -258,34 +262,32 @@ ExportCountHistograms <- function(use_counts_df, title_postfix = "") {
           )
     }
     DrawHistogram(use_counts_df[, "Count_sg2_match_sg3"],
-                  truncation_limit = 800,
+                  truncation_limit   = 800,
                   x_axis_upper_limit = 800,
-                  num_breaks = 200,
-                  x_axis_label = "Number of reads per plasmid",
-                  y_axis_label = "Plasmid count",
-                  title_text = paste0("Reads using sg2 & sg3", title_postfix)
+                  num_breaks         = 200,
+                  x_axis_label       = "Number of reads per plasmid",
+                  y_axis_label       = "Plasmid count",
+                  title_text         = paste0("Reads using sg2 & sg3", title_postfix)
                   )
     if (use_device == "png") {
       dev.off()
     }
-
     if (use_device == "png") {
       png(file.path(figures_dir, "PNGs", "Histogram - reads per plasmid - 3) sg3 & sg4.png"),
           width = use_width, height = use_height, units = "in", res = use_res
           )
     }
     DrawHistogram(use_counts_df[, "Count_sg3_match_sg4"],
-                  truncation_limit = 800,
+                  truncation_limit   = 800,
                   x_axis_upper_limit = 800,
-                  num_breaks = 200,
-                  x_axis_label = "Number of reads per plasmid",
-                  y_axis_label = "Plasmid count",
-                  title_text = paste0("Reads using sg3 & sg4", title_postfix)
+                  num_breaks         = 200,
+                  x_axis_label       = "Number of reads per plasmid",
+                  y_axis_label       = "Plasmid count",
+                  title_text         = paste0("Reads using sg3 & sg4", title_postfix)
                   )
     if (use_device == "png") {
       dev.off()
     }
-
     if (use_device == "pdf") {
       dev.off()
     }
@@ -296,17 +298,19 @@ ExportCountHistograms <- function(use_counts_df, title_postfix = "") {
 
 
 RawCountsHistogram <- function(raw_mat,
-                               show_replicates = FALSE,
+                               show_replicates       = FALSE,
                                semitransparent_lines = FALSE,
-                               title_text = "Plasmid count at baseline",
-                               x_axis_label = expression("Log"[10] ~ "(raw count + 1)"),
-                               x_axis_space = 0.01,
-                               y_axis_space = 0.01,
-                               x_start_lines = 0.75,
-                               y_start_lines = 1,
-                               text_x_lines = 1.1,
-                               segment_length_lines = 0.45,
-                               short_labels = FALSE,
+                               title_text            = "Plasmid count at baseline",
+                               x_axis_label          = expression("Log"[10] ~ "(raw count + 1)"),
+                               x_axis_space          = 0.01,
+                               y_axis_space          = 0.01,
+                               x_start_lines         = 0.75,
+                               y_start_lines         = 1,
+                               text_x_lines          = 1.1,
+                               segment_length_lines  = 0.45,
+                               short_labels          = FALSE,
+                               show_y_axis           = TRUE,
+                               show_legend           = TRUE,
                                ...
                                ) {
   LogTransform <- function(x) log10(x + 1)
@@ -331,33 +335,36 @@ RawCountsHistogram <- function(raw_mat,
                 draw_box            = FALSE,
                 x_axis_space        = x_axis_space,
                 y_axis_space        = y_axis_space,
+                show_y_axis         = show_y_axis,
                 ...
                 )
   if (show_replicates) {
-    ## Draw the legend
-    x_start <- par("usr")[[1]] + diff(grconvertX(c(0, x_start_lines), from = "lines", to = "user"))
-    y_start <- par("usr")[[4]] - diff(grconvertY(c(0, y_start_lines), from = "lines", to = "user"))
-    timepoints_seq <- seq_along(hist_colors) - 1L
-    y_vec <- y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq
-    segments(x0  = x_start,
-             x1  = x_start + diff(grconvertX(c(0, segment_length_lines), from = "lines", to = "user")),
-             y0  = y_vec,
-             col = line_colors,
-             lwd = par("lwd") * 2,
-             xpd = NA
-             )
-    # points(x   = rep(x_start + diff(grconvertX(c(0, 0.1))), length(y_vec)),
-    #        y   = y_vec,
-    #        pch = 22,
-    #        col = hist_colors,
-    #        lwd = par("lwd") * 2
-    #        )
-    text(x      = x_start + diff(grconvertX(c(0, text_x_lines), from = "lines", to = "user")),
-         y      = y_vec,
-         labels = if (short_labels) c("R1", "R2") else c("Replicate 1", "Replicate 2"),
-         adj    = c(0, 0.5),
-         xpd    = NA
-         )
+    if (show_legend) {
+      ## Draw the legend
+      x_start <- par("usr")[[1]] + diff(grconvertX(c(0, x_start_lines), from = "lines", to = "user"))
+      y_start <- par("usr")[[4]] - diff(grconvertY(c(0, y_start_lines), from = "lines", to = "user"))
+      timepoints_seq <- seq_along(hist_colors) - 1L
+      y_vec <- y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq
+      segments(x0  = x_start,
+               x1  = x_start + diff(grconvertX(c(0, segment_length_lines), from = "lines", to = "user")),
+               y0  = y_vec,
+               col = line_colors,
+               lwd = par("lwd") * 2,
+               xpd = NA
+               )
+      # points(x   = rep(x_start + diff(grconvertX(c(0, 0.1))), length(y_vec)),
+      #        y   = y_vec,
+      #        pch = 22,
+      #        col = hist_colors,
+      #        lwd = par("lwd") * 2
+      #        )
+      text(x      = x_start + diff(grconvertX(c(0, text_x_lines), from = "lines", to = "user")),
+           y      = y_vec,
+           labels = if (short_labels) c("R1", "R2") else c("Replicate 1", "Replicate 2"),
+           adj    = c(0, 0.5),
+           xpd    = NA
+           )
+    }
   } else {
     ## Show the mean
     mean_count <- mean(raw_mat[, 1:2])
@@ -370,20 +377,31 @@ RawCountsHistogram <- function(raw_mat,
          xpd    = NA
          )
   }
-  box(bty = "l")
+  if (show_y_axis) {
+    box(bty = "l")
+  } else {
+    segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = par("usr")[[3]],
+             xpd = NA
+             )
+  }
 
   return(invisible(NULL))
 }
 
 
 
-ManuscriptRawCountsHistogram <- function(raw_counts_mat, title_text) {
-  old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+ManuscriptRawCountsHistogram <- function(raw_counts_mat,
+                                         title_text,
+                                         use_mai = c(0.36, 0.48, 0.24, 0.12),
+                                         semitransparent_lines = TRUE,
+                                         ...
+                                         ) {
+  old_par <- par(mai = use_mai, cex = 0.6, lwd = 0.8)
   RawCountsHistogram(raw_counts_mat,
                      y_axis_upper_limit    = 1600,
                      fixed_y_upper_limit   = TRUE,
                      show_replicates       = TRUE,
-                     semitransparent_lines = TRUE,
+                     semitransparent_lines = semitransparent_lines,
                      x_axis_space          = 0.02,
                      y_axis_space          = 0.02,
                      title_text            = title_text,
@@ -398,7 +416,8 @@ ManuscriptRawCountsHistogram <- function(raw_counts_mat, title_text) {
                      x_axis_label_line     = 1.7,
                      y_axis_label_line     = 2.68,
                      x_axis_mgp            = 0.35,
-                     y_axis_mgp            = 0.45
+                     y_axis_mgp            = 0.45,
+                     ...
                      )
   par(old_par)
   return(invisible(NULL))
