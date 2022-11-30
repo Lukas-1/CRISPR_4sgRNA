@@ -6,7 +6,7 @@
 library("png")
 library("pBrackets")
 library("DescTools")
-
+library("RColorBrewer")
 
 
 
@@ -269,6 +269,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                 write_rep             = FALSE,
                                 wex                   = 0.85,
                                 use_blomen_hart       = TRUE,
+                                bracket_color         = "black",
                                 ...
                                 ) {
 
@@ -287,14 +288,15 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
   rep_list <- c(split(R1_df[, "Log2FC"], !(R1_df[, "Is_essential"])),
                 split(R2_df[, "Log2FC"], !(R2_df[, "Is_essential"]))
                 )[c(1, 3, 2, 4)]
+  names(rep_list) <- c("Essential R1", "Essential R2",
+                       "Non-essential R1", "Non-essential R2"
+                       )
 
   old_mar <- par(mar = use_mar)
 
   if (show_phenotype_score) {
     rep_list <- lapply(rep_list, function(x) x / num_cell_divisions)
   }
-
-  assign("delete_rep_list", rep_list, envir = globalenv())
 
   x_positions <- BeeViolinPlot(rep_list, point_cex = point_cex, use_spacing = 0.5, wex = wex,
                                violin_colors = rep(c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"), each = 2),
@@ -313,11 +315,10 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
   }
   mtext(y_axis_label, side = 2, line = y_label_line, cex = par("cex"))
 
-
   segments(x0  = x_positions[c(1, 3)] - 0.25,
            x1  = x_positions[c(2, 4)] + 0.25,
            y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.45), from = "lines", to = "user")),
-           col = "black",
+           col = bracket_color,
            xpd = NA
            )
   mtext(c("Essential\ngenes", "Non-essential\ngenes"),
@@ -331,7 +332,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
 
   title(as.expression(use_title), cex.main = 1, line = title_line)
   par(old_mar)
-  return(invisible(NULL))
+  return(invisible(rep_list))
 }
 
 
@@ -639,7 +640,7 @@ IntegrateData <- function(entrezs_vec,
 
 
 SplitByDistance <- function(pairs_df, distance_cutoff = 1000L) {
-  split(pairs_df[, "Log2FC"], pairs_df[, "Distance"] >= distance_cutoff)
+  split(pairs_df[, "Log2FC"], pairs_df[, "Distance"] > distance_cutoff)
 }
 
 
@@ -659,11 +660,11 @@ PrettyScientific <- function(input_number, digits = 0, scientific = 4) {
 
 
 
-IndicatePValue <- function(x_1, x_2, vec_1, vec_2, paired = FALSE, y_pos_adj = 0) {
+IndicatePValue <- function(x_1, x_2, vec_1, vec_2, paired = FALSE, y_line_adj = 0, y_start_adj = 0) {
 
   ## Draw brackets to indicate between-group comparison
-  y_pos <- par("usr")[[4]] + diff(grconvertY(c(0, 0.5), from = "lines", to = "user"))
-  y_pos_line <- y_pos + diff(grconvertY(c(0, y_pos_adj), from = "lines", to = "user"))
+  y_pos <- par("usr")[[4]] + diff(grconvertY(c(0, 0.5 + y_start_adj), from = "lines", to = "user"))
+  y_pos_line <- y_pos + diff(grconvertY(c(0, y_line_adj), from = "lines", to = "user"))
   segments(x0  = x_1,
            x1  = x_2,
            y0  = y_pos_line,
@@ -685,7 +686,7 @@ IndicatePValue <- function(x_1, x_2, vec_1, vec_2, paired = FALSE, y_pos_adj = 0
   text(x      = mean(c(x_1, x_2)),
        y      = y_text_pos,
        labels = VerticalAdjust(p_value_label),
-       cex    = par("cex") * 0.7,
+       cex    = 0.7,
        xpd    = NA
        )
 
@@ -703,7 +704,17 @@ BidirectionalViolins <- function(bidirect_df,
                                  lower_bound          = if (show_phenotype_score) -0.5 else -5,
                                  num_controls         = NULL,
                                  choose_rep           = NULL,
-                                 compare_across       = TRUE
+                                 compare_across       = TRUE,
+                                 point_cex            = 0.5,
+                                 annotation_cex       = 0.7,
+                                 draw_groups_n        = TRUE,
+                                 use_spacing          = 0.9,
+                                 label_points         = FALSE,
+                                 draw_group_labels    = TRUE,
+                                 gap_ratio            = 1.35,
+                                 y_start_adj          = 0,
+                                 y_line_adj           = 0,
+                                 ...
                                  ) {
 
   ## Assemble data
@@ -717,46 +728,72 @@ BidirectionalViolins <- function(bidirect_df,
                                                     )
                           )
 
+
   ## Split data into near and far subgroups
   set.seed(1)
   if (is.null(num_controls)) {
     random_indices <- sample(seq_len(nrow(pairs_df_list[[3]])), nrow(pairs_df_list[[1]]))
   } else {
-    are_near <- pairs_df_list[[3]][, "Distance"] >= distance_cutoff
+    are_near <- pairs_df_list[[3]][, "Distance"] < distance_cutoff
     near_indices <- which(are_near)
     far_indices <- which(!(are_near))
-    if (sum(are_near) >= num_controls) {
-      near_indices <- sample(near_indices, num_controls)
-    }
     if (sum(!(are_near)) >= num_controls) {
       far_indices <- sample(far_indices, num_controls)
     }
+    if (sum(are_near) >= num_controls) {
+      near_indices <- sample(near_indices, num_controls)
+    }
     random_indices <- c(near_indices, far_indices)
   }
-  numeric_list <- c(SplitByDistance(pairs_df_list[[1]], distance_cutoff),
-                    SplitByDistance(pairs_df_list[[2]], distance_cutoff),
-                    SplitByDistance(pairs_df_list[[3]][random_indices, ], distance_cutoff)
-                    )
+  pairs_df_list[[3]] <- pairs_df_list[[3]][random_indices, ]
+  pairs_df_list <- lapply(pairs_df_list, function(x) {
+    x[order(x[, "Distance"] >= distance_cutoff), ]
+  })
+  numeric_list <- unlist(lapply(pairs_df_list, SplitByDistance), recursive = FALSE)
   if (show_phenotype_score) {
     numeric_list <- lapply(numeric_list, function(x) x / num_cell_divisions)
   }
   groups_vec <- rep(1:3, each = 2)
 
+  if (label_points) {
+    text_vec_list <- lapply(1:3, function(x) {
+      vec_1 <- pairs_df_list[[x]][, "Gene_symbol_1"]
+      vec_2 <- pairs_df_list[[x]][, "Gene_symbol_2"]
+      are_essential <- pairs_df_list[[x]][, "Essentiality_1"] == "Essential"
+      if (x == 1) {
+        first_vec <- ifelse(are_essential, vec_1, vec_2)
+        second_vec <- ifelse(are_essential, vec_2, vec_1)
+      } else if (x == 2) {
+        first_vec <- ifelse(are_essential, vec_2, vec_1)
+        second_vec <- ifelse(are_essential, vec_1, vec_2)
+      } else {
+        first_vec <- vec_1
+        second_vec <- vec_2
+      }
+      paste0(first_vec, "\n", second_vec)
+    })
+    text_vec <- unlist(text_vec_list)
+  } else {
+    text_vec <- NULL
+  }
+
   ## Draw violin plots
   old_mar <- par("mar" = c(6, 4, 3, 1.5))
   x_positions <- BeeViolinPlot(numeric_list,
                                groups_vec,
-                               y_limits      = y_limits,
-                               lower_bound   = lower_bound,
-                               gap_ratio     = 1.35,
-                               point_cex     = 0.5,
-                               use_spacing   = 0.9,
-                               violin_colors = rep(c(brewer.pal(9, "Purples")[[3]], "#cbdde7", "#c7e7c0"), each = 2),
-                               point_colors  = rep(c("#8f83af", "#7690ad", "#689c79"), each = 2),
-                               line_colors   = rep(c("#7c7198", "#617b98", "#5b8669"), each = 2),
-                               border_colors = rep(c("#d1cddb", "#c5d3dd", "#bfd4c6"), each = 2),
-                               draw_border   = TRUE,
-                               draw_groups_n = FALSE
+                               y_limits       = y_limits,
+                               lower_bound    = lower_bound,
+                               gap_ratio      = gap_ratio,
+                               point_cex      = point_cex,
+                               use_spacing    = use_spacing,
+                               violin_colors  = rep(c(brewer.pal(9, "Purples")[[3]], "#cbdde7", "#c7e7c0"), each = 2),
+                               point_colors   = rep(c("#8f83af", "#7690ad", "#689c79"), each = 2),
+                               line_colors    = rep(c("#7c7198", "#617b98", "#5b8669"), each = 2),
+                               border_colors  = rep(c("#d1cddb", "#c5d3dd", "#bfd4c6"), each = 2),
+                               draw_border    = TRUE,
+                               draw_groups_n  = FALSE,
+                               text_vec       = text_vec,
+                               ...
                                )
 
   ## Draw y axis label
@@ -773,32 +810,37 @@ BidirectionalViolins <- function(bidirect_df,
   mtext(y_axis_label, side = 2, line = 2.5, cex = par("cex"))
 
   ## Indicate the number of observations
-  mtext(lengths(numeric_list), at = x_positions, side = 1, line = -0.97,
-        cex = par("cex") * 0.4, col = "gray60", padj = 0
-        )
+  if (draw_groups_n) {
+    mtext(lengths(numeric_list), at = x_positions, side = 1, line = -0.97,
+          cex = par("cex") * 0.4, col = "gray60", padj = 0
+          )
+  }
 
   ## Draw x axis labels
-  label_positions <- tapply(x_positions, groups_vec, mean)
-  mtext(rep(c(as.expression(bquote("" <= .(distance_cutoff / 1000) * scriptscriptstyle(" ") * "kb")),
-              as.expression(bquote("1\u2013" * .(max_distance / 1000) * scriptscriptstyle(" ") * "kb"))
-              ), 3),
-        side = 1, at = x_positions, line = 0.1, cex = par("cex") * 0.7
-        )
-  segments(x0  = label_positions - 0.7,
-           x1  = label_positions + 0.7,
-           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.3), from = "lines", to = "user")),
-           col = "gray50",
-           xpd = NA
-           )
-  old_lheight <- par("lheight" = 1.15)
-  mtext(c("Essential genes\nwith a non-essential\ngene nearby",
-          "Non-essential genes\nwith an essential\ngene nearby",
-          "Non-essential genes\nwith a non-essential\ngene nearby"
-          ),
-        side = 1, at = label_positions, line = 0.9, padj = 1,
-        cex = par("cex") * 0.7
-        )
-  par(old_lheight)
+  if (draw_group_labels) {
+    label_positions <- tapply(x_positions, groups_vec, mean)
+    more_space <- annotation_cex > 0.7
+    mtext(rep(c(as.expression(bquote("" <= .(distance_cutoff / 1000) * scriptscriptstyle(" ") * "kb")),
+                as.expression(bquote("1\u2013" * .(max_distance / 1000) * scriptscriptstyle(" ") * "kb"))
+                ), 3),
+          side = 1, at = x_positions, line = if (more_space) 0.4 else 0.1, cex = par("cex") * annotation_cex
+          )
+    segments(x0  = label_positions - 0.7,
+             x1  = label_positions + 0.7,
+             y0  = par("usr")[[3]] - diff(grconvertY(c(0, if (more_space) 1.65 else 1.3), from = "lines", to = "user")),
+             col = "gray50",
+             xpd = NA
+             )
+    old_lheight <- par("lheight" = 1.15)
+    mtext(c("Essential genes\nwith a non-essential\ngene nearby",
+            "Non-essential genes\nwith an essential\ngene nearby",
+            "Non-essential genes\nwith a non-essential\ngene nearby"
+            ),
+          side = 1, at = label_positions, line = if (more_space) 1.45 else 0.9, padj = 1,
+          cex = par("cex") * annotation_cex
+          )
+    par(old_lheight)
+  }
 
   ## Draw brackets to indicate between-group comparisons
   numeric_list <- lapply(numeric_list, function(x) BringWithinLimits(x, lower_bound = lower_bound)[["curtailed_vec"]])
@@ -808,19 +850,24 @@ BidirectionalViolins <- function(bidirect_df,
                    x_positions[[3]] - x_space,
                    numeric_list[[1]],
                    numeric_list[[3]],
-                   paired = TRUE
+                   paired = TRUE,
+                   y_line_adj = y_line_adj,
+                   y_start_adj = y_start_adj
                    )
     IndicatePValue(x_positions[[3]] + x_space,
                    x_positions[[5]],
                    numeric_list[[3]],
-                   numeric_list[[5]]
+                   numeric_list[[5]],
+                   y_line_adj = y_line_adj,
+                   y_start_adj = y_start_adj
                    )
   } else {
     IndicatePValue(x_positions[[3]],
                    x_positions[[4]],
                    numeric_list[[3]],
                    numeric_list[[4]],
-                   y_pos_adj = -0.1
+                   y_line_adj = y_line_adj - 0.1,
+                   y_start_adj = y_start_adj
                    )
   }
 
@@ -967,7 +1014,9 @@ DrawSideLegend <- function(labels_list,
                            y_mid                = 0.5,
                            small_gap_size       = 1.25,
                            large_gap_multiplier = 1.75,
-                           point_x_start        = 0.15
+                           point_x_start        = 0.15,
+                           title_vec            = NULL,
+                           title_x_start        = NULL
                            ) {
 
   ## Perform checks
@@ -978,11 +1027,16 @@ DrawSideLegend <- function(labels_list,
   medium_gap <- small_gap * 1.25
   large_gap <- small_gap * large_gap_multiplier
 
-  if (all(lengths(labels_list) == 1)) {
-    gaps_vec <- rep(medium_gap, length(labels_list))
-    are_first <- rep(TRUE, length(labels_list))
+  if (is.null(title_vec)) {
+    text_list <- labels_list
   } else {
-    are_first <- unlist(lapply(labels_list, function(x) {
+    text_list <- c(list(title_vec), labels_list)
+  }
+  if (all(lengths(text_list) == 1)) {
+    gaps_vec <- rep(medium_gap, length(text_list))
+    are_first <- rep(TRUE, length(text_list))
+  } else {
+    are_first <- unlist(lapply(text_list, function(x) {
       c(TRUE, rep(FALSE, length(x) - 1))
     }))
     gaps_vec <- ifelse(are_first, large_gap, small_gap)
@@ -995,6 +1049,23 @@ DrawSideLegend <- function(labels_list,
 
   x_text  <- 1 + diff(grconvertX(c(0, lines_x_start), from = "lines", to = "npc"))
   x_point <- 1 + diff(grconvertX(c(0, lines_x_start + point_x_start), from = "lines", to = "npc"))
+
+  if (!(is.null(title_vec))) {
+    if (is.null(title_x_start)) {
+      title_x <- grconvertX(x = x_point, from = "npc", to = "user") - (strwidth(VerticalAdjust("")) / 2) - (strwidth("o") / 2)
+    } else {
+      x_title <- 1 + diff(grconvertX(c(0, title_x_start), from = "lines", to = "npc"))
+      title_x <-  grconvertX(x = x_title, from = "npc", to = "user")
+    }
+    text(x      = title_x,
+         y      = y_pos[seq_along(title_vec)],
+         cex    = 1,
+         labels = sapply(title_vec, VerticalAdjust),
+         adj    = c(0, 0.5),
+         xpd    = NA
+         )
+    y_pos <- y_pos[seq_along(unlist(labels_list)) + length(title_vec)]
+  }
 
   ## Draw legend
   text(x      = grconvertX(x = x_text, from = "npc", to = "user"),
@@ -1044,6 +1115,15 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
 
 # Functions for creating replicate scatter plots --------------------------
 
+Palify <- function(colors_vec, fraction_pale = 0.5) {
+  adjustcolor(colors_vec,
+              offset    = c(rep(fraction_pale, 3), 0),
+              transform = diag(c(rep(1 - fraction_pale, 3), 1))
+              )
+
+}
+
+
 ReplicateScatterPlot <- function(input_df,
                                  show_phenotype_score = FALSE,
                                  lower_bound          = -8 * (if (show_phenotype_score) 0.1 else 1),
@@ -1059,16 +1139,16 @@ ReplicateScatterPlot <- function(input_df,
                                  axis_labels_list     = NULL,
                                  essential_colors     = c("#6810c6", "#18a008"),
                                  point_cex            = 0.4,
-                                 axis_cex_factor      = 1 / 0.7,
                                  x_axis_label_line    = 2,
                                  y_axis_label_line    = 2.3,
                                  sparse_x_axis_labels = FALSE,
                                  use_tcl              = 0.375,
                                  x_axis_mgp           = 0.4,
                                  y_axis_mgp           = 0.55,
-                                 legend_point_x_start = 0.2,
-                                 legend_lines_x_start = 0.6,
-                                 abbreviate_NT        = FALSE
+                                 legend_point_x_start = 0,
+                                 legend_lines_x_start = 0.8,
+                                 abbreviate_NT        = FALSE,
+                                 show_y_labels        = TRUE
                                  ) {
 
   required_objects <- c("essential_df", "essentials_2020Q2_df",
@@ -1150,7 +1230,7 @@ ReplicateScatterPlot <- function(input_df,
       label_colors <- highlight_colors
     } else {
       labels_list <- list("all" = c("All", "genes", paste0("(", length(entrezs_vec), ")")))
-      label_colors <- adjustcolor("black", alpha.f = 0.7)
+      label_colors <- Palify("black", fraction_pale = 0.3)
       highlight_colors <- c()
     }
     if (highlight_NT) {
@@ -1206,7 +1286,7 @@ ReplicateScatterPlot <- function(input_df,
         height   = temp_height,
         units    = "in",
         res      = 900,
-        bg       = "transparent"
+        bg       = "white"
         )
     par(lwd = current_par[["lwd"]])
     par(cex = current_par[["cex"]])
@@ -1217,8 +1297,8 @@ ReplicateScatterPlot <- function(input_df,
   plot(NA, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i",
        axes = FALSE, ann = FALSE
        )
-  abline(v = 0, h = 0, col = "gray85", lend = "butt")
-  abline(a = 0, b = 1, col = "gray85", lend = "butt")
+  abline(v = 0, h = 0,  col = "gray85", lend = "butt")
+  abline(a = 0, b = 1,  col = "gray85", lend = "butt")
   abline(a = 0, b = -1, col = "gray85", lend = "butt")
 
   ## Draw points
@@ -1254,7 +1334,9 @@ ReplicateScatterPlot <- function(input_df,
 
   ## Annotate plot
   mtext(axis_labels_list[[1]], side = 1, line = x_axis_label_line, cex = par("cex"))
-  mtext(axis_labels_list[[2]], side = 2, line = y_axis_label_line, cex = par("cex"))
+  if (show_y_labels) {
+    mtext(axis_labels_list[[2]], side = 2, line = y_axis_label_line, cex = par("cex"))
+  }
   if (!(is.null(use_title))) {
     title(use_title, cex.main = 1, font.main = title_font)
   }
@@ -1270,18 +1352,18 @@ ReplicateScatterPlot <- function(input_df,
     }
     axis(i,
          at       = tick_locations,
-         labels   = tick_labels,
+         labels   = if ((i == 2) && (!(show_y_labels))) NA else tick_labels,
          mgp      = c(3, if (i == 1) x_axis_mgp else y_axis_mgp, 0),
          tcl      = -(use_tcl),
          las      = 1,
          lwd      = par("lwd"),
-         cex.axis = par("cex") * axis_cex_factor
+         cex.axis = 1 / 0.7
          )
   }
   box()
   if (highlight_genes) {
     DrawSideLegend(labels_list,
-                   use_colors = adjustcolor(label_colors, alpha.f = 0.85),
+                   use_colors = vapply(label_colors, Palify, fraction_pale = 0.15, ""),
                    use_point_size = 1, point_x_start = legend_point_x_start,
                    lines_x_start = legend_lines_x_start
                    )
@@ -1471,8 +1553,8 @@ DrawBottomLabels <- function(x_positions, groups_vec, are_included) {
   are_rep1 <- rep(c(TRUE, FALSE), times = 3)[are_included]
   segments(x0  = x_positions[are_rep1] - 0.25,
            x1  = x_positions[!(are_rep1)] + 0.25,
-           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.45), from = "lines", to = "user")),
-           col = "black",
+           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.425), from = "lines", to = "user")),
+           col = "gray50",
            xpd = NA
            )
   mtext(text = c("Baseline", "T0", "Endpoint")[are_included[are_rep1]],
@@ -1494,7 +1576,7 @@ CountBarPlot <- function(use_counts_mat,
                          gini_index = FALSE,
                          lollipop   = FALSE,
                          bar_color  = brewer.pal(9, "Blues")[[8]],
-                         stem_color = brewer.pal(9, "Blues")[[4]],
+                         stem_color = brewer.pal(9, "Blues")[[2]],
                          use_title  = NULL,
                          show_title = TRUE
                          ) {
@@ -1540,9 +1622,18 @@ CountBarPlot <- function(use_counts_mat,
   MakeEmptyPlot(x_limits = group_limits, y_limits = numeric_limits)
 
   if (lollipop) {
+    grid_pos <- pretty(numeric_limits, n = 30)
+    segments(x0  = par("usr")[[1]],
+             x1  = par("usr")[[2]],
+             y0  = grid_pos,
+             col = ifelse(((grid_pos * 100) %% 10) < (10^-12),
+                          "gray88", "gray95"
+                          ),
+             xpd = NA
+             )
     segments(x0  = bar_positions,
              y0  = 0,
-             y1  = bars_vec,
+             y1  = par("usr")[[4]],
              col = stem_color,
              xpd = NA,
              lwd = par("lwd") * 2
@@ -1640,6 +1731,7 @@ GammaBoxPlot <- function(use_counts_df,
                          cloud_alpha          = 0.15,
                          cloud_sd             = 0.025,
                          y_label_line         = 2.35,
+                         show_y_axis          = TRUE,
                          ...
                          ) {
 
@@ -1704,14 +1796,17 @@ GammaBoxPlot <- function(use_counts_df,
                 border_colors = brewer.pal(9, "Blues")[[8]],
                 point_colors  = "#518dc2",
                 draw_groups_n = FALSE,
+                show_y_axis   = show_y_axis,
                 ...
                 )
 
-  mtext(VerticalAdjust(expression("Phenotype (" * gamma * ")")),
-        side = 2,
-        line = y_label_line,
-        cex = par("cex")
-        )
+  if (show_y_axis) {
+    mtext(VerticalAdjust(expression("Phenotype (" * gamma * ")")),
+          side = 2,
+          line = y_label_line,
+          cex = par("cex")
+          )
+  }
 
   if (both_timepoints) {
     mtext(text = paste0("R", rep(1:2, 2)),
@@ -1748,10 +1843,34 @@ GammaBoxPlot <- function(use_counts_df,
 # Functions for displaying read-level QC data -----------------------------
 
 MappedReadsBarPlot <- function(num_reads_mat,
-                               include_timepoints = 1:3,
-                               use_colors = NULL,
-                               use_title = "All sequencing reads"
+                               include_timepoints    = 1:3,
+                               use_colors            = NULL,
+                               use_title             = TRUE,
+                               set_mar               = TRUE,
+                               y_axis_mgp            = 0.5,
+                               y_axis_tcl            = 0.375,
+                               y_axis_label_line     = 2.35,
+                               show_legend           = TRUE,
+                               show_y_axis           = TRUE,
+                               legend_point_x_start  = 0,
+                               legend_lines_x_start  = 0.8,
+                               y_upper_limit         = NULL,
+                               bar_width             = 2/3,
+                               gap_ratio             = 1.25,
+                               side_gap              = 0.5,
+                               unit_in_axis          = TRUE,
+                               show_percentage       = FALSE,
+                               large_gap_multiplier  = 1.5,
+                               ...
                                ) {
+
+  if (isTRUE(use_title)) {
+    if (show_percentage) {
+       use_title <- "Mapped reads"
+    } else {
+      use_title <- "All sequencing reads"
+    }
+  }
 
   if (is.null(use_colors)) {
     use_colors <- colorRampPalette(brewer.pal(9, "Blues")[3:8])(nrow(num_reads_mat))
@@ -1766,29 +1885,37 @@ MappedReadsBarPlot <- function(num_reads_mat,
   numeric_mat <- num_reads_mat[, are_included]
 
   ## Determine bar positions
-  bar_positions <- RepositionByGroups(all_timepoints_vec[are_included])
+  bar_positions <- RepositionByGroups(all_timepoints_vec[are_included], gap_ratio = gap_ratio)
   num_bars <- length(bar_positions)
-  bar_width <- 2/3
   final_width <- bar_width * ((max(bar_positions) - min(bar_positions)) / (num_bars - 1))
-  group_limits <- c((min(bar_positions) - 0.5) - (num_bars * 0.04),
-                     max(bar_positions) + 0.5  + (num_bars * 0.04)
+  group_limits <- c((min(bar_positions) - side_gap) - (num_bars * 0.04),
+                     max(bar_positions) + side_gap  + (num_bars * 0.04)
                     )
 
   ## Prepare the data axis
   use_numeric_limits <- c(0, max(colSums(numeric_mat)) * 1.00)
   numeric_axis_pos <- pretty(use_numeric_limits)
-  numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
+  if (is.null(y_upper_limit)) {
+    y_upper_limit <- numeric_axis_pos[[length(numeric_axis_pos)]]
+  }
+  numeric_limits <- c(numeric_axis_pos[[1]], y_upper_limit)
 
   ## Draw the barplot
-  old_mar <- par(mar = c(4, 3.75, 3.75, 6.5))
-  plot(NA,
-       xlim = group_limits,
-       ylim = numeric_limits,
-       xaxs = "i",
-       yaxs = "i",
-       axes = FALSE,
-       ann  = FALSE
-       )
+  if (set_mar) {
+    old_mar <- par(mar = c(4, 3.75, 3.75, 6.5))
+  }
+  MakeEmptyPlot(x_limits = group_limits, y_limits = numeric_limits)
+  if (show_percentage) {
+    grid_pos <- pretty(use_numeric_limits, n = 30)
+    segments(x0  = par("usr")[[1]],
+             x1  = par("usr")[[2]],
+             y0  = grid_pos,
+             col = ifelse(rep_len(c(TRUE, FALSE), length.out = length(grid_pos)),
+                          "gray88", "gray95"
+                          ),
+             xpd = NA
+             )
+  }
   PlotBarplotMat(numeric_mat,
                  colors_vec    = use_colors,
                  positions_vec = bar_positions,
@@ -1796,43 +1923,90 @@ MappedReadsBarPlot <- function(num_reads_mat,
                  )
 
   ## Draw the y axis
-  tick_pos <- axTicks(2)
-  axis(2,
-       at     = tick_pos,
-       labels = paste0(tick_pos / 10^6, "M"),
-       las    = 2,
-       mgp    = c(3, 0.5, 0),
-       tcl    = -0.375,
-       lwd    = par("lwd")
-       )
-  mtext(VerticalAdjust("Number of reads"),
-        side = 2,
-        line = 2.35,
-        cex  = par("cex")
-        )
+  if (show_y_axis) {
+    tick_pos <- axTicks(2)
+    if (show_percentage) {
+      tick_labels <- paste0(tick_pos * 100, if (unit_in_axis) "%" else "")
+    } else {
+      tick_labels <- paste0(tick_pos / 10^6, if (unit_in_axis) "M" else "")
+    }
+    axis(2,
+         at     = tick_pos,
+         labels = tick_labels,
+         las    = 2,
+         mgp    = c(3, y_axis_mgp, 0),
+         tcl    = -(y_axis_tcl),
+         lwd    = par("lwd")
+         )
+    if (show_percentage) {
+      y_axis_label <- "Percentage of reads"
+    } else {
+      if (unit_in_axis) {
+        y_axis_label <- "Number of reads"
+      } else {
+        y_axis_label <- "Number of reads (millions)"
+      }
+    }
+    mtext(VerticalAdjust(y_axis_label),
+          side = 2,
+          line = y_axis_label_line,
+          cex  = par("cex")
+          )
+  }
 
   ## Draw the bar labels
   DrawBottomLabels(bar_positions, all_timepoints_vec, are_included)
 
   ## Draw the legend
-  DrawSideLegend(list(c("Both reads", "unmapped"),
-                      c("Read 1", "unmapped"),
-                      c("Read 2", "unmapped"),
-                      c("Mapped", "reads")
-                      ),
-                 use_colors    = rev(use_colors),
-                 border_colors = "gray50",
-                 use_pch       = 22,
-                 point_x_start = 0.2,
-                 lines_x_start = 0.6,
-                 )
+  if (show_legend) {
+    if (show_percentage) {
+      if (length(use_colors) == 2) {
+        title_vec <- c("Template", "switch")
+        labels_list <- list("Yes", "No")
+      } else {
+        title_vec <- c("One", "mismatch", "tolerance")
+        labels_list <- list(c("Both reads"),
+                            c("Read 1"),
+                            c("Read 2"),
+                            c("None")
+                            )
+      }
+    } else {
+      labels_list <- list(c("Both reads", "unmapped"),
+                          c("Read 1", "unmapped"),
+                          c("Read 2", "unmapped"),
+                          c("Both reads", "mapped")
+                          )
+      title_vec <- NULL
+    }
+    DrawSideLegend(labels_list,
+                   use_colors     = rev(use_colors),
+                   border_colors  = "gray50",
+                   use_pch        = 22,
+                   point_x_start  = legend_point_x_start,
+                   lines_x_start  = legend_lines_x_start,
+                   title_vec      = title_vec,
+                   large_gap_multiplier = large_gap_multiplier,
+                   ...
+                   )
+  }
 
   ## Final steps
   if (!(is.null(use_title))) {
     title(use_title, font.main = 1, cex.main = 1)
   }
-  box(bty = "l")
-  par(mar = old_mar)
+  if (show_y_axis) {
+    box(bty = "l")
+  } else {
+    segments(x0  = par("usr")[[1]],
+             x1  = par("usr")[[2]],
+             y0  = par("usr")[[3]],
+             xpd = NA
+             )
+  }
+  if (set_mar) {
+    par(mar = old_mar)
+  }
   return(invisible(NULL))
 }
 
@@ -1925,18 +2099,47 @@ MakeEmptyPlot <- function(x_limits = c(0, 1), y_limits = c(0, 1)) {
 
 
 
+GetLibraryDensities <- function(sg_mat) {
+  sg_mat <- toupper(sg_mat)
+  char_vec_1 <- strsplit(sg_mat[, 1], "")
+  char_vec_2 <- strsplit(sg_mat[, 2], "")
+  GC_vec_1 <- vapply(char_vec_1, function(x) sum(x %in% c("C", "G")), integer(1))
+  GC_vec_2 <- vapply(char_vec_2, function(x) sum(x %in% c("C", "G")), integer(1))
+  density_1 <- density(GC_vec_1 / 20, adj = 3, from = 0, to = 1)
+  density_2 <- density(GC_vec_2 / 20, adj = 3, from = 0, to = 1)
+  density_list <- list(density_1, density_2)
+  return(density_list)
+}
+
+
+
 TwoDensities <- function(show_GC               = TRUE,
                          include_timepoints    = 1:3,
                          semitransparent_lines = TRUE,
                          show_title            = TRUE,
                          use_title             = NULL,
-                         include_zero          = TRUE
+                         include_zero          = TRUE,
+                         label_read_on_y_axis  = TRUE,
+                         show_y_axis_label     = TRUE,
+                         show_legend           = TRUE,
+                         omit_zero_label       = FALSE,
+                         x_axis_mgp            = 0.375,
+                         x_axis_label_line     = 2.1,
+                         y_axis_label_line     = 0.5,
+                         legend_x_lines        = 1,
+                         legend_y_lines        = 1,
+                         embed_PNG             = FALSE,
+                         grid_lwd              = 1,
+                         title_y_pos           = 0.5,
+                         darker_box            = FALSE,
+                         broad_margins         = FALSE
                          ) {
 
   if (show_GC) {
     density_object <- "GC_content_densities"
   } else {
     density_object <- "sequence_qual_densities"
+    stopifnot("library_densities" %in% ls(envir = globalenv()))
   }
   stopifnot(density_object %in% ls(envir = globalenv()))
   density_list <- get(density_object)[c("Read 1", "Read 2")]
@@ -1945,13 +2148,15 @@ TwoDensities <- function(show_GC               = TRUE,
   timepoint_labels <- c("Baseline", "T0", "Endpoint")[include_timepoints]
   all_timepoints_vec <- rep(1:3, each = 2)
   are_included <- all_timepoints_vec %in% include_timepoints
-  timepoint_colors <- c(
+  original_colors <- c(
     brewer.pal(9, "Blues")[[8]],
     brewer.pal(9, "Purples")[[8]],
     brewer.pal(9, "Reds")[[8]]
   )[include_timepoints]
   if (semitransparent_lines) {
-    timepoint_colors <- adjustcolor(timepoint_colors, alpha.f = 0.6)
+    timepoint_colors <- adjustcolor(original_colors, alpha.f = 0.6)
+  } else {
+    timepoint_colors <- original_colors
   }
   colors_vec <- rep(timepoint_colors, each = 2)
   density_list <- lapply(density_list, function(x) x[are_included])
@@ -1969,6 +2174,9 @@ TwoDensities <- function(show_GC               = TRUE,
   if (show_GC) {
     x_axis_label <- "GC content"
     x_tick_labels <- paste0(x_ticks * 100, "%")
+    if (omit_zero_label) {
+      x_tick_labels[x_tick_labels == "0%"] <- NA
+    }
     if (is.null(use_title)) {
       use_title <- "Density (all reads)"
     }
@@ -1985,24 +2193,36 @@ TwoDensities <- function(show_GC               = TRUE,
   y_limits <- c(0, y_max * 1.04)
 
   ## Additional preparations
-  grid_color <- "gray84"
+  if (show_GC) {
+    grid_color <- "gray86"
+  } else {
+    grid_color <- "gray80"
+  }
   layout_mat <- rbind(
-    c(1, 1, 1),
+    c(3, 1, 4),
     c(3, 6, 4),
     c(3, 5, 4),
     c(3, 7, 4),
-    c(2, 2, 2)
+    c(3, 2, 4)
   )
 
   ## Set up the multi-plot layout
+  original_cex <- par("cex")
+  if (broad_margins) {
+    use_widths <- c(2.25, 7, 0.75)
+    use_heights <- c(1.2, 3.27, 0.21, 3.27, 2)
+  } else {
+    use_widths <- c(1, 8, 1)
+    use_heights <- c(1.2, 3.4, 0.25, 3.4, 1.75)
+  }
   layout(layout_mat,
-         widths  = c(1, 8, 1),
-         heights = c(1.2, 3.4, 0.25, 3.4, 1.75)
+         widths  = use_widths,
+         heights = use_heights
          )
-  old_mar <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
+  old_mar <- par(mar = rep(0, 4), cex = original_cex * par("cex") * (1 / 0.66))
   MakeEmptyPlot()
   if (show_title) {
-    text(x = 0.5, y = 0.5, labels = use_title)
+    text(x = 0.5, y = title_y_pos, labels = use_title)
   }
   for (i in 1:4) {
     MakeEmptyPlot()
@@ -2012,26 +2232,120 @@ TwoDensities <- function(show_GC               = TRUE,
   for (i in 1:2) {
     MakeEmptyPlot(x_limits, y_limits)
 
-    ## Draw the grid
-    if (i == 1) {
-      abline(v = x_grid[-c(1:2)], col = grid_color)
-      if (length(include_timepoints) == 2) {
-        grid_top <- 0.5
-      } else {
-        grid_top <- 1/3
-      }
-      segments(x0   = x_grid[1:2],
-               y0   = par("usr")[[3]],
-               y1   = grconvertY(grid_top, from = "npc", to = "user"),
-               col  = grid_color,
-               lend = "butt"
-               )
-    } else {
-      abline(v = x_grid, col = grid_color)
+    if (embed_PNG) {
+      PDF_mar <- par("mar")
+      PDF_device <- dev.cur()
+      temp_path <- file.path(figures_dir, "temp.png")
+      temp_width  <- par("pin")[[1]] + 0.02
+      temp_height <- par("pin")[[2]] + 0.02
+      current_par <- par(no.readonly = TRUE)
+      png(filename = temp_path,
+          width    = temp_width,
+          height   = temp_height,
+          units    = "in",
+          res      = 900,
+          bg       = "white",
+          type     = "cairo-png"
+          )
+      par(lwd = current_par[["lwd"]])
+      par(cex = current_par[["cex"]])
+      par(mai = rep(0.01, 4))
+      MakeEmptyPlot(x_limits, y_limits)
     }
-    box(col = grid_color)
+
+    if (!(show_GC)) {
+      ## Draw the background
+      rect(xleft   = 28,
+           xright  = 40,
+           ybottom = par("usr")[[3]],
+           ytop    = par("usr")[[4]],
+           col     = adjustcolor("#C6E8BF", alpha.f = 0.4),
+           border  = NA
+           )
+      rect(xleft   = 20,
+           xright  = 28,
+           ybottom = par("usr")[[3]],
+           ytop    = par("usr")[[4]],
+           col     = adjustcolor("#FFEDA0", alpha.f = 0.4),
+           border  = NA
+           )
+      rect(xleft   = 0,
+           xright  = 20,
+           ybottom = par("usr")[[3]],
+           ytop    = par("usr")[[4]],
+           col     = adjustcolor("#FCC9B3", alpha.f = 0.4),
+           border  = NA
+           )
+    }
+
+    ## Draw the grid
+    if (show_legend) {
+      if (label_read_on_y_axis) {
+        are_behind_read <- rep(FALSE, length(x_grid))
+      } else {
+        are_behind_read <- seq_along(x_grid) %in% 1:2
+      }
+      are_behind_legend <- rep(FALSE, length(x_grid))
+      if (i == 1) {
+        ## Calculate how much white space to leave for the legend
+        legend_x_start <- par("usr")[[1]] + diff(grconvertX(c(0, legend_x_lines), from = "lines", to = "user"))
+        legend_text_x <- legend_x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user"))
+        legend_y_start <- par("usr")[[4]] - diff(grconvertY(c(0, legend_y_lines), from = "lines", to = "user"))
+        timepoints_seq <- seq_along(timepoint_colors) - 1L
+        legend_y_vec <- legend_y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq
+
+        legend_x_end <- legend_text_x + max(strwidth(timepoint_labels)) + strwidth("OO")
+        are_behind_legend <- x_grid < legend_x_end
+        legend_y_end <- min(legend_y_vec) - (strheight(timepoint_labels[[length(timepoint_labels)]])) * 1.2
+        if ((length(include_timepoints) == 2) && (grconvertY(legend_y_end, from = "user", to = "npc") > 0.5)) {
+          grid_top <- 0.5
+        } else {
+          grid_top <- 1/3
+        }
+        segments(x0   = x_grid[are_behind_legend & !(are_behind_read)],
+                 y0   = par("usr")[[3]],
+                 y1   = grconvertY(grid_top, from = "npc", to = "user"),
+                 col  = grid_color,
+                 lend = "butt",
+                 lwd  = par("lwd") * grid_lwd
+                 )
+      } else {
+        are_behind_legend <- rep(FALSE, length(x_grid))
+        if (!(label_read_on_y_axis)) {
+          segments(x0   = x_grid[are_behind_read],
+                   y0   = grconvertY(1/3, from = "npc", to = "user"),
+                   y1   = par("usr")[[4]],
+                   col  = grid_color,
+                   lend = "butt",
+                   lwd  = par("lwd") * grid_lwd
+                   )
+        }
+      }
+    } else {
+      are_behind_legend <- rep(FALSE, length(x_grid))
+      are_behind_read <- rep(FALSE, length(x_grid))
+    }
+    abline(v = x_grid[!(are_behind_legend | are_behind_read)],
+           col = grid_color, lwd = par("lwd") * grid_lwd
+           )
+
+    box(col = if (darker_box) "gray50" else grid_color,
+        lwd = par("lwd") * grid_lwd,
+        xpd = NA
+        )
 
     ## Draw the density lines
+    if (show_GC) {
+      ref_x_vec <- library_densities[[i]][["x"]]
+      polygon(x      = c(ref_x_vec[[1]], ref_x_vec, ref_x_vec[[length(ref_x_vec)]]),
+              y      = c(0, library_densities[[i]][["y"]], 0),
+              col    = "gray95",
+              border = NA,
+              xpd    = NA
+              )
+      lines(library_densities[[i]], col = "gray80", lwd = par("lwd"))
+    }
+
     for (j in seq_along(density_list[[i]])) {
       lines(density_list[[i]][[j]],
             col  = colors_vec[[j]],
@@ -2040,28 +2354,41 @@ TwoDensities <- function(show_GC               = TRUE,
             )
     }
 
-    ## Draw the y axis
-    mtext(paste0("Read ", i),
-          side = 2,
-          line = 0.5,
-          cex  = par("cex")
-          )
+    if (embed_PNG) {
+      dev.off()
+      raster_array <- png::readPNG(temp_path)
+      file.remove(temp_path)
+      dev.set(PDF_device)
+      par(PDF_mar)
+      rasterImage(raster_array,
+                  xleft   = par("usr")[[1]] - diff(grconvertX(c(0, 0.01), from = "inches", to = "user")),
+                  xright  = par("usr")[[2]] + diff(grconvertX(c(0, 0.01), from = "inches", to = "user")),
+                  ybottom = par("usr")[[3]] - diff(grconvertY(c(0, 0.01), from = "inches", to = "user")),
+                  ytop    = par("usr")[[4]] + diff(grconvertY(c(0, 0.01), from = "inches", to = "user")),
+                  xpd = NA
+                  )
+    }
 
-    if (i == 1) {
+    ## Draw the y axis
+    if (show_y_axis_label) {
+      mtext(if (label_read_on_y_axis) paste0("Read ", i) else "Density",
+            side = 2,
+            line = y_axis_label_line,
+            cex  = par("cex")
+            )
+    }
+
+    if (show_legend && (i == 1)) {
       ## Draw the legend
-      x_start <- par("usr")[[1]] + diff(grconvertX(c(0, 1), from = "lines", to = "user"))
-      y_start <- par("usr")[[4]] - diff(grconvertY(c(0, 1), from = "lines", to = "user"))
-      timepoints_seq <- seq_along(timepoint_colors) - 1L
-      y_vec <- y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq
-      segments(x0  = x_start,
-               x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
-               y0  = y_vec,
-               col = timepoint_colors,
+      segments(x0  = legend_x_start,
+               x1  = legend_x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
+               y0  = legend_y_vec,
+               col = if (embed_PNG) original_colors else timepoint_colors,
                lwd = par("lwd") * 2,
                xpd = NA
                )
-      text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
-           y      = y_vec,
+      text(x      = legend_text_x,
+           y      = legend_y_vec,
            labels = timepoint_labels,
            adj    = c(0, 0.5),
            xpd    = NA
@@ -2069,16 +2396,22 @@ TwoDensities <- function(show_GC               = TRUE,
     } else if (i == 2) {
       ## Draw the x axis
       axis(1,
-           at     = x_ticks,
-           labels = x_tick_labels,
-           mgp    = c(3, 0.375, 0.3),
-           tcl    = -0.375,
-           lwd    = par("lwd")
+           at       = x_ticks,
+           labels   = x_tick_labels,
+           mgp      = c(3, x_axis_mgp, 0.3),
+           tcl      = -0.375,
+           gap.axis = 0.5,
+           lwd      = par("lwd")
            )
       mtext(x_axis_label,
             side = 1,
-            line = 2.1,
+            line = x_axis_label_line,
             cex  = par("cex")
+            )
+    }
+    if (show_legend && !(label_read_on_y_axis)) {
+      mtext(paste0("Read ", i), side = 1, line = -1.5,
+            at = grconvertX(0.15, from = "npc", to = "user"), cex = par("cex")
             )
     }
   }
@@ -2093,41 +2426,74 @@ TwoDensities <- function(show_GC               = TRUE,
 
 
 PerBaseQuality <- function(qual_mat,
-                           include_timepoints = 1:3,
+                           include_timepoints    = 1:3,
                            semitransparent_lines = TRUE,
-                           show_title = TRUE
+                           use_title             = "Per-base quality (all reads)",
+                           show_title            = TRUE,
+                           show_y_axis           = TRUE,
+                           show_legend           = TRUE,
+                           omit_zero_label       = FALSE,
+                           x_axis_mgp            = 0.375,
+                           y_axis_mgp            = 0.55,
+                           x_axis_label_line     = 1.9,
+                           y_axis_label_line     = 2.2,
+                           title_y_pos           = 0.5,
+                           separate_x_labels     = FALSE,
+                           legend_x_lines        = 2.5,
+                           legend_y_lines        = 3,
+                           embed_PNG             = FALSE,
+                           small_middle_gap      = FALSE,
+                           broad_margins         = FALSE,
+                           x_axis_tcl            = 0.375
                            ) {
 
   ## Prepare the timepoints included
   timepoint_labels <- c("Baseline", "T0", "Endpoint")[include_timepoints]
   all_timepoints_vec <- rep(1:3, each = 2)
   are_included <- all_timepoints_vec %in% include_timepoints
-  timepoint_colors <- c(
+  original_colors <- c(
     brewer.pal(9, "Blues")[[8]],
     brewer.pal(9, "Purples")[[8]],
     brewer.pal(9, "Reds")[[8]]
   )[include_timepoints]
-  colors_vec <- rep(timepoint_colors, each = 2)
+  colors_vec <- rep(original_colors, each = 2)
   if (semitransparent_lines) {
     colors_vec <- adjustcolor(colors_vec, alpha.f = 0.6)
-    timepoint_colors <- adjustcolor(timepoint_colors, alpha.f = 0.9) # For the legend
+    timepoint_colors <- adjustcolor(original_colors, alpha.f = 0.9) # For the legend
+  } else {
+    timepoint_colors <- original_colors
   }
-  assign("delete_colors_vec", colors_vec, envir = globalenv())
 
   ## Set up the multi-plot layout
   layout_mat <- rbind(
-    c(1, 1, 1, 1, 1),
+    c(3, 1, 1, 1, 4),
     c(3, 6, 5, 7, 4),
-    c(2, 2, 2, 2, 2)
+    c(3, 2, 2, 2, 4)
   )
+  original_cex <- par("cex")
+  if (broad_margins) {
+    if (small_middle_gap) {
+      use_widths <- c(2.25, 3.425, 0.15, 3.425, 0.75)
+    } else {
+      use_widths <- c(2.25, 3.25, 0.5, 3.25, 0.75)
+    }
+    use_heights <- c(1.2, 6.8, 2)
+  } else {
+    if (small_middle_gap) {
+      use_widths <- c(1.5, 3.925, 0.15, 3.925, 0.5)
+    } else {
+      use_widths <- c(1.5, 3.725, 0.55, 3.725, 0.5)
+    }
+    use_heights <- c(1.2, 7.05, 1.75)
+  }
   layout(layout_mat,
-         widths  = c(1.5, 3.725, 0.55, 3.725, 0.5),
+         widths  = use_widths,
          heights = c(1.2, 7.05, 1.75)
          )
-  old_mar <- par(mar = rep(0, 4), cex = par("cex") * (1 / 0.66))
+  old_mar <- par(mar = rep(0, 4), cex = original_cex * par("cex") * (1 / 0.66))
   MakeEmptyPlot()
   if (show_title) {
-    text(x = 0.5, y = 0.5, labels = "Per-base quality (all reads)")
+    text(x = 0.5, y = title_y_pos, labels = use_title)
   }
   for (i in 1:4) {
     MakeEmptyPlot()
@@ -2141,6 +2507,50 @@ PerBaseQuality <- function(qual_mat,
     are_this_read <- grepl(paste0("_read", i), colnames(qual_mat), fixed = TRUE)
     use_indices <- which(are_this_read)[are_included]
 
+    if (embed_PNG) {
+      PDF_mar <- par("mar")
+      PDF_device <- dev.cur()
+      temp_path <- file.path(figures_dir, "temp.png")
+      temp_width  <- par("pin")[[1]] + 0.02
+      temp_height <- par("pin")[[2]] + 0.02
+      current_par <- par(no.readonly = TRUE)
+      png(filename = temp_path,
+          width    = temp_width,
+          height   = temp_height,
+          units    = "in",
+          res      = 900,
+          bg       = "white",
+          type     = "cairo-png"
+          )
+      par(lwd = current_par[["lwd"]])
+      par(cex = current_par[["cex"]])
+      par(mar = rep(0, 4))
+      MakeEmptyPlot(x_limits = c(0, 21), y_limits = c(0, 40))
+    }
+
+    ## Draw the background
+    rect(xleft   = par("usr")[[1]],
+         xright  = if (i == 1) 20 else par("usr")[[2]],
+         ybottom = 28,
+         ytop    = 40,
+         col     = adjustcolor("#C6E8BF", alpha.f = 0.4),
+         border  = NA
+         )
+    rect(xleft   = par("usr")[[1]],
+         xright  = if (i == 1) 20 else par("usr")[[2]],
+         ybottom = 20,
+         ytop    = 28,
+         col     = adjustcolor("#FFEDA0", alpha.f = 0.4),
+         border  = NA
+         )
+    rect(xleft   = par("usr")[[1]],
+         xright  = if (i == 1) 20 else par("usr")[[2]],
+         ybottom = 0,
+         ytop    = 20,
+         col     = adjustcolor("#FCC9B3", alpha.f = 0.4),
+         border  = NA
+         )
+
     ## Draw the lines
     for (j in seq_along(use_indices)) {
       lines(x    = seq_len(nrow(qual_mat)),
@@ -2152,55 +2562,91 @@ PerBaseQuality <- function(qual_mat,
             )
     }
 
+    if (embed_PNG) {
+      dev.off()
+      raster_array <- png::readPNG(temp_path)
+      file.remove(temp_path)
+      dev.set(PDF_device)
+      par(PDF_mar)
+      rasterImage(raster_array,
+                  xleft   = par("usr")[[1]], xright = par("usr")[[2]],
+                  ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
+                  )
+    }
+
     ## Draw the x axis
+    x_ticks <- axTicks(1)
+    x_tick_labels <- x_ticks
+    if (omit_zero_label && (i == 2)) {
+      x_tick_labels[x_tick_labels == 0] <- NA
+    }
     axis(1,
-         mgp = c(3, 0.375, 0),
-         tcl = -0.375,
-         lwd = par("lwd")
+         at       = x_ticks,
+         labels   = x_tick_labels,
+         mgp      = c(3, x_axis_mgp, 0),
+         tcl      = -(x_axis_tcl),
+         gap.axis = 0.5,
+         lwd      = par("lwd")
          )
-    mtext(paste0("Read ", i, " (base)"),
+    mtext(if (separate_x_labels) "Base" else paste0("Read ", i, " (base)"),
           side = 1,
-          line = 1.9,
+          line = x_axis_label_line,
           cex  = par("cex")
           )
+    if (separate_x_labels) {
+      text(x      = grconvertX(0.5, from = "npc", to = "user"),
+           y      = grconvertY(0.6, from = "npc", to = "user"),
+           labels = paste0("Read ", i),
+           xpd     = NA
+           )
+    }
 
     if (i == 1) {
       ## Draw the y axis
-      axis(2,
-           las = 2,
-           mgp = c(3, 0.55, 0),
-           tcl = -0.375,
-           )
-      mtext("Mean quality",
-            side = 2,
-            line = 2.3,
-            cex  = par("cex")
-            )
+      if (show_y_axis) {
+        axis(2,
+             las = 2,
+             mgp = c(3, y_axis_mgp, 0),
+             tcl = -0.375,
+             lwd = par("lwd")
+             )
+        mtext(VerticalAdjust("Mean quality"),
+              side = 2,
+              line = y_axis_label_line,
+              cex  = par("cex")
+              )
+      } else {
+        segments(x0 = par("usr")[[1]], y0 = par("usr")[[3]],
+                 y1 = par("usr")[[4]], xpd = NA
+                 )
+      }
       segments(x0 = par("usr")[[1]], x1 = 20,
                y0 = par("usr")[[4]], xpd = NA
                )
     } else if (i == 2) {
       box(bty = "]")
-      ## Draw the legend
-      x_start <- par("usr")[[2]] -
-                 max(strwidth(timepoint_labels)) -
-                 diff(grconvertX(c(0, 2.5), from = "lines", to = "user"))
-      y_start <- par("usr")[[3]] + diff(grconvertY(c(0, 3), from = "lines", to = "user"))
-      timepoints_seq <- seq_along(timepoint_colors) - 1L
-      y_vec <- rev(y_start + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq)
-      segments(x0  = x_start,
-               x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
-               y0  = y_vec,
-               col = timepoint_colors,
-               lwd = par("lwd") * 2,
-               xpd = NA
-               )
-      text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
-           y      = y_vec,
-           labels = timepoint_labels,
-           adj    = c(0, 0.5),
-           xpd    = NA
-           )
+      if (show_legend) {
+        ## Draw the legend
+        x_start <- par("usr")[[2]] -
+                   max(strwidth(timepoint_labels)) -
+                   diff(grconvertX(c(0, legend_x_lines), from = "lines", to = "user"))
+        y_start <- par("usr")[[3]] + diff(grconvertY(c(0, legend_y_lines), from = "lines", to = "user"))
+        timepoints_seq <- seq_along(timepoint_colors) - 1L
+        y_vec <- rev(y_start + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq)
+        segments(x0  = x_start,
+                 x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
+                 y0  = y_vec,
+                 col = if (embed_PNG) original_colors else timepoint_colors,
+                 lwd = par("lwd") * 2,
+                 xpd = NA
+                 )
+        text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
+             y      = y_vec,
+             labels = timepoint_labels,
+             adj    = c(0, 0.5),
+             xpd    = NA
+             )
+      }
     }
   }
 
@@ -2208,6 +2654,102 @@ PerBaseQuality <- function(qual_mat,
   par(old_mar)
   layout(1)
   return(invisible(NULL))
+}
+
+
+
+
+# Functions for assessing the separation between groups -------------------
+
+FilterNonFinite <- function(vec1, vec2, lower_bound = NULL) {
+  are_finite_vec1 <- is.finite(vec1)
+  are_finite_vec2 <- is.finite(vec2)
+  if (!(is.null(lower_bound))) {
+    are_neginf_vec1 <- (!(are_finite_vec1)) & (vec1 < 0)
+    are_neginf_vec2 <- (!(are_finite_vec2)) & (vec2 < 0)
+    vec1[are_neginf_vec1] <- lower_bound
+    vec2[are_neginf_vec2] <- lower_bound
+    if ((any(are_neginf_vec1) || any(are_neginf_vec2))) {
+      message(paste0(sum(are_neginf_vec1) + sum(are_neginf_vec2),
+                     " -Inf values were replaced with the lower limit (i.e. ",
+                     lower_bound, ")."
+                     ))
+    }
+  }
+  are_finite_vec1 <- is.finite(vec1)
+  are_finite_vec2 <- is.finite(vec2)
+  if (!(all(are_finite_vec1) && all(are_finite_vec2))) {
+    message(paste0(sum(!(are_finite_vec1)) + sum(!(are_finite_vec2)),
+                   " non-finite values were excluded."
+                   ))
+  }
+  vec1 <- vec1[are_finite_vec1]
+  vec2 <- vec2[are_finite_vec2]
+  results_list <- list(vec1, vec2)
+  return(results_list)
+}
+
+
+ZPrimeFactor <- function(neg_vec, pos_vec, lower_bound = NULL) {
+  filtered_list <- FilterNonFinite(neg_vec, pos_vec, lower_bound = lower_bound)
+  neg_vec <- filtered_list[[1]]
+  pos_vec <- filtered_list[[2]]
+  z_prime <- (1 - (3 * (sd(pos_vec) + sd(neg_vec))) / abs(mean(pos_vec) - mean(neg_vec)))
+  return(z_prime)
+}
+
+
+RobustZPrimeFactor <- function(neg_vec, pos_vec, lower_bound = NULL) {
+  filtered_list <- FilterNonFinite(neg_vec, pos_vec, lower_bound = lower_bound)
+  neg_vec <- filtered_list[[1]]
+  pos_vec <- filtered_list[[2]]
+  z_prime <- (1 - (3 * (mad(pos_vec) + mad(neg_vec))) / abs(median(pos_vec) - median(neg_vec)))
+  return(z_prime)
+}
+
+
+SSMDControls <- function(neg_vec, pos_vec, lower_bound = NULL) {
+  filtered_list <- FilterNonFinite(neg_vec, pos_vec, lower_bound = lower_bound)
+  neg_vec <- filtered_list[[1]]
+  pos_vec <- filtered_list[[2]]
+  SSMD <- (mean(pos_vec) - mean(neg_vec)) / (sqrt(var(pos_vec) + var(neg_vec)))
+  return(SSMD)
+}
+
+
+RobustSSMDControls <- function(neg_vec, pos_vec, lower_bound = NULL) {
+  filtered_list <- FilterNonFinite(neg_vec, pos_vec, lower_bound = lower_bound)
+  neg_vec <- filtered_list[[1]]
+  pos_vec <- filtered_list[[2]]
+  SSMD <- (median(pos_vec) - median(neg_vec)) / (1.4826 * sqrt((mad(pos_vec))^2 + (mad(neg_vec))^2))
+  return(SSMD)
+}
+
+
+SeparationMetrics <- function(input_list) {
+  all_methods <- c("ZPrimeFactor", "RobustZPrimeFactor",
+                   "SSMDControls", "RobustSSMDControls"
+                   )
+  vec_list_all <- lapply(1:2, function(rep_index) vapply(all_methods, function(x) {
+    get(x)(neg_vec = input_list[[paste0("Non-essential R", rep_index)]],
+           pos_vec = input_list[[paste0("Essential R", rep_index)]],
+           lower_bound = -0.6
+           )
+  }, numeric(1)))
+  vec_list_finite <- lapply(1:2, function(rep_index) vapply(all_methods, function(x) {
+    get(x)(neg_vec = input_list[[paste0("Non-essential R", rep_index)]],
+           pos_vec = input_list[[paste0("Essential R", rep_index)]],
+           lower_bound = NULL
+           )
+  }, numeric(1)))
+  results_mat <- rbind(do.call(cbind, vec_list_all), do.call(cbind, vec_list_finite))
+  dimnames(results_mat) <- list(c("Z' factor", "Robust z'", "SSMD", "Robust SSMD",
+                                  "Z' finite", "Robust z' finite",
+                                  "SSMD finite", "Robust SSMD finite"
+                                  ),
+                                c("R1", "R2")
+                                )
+  return(results_mat)
 }
 
 
