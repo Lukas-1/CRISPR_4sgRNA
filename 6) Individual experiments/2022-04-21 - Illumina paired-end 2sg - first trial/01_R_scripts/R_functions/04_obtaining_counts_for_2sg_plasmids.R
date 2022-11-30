@@ -67,6 +67,8 @@ NumMappedReads <- function(use_lumi_df, sg_numbers = 1:2) {
   samples_fac <- factor(use_lumi_df[, "Sample_name"],
                         levels = unique(use_lumi_df[, "Sample_name"])
                         )
+  have_1MM_read1 <- use_lumi_df[, paste0("Num_MM_sg", sg_numbers[[1]])] == 1
+  have_1MM_read2 <- use_lumi_df[, paste0("Num_MM_sg", sg_numbers[[2]])] == 1
   results_df <- data.frame(
     "Sample_name"             = levels(samples_fac),
     "Num_either_read_mapped"  = tabulate(samples_fac),
@@ -74,6 +76,9 @@ NumMappedReads <- function(use_lumi_df, sg_numbers = 1:2) {
     "Num_unmapped_read1_only" = tapply(is.na(use_lumi_df[, paste0("Plasmid_sg", sg_numbers[[1]])]), samples_fac, sum),
     "Num_unmapped_read2_only" = tapply(is.na(use_lumi_df[, paste0("Plasmid_sg", sg_numbers[[2]])]), samples_fac, sum),
     "Num_template_switch"     = tapply(use_lumi_df[, "Has_template_switch"], samples_fac, sum),
+    "Num_1MM_read1_only"      = tapply(have_1MM_read1 & (!(have_1MM_read2)), samples_fac, sum, na.rm = TRUE),
+    "Num_1MM_read2_only"      = tapply(have_1MM_read2 & (!(have_1MM_read1)), samples_fac, sum, na.rm = TRUE),
+    "Num_1MM_both_reads"      = tapply(have_1MM_read1 & have_1MM_read2, samples_fac, sum, na.rm = TRUE),
     stringsAsFactors = FALSE,
     row.names = NULL
   )
