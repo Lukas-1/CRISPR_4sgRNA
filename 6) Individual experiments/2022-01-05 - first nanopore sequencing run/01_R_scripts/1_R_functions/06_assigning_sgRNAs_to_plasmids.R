@@ -196,14 +196,18 @@ Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NU
     stringsAsFactors = FALSE
   )
   if (length(sg_numbers) == 4) {
+    two_or_more_mat <- t(apply(plasmids_mat, 1, AtLeast2))
+    num_plasmids_2ormore <- apply(two_or_more_mat , 1, function(x) length(unique(x[!(is.na(x))])))
     results_df <- data.frame(
       results_df,
+      "Num_plasmids_2sgs" = num_plasmids_2ormore,
       "Switch_sg1_to_sg2" = plasmids_mat[, 1] != plasmids_mat[, 2],
       "Switch_sg2_to_sg3" = plasmids_mat[, 2] != plasmids_mat[, 3],
       "Switch_sg3_to_sg4" = plasmids_mat[, 3] != plasmids_mat[, 4],
       "Num_switch_backs"  = ifelse(switch_twice, 2L,
                                    ifelse(switch_back == 1, 1L, 0L)
                                    ),
+      row.names = NULL,
       stringsAsFactors = FALSE
     )
   }
@@ -241,7 +245,22 @@ GetCounts <- function(library_plasmids, reads_df, sg_numbers = 1:4) {
 
 
 
+
+AtLeast2 <- function(char_vec) {
+  input_fac <- factor(char_vec)
+  num_occurrences <- tabulate(input_fac)
+  matches_vec <- match(char_vec, levels(input_fac))
+  have_at_least_2 <- num_occurrences[matches_vec] > 1
+  char_vec[!(have_at_least_2)] <- NA
+  char_vec
+}
+
+
+
 MakeCountsDf <- function(sg_df, mapped_df) {
+
+  plasmids_mat <- as.matrix(mapped_df[, paste0("Plasmid_sg", 1:4)])
+  two_or_more_mat <- t(apply(plasmids_mat, 1, AtLeast2))
 
   have_no_switch    <- mapped_df[, "Num_template_switches"] == 0
   no_switch_all_4   <- have_no_switch & (mapped_df[, "Num_matched_sgRNAs"] == 4)
@@ -250,22 +269,25 @@ MakeCountsDf <- function(sg_df, mapped_df) {
   sg3_matches_sg4   <- (mapped_df[, "Plasmid_sg3"] == mapped_df[, "Plasmid_sg4"]) %in% TRUE
 
   counts_all4_vec       <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
-                                     mapped_df[no_switch_all_4, ],
+                                     plasmids_mat[no_switch_all_4, ],
+                                     )
+  counts_2noswitch_vec  <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
+                                     plasmids_mat[no_switch_2ormore, ]
                                      )
   counts_2ormore_vec    <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
-                                     mapped_df[no_switch_2ormore, ]
+                                     two_or_more_mat
                                      )
   counts_noswitch_vec   <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
-                                     mapped_df[have_no_switch, ]
+                                     plasmids_mat[have_no_switch, ]
                                      )
   counts_unselected_vec <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
-                                     mapped_df
+                                     plasmids_mat
                                      )
   counts_sg2_sg3_vec    <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
-                                     mapped_df[sg2_matches_sg3, ]
+                                     two_or_more_mat[sg2_matches_sg3, ]
                                      )
   counts_sg3_sg4_vec    <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
-                                     mapped_df[sg3_matches_sg4, ]
+                                     two_or_more_mat[sg3_matches_sg4, ]
                                      )
 
   use_columns <- c("Plasmid_ID", "Gene_symbol", "Entrez_ID",
@@ -274,7 +296,8 @@ MakeCountsDf <- function(sg_df, mapped_df) {
                    )
   counts_df <- data.frame(
     "Count_perfect"       = counts_all4_vec,
-    "Count_2_filtered"    = counts_2ormore_vec,
+    "Count_2_filtered"    = counts_2noswitch_vec,
+    "Count_2_or_more"     = counts_2ormore_vec,
     "Count_filtered"      = counts_noswitch_vec,
     "Count_unfiltered"    = counts_unselected_vec,
     "Count_sg2_match_sg3" = counts_sg2_sg3_vec,
