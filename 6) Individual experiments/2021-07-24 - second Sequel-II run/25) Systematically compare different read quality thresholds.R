@@ -4,6 +4,8 @@
 
 # Import packages and source code -----------------------------------------
 
+library("devEMF")
+
 CRISPR_root_directory <- "~/CRISPR"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 plate1_directory      <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate")
@@ -91,9 +93,7 @@ ViolinBoxAllCutoffs(summary_list_list, "Count_no_contam_sg4_cr4", "All plates (s
 
 
 
-# # Export .emf files for selected plots ----------------------------------
-
-library("devEMF")
+# Export .emf files for selected plots ------------------------------------
 
 use_lwd <- 0.8
 use_cex <- 0.8
@@ -115,7 +115,13 @@ ViolinBoxAllCutoffs(summary_list_list,
                     set_mar          = FALSE,
                     embed_PNG        = TRUE,
                     transparent_PNG  = FALSE,
-                    brewer_palette   = "Purples"
+                    brewer_palette   = "Purples",
+                    point_cex        = 0.6,
+                    use_wex          = 0.7,
+                    violin_wex       = 0.5,
+                    sina_plot        = TRUE,
+                    box_lwd          = 1.75,
+                    med_lwd          = 3
                     )
 dev.off()
 
@@ -136,7 +142,13 @@ ViolinBoxAllCutoffs(summary_list_list,
                     bold_read_counts = TRUE,
                     set_mar          = FALSE,
                     embed_PNG        = TRUE,
-                    transparent_PNG  = FALSE
+                    transparent_PNG  = FALSE,
+                    point_cex        = 0.4,
+                    use_wex          = 0.7,
+                    violin_wex       = 0.7,
+                    sina_plot        = TRUE,
+                    box_lwd          = 1.75,
+                    med_lwd          = 4
                     )
 dev.off()
 
