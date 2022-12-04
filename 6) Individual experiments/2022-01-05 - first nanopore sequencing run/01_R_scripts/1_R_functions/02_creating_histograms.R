@@ -63,13 +63,15 @@ DrawHistogram <- function(numeric_input,
                           title_font          = 2,
                           draw_box            = TRUE,
                           show_outline        = NULL,
+                          show_both           = FALSE,
                           use_lwd             = 1.5,
                           use_tcl             = 0.35,
                           x_axis_label_line   = 2.2,
                           y_axis_label_line   = 2.9,
                           x_axis_mgp          = 0.5,
                           y_axis_mgp          = 0.5,
-                          show_y_axis         = TRUE
+                          show_y_axis         = TRUE,
+                          embed_PNG           = FALSE
                           ) {
 
   if (!(is.list(numeric_input))) {
@@ -136,6 +138,25 @@ DrawHistogram <- function(numeric_input,
   }
 
   ## Draw histogram
+
+  if (embed_PNG) {
+    PDF_mar <- par("mar")
+    PDF_device <- dev.cur()
+    temp_path <- file.path(figures_dir, "temp.png")
+    temp_width  <- par("pin")[[1]]
+    temp_height <- par("pin")[[2]]
+    current_par <- par(no.readonly = TRUE)
+    png(filename = temp_path,
+        width    = temp_width,
+        height   = temp_height,
+        units    = "in",
+        res      = 900,
+        bg       = "white"
+        )
+    par(lwd = current_par[["lwd"]])
+    par(cex = current_par[["cex"]])
+    par(mar = rep(0, 4))
+  }
   plot(NA, ann = FALSE, axes = FALSE,
        xlim = x_axis_limits, ylim = y_axis_limits,
        xaxs = "i", yaxs = "i"
@@ -153,16 +174,33 @@ DrawHistogram <- function(numeric_input,
               xpd  = NA
               )
       }
-    } else {
+    }
+    if (show_both) {
       for (polygon_mat in polygon_mat_list) {
         polygon(polygon_mat[, "x"],
                 polygon_mat[, "y"],
-                col    = hist_colors[[i]],
+                col    = adjustcolor(hist_colors[[i]], alpha.f = 0.05),
                 border = NA,
                 xpd    = NA
                 )
       }
     }
+  }
+
+  if (embed_PNG) {
+    dev.off()
+    raster_array <- png::readPNG(temp_path)
+    file.remove(temp_path)
+    dev.set(PDF_device)
+    par(PDF_mar)
+    plot(NA, ann = FALSE, axes = FALSE,
+         xlim = x_axis_limits, ylim = y_axis_limits,
+         xaxs = "i", yaxs = "i"
+         )
+    rasterImage(raster_array,
+                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
+                )
   }
 
   ## Draw x axis
