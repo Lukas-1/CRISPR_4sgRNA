@@ -26,7 +26,7 @@ PDFs_dir          <- file.path(figures_dir, "PDFs")
 recreate_figs_dir <- file.path(PDFs_dir, "Re-create figures of Nunez et al")
 library_path      <- file.path(first_illumina_trial_dir, "02_input_data", "2021 - Genome-wide programmable transcriptional memory by CRISPR-based epigenome editing - Table S3.xlsx")
 first_rdata_dir   <- file.path(first_illumina_trial_dir, "03_R_objects")
-
+thesis_dir        <- file.path(figures_dir, "PDFs", "Thesis")
 
 
 # Load data ---------------------------------------------------------------
@@ -46,14 +46,6 @@ Nunez_df <- data.frame(readxl::read_excel(library_path, skip = 3, sheet = 2),
 
 
 # Define functions --------------------------------------------------------
-
-ROCDfForColumn <- function(input_df, use_column) {
-  new_order <- order(input_df[, use_column])
-  results_df <- input_df[new_order, ]
-  results_df <- MakeROCDf(results_df, numeric_column = use_column)
-  return(results_df)
-}
-
 
 RocOffvMutant <- function(CRISPRoff_ROC_df,
                           mutant_ROC_df,
@@ -142,38 +134,27 @@ non_essential_entrezs <- intersect(non_essentials_2020Q2_df[, "Entrez_ID"], Nune
 
 # Prepare for re-creating the ROC curves of Nunez et al. ------------------
 
-are_essential <- ifelse(Nunez_df[, "Entrez_ID"] %in% essential_entrezs,
-                        TRUE,
-                        ifelse(Nunez_df[, "Entrez_ID"] %in% non_essential_entrezs,
-                               FALSE,
-                               NA
-                               )
-                        )
-Nunez_df[, "Is_essential"] <- are_essential
-
 ROC_columns <- c(
-  "Entrez_ID", "Gene_symbol", "Is_essential",
+  "Entrez_ID", "Gene_symbol",
   "CRISPRoff_average", "mutant_average",
   "CRISPRoff_Rep1", "CRISPRoff_Rep2", "CRISPRoff_mut_Rep1", "CRISPRoff_mut_Rep2"
 )
 
-ROC_df <- Nunez_df[!(is.na(are_essential)), ROC_columns]
-new_order <- order(ROC_df[, "Is_essential"], decreasing = TRUE)
-ROC_df <- ROC_df[new_order, ]
-row.names(ROC_df) <- NULL
+ROC_input_df <- Nunez_df[, ROC_columns]
+ROC_input_df <- ROCInputDf(ROC_input_df, essential_entrezs, non_essential_entrezs)
 
 
 
 # Draw ROC curves ---------------------------------------------------------
 
-CRISPRoff_both_reps_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_average")
-mutant_both_reps_ROC_df <- ROCDfForColumn(ROC_df, "mutant_average")
+CRISPRoff_both_reps_ROC_df <- ROCDfForColumn(ROC_input_df, "CRISPRoff_average")
+mutant_both_reps_ROC_df <- ROCDfForColumn(ROC_input_df, "mutant_average")
 
-CRISPRoff_rep1_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_Rep1")
-mutant_rep1_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_mut_Rep1")
+CRISPRoff_rep1_ROC_df <- ROCDfForColumn(ROC_input_df, "CRISPRoff_Rep1")
+mutant_rep1_ROC_df <- ROCDfForColumn(ROC_input_df, "CRISPRoff_mut_Rep1")
 
-CRISPRoff_rep2_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_Rep2")
-mutant_rep2_ROC_df <- ROCDfForColumn(ROC_df, "CRISPRoff_mut_Rep2")
+CRISPRoff_rep2_ROC_df <- ROCDfForColumn(ROC_input_df, "CRISPRoff_Rep2")
+mutant_rep2_ROC_df <- ROCDfForColumn(ROC_input_df, "CRISPRoff_mut_Rep2")
 
 
 for (create_PDF in c(FALSE, TRUE)) {
@@ -201,14 +182,25 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 
 
+# Draw ROC curve for CRISPRoff only ---------------------------------------
+
+devEMF::emf(file.path(thesis_dir, "3B) ROC curve - i) re-analysis.emf"),
+            width = 2, height = 2, emfPlus = FALSE
+            )
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+PlotROCDf(CRISPRoff_both_reps_ROC_df, flip = TRUE, xlab_line = 1.6, ylab_line = 2.1, ROC_lwd = 1.5)
+title("Data reanalysis (Nu\u00F1ez et al.)", cex.main = 1, font.main = 1, line = 0.7)
+dev.off()
+
+
+
 # Create violin plots -----------------------------------------------------
 
-are_for_violins <- (!(duplicated(Nunez_df[, "Entrez_ID"]))) &
-                   (!(is.na(Nunez_df[, "Is_essential"])))
+are_for_violins <- !(duplicated(ROC_input_df[, "Entrez_ID"]))
 violin_columns <- c("Is_essential", "CRISPRoff_Rep1", "CRISPRoff_Rep2",
                     "CRISPRoff_mut_Rep1", "CRISPRoff_mut_Rep2"
                     )
-violins_df <- Nunez_df[are_for_violins, violin_columns]
+violins_df <- ROC_input_df[are_for_violins, violin_columns]
 row.names(violins_df) <- NULL
 
 rep_list <- c(split(violins_df[, "CRISPRoff_Rep1"], !(violins_df[, "Is_essential"])),
@@ -276,6 +268,55 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 
 
+# Create violin plots for CRISPRoff only ----------------------------------
+
+devEMF::emf(file.path(thesis_dir, "3A) Violin plot - i) re-analysis.emf"),
+            width = 2, height = 2, emfPlus = FALSE
+            )
+old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9, mar = c(3, 4, 4, 1))
+custom_y_limits <- c(-0.6 - (0.86 * 0.02), 0.25)
+x_positions <- BeeViolinPlot(
+  rep_list[1:4],
+  point_cex        = 0.175,
+  use_spacing      = 0.5,
+  wex              = 0.88,
+  violin_colors    = rep(c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"), each = 2),
+  point_colors     = rep(c("#7c7198", "#5b8669"), each = 2),
+  border_colors    = rep(c("#d1cddb", "#bfd4c6"), each = 2),
+  cloud_alpha      = 0.2,
+  cloud_sd         = 0.04,
+  lower_bound      = -0.6,
+  upper_bound      = 0.25,
+  y_limits         = custom_y_limits,
+  draw_groups_n    = FALSE,
+  draw_border      = TRUE,
+  quantiles_lty    = c("dashed", "longdash", "dashed"),
+  right_gap        = 0.4,
+  show_x_axis      = FALSE,
+  indicate_zero    = FALSE,
+  draw_grid        = TRUE
+)
+
+mtext(expression("Phenotype (" * gamma * ")"), side = 2, line = 2.1, cex = par("cex"))
+segments(x0  = x_positions[c(1, 3)] - 0.25,
+         x1  = x_positions[c(2, 4)] + 0.25,
+         y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.45), from = "lines", to = "user")),
+         col = "gray50",
+         xpd = NA
+         )
+mtext(c("Essential\ngenes", "Non-essential\ngenes"),
+      at = c(mean(x_positions[1:2]), mean(x_positions[3:4])),
+      line = 0.6, padj = 0, cex = par("cex")
+      )
+mtext(text = rep(paste0("R", 1:2), 2),
+      at = x_positions, side = 1, line = 0.2, cex = par("cex")
+      )
+title(expression(bold("Data reanalysis (Nu\u00F1ez et al.)")), cex.main = 1, line = 3.3)
+dev.off()
+
+
+
+
 # Create scatter plots ----------------------------------------------------
 
 for (create_PDF in c(FALSE, TRUE)) {
@@ -330,8 +371,13 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 
 
-
 # Save data ---------------------------------------------------------------
+
+separation_original_mat <- SeparationMetrics(
+  setNames(rep_list[1:4],
+           paste0(rep(c("Essential R", "Non-essential R"), each = 2), 1:2)
+           )
+)[1:4, ]
 
 logfc_original_df <- data.frame(
   Nunez_df[, c("sgID", "Gene_symbol")],
@@ -343,9 +389,10 @@ logfc_original_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
-save(list = "logfc_original_df",
+ROC_original_df <- CRISPRoff_both_reps_ROC_df
+
+save(list = c("logfc_original_df", "separation_original_mat", "ROC_original_df"),
      file = file.path(rdata_dir, "10_recreate_figures_of_Nunez_et_al.RData")
      )
-
 
 
