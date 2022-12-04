@@ -26,6 +26,7 @@ with_switch_dir <- file.path(PDFs_dir, "Including template switch")
 no_switch_dir   <- file.path(PDFs_dir, "Excluding template switch")
 first_rdata_dir <- file.path(first_illumina_trial_dir, "03_R_objects")
 manuscript_dir  <- file.path(PDFs_dir, "Manuscript")
+thesis_dir      <- file.path(PDFs_dir, "Thesis")
 
 
 
@@ -44,15 +45,16 @@ load(file.path(CRISPR_root_directory, "3) RData files", "1) General",
 
 
 
-
 # Prepare R objects -------------------------------------------------------
 
 CRISPRoff_df <- sg_sequences_df
 
 CRISPRoff_df[, "Num_plasmids_for_Entrez"] <- table(CRISPRoff_df[, "Entrez_ID"])[CRISPRoff_df[, "Entrez_ID"]]
 
+are_obsolete <- CRISPRoff_df[, "Is_obsolete"] %in% "Yes"
 new_order <- order(
   as.integer(CRISPRoff_df[, "Entrez_ID"]),
+  are_obsolete,
   match(CRISPRoff_df[, "Is_main_TSS"], c("Main", "Single", "Other"))
 )
 CRISPRoff_df <- CRISPRoff_df[new_order, ]
@@ -64,6 +66,10 @@ CRISPRoff_df[, "gene"] <- ifelse(grepl("^Control_", CRISPRoff_df[, "Gene_symbol"
 
 counts_df <- counts_df[new_order, ]
 row.names(counts_df) <- NULL
+
+sg_mat <- as.matrix(CRISPRoff_df[, c("Sequence_sg2", "Sequence_sg3")])
+library_densities <- GetLibraryDensities(sg_mat[!(are_obsolete), ])
+
 
 
 
@@ -193,9 +199,9 @@ for (allow_switch in c(FALSE, TRUE)) {
 }
 
 
-use_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12_df"]]
+use_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12"]]
 pdf(file.path(manuscript_dir, "T.gonfio ROC curve BvT12.pdf"),
-    width = 1.75, height = 1.75
+    width = 2, height = 2
     )
 old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
 PlotROCDf(use_df, flip = TRUE, xlab_line = 1.6, ylab_line = 2.1, ROC_lwd = 1.5)
@@ -281,30 +287,32 @@ for (allow_switch in c(FALSE, TRUE)) {
 
 
 pdf(file.path(manuscript_dir, "T.gonfio violin plots BvT12.pdf"),
-    width = 1.95, height = 1.95
+    width = 2, height = 2
     )
 old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9)
 
-RepEssentialViolins(1:2, 5:6,
-                    use_title        = expression(bold("T.gonfio library")),
-                    lower_bound      = -0.6,
-                    upper_bound      = 0.25,
-                    y_limits         = custom_y_limits,
-                    allow_switch     = FALSE,
-                    use_mar          = c(3, 4, 4, 1),
-                    y_axis_label     = expression("Phenotype (" * gamma * ")"),
-                    y_label_line     = 2.1,
-                    rep_label_line   = 0.4,
-                    genes_label_line = 0.6,
-                    axis_cex_factor  = 1 / 0.45,
-                    draw_groups_n    = FALSE,
-                    point_cex        = 0.175,
-                    title_line       = 3.3,
-                    draw_border      = TRUE,
-                    wex              = 0.88
-                    )
+reps_list <- RepEssentialViolins(
+  1:2, 5:6,
+  use_title        = expression(bold("T.gonfio library")),
+  lower_bound      = -0.6,
+  upper_bound      = 0.25,
+  allow_switch     = FALSE,
+  use_mar          = c(3, 4, 4, 1),
+  y_axis_label     = expression("Phenotype (" * gamma * ")"),
+  y_label_line     = 2.1,
+  rep_label_line   = 0.4,
+  genes_label_line = 0.6,
+  draw_groups_n    = FALSE,
+  point_cex        = 0.175,
+  title_line       = 3.3,
+  draw_border      = TRUE,
+  wex              = 0.88
+)
 par(old_par)
 dev.off()
+
+separation_mat <- SeparationMetrics(reps_list)
+
 
 
 
@@ -572,27 +580,34 @@ PlotCountsForPlasmid("HNRNPK")
 # Create QC plots ---------------------------------------------------------
 
 ## Prepare read-level statistics
-num_reads_mat <- rbind(
-  "Unmapped" = samples_df[, "Num_reads"] - num_mapped_df[, "Num_both_reads_mapped"],
-  "Mapped"   = num_mapped_df[, "Num_both_reads_mapped"]
-)
 num_reads_detailed_mat <- rbind(
   "Unmapped_both" = samples_df[, "Num_reads"] - num_mapped_df[, "Num_either_read_mapped"],
   "Unmapped_sg1"  = num_mapped_df[, "Num_unmapped_read1_only"],
   "Unmapped_sg2"  = num_mapped_df[, "Num_unmapped_read2_only"],
   "Mapped"        = num_mapped_df[, "Num_both_reads_mapped"]
 )
-percentages_vec <- num_mapped_df[, "Num_template_switch"] / num_mapped_df[, "Num_both_reads_mapped"]
+percent_switch_vec <- num_mapped_df[, "Num_template_switch"] / num_mapped_df[, "Num_both_reads_mapped"]
+percent_1MM_mat <- rbind(
+  "Tolerates1MM_both" = num_mapped_df[, "Num_1MM_both_reads"],
+  "Tolerates1MM_sg1"  = num_mapped_df[, "Num_1MM_read1_only"],
+  "Tolerates1MM_sg2"  = num_mapped_df[, "Num_1MM_read2_only"],
+  "Without_mismatch"  = num_mapped_df[, "Num_both_reads_mapped"] -
+                        (num_mapped_df[, "Num_1MM_both_reads"] +
+                         num_mapped_df[, "Num_1MM_read1_only"] +
+                         num_mapped_df[, "Num_1MM_read2_only"]
+                         )
+)
+percent_1MM_mat <- prop.table(percent_1MM_mat, margin = 2)
 
 
 ## Prepare count data
-counts_mat <- GetCountsMat(counts_df,
+counts_mat <- GetCountsMat(counts_df[!(are_obsolete), ],
                            allow_switch = FALSE,
                            allow_1MM    = TRUE,
                            normalization_columns = c(1:2, 5:6),
                            normalize = TRUE
                            )
-raw_counts_mat <- GetCountsMat(counts_df,
+raw_counts_mat <- GetCountsMat(counts_df[!(are_obsolete), ],
                                allow_switch = FALSE,
                                allow_1MM    = TRUE,
                                normalization_columns = c(1:2, 5:6),
@@ -628,8 +643,9 @@ for (all_timepoints in c(FALSE, TRUE)) {
     PerBaseQuality(base_qual_mat, semitransparent_lines = make_PDF, include_timepoints = use_timepoints)
     TwoDensities(show_GC = FALSE, semitransparent_lines = make_PDF, include_timepoints = use_timepoints)
     MappedReadsBarPlot(num_reads_detailed_mat, include_timepoints = use_timepoints)
+    MappedReadsBarPlot(percent_1MM_mat, include_timepoints = use_timepoints, show_percentage = TRUE)
     old_mar <- par(mar = c(4, 4, 3.75, 2.1))
-    PercentageBarPlot(percentages_vec, include_timepoints = use_timepoints)
+    PercentageBarPlot(percent_switch_vec, include_timepoints = use_timepoints)
 
     ## Display count-level data
     RawCountsHistogram(raw_counts_mat,
@@ -643,8 +659,10 @@ for (all_timepoints in c(FALSE, TRUE)) {
                        semitransparent_lines = make_PDF
                        )
     CountBoxPlot(counts_mat, include_timepoints = use_timepoints, embed_PNG = TRUE)
-    gini_indices <- CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints)
-    CountBarPlot(raw_counts_mat, include_timepoints = use_timepoints)
+    gini_indices <- CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints,
+                                 lollipop = TRUE
+                                 )
+    num_missing <- CountBarPlot(raw_counts_mat, include_timepoints = use_timepoints)
     par(old_par)
 
     GammaBoxPlot(counts_df, embed_PNG = TRUE)
@@ -666,7 +684,6 @@ for (all_timepoints in c(FALSE, TRUE)) {
     }
   }
 }
-
 
 
 
@@ -696,7 +713,6 @@ Log2FCScatterPlot(baseline_indices     = 1:2,
                   use_title            = "T.gonfio library",
                   title_font           = 1,
                   use_mar              = use_mai * 5,
-                  axis_cex_factor      = 1 / 0.45,
                   embed_PNG            = TRUE,
                   x_axis_label_line    = 1.8,
                   y_axis_label_line    = 2.5,
@@ -705,11 +721,12 @@ Log2FCScatterPlot(baseline_indices     = 1:2,
                   x_axis_mgp           = 0.35,
                   y_axis_mgp           = 0.5,
                   point_cex            = 0.45,
-                  legend_lines_x_start = 0.4,
-                  legend_point_x_start = 0.3,
+                  legend_lines_x_start = 0.65,
+                  legend_point_x_start = 0.05,
                   abbreviate_NT        = TRUE
                   )
 dev.off()
+
 
 
 pdf(file.path(manuscript_dir, "T.gonfio - Fig. S7D - phenotype violin plots.pdf"),
@@ -717,7 +734,7 @@ pdf(file.path(manuscript_dir, "T.gonfio - Fig. S7D - phenotype violin plots.pdf"
     )
 old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
 GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
-             axis_cex_factor = 1 / 0.45, use_title = "T.gonfio library",
+             use_title = "T.gonfio library",
              cloud_alpha = 0.2, cloud_sd = 0.015, point_cex = 0.2,
              use_lwd = 0.6,
              zero_lty = "solid", zero_lwd = 0.6, zero_color = "gray70",
@@ -726,11 +743,252 @@ GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
 dev.off()
 
 
+
+# Export plots for the thesis ---------------------------------------------
+
+devEMF::emf(file.path(thesis_dir, "1A - GC content.emf"),
+            width  = 2.15,
+            height = 2.27, emfPlus = FALSE
+            )
+par("cex" = 0.7, "lwd" = 0.8)
+TwoDensities(show_GC = TRUE, include_timepoints = c(1, 3),
+             semitransparent_lines = TRUE, use_title = "T.gonfio library",
+             legend_x_lines = 0.7, legend_y_lines = 0.8, broad_margins = TRUE,
+             label_read_on_y_axis = FALSE, embed_PNG = TRUE, grid_lwd = 0.75,
+             title_y_pos = 0.4, x_axis_label_line = 1.8, x_axis_mgp = 0.39,
+             show_y_axis_label = FALSE, omit_zero_label = TRUE,
+             show_legend = FALSE
+             )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "1B - Per-base quality.emf"),
+            width  = 2.15,
+            height = 2.27, emfPlus = FALSE
+            )
+
+par("cex" = 0.7, "lwd" = 0.8)
+PerBaseQuality(base_qual_mat, include_timepoints = c(1, 3),
+               semitransparent_lines = FALSE, use_title = "T.gonfio library",
+               x_axis_label_line = 1.5,
+               broad_margins = TRUE, x_axis_tcl = 0.35,
+               title_y_pos = 0.4, separate_x_labels = TRUE, x_axis_mgp = 0.39,
+               embed_PNG = TRUE, small_middle_gap = TRUE, omit_zero_label = TRUE,
+               show_y_axis = FALSE, legend_x_lines = 1.5, legend_y_lines = 1.7
+               )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "1C - Mean sequence quality.emf"),
+            width  = 2.15,
+            height = 2.27, emfPlus = FALSE
+            )
+par("cex" = 0.7, "lwd" = 0.8)
+TwoDensities(show_GC = FALSE, include_timepoints = c(1, 3),
+             semitransparent_lines = TRUE, use_title = "T.gonfio library",
+             legend_x_lines = 0.7, legend_y_lines = 0.8, broad_margins = TRUE,
+             label_read_on_y_axis = FALSE, embed_PNG = TRUE, grid_lwd = 0.75,
+             title_y_pos = 0.4, x_axis_label_line = 1.8, x_axis_mgp = 0.39,
+             show_y_axis_label = FALSE, omit_zero_label = TRUE,
+             show_legend = FALSE, darker_box = TRUE
+             )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "1D - Percentage of mapped reads.emf"),
+            width  = 2.5,
+            height = 2.27, emfPlus = FALSE
+            )
+par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
+MappedReadsBarPlot(num_reads_detailed_mat, include_timepoints = c(1, 3),
+                   set_mar = FALSE, use_title = NA,
+                   legend_point_x_start = -0.1, legend_lines_x_start = 1,
+                   use_point_size = 1.45, small_gap_size = 1,
+                   large_gap_multiplier = 1.6, y_upper_limit = 80 * 10^6,
+                   bar_width = 0.6, gap_ratio = 1.4,
+                   side_gap = 0.6, show_y_axis = FALSE
+                   )
+text(x      = grconvertX(0.5, from = "npc", to = "user"),
+     y      = par("usr")[[4]] + (diff(grconvertY(c(0, par("mai")[[3]]), from = "inches", to = "user")) * 0.4),
+     labels = "T.gonfio library",
+     xpd    = NA
+     )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "1E - Percentage of 1MM reads.emf"),
+            width  = 2.5,
+            height = 2.27, emfPlus = FALSE
+            )
+par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
+MappedReadsBarPlot(percent_1MM_mat, include_timepoints = c(1, 3),
+                   set_mar = FALSE, use_title = NA,
+                   legend_point_x_start = -0.1, legend_lines_x_start = 1,
+                   use_point_size = 1.45, small_gap_size = 1.15,
+                   large_gap_multiplier = 1.35, y_upper_limit = 1,
+                   bar_width = 0.6, gap_ratio = 1.4,
+                   side_gap = 0.6, show_percentage = TRUE, show_y_axis = FALSE
+                   )
+text(x      = grconvertX(0.5, from = "npc", to = "user"),
+     y      = par("usr")[[4]] + (diff(grconvertY(c(0, par("mai")[[3]]), from = "inches", to = "user")) * 0.4),
+     labels = "T.gonfio library",
+     xpd    = NA
+     )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "1F - Template switch.emf"),
+            width  = 2.5,
+            height = 2.27, emfPlus = FALSE
+            )
+par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
+MappedReadsBarPlot(rbind(percent_switch_vec, 1 - percent_switch_vec),
+                   include_timepoints = c(1, 3),
+                   set_mar = FALSE, use_title = NA,
+                   legend_point_x_start = -0.1, legend_lines_x_start = 1,
+                   use_point_size = 1.45, small_gap_size = 1.15,
+                   large_gap_multiplier = 1.4, y_upper_limit = 1,
+                   bar_width = 0.6, gap_ratio = 1.4,
+                   side_gap = 0.6, show_percentage = TRUE, show_y_axis = FALSE,
+                   use_colors = brewer.pal(9, "Blues")[c(3, 6)]
+                   )
+text(x      = grconvertX(0.5, from = "npc", to = "user"),
+     y      = par("usr")[[4]] + (diff(grconvertY(c(0, par("mai")[[3]]), from = "inches", to = "user")) * 0.4),
+     labels = "T.gonfio library",
+     xpd    = NA
+     )
+dev.off()
+
+
+
+# Export count-level QC plots for the thesis ------------------------------
+
+devEMF::emf(file.path(thesis_dir, "2A - Count histograms.emf"),
+            width = 2.47, height = 1.75, emfPlus = FALSE
+            )
+ManuscriptRawCountsHistogram(raw_counts_mat, "T.gonfio library",
+                             use_mai = c(0.6, 0.8, 0.4, 1.4) * 0.6,
+                             semitransparent_lines = FALSE,
+                             show_y_axis = FALSE, show_legend = FALSE,
+                             x_axis_upper_limit = 4.2
+                             )
+dev.off()
+
+
+
+use_mai <- c(0.7, 0.8, 0.4, 1.4)
+use_cex <- 0.6
+base_height <- 1.15
+devEMF::emf(file.path(thesis_dir, "2D - Scatter plot.emf"),
+            width  = base_height + (sum(use_mai[c(2, 4)] * use_cex)),
+            height = base_height + (sum(use_mai[c(1, 3)]) * use_cex),
+            emfPlus = FALSE
+            )
+old_par <- par(cex = 0.6, lwd = 0.8)
+Log2FCScatterPlot(baseline_indices     = 1:2,
+                  intervention_indices = 5:6,
+                  allow_switch         = FALSE,
+                  highlight_NT         = TRUE,
+                  highlight_essential  = FALSE,
+                  show_phenotype_score = TRUE,
+                  use_title            = "T.gonfio library",
+                  title_font           = 1,
+                  use_mar              = use_mai * 5,
+                  embed_PNG            = TRUE,
+                  x_axis_label_line    = 1.8,
+                  y_axis_label_line    = 2.5,
+                  sparse_x_axis_labels = TRUE,
+                  use_tcl              = 0.3,
+                  x_axis_mgp           = 0.35,
+                  y_axis_mgp           = 0.5,
+                  point_cex            = 0.45,
+                  legend_lines_x_start = 0.65,
+                  legend_point_x_start = 0.05,
+                  abbreviate_NT        = TRUE,
+                  show_y_labels        = FALSE
+                  )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "2E - Phenotype violin plots.emf"),
+            width = 1.4, height = 1.75, emfPlus = FALSE
+            )
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
+             use_title = "T.gonfio library",
+             cloud_alpha = 0.2, cloud_sd = 0.015, point_cex = 0.2,
+             use_lwd = 0.6,
+             use_swarm = "sina", sina_wex_factor = 0.93,
+             violin_colors = brewer.pal(9, "Blues")[[7]], line_colors = brewer.pal(9, "Blues")[[4]],
+             zero_lty = "solid", zero_lwd = 0.6, zero_color = "gray70",
+             y_label_line = 2.1,
+             png_res = 1200, wex = 0.85, side_gap = 0.525, show_y_axis = FALSE,
+             right_gap = 0.45
+             )
+rect(xleft   = par("usr")[[1]] - diff(grconvertX(c(0, 0.1), from = "lines", to = "user")),
+     xright  = par("usr")[[1]] + (0.525 - 0.45),
+     ybottom = par("usr")[[3]] - diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
+     ytop    = par("usr")[[4]] + diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
+     border  = NA,
+     xpd     = NA
+     )
+dev.off()
+
+
+
+
+# Export main figures for the thesis --------------------------------------
+
+devEMF::emf(file.path(thesis_dir, "3A) Violin plot - iii) T.gonfio.emf"),
+            width = 2, height = 2, emfPlus = FALSE
+            )
+old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9)
+
+reps_list <- RepEssentialViolins(
+  1:2, 5:6,
+  use_title        = expression(bold("T.gonfio library")),
+  lower_bound      = -0.6,
+  upper_bound      = 0.25,
+  y_limits         = custom_y_limits,
+  allow_switch     = FALSE,
+  use_mar          = c(3, 4, 4, 1),
+  y_axis_label     = NA,
+  y_label_line     = 2.1,
+  rep_label_line   = 0.2,
+  genes_label_line = 0.6,
+  draw_groups_n    = FALSE,
+  point_cex        = 0.175,
+  title_line       = 3.3,
+  draw_border      = TRUE,
+  wex              = 0.88,
+  quantiles_lty    = c("dashed", "longdash", "dashed"), # compatibility with emf device
+  right_gap        = 0.4,
+  bracket_color    = "gray50",
+  draw_grid        = TRUE,
+  indicate_zero    = FALSE,
+  show_x_axis      = FALSE,
+  show_y_axis      = FALSE
+)
+par(old_par)
+dev.off()
+
+
+
+
 # Compile log2FC data -----------------------------------------------------
 
 sg_CRISPRoff_df <- CRISPRoff_df
 logfc_4sg_df <- StandardLog2FCDf(counts_df)
 gini_indices_4sg <- gini_indices
+separation_4sg_mat <- separation_mat
+num_missing_4sg <- num_missing
+ROC_4sg_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12"]]
 
 
 
@@ -746,7 +1004,10 @@ BidirectionalViolins(bidirectional_df, logfc_4sg_df, max_distance = 20000,
 
 # Save data ---------------------------------------------------------------
 
-save(list = c("sg_CRISPRoff_df", "logfc_4sg_df", "gini_indices_4sg"),
+save(list = c("sg_CRISPRoff_df", "logfc_4sg_df",
+              "gini_indices_4sg", "separation_4sg_mat", "num_missing_4sg",
+              "ROC_4sg_df"
+              ),
      file = file.path(rdata_dir, "09_create_figures_from_count_data.RData")
      )
 
