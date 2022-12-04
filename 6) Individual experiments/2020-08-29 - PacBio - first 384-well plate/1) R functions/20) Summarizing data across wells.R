@@ -5,6 +5,7 @@
 # Import packages and source code -----------------------------------------
 
 library("vioplot")
+library("sinaplot")
 library("png")
 
 
@@ -666,12 +667,18 @@ CustomBoxPlot <- function(input_list,
                           use_brewer_pal,
                           use_wex       = 0.4,
                           draw_whiskers = TRUE,
-                          median_lwd    = 3
+                          median_lwd    = 3,
+                          dark_whiskers = FALSE
                           ) {
 
   if (draw_whiskers) {
     quantile_mat <- t(sapply(input_list, quantile, probs = c(0.05, 0.95), na.rm = TRUE))
-    whisker_color <- brewer.pal(9, use_brewer_pal)[[5]]
+    if (dark_whiskers) {
+      whisker_color <- brewer.pal(9, use_brewer_pal)[[9]]
+    } else {
+      whisker_color <- brewer.pal(9, use_brewer_pal)[[5]]
+    }
+
     segments(x0   = at_positions,
              y0   = quantile_mat[, 1],
              y1   = quantile_mat[, 2],
@@ -807,6 +814,32 @@ RemoveIfOnlyZeros <- function(input_list) {
 }
 
 
+
+DoSinaPlot <- function(numeric_list, x_positions, point_color, wex, add_jitter = FALSE) {
+  numeric_list <- lapply(numeric_list, function(x) x[!(is.na(x))])
+  sina_df <- sinaplot::sinaplot(numeric_list,
+                                col       = adjustcolor(point_color, alpha.f = 0.5),
+                                plot      = FALSE,
+                                scale     = FALSE,
+                                maxwidth  = wex,
+                                bin_limit = 1
+                                )
+  x_vec <- rep(x_positions, lengths(numeric_list))
+  if (add_jitter) {
+    x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.0075)
+  }
+  points(x_vec + (sina_df[, "scaled"] - sina_df[, "x"]),
+         sina_df[, "y"],
+         pch = 16,
+         col = sina_df[, "col"],
+         cex = 0.4,
+         xpd = NA
+         )
+  return(invisible(NULL))
+}
+
+
+
 SummaryBoxPlot <- function(input_df,
                            plate_names       = NULL,
                            use_columns       = c("Count_at_least_1", "Count_at_least_2", "Count_at_least_3", "Count_all_4"),
@@ -815,6 +848,7 @@ SummaryBoxPlot <- function(input_df,
                            use_y_limits      = c(0, 1),
                            embed_PNG         = FALSE,
                            embed_PNG_res     = 900,
+                           PNG_adjust        = 0,
                            custom_title      = NULL,
                            draw_whiskers     = FALSE,
                            median_lwd        = 3,
@@ -822,6 +856,9 @@ SummaryBoxPlot <- function(input_df,
                            violin_wex        = 0.4,
                            use_side_gap      = 0.3,
                            controls_x_gap    = 0.35,
+                           sina_plot         = FALSE,
+                           sina_jitter       = TRUE,
+                           shift_left        = 0,
                            ...
                            ) {
 
@@ -864,15 +901,13 @@ SummaryBoxPlot <- function(input_df,
     temp_width  <- par("pin")[[1]]
     temp_height <- par("pin")[[2]]
     current_par <- par(no.readonly = TRUE)
-
     png(filename = temp_path,
         width    = temp_width,
         height   = temp_height,
         units    = "in",
         res      = embed_PNG_res,
-        bg       = "transparent"
+        bg       = "white"
         )
-
     par(lwd = current_par[["lwd"]])
     par(cex = current_par[["cex"]])
     par(mar = rep(0, 4))
@@ -891,8 +926,8 @@ SummaryBoxPlot <- function(input_df,
   num_groups <- length(use_columns)
   group_positions <- seq_len(num_groups)
 
-  control_pos  <- group_positions - (controls_x_gap / 2)
-  selected_pos <- group_positions + (controls_x_gap / 2)
+  control_pos  <- group_positions - (controls_x_gap / 2) - shift_left
+  selected_pos <- group_positions + (controls_x_gap / 2) - shift_left
 
   RemoveIfOnlyZeros <- function(input_list) {
     lapply(input_list, function(x) {
@@ -908,77 +943,80 @@ SummaryBoxPlot <- function(input_df,
 
   if (draw_whiskers) {
     violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[3]], "")
-  } else {
-    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[4]], "")
-  }
-  violin_border_width <- 1
-
-  ViolinClippedBorders(control_list, control_pos, fill = TRUE,
-                       border_colors = violin_colors[[1]],
-                       use_wex = violin_wex, use_lwd = violin_border_width
-                       )
-  ViolinClippedBorders(selected_list, selected_pos, fill = TRUE,
-                       border_colors = violin_colors[[2]],
-                       use_wex = violin_wex, use_lwd = violin_border_width
-                       )
-
-  vioplot(RemoveIfOnlyZeros(selected_list),
-          at       = selected_pos,
-          pchMed   = NA,
-          drawRect = FALSE,
-          col      = violin_colors[[2]],
-          border   = NA,
-          wex      = violin_wex,
-          add      = TRUE,
-          axes     = FALSE
-          )
-
-  vioplot(RemoveIfOnlyZeros(control_list),
-          at       = control_pos,
-          pchMed   = NA,
-          drawRect = FALSE,
-          col      = violin_colors[[1]],
-          border   = NA,
-          wex      = violin_wex,
-          add      = TRUE,
-          axes     = FALSE
-          )
-
-
-  if (draw_whiskers) {
-    jitter_sd <- 0.02
-  } else {
-    jitter_sd <- 0.03
-  }
-
-  control_jittered  <- control_pos[rep(seq_along(control_list), lengths(control_list))] +
-                       rnorm(n = length(control_unlisted), mean = 0, sd = jitter_sd)
-
-  selected_jittered <- selected_pos[rep(seq_along(selected_list), lengths(selected_list))] +
-                       rnorm(n = length(selected_unlisted), mean = 0, sd = jitter_sd)
-
-  if (draw_whiskers) {
     point_colors <- vapply(use_brewer_pals, function(x) {
       colorRampPalette(brewer.pal(9, x))(101)[[80]]
     }, "")
   } else {
+    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[4]], "")
     point_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[8]], "")
   }
-  point_colors <- adjustcolor(point_colors, alpha.f = 0.2)
 
-  ## Draw the jittered points
-  points(x   = control_jittered,
-         y   = control_unlisted,
-         cex = 0.4,
-         col = point_colors[[1]],
-         pch = 16
-         )
-  points(x   = selected_jittered,
-         y   = selected_unlisted,
-         cex = 0.4,
-         col = point_colors[[2]],
-         pch = 16
-         )
+  if (sina_plot) {
+    point_colors <- c(brewer.pal(9, use_brewer_pals[[1]])[[5]], "#a9cbea")
+    DoSinaPlot(control_list, control_pos, point_colors[[1]], wex = violin_wex * 0.5, add_jitter = sina_jitter)
+    DoSinaPlot(selected_list, selected_pos, point_colors[[2]], wex = violin_wex, add_jitter = sina_jitter)
+  } else {
+    violin_border_width <- 1
+
+    ViolinClippedBorders(control_list, control_pos, fill = TRUE,
+                         border_colors = violin_colors[[1]],
+                         use_wex = violin_wex, use_lwd = violin_border_width
+                         )
+    ViolinClippedBorders(selected_list, selected_pos, fill = TRUE,
+                         border_colors = violin_colors[[2]],
+                         use_wex = violin_wex, use_lwd = violin_border_width
+                         )
+
+    vioplot(RemoveIfOnlyZeros(selected_list),
+            at       = selected_pos,
+            pchMed   = NA,
+            drawRect = FALSE,
+            col      = violin_colors[[2]],
+            border   = NA,
+            wex      = violin_wex,
+            add      = TRUE,
+            axes     = FALSE
+            )
+
+    vioplot(RemoveIfOnlyZeros(control_list),
+            at       = control_pos,
+            pchMed   = NA,
+            drawRect = FALSE,
+            col      = violin_colors[[1]],
+            border   = NA,
+            wex      = violin_wex,
+            add      = TRUE,
+            axes     = FALSE
+            )
+
+    if (draw_whiskers) {
+      jitter_sd <- 0.02
+    } else {
+      jitter_sd <- 0.03
+    }
+    control_jittered  <- control_pos[rep(seq_along(control_list), lengths(control_list))] +
+                         rnorm(n = length(control_unlisted), mean = 0, sd = jitter_sd)
+
+    selected_jittered <- selected_pos[rep(seq_along(selected_list), lengths(selected_list))] +
+                         rnorm(n = length(selected_unlisted), mean = 0, sd = jitter_sd)
+
+    point_colors <- adjustcolor(point_colors, alpha.f = 0.2)
+
+    ## Draw the jittered points
+    points(x   = control_jittered,
+           y   = control_unlisted,
+           cex = 0.4,
+           col = point_colors[[1]],
+           pch = 16
+           )
+    points(x   = selected_jittered,
+           y   = selected_unlisted,
+           cex = 0.4,
+           col = point_colors[[2]],
+           pch = 16
+           )
+  }
+
 
   if (embed_PNG) {
     dev.off()
@@ -986,17 +1024,17 @@ SummaryBoxPlot <- function(input_df,
     file.remove(temp_path)
     dev.set(PDF_device)
     par(PDF_mar)
-
     SetUpPercentagePlot(use_columns, use_y_limits, main_title = "",
                         side_gap = use_side_gap,
                         for_embedded_PNG = TRUE, draw_grid = FALSE
                         )
-
     rasterImage(raster_array,
-                xleft = par("usr")[[1]], xright = par("usr")[[2]],
-                ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+                xleft   = par("usr")[[1]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
+                xright  = par("usr")[[2]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
+                ybottom = par("usr")[[3]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
+                ytop    = par("usr")[[4]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
+                xpd     = NA
                 )
-
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         legend_pch = 22, draw_grid = FALSE,
                         make_plot = FALSE, ...
@@ -1004,25 +1042,29 @@ SummaryBoxPlot <- function(input_df,
   }
 
   ## Draw the superimposed borders of the violin plots
-  ViolinClippedBorders(control_list, control_pos,
-                       border_colors = violin_colors[[1]],
-                       use_wex = violin_wex, use_lwd = violin_border_width
-                       )
-  ViolinClippedBorders(selected_list, selected_pos,
-                       border_colors = violin_colors[[2]],
-                       use_wex = violin_wex, use_lwd = violin_border_width,
-                       clip_distance = 0.15
-                       )
+  if (!(sina_plot)) {
+    ViolinClippedBorders(control_list, control_pos,
+                         border_colors = violin_colors[[1]],
+                         use_wex = violin_wex, use_lwd = violin_border_width
+                         )
+    ViolinClippedBorders(selected_list, selected_pos,
+                         border_colors = violin_colors[[2]],
+                         use_wex = violin_wex, use_lwd = violin_border_width,
+                         clip_distance = 0.15
+                         )
+  }
 
   ## Draw the superimposed box plots
   assign("delete_control_list", control_list, envir = globalenv())
   CustomBoxPlot(control_list, control_pos, use_brewer_pals[[1]],
-                use_wex = box_wex, draw_whiskers = draw_whiskers
+                use_wex = box_wex, draw_whiskers = draw_whiskers,
+                dark_whiskers = sina_plot
                 )
 
   if (!(all(is.na(selected_mat)))) {
     CustomBoxPlot(selected_list, selected_pos, use_brewer_pals[[2]],
-                  use_wex = box_wex, draw_whiskers = draw_whiskers
+                  use_wex = box_wex, draw_whiskers = draw_whiskers,
+                  dark_whiskers = sina_plot
                   )
   }
 
@@ -1294,7 +1336,7 @@ ReadCountsBoxPlot <- function(summary_df,
         height   = temp_height,
         units    = "in",
         res      = 900,
-        bg       = "transparent"
+        bg       = "white"
         )
 
     par(lwd = current_par[["lwd"]])

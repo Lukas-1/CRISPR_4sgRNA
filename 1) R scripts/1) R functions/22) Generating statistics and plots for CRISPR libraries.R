@@ -7,6 +7,7 @@
 library("rcartocolor")
 library("png")
 library("devEMF")
+library("sinaplot")
 library("eulerr")
 library("gridExtra") # For grid.arrange
 library("ggplot2")
@@ -257,16 +258,21 @@ FilterCRISPRDf <- function(CRISPR_df) {
 }
 
 
-palify_cache_101 <- list()
-Palify <- function(myhex, fraction_pale = 0.5) {
-  if (myhex %in% names(palify_cache_101)) {
-    color_vec <- palify_cache_101[[myhex]]
-  } else {
-    color_vec <- colorRampPalette(c(myhex, "#FFFFFF"))(101)
-    palify_cache_101[[myhex]] <- color_vec
-    assign("palify_cache_101", palify_cache_101, envir = globalenv())
-  }
-  color_vec[[round(fraction_pale * 100) + 1]]
+Palify <- function(colors_vec, fraction_pale = 0.5) {
+  adjustcolor(colors_vec,
+              offset    = c(rep(fraction_pale, 3), 0),
+              transform = diag(c(rep(1 - fraction_pale, 3), 1))
+              )
+
+}
+
+
+Darken <- function(color, factor = 1.1) {
+  # from https://gist.github.com/Jfortin1/72ef064469d1703c6b30
+  col <- col2rgb(color)
+  col <- col / factor
+  col <- rgb(t(col), maxColorValue = 255)
+  return(col)
 }
 
 
@@ -4227,7 +4233,7 @@ ManuscriptAnnotate <- function(group_positions,
 
 
 
-ManuscriptGrid <- function(horizontal = TRUE) {
+ManuscriptGrid <- function(horizontal = TRUE, use_lwd = 1) {
   axis_ticks <- axTicks(if (horizontal) 1 else 2)
   grid_positions <- seq(axis_ticks[[1]],
                         axis_ticks[[length(axis_ticks)]],
@@ -4240,6 +4246,7 @@ ManuscriptGrid <- function(horizontal = TRUE) {
              x0   = grid_positions,
              col  = grid_colors,
              lend = "butt",
+             lwd  = par("lwd") * use_lwd,
              xpd  = NA
              )
   } else {
@@ -4248,6 +4255,7 @@ ManuscriptGrid <- function(horizontal = TRUE) {
              y0   = grid_positions,
              col  = grid_colors,
              lend = "butt",
+             lwd  = par("lwd") * use_lwd,
              xpd  = NA
              )
   }
@@ -4618,7 +4626,13 @@ ManuscriptViolinBox <- function(plot_df,
                                 CRISPRa_colors       = manuscript_CRISPRa_colors,
                                 CRISPRo_colors       = manuscript_CRISPRo_colors,
                                 rename_libraries     = FALSE,
-                                line_breaks          = TRUE
+                                line_breaks          = TRUE,
+                                sina_plot            = FALSE,
+                                sina_jitter          = TRUE,
+                                sina_invert          = FALSE,
+                                grid_lwd             = 1,
+                                PNG_adjust           = 0,
+                                draw_whiskers        = FALSE
                                 ) {
 
   ## Prepare colors and labels
@@ -4648,7 +4662,6 @@ ManuscriptViolinBox <- function(plot_df,
     use_colors <- NULL
   }
 
-
   ## Prepare the data axis
   numeric_limits <- GetAxisLimits(plot_df[["Numeric_data"]],
                                   column_name = names(plot_df)[[7]],
@@ -4657,7 +4670,6 @@ ManuscriptViolinBox <- function(plot_df,
   if (names(plot_df)[[7]] %in% c("CRISPOR_Doench_efficacy", "GuideScan_efficiency")) {
     numeric_limits[[1]] <- 0
   }
-
 
   ## Prepare the groups axis
   spaces_vec <- rep(1.15, num_groups - 1)
@@ -4669,13 +4681,14 @@ ManuscriptViolinBox <- function(plot_df,
                     max(group_positions) + 0.5 + (num_groups * 0.04)
                     )
 
-
   ## Prepare the data points
   set.seed(1)
   jittered_vec <- group_positions[as.integer(plot_df[["Groups_factor"]])] +
                   rnorm(n = nrow(plot_df), mean = 0, sd = 0.03)
   points_alpha <- 0.1
   alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
+
+  numeric_list <- split(plot_df[["Numeric_data"]], plot_df[["Groups_factor"]])
 
 
   ## Prepare the raster graphics device
@@ -4690,18 +4703,22 @@ ManuscriptViolinBox <- function(plot_df,
   old_par <- par(mai = use_mai, cex = use_cex, lwd = use_lwd)
   main_folder_path <- file.path(output_plots_directory, "Manuscript")
 
+  PDF_mar <- par("mar")
   PDF_device <- dev.cur()
   temp_path <- file.path(main_folder_path, "temp.png")
-  temp_width <- use_width - sum(use_mai[c(2, 4)])
-  temp_height <- use_height - sum(use_mai[c(1, 3)])
-
+  temp_width  <- par("pin")[[1]]
+  temp_height <- par("pin")[[2]]
+  current_par <- par(no.readonly = TRUE)
   png(filename = temp_path,
       width    = temp_width,
       height   = temp_height,
       units    = "in",
       res      = 900,
-      bg       = "transparent"
+      bg       = "white"
       )
+  par(lwd = current_par[["lwd"]])
+  par(cex = current_par[["cex"]])
+  par(mar = rep(0, 4))
 
   ## Prepare the plot for the raster device
   old_par <- par(mai = rep(0, 4), cex = use_cex)
@@ -4715,29 +4732,53 @@ ManuscriptViolinBox <- function(plot_df,
        ann  = FALSE
        )
 
-
   ## Draw the grid
-  axis_ticks <- ManuscriptGrid(horizontal)
+  axis_ticks <- ManuscriptGrid(horizontal, use_lwd = grid_lwd)
 
+  if (sina_plot) {
+    if (sina_invert) {
+      point_color <- Palify(colorRampPalette(use_colors)(9)[[8]], fraction_pale = 0.2)
+    } else {
+      point_color <- colorRampPalette(use_colors)(100)[[20]]
+    }
+    sina_df <- sinaplot::sinaplot(numeric_list,
+                                  col       = adjustcolor(point_color, alpha.f = 0.6),
+                                  maxwidth  = 0.85,
+                                  plot      = FALSE,
+                                  scale     = FALSE
+                                  )
+
+    x_vec <- rep(group_positions, lengths(numeric_list))
+    if (sina_jitter) {
+      x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.0075)
+    }
+    points(x_vec + (sina_df[, "scaled"] - sina_df[, "x"]),
+           sina_df[, "y"],
+           pch = 16,
+           col = sina_df[, "col"],
+           cex = 0.4,
+           xpd = NA
+           )
+  } else {
   ## Draw the violin plots
-  numeric_list <- split(plot_df[["Numeric_data"]], plot_df[["Groups_factor"]])
-  for (i in seq_along(group_positions)) {
-    SingleViolin(numeric_list[[i]],
-                 at             = group_positions[[i]],
-                 wex            = 1.1 / 1.25,
-                 violin_color   = colorRampPalette(use_colors)(9)[[2]],
-                 show_quantiles = NULL,
-                 use_sm_density = TRUE
-                 )
-  }
+    for (i in seq_along(group_positions)) {
+      SingleViolin(numeric_list[[i]],
+                   at             = group_positions[[i]],
+                   wex            = 1.1 / 1.25,
+                   violin_color   = colorRampPalette(use_colors)(9)[[2]],
+                   show_quantiles = NULL,
+                   use_sm_density = TRUE
+                   )
+    }
 
-  ## Draw the jittered points
-  points(x   = if (horizontal) plot_df[["Numeric_data"]] else jittered_vec,
-         y   = if (horizontal) jittered_vec else plot_df[["Numeric_data"]],
-         cex = 0.4,
-         col = paste0(colorRampPalette(use_colors)(9)[[8]], alpha_hex),
-         pch = 16
-         )
+    ## Draw the jittered points
+    points(x   = if (horizontal) plot_df[["Numeric_data"]] else jittered_vec,
+           y   = if (horizontal) jittered_vec else plot_df[["Numeric_data"]],
+           cex = 0.4,
+           col = paste0(colorRampPalette(use_colors)(9)[[8]], alpha_hex),
+           pch = 16
+           )
+  }
 
 
   ## Capture and remove the temporary PNG file
@@ -4745,7 +4786,7 @@ ManuscriptViolinBox <- function(plot_df,
   raster_array <- readPNG(temp_path)
   file.remove(temp_path)
   dev.set(PDF_device)
-
+  par(PDF_mar)
 
   ## Prepare the final plot
   plot(1,
@@ -4759,15 +4800,40 @@ ManuscriptViolinBox <- function(plot_df,
        )
 
   rasterImage(raster_array,
-              xleft = par("usr")[[1]], xright = par("usr")[[2]],
-              ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+              xleft   = par("usr")[[1]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
+              xright  = par("usr")[[2]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
+              ybottom = par("usr")[[3]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
+              ytop    = par("usr")[[4]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
+              xpd     = NA
               )
 
   ## Draw the superimposed boxplots
+  if (sina_plot) {
+    boxplot_line_color <- Darken(use_colors[[2]])
+  } else {
+    boxplot_line_color <- use_colors[[2]]
+  }
+
+  if (draw_whiskers) {
+    quantile_mat <- t(sapply(numeric_list, quantile, probs = c(0.05, 0.95), na.rm = TRUE))
+    if (sina_invert) {
+      line_color <- colorRampPalette(use_colors)(100)[[20]]
+    } else {
+      line_color <- boxplot_line_color # colorRampPalette(use_colors)(100)[[50]]
+    }
+    segments(x0   = group_positions,
+             y0   = quantile_mat[, 1],
+             y1   = quantile_mat[, 2],
+             col  = line_color,
+             xpd  = NA,
+             lend = "butt"
+             )
+  }
+
   boxplot(plot_df[["Numeric_data"]] ~ plot_df[["Groups_factor"]],
           add        = TRUE,
           at         = group_positions,
-          boxwex     = 0.35,
+          boxwex     = if (sina_plot) 0.27 else 0.35,
           outline    = FALSE,
           names      = rep.int("", length(group_positions)),
           whisklty   = "blank",
@@ -4776,7 +4842,7 @@ ManuscriptViolinBox <- function(plot_df,
           staplelty  = 0,
           medlwd     = par("lwd") * 3,
           col        = Palify(use_colors[[1]]),
-          border     = use_colors[[2]],
+          border     = boxplot_line_color,
           axes       = FALSE,
           lwd        = 1,
           horizontal = horizontal
@@ -4916,7 +4982,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                                    make_PNGs        = FALSE,
                                    make_EMFs        = FALSE,
                                    rename_libraries = FALSE,
-                                   line_breaks      = TRUE
+                                   line_breaks      = TRUE,
+                                   ...
                                    ) {
 
   labels_list <- list(
@@ -5069,7 +5136,10 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                               CRISPRa_colors       = manuscript_CRISPRa_colors,
                               CRISPRo_colors       = manuscript_CRISPRo_colors,
                               rename_libraries     = rename_libraries,
-                              line_breaks          = line_breaks
+                              line_breaks          = line_breaks,
+                              PNG_adjust           = if (make_EMFs) 0.00325 else 0,
+                              grid_lwd             = if (make_EMFs) 0.6 else 1,
+                              ...
                               )
         }
         dev.off()

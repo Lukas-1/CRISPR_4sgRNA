@@ -2,6 +2,11 @@
 
 
 
+# Import packages and source code -----------------------------------------
+
+library("sinaplot")
+
+
 # Define maps -------------------------------------------------------------
 
 use_width <- 8
@@ -150,7 +155,13 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
                                 large_gap_lines     = 2,
                                 title_line          = 2,
                                 y_axis_label        = NULL,
-                                bold_read_counts    = FALSE
+                                bold_read_counts    = FALSE,
+                                sina_plot           = FALSE,
+                                point_cex           = 0.4,
+                                use_wex             = 0.8,
+                                violin_wex          = use_wex,
+                                med_lwd             = 3,
+                                box_lwd             = 1
                                 ) {
 
   set.seed(1) # For reproducible jitter
@@ -208,7 +219,7 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
   numeric_axis_labels <- paste0(format(numeric_axis_pos * 100), "%")
 
   final_y_range <- numeric_limits[[2]] - numeric_limits[[1]]
-  y_gap <- final_y_range * 0.0075
+  y_gap <- final_y_range * 0.01
   final_y_limits <- c(numeric_limits[[1]] - y_gap, numeric_limits[[2]] + y_gap)
 
   if (embed_PNG) {
@@ -243,32 +254,57 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
        )
   DrawGridlines(use_y_limits)
 
+  if (sina_plot) {
+    if (brewer_palette == "Blues") {
+      point_color <- "#a9cbea"
+    } else if (brewer_palette == "Purples") {
+      point_color <- "#a5a3dc"
+    } else {
+      point_color <- colorRampPalette(brewer.pal(9, brewer_palette)[c(4, 5)])(5)[[3]]
+    }
+    metric_list <- lapply(metric_list, function(x) x[!(is.na(x))])
+    sina_df <- sinaplot::sinaplot(metric_list,
+                                  col       = adjustcolor(point_color, alpha.f = 0.5),
+                                  plot      = FALSE,
+                                  scale     = FALSE,
+                                  maxwidth  = violin_wex,
+                                  bin_limit = 1
+                                  )
+    x_vec <- rep(group_positions, lengths(metric_list))
+    x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.01)
+    points(x_vec + (sina_df[, "scaled"] - sina_df[, "x"]),
+           sina_df[, "y"],
+           pch = 16,
+           col = sina_df[, "col"],
+           cex = point_cex,
+           xpd = NA
+           )
+  } else {
+    ## Draw the violin
+    if (!(are_all_NA)) {
+      vioplot(metric_list,
+              at       = group_positions,
+              pchMed   = NA,
+              drawRect = FALSE,
+              col      = brewer.pal(9, brewer_palette)[[4]],
+              border   = NA,
+              wex      = use_wex,
+              add      = TRUE,
+              axes     = FALSE
+              )
+    }
 
-  ## Draw the violin
-  use_wex <- 0.8
-  if (!(are_all_NA)) {
-    vioplot(metric_list,
-            at       = group_positions,
-            pchMed   = NA,
-            drawRect = FALSE,
-            col      = brewer.pal(9, brewer_palette)[[4]],
-            border   = NA,
-            wex      = use_wex,
-            add      = TRUE,
-            axes     = FALSE
-            )
-  }
+    ## Draw the jittered points
+    jittered_vec  <- group_positions[rep(seq_along(metric_list), lengths(metric_list))] +
+                     rnorm(n = length(metric_unlisted), mean = 0, sd = 0.05)
+    points(x   = jittered_vec,
+           y   = metric_unlisted,
+           cex = point_cex,
+           col = adjustcolor(brewer.pal(9, brewer_palette)[[8]], alpha.f = 0.2),
+           pch = 16
+           )
+    }
 
-
-  ## Draw the jittered points
-  jittered_vec  <- group_positions[rep(seq_along(metric_list), lengths(metric_list))] +
-                   rnorm(n = length(metric_unlisted), mean = 0, sd = 0.05)
-  points(x   = jittered_vec,
-         y   = metric_unlisted,
-         cex = 0.4,
-         col = adjustcolor(brewer.pal(9, brewer_palette)[[8]], alpha.f = 0.2),
-         pch = 16
-         )
 
   if (embed_PNG) {
     dev.off()
@@ -302,12 +338,12 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
             staplewex  = 0,
             whisklwd   = 0,
             staplelty  = 0,
-            medlwd     = par("lwd") * 3,
+            medlwd     = par("lwd") * med_lwd,
             col        = brewer.pal(9, brewer_palette)[[2]],
             border     = brewer.pal(9, brewer_palette)[[9]],
             add        = TRUE,
             axes       = FALSE,
-            lwd        = 1
+            lwd        = box_lwd
             )
   }
 
