@@ -975,6 +975,33 @@ MakeROCDfListList <- function(choose_rep = NULL, use_blomen_hart = TRUE) {
 
 
 
+ROCInputDf <- function(input_df, essential_entrezs, non_essential_entrezs) {
+  are_essential <- ifelse(input_df[, "Entrez_ID"] %in% essential_entrezs,
+                          TRUE,
+                          ifelse(input_df[, "Entrez_ID"] %in% non_essential_entrezs,
+                                 FALSE,
+                                 NA
+                                 )
+                          )
+  input_df[, "Is_essential"] <- are_essential
+  results_df <- input_df[!(is.na(are_essential)), ]
+  new_order <- order(results_df[, "Is_essential"], decreasing = TRUE)
+  results_df <- results_df[new_order, ]
+  row.names(results_df) <- NULL
+  return(results_df)
+}
+
+
+
+ROCDfForColumn <- function(input_df, use_column) {
+  new_order <- order(input_df[, use_column])
+  results_df <- input_df[new_order, ]
+  results_df <- MakeROCDf(results_df, numeric_column = use_column)
+  return(results_df)
+}
+
+
+
 # Helper functions (required by ReplicateScatterPlot) ---------------------
 
 ConcatenateExpressions <- function(expression_list, my_sep = "  \u2013  ") {
@@ -1007,6 +1034,10 @@ StripExpression <- function(my_expression) {
 
 DrawSideLegend <- function(labels_list,
                            use_colors,
+                           draw_lines           = FALSE,
+                           use_lwd              = 1.25,
+                           line_x_distance      = -0.2,
+                           length_in_lines      = 0.5,
                            border_colors        = NULL,
                            use_pch              = 16,
                            use_point_size       = 1.2,
@@ -1075,14 +1106,26 @@ DrawSideLegend <- function(labels_list,
        xpd    = NA
        )
   groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
-  points(x   = rep(grconvertX(x = x_point, from = "npc", to = "user"), length(labels_list)),
-         y   = tapply(y_pos, groups_vec, mean),
-         cex = use_point_size,
-         pch = use_pch,
-         col = if (!(is.null(border_colors))) border_colors else use_colors,
-         bg  = use_colors,
-         xpd = NA
-         )
+  if (draw_lines) {
+    x_user <- grconvertX(x = x_text, from = "npc", to = "user")
+    line_x_start <- x_user + diff(grconvertX(c(0, line_x_distance), from = "lines", to = "user"))
+    segments(x0  = line_x_start,
+             x1  = line_x_start + diff(grconvertX(c(0, length_in_lines), from = "lines", to = "user")),
+             y0  = tapply(y_pos, groups_vec, mean),
+             col = use_colors,
+             lwd = par("lwd") * use_lwd,
+             xpd = NA
+             )
+  } else {
+    points(x   = rep(grconvertX(x = x_point, from = "npc", to = "user"), length(labels_list)),
+           y   = tapply(y_pos, groups_vec, mean),
+           cex = use_point_size,
+           pch = use_pch,
+           col = if (!(is.null(border_colors))) border_colors else use_colors,
+           bg  = use_colors,
+           xpd = NA
+           )
+  }
 
   return(invisible(NULL))
 }
@@ -1732,6 +1775,10 @@ GammaBoxPlot <- function(use_counts_df,
                          cloud_sd             = 0.025,
                          y_label_line         = 2.35,
                          show_y_axis          = TRUE,
+                         use_swarm            = FALSE,
+                         violin_colors        = brewer.pal(9, "Blues")[[3]],
+                         line_colors          = brewer.pal(9, "Blues")[[8]],
+                         border_colors        = brewer.pal(9, "Blues")[[8]],
                          ...
                          ) {
 
@@ -1787,13 +1834,13 @@ GammaBoxPlot <- function(use_counts_df,
                 groups_vec,
                 lower_bound   = -0.8,
                 upper_bound   = 0.4,
-                use_swarm     = FALSE,
+                use_swarm     = use_swarm,
                 cloud_alpha   = cloud_alpha,
                 cloud_sd      = cloud_sd,
                 draw_border   = TRUE,
-                violin_colors = brewer.pal(9, "Blues")[[3]],
-                line_colors   = brewer.pal(9, "Blues")[[8]],
-                border_colors = brewer.pal(9, "Blues")[[8]],
+                violin_colors = violin_colors,
+                line_colors   = line_colors,
+                border_colors = border_colors,
                 point_colors  = "#518dc2",
                 draw_groups_n = FALSE,
                 show_y_axis   = show_y_axis,
@@ -2339,7 +2386,7 @@ TwoDensities <- function(show_GC               = TRUE,
       ref_x_vec <- library_densities[[i]][["x"]]
       polygon(x      = c(ref_x_vec[[1]], ref_x_vec, ref_x_vec[[length(ref_x_vec)]]),
               y      = c(0, library_densities[[i]][["y"]], 0),
-              col    = "gray95",
+              col    = adjustcolor("gray80", alpha.f = 0.25),
               border = NA,
               xpd    = NA
               )
