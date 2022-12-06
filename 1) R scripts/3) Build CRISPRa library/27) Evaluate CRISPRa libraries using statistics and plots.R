@@ -94,12 +94,31 @@ save(list = "CRISPRa_figure_list",
 DrawAllManuscriptPlots(CRISPRa_figure_list, rename_libraries = TRUE)
 DrawAllManuscriptPlots(CRISPRa_figure_list, make_PNGs = TRUE)
 DrawAllManuscriptPlots(CRISPRa_figure_list, make_EMFs = TRUE,
-                       rename_libraries = TRUE, line_breaks = FALSE
+                       rename_libraries = TRUE, line_breaks = FALSE,
+                       sina_plot = TRUE, draw_whiskers = TRUE
                        )
 
 
+ManuscriptViolinBox(CRISPRa_figure_list[["df_list_filtered"]][["GuideScan_specificity"]],
+                    axis_label           = "GuideScan specificity",
+                    horizontal           = FALSE,
+                    use_mai              = par("mai"),
+                    use_width            = pdf_width,
+                    use_height           = pdf_height,
+                    abbreviate_libraries = TRUE,
+                    modality_on_bottom   = FALSE,
+                    use_cex              = 1,
+                    use_lwd              = 1,
+                    CRISPRa_colors       = manuscript_CRISPRa_colors,
+                    CRISPRo_colors       = manuscript_CRISPRo_colors,
+                    rename_libraries     = TRUE,
+                    line_breaks          = TRUE,
+                    sina_plot            = TRUE
+                    )
 
-## Draw the TSS doughnut plot
+
+
+## Export the TSS doughnut plot
 
 TSS_colors <- carto_pal(3, "Emrld") # or pink: c("#fdd8eb", "#f990c6", "#d31279")
 TSS_colors <- c(TSS_colors[[1]], colorRampPalette(TSS_colors)(100)[[40]], TSS_colors[[3]])
@@ -131,18 +150,48 @@ dev.off()
 
 
 
-## Draw the plasmid doughnut plot
+devEMF::emf(file.path(output_plots_directory, "Manuscript", "Thesis",
+                      "Doughnut plot - TSSs.emf"
+                      ),
+            width = 3.5, height = 2.1, emfPlus = FALSE, coordDPI = 1500  # width = 3.4, height = 2.5
+            )
+par(cex = manuscript_cex, lwd = 0.8)
+do.call(TSSDonutBar,
+        c(manuscript_donut_args[!(names(manuscript_donut_args) %in% c("use_mai", "bar_label_line", "donut_radius", "donut_x_mid", "donut_y_mid"))],
+          list(CRISPR_df       = merged_replaced_CRISPRa_df,
+               x_axis_label    = "Genes in T.gonfio library",
+               use_labels      = 1:6,
+               use_colors      = TSS_colors,
+               use_mai         = c(0.2, 0.47, 0.4, 0.32),
+               y_axis_label    = "Number of TSSs",
+               text_dark_color = "black",
+               space           = 0.3,
+               bar_label_line  = 0.8,
+               donut_radius    = 0.26,
+               donut_x_mid     = 0.85,
+               donut_y_mid     = 0.23,
+               y_axis_label_line = 2.2,
+               x_axis_label_line = 1.87
+               )
+          )
+        )
+dev.off()
+
+
+
+
+## Export the plasmid targets doughnut plot
 
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               paste0("Doughnut plots - CRISPRa plasmids.pdf")
               ),
-    width = 2.6, height = 1.7 #width = 3.4, height = 2.5
+    width = 2.6, height = 1.7
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 new_donut_args <- list(space           = 0.3,
                        use_mai         = c(0.05, 1, 0.4, 0.16),
                        donut_radius    = 0.34,
-                       use_line_height = 0.7,
+                       use_line_height = 0.72,
                        donut_y_mid     = 0.35
                        )
 do.call(SummaryDonutBar,
@@ -160,6 +209,36 @@ dev.off()
 
 
 
+devEMF::emf(file.path(output_plots_directory, "Manuscript", "Thesis",
+                      "Doughnut plots - CRISPRa plasmids.emf"
+                      ),
+            width = 3, height = 2.2, emfPlus = FALSE, coordDPI = 1500
+            )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+new_donut_args <- list(space           = 0.3,
+                       use_mai         = c(0.05, 1, 0.4, 0.16),
+                       donut_radius    = 0.34,
+                       use_line_height = 0.9,
+                       donut_y_mid     = 0.35
+                       )
+do.call(SummaryDonutBar,
+        c(manuscript_donut_args[!(names(manuscript_donut_args) %in% names(new_donut_args))],
+          list(CRISPR_df    = merged_replaced_CRISPRa_df,
+               targets_df   = TSS_targets_df,
+               x_axis_label = "Genes in T.gonfio library",
+               use_map_list = manuscript_map_list,
+               percent_max  = 100
+               ),
+          new_donut_args
+          )
+        )
+dev.off()
+
+
+
+
+## Export the TSS histogram
+
 TSS_distances_df <- TSSHistogramsForModality(merged_replaced_CRISPRa_df,
                                              "CRISPRoff",
                                              omit_outside_x_range = TRUE
@@ -170,18 +249,18 @@ TSS_4sg_distances_vec <- FilterDistanceByGroup(TSS_distances_df, "4sg")
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               "Histogram - CRISPRoff - window around TSS.pdf"
               ),
-    width = 2.1, height = 2 # width = 3.4, height = 2.5
+    width = 2.1, height = 2
     )
 par(cex = 0.6, lwd = 0.8,
     mai = c(0.4, 0.6, 0.2, 0.2)
     )
-
 TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
              use_breaks           = 200,
              use_title            = "",
              modality_text        = "",
              highlight_range      = c(-500, 500),
              highlight_color      = colorRampPalette(brewer.pal(9, "Blues")[c(2, 3)])(3)[[2]],
+             hist_color           = brewer.pal(9, "Blues")[[8]],
              omit_outside_x_range = TRUE,
              label_range          = FALSE,
              draw_grid            = FALSE,
@@ -193,8 +272,38 @@ TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
              use_tcl              = 0.4
              )
 title("T.gonfio library", cex.main = 1, font.main = 1, line = 0.5)
-
 dev.off()
+
+
+
+
+devEMF::emf(file.path(output_plots_directory, "Manuscript", "Whole library",
+                      "Histogram - CRISPRoff - window around TSS.emf"
+                      ),
+            width = 4.2, height = 2.2, emfPlus = FALSE
+            )
+par(cex = 0.7, lwd = 0.8,
+    mai = c(0.4, 0.5, 0.2, 0.32)
+    )
+TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
+             use_breaks           = 200,
+             use_title            = "",
+             modality_text        = "",
+             highlight_range      = c(-500, 500),
+             highlight_color      = colorRampPalette(brewer.pal(9, "Blues")[c(2, 3)])(3)[[2]],
+             omit_outside_x_range = TRUE,
+             label_range          = FALSE,
+             draw_grid            = FALSE,
+             hardcoded_x_axis     = FALSE,
+             x_label_line         = 1.7,
+             x_axis_mgp           = 0.45,
+             y_axis_mgp           = 0.55,
+             y_label_line         = 2.8,
+             use_tcl              = 0.4
+             )
+title("T.gonfio library", cex.main = 1, font.main = 1, line = 0.5)
+dev.off()
+
 
 
 
