@@ -56,7 +56,6 @@ dev.off()
 
 
 
-
 # Set up loop -------------------------------------------------------------
 
 AllSmrtLinkVersionsForOnePlate(DrawAlterationBarplot,
