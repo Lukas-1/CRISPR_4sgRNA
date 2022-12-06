@@ -139,7 +139,10 @@ WellLayoutBarplot <- function(summary_df,
                               show_low_read_numbers   = FALSE,
                               outline_few_reads       = FALSE,
                               few_reads_cutoff        = 20L,
-                              label_rows_with_letters = TRUE
+                              label_rows_with_letters = TRUE,
+                              label_cex               = 0.5,
+                              label_space_adjust      = 0,
+                              label_font              = 2
                               ) {
 
   MakeEmptyPlot()
@@ -193,23 +196,24 @@ WellLayoutBarplot <- function(summary_df,
        xpd     = NA
        )
 
-  text(x      = -(x_gap),
+  text(x      = -(x_gap + diff(grconvertX(c(0, label_space_adjust), from = "lines", to = "user"))),
        y      = y_starts[seq_len(16)] + (well_height / 2),
        labels = rev(if (label_rows_with_letters) LETTERS[1:16] else 1:16),
-       xpd    = NA,
-       cex    = 0.5,
-       font   = 2,
+       cex    = label_cex,
+       font   = label_font,
        col    = "gray30",
-       adj    = c(1, 0.5)
+       adj    = c(1, 0.5),
+       xpd    = NA
+
        )
   text(x      = x_starts[seq_len(24)] + (well_width / 2),
-       y      = -(y_gap),
+       y      = -(y_gap + diff(grconvertY(c(0, label_space_adjust), from = "lines", to = "user"))),
        labels = seq_len(24),
-       xpd    = NA,
-       cex    = 0.5,
-       font   = 2,
+       cex    = label_cex,
+       font   = label_font,
        col    = "gray30",
-       adj    = c(0.5, 1)
+       adj    = c(0.5, 1),
+       xpd    = NA
        )
 
   if (show_low_read_numbers && !(outline_few_reads)) {

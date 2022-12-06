@@ -161,7 +161,8 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
                                 use_wex             = 0.8,
                                 violin_wex          = use_wex,
                                 med_lwd             = 3,
-                                box_lwd             = 1
+                                box_lwd             = 1,
+                                grid_lwd            = 1
                                 ) {
 
   set.seed(1) # For reproducible jitter
@@ -252,7 +253,7 @@ ViolinBoxAllCutoffs <- function(all_ccs_list,
        axes = FALSE,
        ann  = FALSE
        )
-  DrawGridlines(use_y_limits)
+  DrawGridlines(use_y_limits, grid_lwd = grid_lwd)
 
   if (sina_plot) {
     if (brewer_palette == "Blues") {
