@@ -2752,6 +2752,38 @@ GetFlexibleAxisLimits <- function(numeric_vec, start_at_zero = TRUE, subtract_fr
 
 
 
+HistogramPolygon <- function(input_df, half_width) {
+  x_vec <- rbind(input_df[, "Mids"] - half_width, input_df[, "Mids"] + half_width)
+  attributes(x_vec) <- NULL
+  y_vec <- rep(input_df[, "Counts"], each = 2)
+  results_mat <- cbind(
+    x = c(x_vec[[1]], x_vec, x_vec[[length(x_vec)]]),
+    y = c(0, y_vec, 0)
+  )
+  return(results_mat)
+}
+
+
+MakeHistogramPolygons <- function(hist_results) {
+  half_width <- diff(hist_results[["mids"]][1:2]) / 2
+  are_empty <- hist_results[["counts"]] == 0
+  group_lengths <- rle(are_empty)[["lengths"]]
+  rle_vec <- rep(seq_along(group_lengths), group_lengths)
+  hist_df <- data.frame(
+    "Mids"     = hist_results[["mids"]],
+    "Counts"   = hist_results[["counts"]],
+    "Is_empty" = are_empty,
+    "Group"    = rle_vec,
+    stringsAsFactors = FALSE
+  )
+  hist_df <- hist_df[!(are_empty), ]
+  row.names(hist_df) <- NULL
+  hist_df[, "Group"] <- match(hist_df[, "Group"], unique(hist_df[, "Group"]))
+  split_df_list <- split(hist_df, hist_df[, "Group"])
+  mat_list <- lapply(split_df_list, HistogramPolygon, half_width = half_width)
+  return(mat_list)
+}
+
 
 DrawDeletionHistogram <- function(overview_df,
                                   column_name  = "Max_deletion_size",
@@ -2782,20 +2814,19 @@ DrawDeletionHistogram <- function(overview_df,
   }
   y_limits <- GetFlexibleAxisLimits(for_y_lim, subtract_fraction = 0.02)
 
-  hist(log10(numeric_vec),
-       col      = fill_color,
-       border   = NA,
-       breaks   = use_breaks,
-       xlim     = x_limits,
-       ylim     = y_limits,
-       xaxs     = "i",
-       yaxs     = "i",
-       freq     = TRUE,
-       ann      = FALSE,
-       axes     = FALSE,
-       main     = "",
-       mgp      = c(y_label_line, 1, 0),
+  hist_results <- hist(log10(numeric_vec), breaks = use_breaks, plot = FALSE)
+  polygon_mat_list <- MakeHistogramPolygons(hist_results)
+  plot(NA, xlim = x_limits, ylim = y_limits, xaxs = "i", yaxs = "i",
+       ann = FALSE, axes = FALSE
        )
+  for (polygon_mat in polygon_mat_list) {
+    polygon(polygon_mat[, "x"],
+            polygon_mat[, "y"],
+            col    = fill_color,
+            border = NA,
+            xpd    = NA
+            )
+  }
 
   axis(2,
        las = 1,
@@ -3499,7 +3530,9 @@ DonutBars <- function(use_factor         = NULL,
                       draw_box           = FALSE,
                       y_axis_label       = NULL,
                       percent_max        = NULL,
-                      bottom_axis        = FALSE
+                      bottom_axis        = FALSE,
+                      x_axis_label_line  = 1.5,
+                      y_axis_label_line  = 2.53
                       ) {
 
   if (is.null(counts_vec)) {
@@ -3513,7 +3546,6 @@ DonutBars <- function(use_factor         = NULL,
       use_labels <- names(counts_vec)
     }
   }
-
 
 
   if (show_percentages) {
@@ -3599,7 +3631,7 @@ DonutBars <- function(use_factor         = NULL,
          )
   }
 
-  are_too_small <- bar_lengths < (par("usr")[[2]] * 0.2)
+  are_too_small <- bar_lengths < (strwidth(count_labels) + strwidth("o"))
 
   text(x      = grconvertX(x_space + corr_bar_lengths[are_too_small] + (x_range * 0.02), from = "npc", to = "user"),
        y      = bar_y_mids[are_too_small],
@@ -3665,13 +3697,13 @@ DonutBars <- function(use_factor         = NULL,
 
     if (!(is.null(x_axis_label))) {
       mtext(x_axis_label, side = if (bottom_axis) 1 else 3,
-            line = 1.5, cex = par("cex")
+            line = x_axis_label_line, cex = par("cex")
             )
     }
   }
 
   if (!(is.null(y_axis_label))) {
-    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2.53), from = "lines", to = "user")), # 2.53
+    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, y_axis_label_line), from = "lines", to = "user")), # 2.53
          y      = grconvertY(0.5, from = "npc", to = "user"),
          labels = VerticalAdjust(y_axis_label),
          srt    = 90,
@@ -4003,7 +4035,7 @@ manuscript_donut_args <- list(
 # Functions for generating multi-plot layouts -----------------------------
 
 MakeEmptyPlot <- function() {
-  plot(1, xlim = c(0, 1), ylim = c(0, 1), type = "n",
+  plot(NA, xlim = c(0, 1), ylim = c(0, 1), type = "n",
        xaxs = "i", yaxs = "i", ann = FALSE, axes = FALSE
        )
 }
@@ -4161,7 +4193,8 @@ ManuscriptAnnotate <- function(group_positions,
                                modality_on_top    = FALSE,
                                modality_on_side   = FALSE,
                                modality_on_bottom = FALSE,
-                               diagonal_labels    = TRUE
+                               diagonal_labels    = TRUE,
+                               y_axis_label_line  = 2.53
                                ) {
 
   old_lheight <- par("lheight" = 0.8)
@@ -4185,6 +4218,17 @@ ManuscriptAnnotate <- function(group_positions,
   } else {
     modality_color <- NULL
   }
+
+  # if (modality_label == "CRISPRa") {
+  #   top_modality <- "CRISPR activation"
+  # } else {
+  #   top_modality <- "CRISPR knockout"
+  # }
+  # text(x      = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * 0.5),
+  #      y      = par("usr")[[4]] + diff(grconvertY(c(0, 2.1), from = "lines", to = "user")),
+  #      labels = VerticalAdjust(as.expression(bquote(bold(.(top_modality))))),
+  #      xpd    = NA
+  #      )
 
   if (horizontal) {
     mtext(modality_label, line = 0.05, col = modality_color, cex = par("cex"))
@@ -4218,7 +4262,7 @@ ManuscriptAnnotate <- function(group_positions,
   if (horizontal) {
     mtext(axis_label, line = 1.7, side = 1, cex = par("cex"))
   } else {
-    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, 2.53), from = "lines", to = "user")),
+    text(x      = par("usr")[[1]] - diff(grconvertX(c(0, y_axis_label_line), from = "lines", to = "user")),
          y      = grconvertY(0.5, from = "npc", to = "user"),
          labels = VerticalAdjust(axis_label),
          srt    = 90,
@@ -4340,7 +4384,8 @@ ManuscriptBars <- function(counts_mat,
                            CRISPRa_colors       = manuscript_CRISPRa_colors,
                            CRISPRo_colors       = manuscript_CRISPRo_colors,
                            rename_libraries     = FALSE,
-                           line_breaks          = TRUE
+                           line_breaks          = TRUE,
+                           y_axis_label_line    = 2.53
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -4524,7 +4569,8 @@ ManuscriptBars <- function(counts_mat,
                      use_colors,
                      modality_on_side = modality_on_side,
                      modality_on_bottom = modality_on_bottom,
-                     diagonal_labels = rename_libraries
+                     diagonal_labels = rename_libraries,
+                     y_axis_label_line = y_axis_label_line
                      )
   box(bty = "l")
 
@@ -4631,8 +4677,8 @@ ManuscriptViolinBox <- function(plot_df,
                                 sina_jitter          = TRUE,
                                 sina_invert          = FALSE,
                                 grid_lwd             = 1,
-                                PNG_adjust           = 0,
-                                draw_whiskers        = FALSE
+                                draw_whiskers        = FALSE,
+                                y_axis_label_line    = 2.53
                                 ) {
 
   ## Prepare colors and labels
@@ -4799,12 +4845,8 @@ ManuscriptViolinBox <- function(plot_df,
        ann  = FALSE
        )
 
-  rasterImage(raster_array,
-              xleft   = par("usr")[[1]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
-              xright  = par("usr")[[2]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
-              ybottom = par("usr")[[3]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
-              ytop    = par("usr")[[4]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
-              xpd     = NA
+  rasterImage(raster_array, xleft = par("usr")[[1]], xright  = par("usr")[[2]],
+              ybottom = par("usr")[[3]], ytop = par("usr")[[4]], xpd = NA
               )
 
   ## Draw the superimposed boxplots
@@ -4871,7 +4913,8 @@ ManuscriptViolinBox <- function(plot_df,
                      use_colors,
                      modality_on_top = !(modality_on_bottom) && one_group,
                      modality_on_side = !(modality_on_bottom) && !(one_group),
-                     modality_on_bottom = modality_on_bottom
+                     modality_on_bottom = modality_on_bottom,
+                     y_axis_label_line = y_axis_label_line
                      )
 
   if (one_group) {
@@ -5074,8 +5117,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
         } else if (make_EMFs) {
           emf(file.path(use_folder, sub_folder, paste0(file_name, ".emf")),
               width = pdf_width,
-              height = pdf_height + 0.2,
-              emfPlus = FALSE
+              height = pdf_height + 0.2, #+ 0.1,
+              emfPlus = FALSE, coordDPI = 1500
               )
         } else {
           pdf(file.path(use_folder, sub_folder,  paste0(file_name, ".pdf")),
@@ -5099,6 +5142,7 @@ DrawAllManuscriptPlots <- function(df_mat_list,
         } else if (make_EMFs) {
           use_mai <- vertical_mai
           use_mai[[1]] <- use_mai[[1]] + 0.2
+          # use_mai[[3]] <- use_mai[[3]] + 0.1
         } else {
           use_mai <- vertical_mai
         }
@@ -5137,8 +5181,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                               CRISPRo_colors       = manuscript_CRISPRo_colors,
                               rename_libraries     = rename_libraries,
                               line_breaks          = line_breaks,
-                              PNG_adjust           = if (make_EMFs) 0.00325 else 0,
-                              grid_lwd             = if (make_EMFs) 0.6 else 1,
+                              grid_lwd             = if (make_EMFs) 0.7 else 1,
+                              y_axis_label_line    = if (make_EMFs) 2.2 else 2.53,
                               ...
                               )
         }
