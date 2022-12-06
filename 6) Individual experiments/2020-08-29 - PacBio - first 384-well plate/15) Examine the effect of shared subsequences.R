@@ -142,10 +142,10 @@ for (var in manuscript_vars) {
   file_name <- paste0("Shared sub-sequences - ", var)
   for (use_device in c("pdf", "emf")) {
     if (use_device == "emf") {
-      emf(file.path(manuscript_directory, paste0(file_name, ".emf")),
-          width = 3.7, height = 2.2,
-          emfPlus = FALSE
-          )
+      devEMF::emf(file.path(manuscript_directory, paste0(file_name, ".emf")),
+                  width = 3.7, height = 2.2,
+                  emfPlus = FALSE, coordDPI = 1500
+                  )
     } else {
       pdf(file.path(manuscript_directory, paste0(file_name, ".pdf")),
           width = 3.7, height = 2.2
@@ -159,7 +159,7 @@ for (var in manuscript_vars) {
                           grid_dark_gray  = "gray85",
                           grid_light_gray = "gray95",
                           use_spacing     = 0.35,
-                          use_boxwex      = 0.75,
+                          use_boxwex      = 0.78,
                           grid_lwd        = 0.75,
                           y_axis_label    = axis_labels[[var]],
                           use_title       = "",
@@ -167,7 +167,8 @@ for (var in manuscript_vars) {
                           bold_corr       = FALSE,
                           text_cex        = 1,
                           point_cex       = 0.5,
-                          x_axis_label    = "Longest shared subsequence (base pairs)"
+                          x_axis_label    = "Longest shared subsequence (base pairs)",
+                          outline_points  = TRUE
                           )
   dev.off()
 }
@@ -176,12 +177,8 @@ for (var in manuscript_vars) {
 
 
 PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Count_all_4")
-
-
 PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_reads_with_sgRNA_deletion")
 PlotBySharedSubsequence(sl7_ccs7_df_list[["filtered_summary_df"]], "Num_reads_with_deletions_exceeding_20bp")
-
-
 
 
 

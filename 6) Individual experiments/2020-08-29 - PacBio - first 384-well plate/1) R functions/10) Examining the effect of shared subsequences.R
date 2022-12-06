@@ -84,7 +84,8 @@ PlotBySharedSubsequence <- function(summary_df,
                                     corr_line       = 0.75,
                                     bold_corr       = TRUE,
                                     x_axis_label    = "Length of shared subsequence",
-                                    point_cex       = 0.4
+                                    point_cex       = 0.4,
+                                    outline_points  = FALSE
                                     ) {
 
   stopifnot("sg_sequences_df" %in% ls(envir = globalenv()))
@@ -111,7 +112,11 @@ PlotBySharedSubsequence <- function(summary_df,
   numeric_vec <- summary_df[[show_column]][are_to_include]
 
   light_color <- brewer.pal(9, "Blues")[[2]]
-  dark_color <- brewer.pal(9, "Blues")[[7]]
+  if (outline_points) {
+    dark_color <- brewer.pal(9, "Blues")[[6]]
+  } else {
+    dark_color <- brewer.pal(9, "Blues")[[7]]
+  }
 
   is_percentage <- grepl("^(Count|Num)_", show_column)
 
@@ -205,13 +210,25 @@ PlotBySharedSubsequence <- function(summary_df,
                           do.plot  = FALSE
                           )
 
-  points(beeswarm_df[["x"]],
-         beeswarm_df[["y"]],
-         pch = 16,
-         cex = point_cex,
-         col = dark_color,
-         xpd = NA
-         )
+  if (outline_points) {
+    points(beeswarm_df[["x"]],
+           beeswarm_df[["y"]],
+           pch = 21,
+           cex = point_cex,
+           col = brewer.pal(9, "Blues")[[8]],
+           bg  = dark_color,
+           lwd = 0.5 * par("lwd"),
+           xpd = NA
+           )
+  } else {
+    points(beeswarm_df[["x"]],
+           beeswarm_df[["y"]],
+           pch = 16,
+           cex = point_cex,
+           col = dark_color,
+           xpd = NA
+           )
+  }
 
   present_lengths <- seq(from = min(shared_bp_vec), to = max(shared_bp_vec))
 
