@@ -1779,6 +1779,7 @@ GammaBoxPlot <- function(use_counts_df,
                          violin_colors        = brewer.pal(9, "Blues")[[3]],
                          line_colors          = brewer.pal(9, "Blues")[[8]],
                          border_colors        = brewer.pal(9, "Blues")[[8]],
+                         point_colors         = "#518dc2",
                          ...
                          ) {
 
@@ -1841,7 +1842,7 @@ GammaBoxPlot <- function(use_counts_df,
                 violin_colors = violin_colors,
                 line_colors   = line_colors,
                 border_colors = border_colors,
-                point_colors  = "#518dc2",
+                point_colors  = point_colors,
                 draw_groups_n = FALSE,
                 show_y_axis   = show_y_axis,
                 ...
