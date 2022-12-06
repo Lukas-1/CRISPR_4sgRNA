@@ -58,7 +58,7 @@ row.names(summary_df) <- NULL
 
 use_width <- 3.0
 use_height <- 1.5
-use_lwd <- 0.8
+use_lwd <- 0.9
 use_cex <- 0.7
 
 emf(file = file.path(thesis_dir, paste0("Plate HA_21 - stacked barplot.emf")),

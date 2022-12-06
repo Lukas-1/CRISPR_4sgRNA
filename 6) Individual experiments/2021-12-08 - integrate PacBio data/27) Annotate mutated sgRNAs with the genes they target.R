@@ -4,6 +4,8 @@
 
 # Import packages and source code -----------------------------------------
 
+library("devEMF")
+
 CRISPR_root_directory       <- "~/CRISPR"
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts/1) R functions")
 experiments_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments")
@@ -186,6 +188,30 @@ ManuscriptMutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]],
                   "Mutated\nCRISPRo\ngRNAs"
                   )
 dev.off()
+
+
+
+
+emf(file.path(manuscript_directory, paste0("E) Doughnut plot - CRISPRa library.emf")),
+    width = 3.4, height = 2, emfPlus = FALSE, coordDPI = 3000
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+ManuscriptMutationsDonutBar(TSS_20bp_mut_list[["gRNA_numbers"]], "",
+                  "Mutated\nT.gonfio\ngRNAs"
+                  )
+dev.off()
+
+
+
+emf(file.path(manuscript_directory, paste0("F) Doughnut plot - CRISPRo library.emf")),
+    width = 3.4, height = 2, emfPlus = FALSE, coordDPI = 3000
+    )
+par(cex = manuscript_cex, lwd = manuscript_lwd)
+ManuscriptMutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]], "",
+                  "Mutated\nT.spiezzo\ngRNAs"
+                  )
+dev.off()
+
 
 
 

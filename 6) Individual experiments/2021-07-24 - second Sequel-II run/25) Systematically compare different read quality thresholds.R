@@ -59,7 +59,6 @@ summary_list_list <- SummarizeWellsForAllCutoffs(plates_analysis_list,
 
 
 
-
 # Modify plate selections -------------------------------------------------
 
 plate_selection_titles_list <- c(
@@ -67,7 +66,6 @@ plate_selection_titles_list <- c(
   plate_selection_titles_list
 )
 plate_selection_prefixes <- c("00", plate_selection_prefixes)
-
 
 
 
@@ -101,7 +99,7 @@ thesis_dir <- file.path(s2r2_directory, "5) Output", "Figures", "Thesis")
 
 
 devEMF::emf(file = file.path(thesis_dir, paste0("Quality cutoffs - 1) Single colony-derived controls.emf")),
-            width = 7.1, height = 3.8, emfPlus = FALSE
+            width = 7.1, height = 3.8, emfPlus = FALSE, coordDPI = 1500
             )
 par(mai = c(0.8, 0.8, 0.6, 0.3), lwd = use_lwd, cex = use_cex)
 ViolinBoxAllCutoffs(summary_list_list,
@@ -120,16 +118,16 @@ ViolinBoxAllCutoffs(summary_list_list,
                     use_wex          = 0.7,
                     violin_wex       = 0.5,
                     sina_plot        = TRUE,
-                    box_lwd          = 1.75,
-                    med_lwd          = 3
+                    box_lwd          = 1.25,
+                    med_lwd          = 3,
+                    grid_lwd         = 0.7
                     )
 dev.off()
 
 
 
-
 devEMF::emf(file = file.path(thesis_dir, paste0("Quality cutoffs - 2) APPEAL plasmids.emf")),
-            width = 7.1, height = 3.8, emfPlus = FALSE
+            width = 7.1, height = 3.8, emfPlus = FALSE, coordDPI = 1500
             )
 par(mai = c(0.8, 0.8, 0.6, 0.3), lwd = use_lwd, cex = use_cex)
 ViolinBoxAllCutoffs(summary_list_list,
@@ -147,8 +145,9 @@ ViolinBoxAllCutoffs(summary_list_list,
                     use_wex          = 0.7,
                     violin_wex       = 0.7,
                     sina_plot        = TRUE,
-                    box_lwd          = 1.75,
-                    med_lwd          = 4
+                    box_lwd          = 1.25,
+                    med_lwd          = 4,
+                    grid_lwd         = 0.7
                     )
 dev.off()
 

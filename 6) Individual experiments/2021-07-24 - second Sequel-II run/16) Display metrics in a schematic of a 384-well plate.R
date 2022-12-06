@@ -63,14 +63,14 @@ summary_df <- summary_df[summary_df[, "Plate_number"] %in% 33, ]
 row.names(summary_df) <- NULL
 
 
-par("cex" = 2)
 emf(file.path(thesis_dir, "Plate HA_21 - schematic - Num_contaminated_reads.emf"),
-    width = 7.5, height = 6, emfPlus = FALSE
+    width = 7.5, height = 6, emfPlus = FALSE, coordDPI = 1500
     )
 WellLayoutBarplot(summary_df,
                   "Num_contaminated_reads",
                   sg_sequences_df,
-                  label_rows_with_letters = TRUE
+                  label_rows_with_letters = TRUE, label_cex = 0.8,
+                  label_space_adjust = 0.1, label_font = 1
                   )
 CenterText("Percentage of reads with contaminations",
            y = par("usr")[[4]] + diff(grconvertY(c(0, 1.3), from = "lines", to = "user")),

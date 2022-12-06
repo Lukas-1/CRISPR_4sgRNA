@@ -463,7 +463,7 @@ DrawAlterationBarplot <- function(summary_df,
                        x_pos              = par("usr")[[1]] + ((par("usr")[[2]] - par("usr")[[1]]) * color_legend_x_pos),
                        y_pos              = color_box_y_pos,
                        use_constant_space = FALSE,
-                       vertical_adjust    = 0,
+                       vertical_adjust    = 0.15,
                        x_space_adjust     = 4
                        )
   }
@@ -490,7 +490,7 @@ ExportAlterationsForManuscript <- function(summary_df, use_prefix) {
     } else if (use_device == "emf") {
       emf(file = file.path(manuscript_directory, paste0(file_name, ".emf")),
           width = use_width, height = use_height,
-          emfPlus = FALSE
+          emfPlus = FALSE, coordDPI = 1500
           )
     }
     par(lwd = use_lwd, cex = use_cex)
@@ -690,6 +690,7 @@ Plot_eCDF <- function(summary_df,
                       legend_pch           = NULL,
                       point_x_start        = legend_x_start + 0.2,
                       lwd_multiplier       = 2,
+                      grid_lwd             = 1,
                       ...
                       ) {
 
@@ -752,10 +753,10 @@ Plot_eCDF <- function(summary_df,
   ## Draw the grid lines
   light_grey <- "gray95"
   darker_grey <- "gray88"
-  abline(v = seq(0.05, 0.95, by = 0.1), col = light_grey)
-  abline(h = seq(0.05, 0.95, by = 0.1), col = light_grey)
-  abline(v = seq(0, 1, by = 0.1), col = darker_grey)
-  abline(h = seq(0, 1, by = 0.1), col = darker_grey)
+  abline(v = seq(0.05, 0.95, by = 0.1), col = light_grey, lwd = par("lwd") * grid_lwd)
+  abline(h = seq(0.05, 0.95, by = 0.1), col = light_grey, lwd = par("lwd") * grid_lwd)
+  abline(v = seq(0, 1, by = 0.1), col = darker_grey, lwd = par("lwd") * grid_lwd)
+  abline(h = seq(0, 1, by = 0.1), col = darker_grey, lwd = par("lwd") * grid_lwd)
 
 
   ## Plot the x and y axes

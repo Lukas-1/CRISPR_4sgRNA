@@ -569,7 +569,7 @@ DrawPercentCorrectBarplot <- function(summary_df,
        las      = 1,
        mgp      = c(3, 0.45, 0),
        tcl      = -0.3,
-       lwd      = if (narrow_lwd) 0.75 else 1,
+       lwd      = (if (narrow_lwd) 0.75 else 1) * par("lwd"),
        cex.axis = 0.9,
        pos      = par("usr")[[1]] - GetHalfLineWidth()
        )
@@ -788,7 +788,7 @@ DrawHeatMap <- function(summary_df,
            y0   = trapezoid_start_y - (0.352 * trapezoid_y_range),
            y1   = trapezoid_start_y - (0 * trapezoid_y_range),
            xpd  = NA,
-           lwd  = use_lwd,
+           lwd  = use_lwd * par("lwd"),
            lend = "square"
            )
   segments(x0   = trapezoid_text_start_x,
@@ -796,7 +796,7 @@ DrawHeatMap <- function(summary_df,
            y0   = trapezoid_start_y - (0 * trapezoid_y_range),
            y1   = trapezoid_start_y - (0 * trapezoid_y_range),
            xpd  = NA,
-           lwd  = use_lwd,
+           lwd  = use_lwd * par("lwd"),
            lend = "square"
            )
   return(invisible(NULL))
@@ -1167,7 +1167,7 @@ ExportFiguresForManuscript <- function(summary_df, use_prefix) {
     } else if (use_device == "emf") {
       emf(file = file.path(manuscript_directory, paste0(file_name, ".emf")),
           width = use_width, height = use_height,
-          emfPlus = FALSE
+          emfPlus = FALSE, coordDPI = 1500
           )
     } else if (use_device == "png") {
       png(file = file.path(manuscript_directory, paste0(file_name, ".png")),
@@ -1201,12 +1201,12 @@ ExportFiguresForManuscript <- function(summary_df, use_prefix) {
     } else if (use_device == "emf") {
       emf(file = file.path(manuscript_directory, paste0(file_name, ".emf")),
           width = use_width, height = use_height,
-          emfPlus = FALSE
+          emfPlus = FALSE, coordDPI = 1500
           )
     } else if (use_device == "png") {
       png(file = file.path(manuscript_directory, paste0(file_name, ".png")),
           width = use_width, height = use_height,
-          units = "in", res = 600
+          units = "in", res = 900
           )
     }
     par(mai = c(0.4, 0.4, 0.13, 0.13), lwd = use_lwd, cex = use_cex)

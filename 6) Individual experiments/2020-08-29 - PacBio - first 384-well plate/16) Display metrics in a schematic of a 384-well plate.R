@@ -58,14 +58,14 @@ manuscript_directory <- file.path(plots_output_directory, "For the manuscript")
 summary_df <- sl7_ccs3_df_list[["filtered_summary_df"]]
 
 
-
 emf(file.path(manuscript_directory, "Thesis", "Count_at_least_2.emf"),
-    width = 7.5, height = 6, emfPlus = FALSE
+    width = 7.5, height = 6, emfPlus = FALSE, coordDPI = 1500
     )
 WellLayoutBarplot(summary_df,
                   "Count_at_least_2",
                   sg_sequences_df,
-                  label_rows_with_letters = TRUE
+                  label_rows_with_letters = TRUE, label_cex = 0.8,
+                  label_space_adjust = 0.1, label_font = 1
                   )
 CenterText("Percentage of reads with at least 2 sgRNAs that are entirely correct",
            y = par("usr")[[4]] + diff(grconvertY(c(0, 1.3), from = "lines", to = "user")),
@@ -76,12 +76,13 @@ dev.off()
 
 
 emf(file.path(manuscript_directory, "Thesis", "Num_contaminated_reads.emf"),
-    width = 7.5, height = 6, emfPlus = FALSE
+    width = 7.5, height = 6, emfPlus = FALSE, coordDPI = 1500
     )
 WellLayoutBarplot(summary_df,
                   "Num_contaminated_reads",
                   sg_sequences_df,
-                  label_rows_with_letters = TRUE
+                  label_rows_with_letters = TRUE, label_cex = 0.8,
+                  label_space_adjust = 0.1, label_font = 1
                   )
 CenterText("Percentage of reads with contaminations (sgRNAs from other wells)",
            y = par("usr")[[4]] + diff(grconvertY(c(0, 1.3), from = "lines", to = "user")),
