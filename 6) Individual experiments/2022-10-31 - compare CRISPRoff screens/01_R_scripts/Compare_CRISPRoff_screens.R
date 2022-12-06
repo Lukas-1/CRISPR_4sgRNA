@@ -1185,7 +1185,7 @@ old_par <- par(mar = c(3, 4, 2, 7), cex = 0.6, lwd = 0.7)
 ThreeLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_multiplier = 1.5,
               transparency = FALSE, use_lwd = 1.75, legend_lwd = 2.5,
               line_x_distance = -0.5, legend_order = c(3, 1, 2), legend_inside = FALSE,
-              length_in_lines = 0.55, lines_x_start = 1.1
+              length_in_lines = 0.55, lines_x_start = 1
               )
 par(old_par)
 dev.off()
