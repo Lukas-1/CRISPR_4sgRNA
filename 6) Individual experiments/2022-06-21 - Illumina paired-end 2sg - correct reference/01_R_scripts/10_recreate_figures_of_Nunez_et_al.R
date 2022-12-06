@@ -182,16 +182,6 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 
 
-# Draw ROC curve for CRISPRoff only ---------------------------------------
-
-devEMF::emf(file.path(thesis_dir, "3B) ROC curve - i) re-analysis.emf"),
-            width = 2, height = 2, emfPlus = FALSE
-            )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
-PlotROCDf(CRISPRoff_both_reps_ROC_df, flip = TRUE, xlab_line = 1.6, ylab_line = 2.1, ROC_lwd = 1.5)
-title("Data reanalysis (Nu\u00F1ez et al.)", cex.main = 1, font.main = 1, line = 0.7)
-dev.off()
-
 
 
 # Create violin plots -----------------------------------------------------
@@ -271,9 +261,9 @@ for (create_PDF in c(FALSE, TRUE)) {
 # Create violin plots for CRISPRoff only ----------------------------------
 
 devEMF::emf(file.path(thesis_dir, "3A) Violin plot - i) re-analysis.emf"),
-            width = 2, height = 2, emfPlus = FALSE
+            width = 2, height = 2, emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9, mar = c(3, 4, 4, 1))
+old_par <- par(cex = 0.6, lwd = 0.7, lheight = 0.9, mar = c(3, 4, 4, 1))
 custom_y_limits <- c(-0.6 - (0.86 * 0.02), 0.25)
 x_positions <- BeeViolinPlot(
   rep_list[1:4],
@@ -290,11 +280,12 @@ x_positions <- BeeViolinPlot(
   y_limits         = custom_y_limits,
   draw_groups_n    = FALSE,
   draw_border      = TRUE,
-  quantiles_lty    = c("dashed", "longdash", "dashed"),
+  quantiles_lty    = c("dotted", "dashed", "dotted"),
   right_gap        = 0.4,
   show_x_axis      = FALSE,
   indicate_zero    = FALSE,
-  draw_grid        = TRUE
+  draw_grid        = TRUE,
+  grid_lwd         = 0.8
 )
 
 mtext(expression("Phenotype (" * gamma * ")"), side = 2, line = 2.1, cex = par("cex"))

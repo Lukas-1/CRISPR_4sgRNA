@@ -3,6 +3,8 @@
 
 # Load packages and source code -------------------------------------------
 
+library("devEMF")
+
 CRISPR_root_directory    <- "~/CRISPR"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
@@ -58,7 +60,6 @@ ChooseOnePerEntrez <- function(input_df) {
 }
 
 
-
 ScatterInputDf <- function(logfc_1_df, logfc_2_df, choose_rep = NULL) {
   if (is.null(choose_rep)) {
     logfc_column <- "Mean_log2FC"
@@ -97,11 +98,11 @@ ThreeScatterPlots <- function(logfc_1_df,
                               show_remaining_genes = FALSE,
                               layout_widths        = c(0.11, 0.26, 0.03, 0.26, 0.03, 0.26, 0.02),
                               layout_heights       = c(0.14, 0.66, 0.2),
+                              x_axis_label_line    = 1.8,
                               y_axis_label_line    = 2.2,
                               label_gene_sets      = TRUE,
                               show_empty_ticks     = TRUE
                               ) {
-
 
   required_objects <- c("essentials_2020Q2_df", "non_essentials_2020Q2_df")
   stopifnot(all(required_objects %in% ls(envir = globalenv())))
@@ -246,7 +247,9 @@ ThreeScatterPlots <- function(logfc_1_df,
     if (label_gene_sets) {
       mtext(VerticalAdjust(top_labels[[i]]), line = 0.2, cex = par("cex"))
     }
-    mtext(VerticalAdjust(axis_labels_list[[1]]), side = 1, line = 1.8, cex = par("cex"))
+    mtext(VerticalAdjust(axis_labels_list[[1]]), side = 1,
+          line = x_axis_label_line, cex = par("cex")
+          )
     if (i == 1) {
       mtext(VerticalAdjust(axis_labels_list[[2]]), side = 2,
             line = y_axis_label_line, cex = par("cex")
@@ -280,13 +283,11 @@ ThreeScatterPlots <- function(logfc_1_df,
       }
     }
     box()
-
     MakeEmptyPlot()
   }
 
   par(old_par)
   layout(1)
-
   return(invisible(NULL))
 }
 
@@ -303,10 +304,12 @@ CompareScreenBars <- function(bars_vec,
                               y_upper_limit     = if (gini_index) 0.5 else NULL,
                               lollipop          = FALSE,
                               lollipop_mode     = "standard",
+                              lollipop_pch      = 16,
                               stem_color        = brewer.pal(9, "Blues")[[2]],
                               bar_color         = brewer.pal(9, "Blues")[[8]],
                               interrupt_x_axis  = FALSE,
                               draw_grid         = TRUE,
+                              grid_lwd          = 0.75,
                               y_axis_n          = 5,
                               bar_width         = 0.45,
                               gap_ratio         = 1.6,
@@ -353,7 +356,7 @@ CompareScreenBars <- function(bars_vec,
              x1  = par("usr")[[2]],
              y0  = grid_pos,
              col = ifelse(are_major, "gray88", "gray95"),
-             lwd = par("lwd") * 0.75,
+             lwd = par("lwd") * grid_lwd,
              xpd = NA
              )
   }
@@ -371,7 +374,7 @@ CompareScreenBars <- function(bars_vec,
              y   = bars_vec,
              col = bar_color,
              cex = par("cex") * 1.5 * point_size_factor,
-             pch = 16,
+             pch = lollipop_pch,
              xpd = NA
              )
     } else if (lollipop_mode == "bisected") {
@@ -705,14 +708,15 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "2B) Gini index comparison.emf"),
-            width = 1.55, height = 1.75, emfPlus = FALSE
+            width = 1.55, height = 1.75, emfPlus = FALSE, coordDPI = 1500
             )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.7)
 CompareScreenBars(c(gini_indices_CRISPRoff[c(1, 2)], gini_indices_4sg[c(1, 2)]),
                   short_labels = TRUE, use_title = "",
                   use_tcl = 0.35, y_axis_label_line = 1.8, y_axis_mgp = 0.525,
-                  lollipop = TRUE, lollipop_mode = "bullseye",
-                  gap_ratio = 1.7, side_gap = 0.6
+                  lollipop = TRUE, lollipop_pch = 18,
+                  gap_ratio = 1.7, side_gap = 0.6, point_size_factor = 1.25,
+                  grid_lwd = 0.7
                   )
 title("Count heterogeneity", cex.main = 1, font.main = 1)
 dev.off()
@@ -723,16 +727,16 @@ dev.off()
 # Plot the numbers of missing plasmids at baseline ------------------------
 
 devEMF::emf(file.path(thesis_dir, "2C) Missing plasmids at baseline.emf"),
-            width = 1.55, height = 1.75, emfPlus = FALSE
+            width = 1.55, height = 1.75, emfPlus = FALSE, coordDPI = 1500
             )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.7)
 CompareScreenBars(c(num_missing_CRISPRoff[1:2], num_missing_4sg[1:2]),
                   short_labels = TRUE,
                   use_tcl = 0.35, y_axis_label_line = 1.8, y_axis_mgp = 0.525,
                   y_axis_label = "Number of missed plasmids",
                   use_title = "", gini_index = FALSE, bar_width = 0.4,
                   y_upper_limit = 100, bar_color = brewer.pal(9, "Blues")[[7]],
-                  gap_ratio = 1.7, side_gap = 0.6
+                  gap_ratio = 1.7, side_gap = 0.6, grid_lwd = 0.7
                   )
 title("Absent at baseline", cex.main = 1, font.main = 1)
 dev.off()
@@ -825,9 +829,9 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "3C) SSMD - bar chart.emf"),
-            width = 2.3, height = 2, emfPlus = FALSE
+            width = 2.3, height = 2, emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.7)
 this_bars_vec <- abs(c(separation_original_mat["Robust SSMD", ],
                        separation_CRISPRoff_mat["Robust SSMD", ],
                        separation_4sg_mat["Robust SSMD", ]
@@ -843,18 +847,7 @@ bar_positions <- CompareScreenBars(
   bar_width = 0.4, lollipop = TRUE, point_size_factor = 1.25,
   group_labels_y = 1.75
 )
-text(x      = tapply(bar_positions, rep(1:3, each = 2), mean),
-     y      = par("usr")[[3]] - diff(grconvertY(c(0, 1.5), from = "lines", to = "user")),
-     labels = c("Re-analysis", "CRISPRoff", "T.gonfio"),
-     adj    = c(1, 1),
-     srt    = 30,
-     xpd    = NA
-     )
 dev.off()
-
-
-
-
 
 
 
@@ -867,7 +860,6 @@ row.names(logfc_original_df) <- NULL
 
 
 
-
 # Choose one plasmid for each Entrez gene ID ------------------------------
 
 logfc_4sg_df       <- ChooseOnePerEntrez(logfc_4sg_df)
@@ -876,7 +868,6 @@ logfc_original_df  <- ChooseOnePerEntrez(logfc_original_df)
 
 common_genes <- intersect(logfc_CRISPRoff_df[, "Entrez_ID"], logfc_4sg_df[, "Entrez_ID"])
 common_genes <- intersect(logfc_original_df[, "Entrez_ID"], common_genes)
-
 
 non_NA_common_genes <- intersect(common_genes,
                                  logfc_CRISPRoff_df[, "Entrez_ID"][!(is.na(logfc_CRISPRoff_df[, "Mean_log2FC"]))]
@@ -895,12 +886,14 @@ ReplicateScatterPlot(ScatterInputDf(logfc_4sg_df, logfc_CRISPRoff_df),
                                              expression("CRISPRoff" ~ "(" * gamma * ")")
                                              )
                      )
+
 ReplicateScatterPlot(ScatterInputDf(logfc_4sg_df, logfc_original_df),
                      highlight_NT = FALSE,
                      axis_labels_list = list(expression("T.gonfio" ~ "(" * gamma * ")"),
                                              expression("Nu\u00f1ez et al." ~ "(" * gamma * ")")
                                              )
                      )
+
 ReplicateScatterPlot(ScatterInputDf(logfc_CRISPRoff_df, logfc_original_df),
                      highlight_NT = FALSE,
                      axis_labels_list = list(expression("CRISPRoff" ~ "(" * gamma * ")"),
@@ -980,7 +973,6 @@ for (make_PDF in c(FALSE, TRUE)) {
                           )
       }
 
-
       use_mai <- c(0.75, 0.75, 0.4, 1.50)
       plot_height <- 2.5
       single_width <- plot_height + sum(use_mai[c(2, 4)])
@@ -1041,10 +1033,9 @@ for (make_PDF in c(FALSE, TRUE)) {
 
 
 
-
 # Export scatter plots for the manuscript ---------------------------------
 
-PDF_height <- 1.15 / sum((use_heights[[2]] / sum(use_heights)))
+PDF_height <- 1.75
 top_gap <- 0.1377392
 left_gap <- 0.1085217
 use_heights <- c(top_gap, 0.66, 0.2 + (0.14 - top_gap))
@@ -1089,145 +1080,56 @@ dev.off()
 
 
 
-
-
 # Export scatter plots for the thesis -------------------------------------
 
-PDF_height <- 1.15 / sum((use_heights[[2]] / sum(use_heights)))
-top_gap <- 0.1377392
-left_gap <- 0.1085217
-use_heights <- c(top_gap, 0.66, 0.2 + (0.14 - top_gap))
-use_widths <- c(left_gap, 0.27, 0.03, 0.27, 0.03, 0.27, 0.02 + (0.11 - left_gap))
-plot_height <- PDF_height * (use_heights[[2]] / sum(use_heights))
-PDF_width <- (plot_height * 3) + ((sum(use_widths[c(1, 3, 5, 7)]) / use_widths[[2]]) * plot_height)
+emf_widths <- c(left_gap, 0.27, 0.03, 0.27, 0.03, 0.27, 0.02 + (0.11 - left_gap))
+emf_width <- (plot_height * 3) + ((sum(emf_widths[c(1, 3, 5, 7)]) / emf_widths[[2]]) * plot_height)
 
+df_names <- c(
+  "T.gonfio"    = "logfc_4sg_df",
+  "CRISPRoff"   = "logfc_CRISPRoff_df",
+  "Re-analysis" = "logfc_original_df"
+)
+dataset_combos <- list(
+  c("T.gonfio", "CRISPRoff"),
+  c("T.gonfio", "Re-analysis"),
+  c("CRISPRoff", "Re-analysis")
+)
 
-library("devEMF")
-emf(file = file.path(thesis_dir, "5A i) Scatter plots - CRISPRoff vs. T.gonfio - both replicates.emf"),
-    width = PDF_width, height = PDF_height, emfPlus = FALSE
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_4sg_df,
-                  logfc_CRISPRoff_df,
-                  "T.gonfio",
-                  "CRISPRoff",
-                  show_remaining_genes = TRUE,
-                  y_axis_label_line = 2.5,
-                  layout_widths     = use_widths,
-                  layout_heights    = use_heights,
-                  show_empty_ticks  = FALSE,
-                  embed_PNG         = TRUE
-                  )
-dev.off()
-
-
-emf(file = file.path(thesis_dir, "5A ii) Scatter plots - original vs. T.gonfio - both replicates.emf"),
-    width = PDF_width, height = PDF_height, emfPlus = FALSE
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_4sg_df,
-                  logfc_original_df,
-                  "T.gonfio",
-                  "Re-analysis",
-                  y_axis_label_line = 2.5,
-                  show_remaining_genes = TRUE,
-                  layout_widths     = use_widths,
-                  layout_heights    = use_heights,
-                  show_empty_ticks  = FALSE,
-                  embed_PNG         = TRUE,
-                  label_gene_sets   = FALSE
-                  )
-dev.off()
-
-
-emf(file = file.path(thesis_dir, "5A iii) Scatter plots - original vs. CRISPRoff - both replicates.emf"),
-    width = PDF_width, height = PDF_height, emfPlus = FALSE
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_CRISPRoff_df,
-                  logfc_original_df,
-                  "CRISPRoff",
-                  "Re-analysis",
-                  y_axis_label_line = 2.5,
-                  show_remaining_genes = TRUE,
-                  layout_widths     = use_widths,
-                  layout_heights    = use_heights,
-                  show_empty_ticks  = FALSE,
-                  embed_PNG         = TRUE,
-                  label_gene_sets   = FALSE
-                  )
-dev.off()
-
-
-
-
-emf(file = file.path(thesis_dir, "5B i) Scatter plots - CRISPRoff vs. T.gonfio - replicate 2.emf"),
-    width = PDF_width, height = PDF_height, emfPlus = FALSE
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_4sg_df,
-                  logfc_CRISPRoff_df,
-                  "T.gonfio",
-                  "CRISPRoff",
-                  choose_rep           = 2,
-                  add_rep_to_label     = TRUE,
-                  show_remaining_genes = TRUE,
-                  y_axis_label_line    = 2.5,
-                  layout_widths        = use_widths,
-                  layout_heights       = use_heights,
-                  show_empty_ticks     = FALSE,
-                  embed_PNG            = TRUE
-                  )
-dev.off()
-
-
-
-
-emf(file = file.path(thesis_dir, "5B ii) Scatter plots - original vs. T.gonfio - replicate 2.emf"),
-    width = PDF_width, height = PDF_height, emfPlus = FALSE
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_4sg_df,
-                  logfc_original_df,
-                  "T.gonfio",
-                  "Re-analysis",
-                  choose_rep           = 2,
-                  add_rep_to_label     = TRUE,
-                  show_remaining_genes = TRUE,
-                  y_axis_label_line    = 2.5,
-                  layout_widths        = use_widths,
-                  layout_heights       = use_heights,
-                  show_empty_ticks     = FALSE,
-                  embed_PNG            = TRUE,
-                  label_gene_sets      = FALSE
-                  )
-dev.off()
-
-
-
-emf(file = file.path(thesis_dir, "5B iii) Scatter plots - original vs. CRISPRoff - replicate 2.emf"),
-    width = PDF_width, height = PDF_height, emfPlus = FALSE
-    )
-par(cex = 0.6, lwd = 0.8)
-ThreeScatterPlots(logfc_CRISPRoff_df,
-                  logfc_original_df,
-                  "CRISPRoff",
-                  "Re-analysis",
-                  choose_rep           = 2,
-                  add_rep_to_label     = TRUE,
-                  show_remaining_genes = TRUE,
-                  y_axis_label_line    = 2.5,
-                  layout_widths        = use_widths,
-                  layout_heights       = use_heights,
-                  show_empty_ticks     = FALSE,
-                  embed_PNG            = TRUE,
-                  label_gene_sets      = FALSE
-                  )
-dev.off()
-
-
-
-
+for (i in 1:6) {
+  if (i %in% 1:3) {
+    use_rep <- NULL
+  } else {
+    use_rep <- 2L
+  }
+  use_index <- rep(1:3, length.out = i)[[i]]
+  file_name <- paste0("5A ", tolower(as.character(as.roman(i))), ") ",
+                      "Scatter plots - CRISPRoff vs. T.gonfio - ",
+                      if (is.null(use_rep)) "both replicates" else paste0("replicate ", use_rep)
+                      )
+  devEMF::emf(file = file.path(thesis_dir, paste0(file_name, ".emf")),
+              width = PDF_width, height = PDF_height, emfPlus = FALSE, coordDPI = 1500
+              )
+  par(cex = 0.6, lwd = 0.7)
+  data1_name <- dataset_combos[[use_index]][[1]]
+  data2_name <- dataset_combos[[use_index]][[2]]
+  ThreeScatterPlots(get(df_names[[data1_name]]),
+                    get(df_names[[data2_name]]),
+                    data1_name,
+                    data2_name,
+                    label_gene_sets      = use_index == 1,
+                    choose_rep           = use_rep,
+                    add_rep_to_label     = !(is.null(use_rep)),
+                    show_remaining_genes = TRUE,
+                    x_axis_label_line    = 1.7,
+                    y_axis_label_line    = 2.1,
+                    layout_widths        = use_widths,
+                    layout_heights       = use_heights,
+                    show_empty_ticks     = FALSE,
+                    embed_PNG            = TRUE
+                    )
+  dev.off()
+}
 
 
 
@@ -1261,21 +1163,11 @@ box()
 
 
 
-PlotROCDf(common_ROC_original_df, show_AUC = FALSE,
-          line_color = brewer.pal(9, "Greys")[[7]]
-          )
-PlotROCDf(common_ROC_CRISPRoff_df, add = TRUE,
-          line_color = brewer.pal(9, "Blues")[[7]]
-          )
-PlotROCDf(common_ROC_4sg_df, add = TRUE,
-          line_color = brewer.pal(9, "Reds")[[4]]
-          )
-box()
-
-
-
-
+individual_ROC_df_list <- list(ROC_original_df, ROC_CRISPRoff_df, ROC_4sg_df)
 ROC_df_list <- list(common_ROC_original_df, common_ROC_CRISPRoff_df, common_ROC_4sg_df)
+
+ThreeLinesROC(individual_ROC_df_list)
+ThreeLinesROC(ROC_df_list)
 
 
 ThreeLinesROC(ROC_df_list, embed_PNG = TRUE, small_gap_size = 1.2, large_gap_multiplier = 1.3,
@@ -1287,9 +1179,9 @@ ThreeLinesROC(ROC_df_list, embed_PNG = TRUE, small_gap_size = 1.2, large_gap_mul
 
 
 devEMF::emf(file.path(thesis_dir, "3B) ROC curves.emf"),
-            width = 2.72, height = 2, emfPlus = FALSE
+            width = 2.72, height = 2, emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(mar = c(3, 4, 2, 7), cex = 0.6, lwd = 0.8)
+old_par <- par(mar = c(3, 4, 2, 7), cex = 0.6, lwd = 0.7)
 ThreeLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_multiplier = 1.5,
               transparency = FALSE, use_lwd = 1.75, legend_lwd = 2.5,
               line_x_distance = -0.5, legend_order = c(3, 1, 2), legend_inside = FALSE,
@@ -1297,7 +1189,6 @@ ThreeLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_m
               )
 par(old_par)
 dev.off()
-
 
 
 
@@ -1343,7 +1234,8 @@ for (i in seq_along(datasets_vec)) {
   old_par <- par(mar = c(3, 4, 2, 1), cex = 10.6, lwd = 10.5)
   BidirectionalViolins(bidirectional_df, get(datasets_vec[[i]]), max_distance = 20000,
                        num_controls = 30L, compare_across = FALSE, point_cex = 0.8,
-                       quantiles_lty = c("dashed", "longdash", "dashed"), # compatibility with emf device
+                       zero_lty = "solid", zero_color = "gray86",
+                       quantiles_lty = c("dotted", "dashed", "dotted"), # compatibility with emf device
                        annotation_cex = 1, draw_groups_n = FALSE, swarm_method = "compactswarm",
                        y_limits = c(-0.52, 0.2), label_points = TRUE,
                        gap_ratio = 1.2, wex = 0.86,

@@ -747,8 +747,7 @@ dev.off()
 # Export plots for the thesis ---------------------------------------------
 
 devEMF::emf(file.path(thesis_dir, "1A - GC content.emf"),
-            width  = 2.15,
-            height = 2.27, emfPlus = FALSE
+            width  = 2.15, height = 2.27, emfPlus = FALSE
             )
 par("cex" = 0.7, "lwd" = 0.8)
 TwoDensities(show_GC = TRUE, include_timepoints = c(1, 3),
@@ -764,8 +763,7 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1B - Per-base quality.emf"),
-            width  = 2.15,
-            height = 2.27, emfPlus = FALSE
+            width  = 2.15, height = 2.27, emfPlus = FALSE
             )
 
 par("cex" = 0.7, "lwd" = 0.8)
@@ -782,8 +780,7 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1C - Mean sequence quality.emf"),
-            width  = 2.15,
-            height = 2.27, emfPlus = FALSE
+            width  = 2.15, height = 2.27, emfPlus = FALSE
             )
 par("cex" = 0.7, "lwd" = 0.8)
 TwoDensities(show_GC = FALSE, include_timepoints = c(1, 3),
@@ -799,8 +796,7 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1D - Percentage of mapped reads.emf"),
-            width  = 2.5,
-            height = 2.27, emfPlus = FALSE
+            width  = 2.5, height = 2.27, emfPlus = FALSE
             )
 par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
 MappedReadsBarPlot(num_reads_detailed_mat, include_timepoints = c(1, 3),
@@ -821,8 +817,7 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1E - Percentage of 1MM reads.emf"),
-            width  = 2.5,
-            height = 2.27, emfPlus = FALSE
+            width  = 2.5, height = 2.27, emfPlus = FALSE
             )
 par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
 MappedReadsBarPlot(percent_1MM_mat, include_timepoints = c(1, 3),
@@ -843,8 +838,7 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1F - Template switch.emf"),
-            width  = 2.5,
-            height = 2.27, emfPlus = FALSE
+            width  = 2.5, height = 2.27, emfPlus = FALSE
             )
 par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
 MappedReadsBarPlot(rbind(percent_switch_vec, 1 - percent_switch_vec),
@@ -869,7 +863,7 @@ dev.off()
 # Export count-level QC plots for the thesis ------------------------------
 
 devEMF::emf(file.path(thesis_dir, "2A - Count histograms.emf"),
-            width = 2.47, height = 1.75, emfPlus = FALSE
+            width = 2.47, height = 1.75, emfPlus = FALSE, coordDPI = 1500
             )
 ManuscriptRawCountsHistogram(raw_counts_mat, "T.gonfio library",
                              use_mai = c(0.6, 0.8, 0.4, 1.4) * 0.6,
@@ -887,9 +881,9 @@ base_height <- 1.15
 devEMF::emf(file.path(thesis_dir, "2D - Scatter plot.emf"),
             width  = base_height + (sum(use_mai[c(2, 4)] * use_cex)),
             height = base_height + (sum(use_mai[c(1, 3)]) * use_cex),
-            emfPlus = FALSE
+            emfPlus = FALSE, coordDPI = 1500
             )
-old_par <- par(cex = 0.6, lwd = 0.8)
+old_par <- par(cex = 0.6, lwd = 0.7)
 Log2FCScatterPlot(baseline_indices     = 1:2,
                   intervention_indices = 5:6,
                   allow_switch         = FALSE,
@@ -917,24 +911,53 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "2E - Phenotype violin plots.emf"),
-            width = 1.4, height = 1.75, emfPlus = FALSE
+            width = 1.4, height = 1.75, emfPlus = FALSE, coordDPI = 1500
             )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+old_par <- par(mai = c(0.36, 0.48, 0.24, 0.12), cex = 0.6, lwd = 0.7)
 GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
              use_title = "T.gonfio library",
-             cloud_alpha = 0.2, cloud_sd = 0.015, point_cex = 0.2,
-             use_lwd = 0.6,
-             use_swarm = "sina", sina_wex_factor = 0.93,
-             violin_colors = brewer.pal(9, "Blues")[[7]], line_colors = brewer.pal(9, "Blues")[[4]],
-             zero_lty = "solid", zero_lwd = 0.6, zero_color = "gray70",
+             point_cex = 0.4,
+             sina_plot = TRUE, sina_wex_factor = 0.93,
+             violin_colors = "#9bc2e4",
+             line_colors = brewer.pal(9, "Blues")[[8]],
+             point_colors = brewer.pal(9, "Blues")[[2]],
+             zero_lty = "solid", zero_lwd = 0.7, zero_color = "gray70",
              y_label_line = 2.1,
-             png_res = 1200, wex = 0.85, side_gap = 0.525, show_y_axis = FALSE,
-             right_gap = 0.45
+             png_res = 1200, wex = 0.85, side_gap = 0.525, right_gap = 0.45,
+             mini_box = TRUE, show_y_axis = FALSE
              )
 rect(xleft   = par("usr")[[1]] - diff(grconvertX(c(0, 0.1), from = "lines", to = "user")),
      xright  = par("usr")[[1]] + (0.525 - 0.45),
      ybottom = par("usr")[[3]] - diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
      ytop    = par("usr")[[4]] + diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
+     col     = "white",
+     border  = NA,
+     xpd     = NA
+     )
+dev.off()
+
+
+
+devEMF::emf(file.path(thesis_dir, "2E - Phenotype violin plots - dark version.emf"),
+            width = 1.4, height = 1.75, emfPlus = FALSE, coordDPI = 1500
+            )
+old_par <- par(mai = c(0.36, 0.48, 0.24, 0.12), cex = 0.6, lwd = 0.7)
+GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
+             use_title = "T.gonfio library",
+             point_cex = 0.4,
+             use_lwd = 1, quantiles_lty = c("dotted", "dashed", "dotted"),
+             sina_plot = TRUE, sina_wex_factor = 0.93,
+             violin_colors = brewer.pal(9, "Blues")[[7]], line_colors = brewer.pal(9, "Blues")[[4]],
+             zero_lty = "solid", zero_lwd = 0.8, zero_color = "gray70",
+             y_label_line = 2.1,
+             png_res = 1200, wex = 0.85, side_gap = 0.525, right_gap = 0.45,
+             show_y_axis = FALSE
+             )
+rect(xleft   = par("usr")[[1]] - diff(grconvertX(c(0, 0.1), from = "lines", to = "user")),
+     xright  = par("usr")[[1]] + (0.525 - 0.45),
+     ybottom = par("usr")[[3]] - diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
+     ytop    = par("usr")[[4]] + diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
+     col     = "white",
      border  = NA,
      xpd     = NA
      )
@@ -946,9 +969,9 @@ dev.off()
 # Export main figures for the thesis --------------------------------------
 
 devEMF::emf(file.path(thesis_dir, "3A) Violin plot - iii) T.gonfio.emf"),
-            width = 2, height = 2, emfPlus = FALSE
+            width = 2, height = 2, emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9)
+old_par <- par(cex = 0.6, lwd = 0.7, lheight = 0.9)
 
 reps_list <- RepEssentialViolins(
   1:2, 5:6,
@@ -967,13 +990,14 @@ reps_list <- RepEssentialViolins(
   title_line       = 3.3,
   draw_border      = TRUE,
   wex              = 0.88,
-  quantiles_lty    = c("dashed", "longdash", "dashed"), # compatibility with emf device
+  quantiles_lty    = c("dotted", "dashed", "dotted"), # compatibility with emf device
   right_gap        = 0.4,
   bracket_color    = "gray50",
   draw_grid        = TRUE,
   indicate_zero    = FALSE,
   show_x_axis      = FALSE,
-  show_y_axis      = FALSE
+  show_y_axis      = FALSE,
+  grid_lwd         = 0.8
 )
 par(old_par)
 dev.off()

@@ -835,11 +835,10 @@ dev.off()
 
 
 
-
 # Export count-level QC plots for the thesis ------------------------------
 
 devEMF::emf(file.path(thesis_dir, "2A - Count histograms.emf"),
-            width = 2.47, height = 1.75, emfPlus = FALSE
+            width = 2.47, height = 1.75, emfPlus = FALSE, coordDPI = 1500
             )
 ManuscriptRawCountsHistogram(raw_counts_mat, "CRISPRoff library",
                              use_mai = c(0.6, 0.8, 0.4, 1.4) * 0.6,
@@ -855,9 +854,9 @@ base_height <- 1.15
 devEMF::emf(file.path(thesis_dir, "2D - Scatter plot.emf"),
             width  = base_height + (sum(use_mai[c(2, 4)] * use_cex)),
             height = base_height + (sum(use_mai[c(1, 3)]) * use_cex),
-            emfPlus = FALSE
+            emfPlus = FALSE, coordDPI = 1500
             )
-old_par <- par(cex = 0.6, lwd = 0.8)
+old_par <- par(cex = 0.6, lwd = 0.7)
 Log2FCScatterPlot(baseline_indices     = 1:2,
                   intervention_indices = 5:6,
                   allow_switch         = FALSE,
@@ -882,32 +881,51 @@ Log2FCScatterPlot(baseline_indices     = 1:2,
 dev.off()
 
 
+
 devEMF::emf(file.path(thesis_dir, "2E - Phenotype violin plots.emf"),
-            width = 1.4, height = 1.75, emfPlus = FALSE
+            width = 1.4, height = 1.75, emfPlus = FALSE, coordDPI = 1500
             )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.8)
+old_par <- par(mai = c(0.36, 0.48, 0.24, 0.12), cex = 0.6, lwd = 0.7)
 GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
              use_title = "CRISPRoff library",
-             cloud_alpha = 0.2, cloud_sd = 0.015, point_cex = 0.2,
-             use_lwd = 0.6,
-             use_swarm = "sina", sina_wex_factor = 0.93,
-             violin_colors = brewer.pal(9, "Blues")[[7]], line_colors = brewer.pal(9, "Blues")[[4]],
-             zero_lty = "solid", zero_lwd = 0.6, zero_color = "gray70",
+             point_cex = 0.4,
+             sina_plot = TRUE, sina_wex_factor = 0.93,
+             violin_colors = "#9bc2e4",
+             line_colors = brewer.pal(9, "Blues")[[8]],
+             point_colors = brewer.pal(9, "Blues")[[2]],
+             zero_lty = "solid", zero_lwd = 0.7, zero_color = "gray70",
              y_label_line = 2.1,
              png_res = 1200, wex = 0.85, side_gap = 0.525, right_gap = 0.45,
+             mini_box = TRUE
              )
 dev.off()
 
+
+
+devEMF::emf(file.path(thesis_dir, "2E - Phenotype violin plots - dark version.emf"),
+            width = 1.4, height = 1.75, emfPlus = FALSE, coordDPI = 1500
+            )
+old_par <- par(mai = c(0.36, 0.48, 0.24, 0.12), cex = 0.6, lwd = 0.7)
+GammaBoxPlot(counts_df, embed_PNG = TRUE, both_timepoints = FALSE,
+             use_title = "CRISPRoff library",
+             cloud_alpha = 0.4, cloud_sd = 0.015, point_cex = 0.4,
+             use_lwd = 1, quantiles_lty = c("dotted", "dashed", "dotted"),
+             sina_plot = TRUE, sina_wex_factor = 0.93,
+             violin_colors = brewer.pal(9, "Blues")[[7]], line_colors = brewer.pal(9, "Blues")[[4]],
+             zero_lty = "solid", zero_lwd = 0.8, zero_color = "gray70",
+             y_label_line = 2.1,
+             png_res = 1200, wex = 0.85, side_gap = 0.525, right_gap = 0.45
+             )
+dev.off()
 
 
 
 # Export main figures for the thesis --------------------------------------
 
 devEMF::emf(file.path(thesis_dir, "3A) Violin plot - ii) CRISPRoff.emf"),
-            width = 2, height = 2, emfPlus = FALSE
+            width = 2, height = 2, emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(cex = 0.6, lwd = 0.8, lheight = 0.9)
-
+old_par <- par(cex = 0.6, lwd = 0.7, lheight = 0.9)
 reps_list <- RepEssentialViolins(
   1:2, 5:6,
   use_title        = expression(bold("CRISPRoff library")),
@@ -925,13 +943,14 @@ reps_list <- RepEssentialViolins(
   title_line       = 3.3,
   draw_border      = TRUE,
   wex              = 0.88,
-  quantiles_lty    = c("dashed", "longdash", "dashed"), # compatibility with emf device
+  quantiles_lty    = c("dotted", "dashed", "dotted"), # compatibility with emf device
   right_gap        = 0.4,
   bracket_color    = "gray50",
   draw_grid        = TRUE,
   indicate_zero    = FALSE,
   show_x_axis      = FALSE,
-  show_y_axis      = FALSE
+  show_y_axis      = FALSE,
+  grid_lwd         = 0.8
 )
 par(old_par)
 dev.off()
@@ -946,6 +965,7 @@ logfc_CRISPRoff_df <- data.frame("sgID" = CRISPRoff_df[, "sgID_AB"],
                                  logfc_CRISPRoff_df, stringsAsFactors = FALSE
                                  )
 logfc_CRISPRoff_df[, "Entrez_ID"] <- as.integer(logfc_CRISPRoff_df[, "Entrez_ID"])
+
 
 
 
