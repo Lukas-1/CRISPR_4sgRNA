@@ -174,6 +174,15 @@ DrawHistogram <- function(numeric_input,
               xpd  = NA
               )
       }
+    } else if (!(show_both)) {
+      for (polygon_mat in polygon_mat_list) {
+        polygon(polygon_mat[, "x"],
+                polygon_mat[, "y"],
+                col    = hist_colors[[i]],
+                border = NA,
+                xpd    = NA
+                )
+      }
     }
     if (show_both) {
       for (polygon_mat in polygon_mat_list) {
@@ -434,7 +443,7 @@ ManuscriptRawCountsHistogram <- function(raw_counts_mat,
                                          semitransparent_lines = TRUE,
                                          ...
                                          ) {
-  old_par <- par(mai = use_mai, cex = 0.6, lwd = 0.8)
+  old_par <- par(mai = use_mai, cex = 0.6, lwd = 0.7)
   RawCountsHistogram(raw_counts_mat,
                      y_axis_upper_limit    = 1600,
                      fixed_y_upper_limit   = TRUE,
