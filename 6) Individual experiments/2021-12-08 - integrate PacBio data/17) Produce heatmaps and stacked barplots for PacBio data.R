@@ -232,7 +232,6 @@ for (include_promoters in c(FALSE, TRUE)) {
       use_top_title <- "T.spiezzo library"
     }
 
-
     for (draw_figure in c("D", "E", "F", "S4G")) {
 
       figure_prefix <- paste0(draw_figure, ") ")
