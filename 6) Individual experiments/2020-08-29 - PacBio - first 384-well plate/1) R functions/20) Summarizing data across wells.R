@@ -177,7 +177,7 @@ GetPlateSelection <- function(plate_names) {
 
 
 
-DrawGridlines <- function(y_limits, extra_grid_lines = TRUE) {
+DrawGridlines <- function(y_limits, extra_grid_lines = TRUE, grid_lwd = 1) {
   y_range <- y_limits[[2]] - y_limits[[1]]
   divide_by <- 20
   grid_seq <- seq(from = y_limits[[1]], to = y_limits[[2]], by = y_range / divide_by)
@@ -187,6 +187,7 @@ DrawGridlines <- function(y_limits, extra_grid_lines = TRUE) {
            y0   = grid_seq[are_main],
            col  = "gray88",
            lend = "butt",
+           lwd  = par("lwd") * grid_lwd,
            xpd  = NA
            )
   if (extra_grid_lines) {
@@ -194,7 +195,8 @@ DrawGridlines <- function(y_limits, extra_grid_lines = TRUE) {
              x1   = par("usr")[[2]],
              y0   = grid_seq[!(are_main)],
              col  = "gray95",
-             lend = "butt",
+             lend = "butt",,
+             lwd  = par("lwd") * grid_lwd,
              xpd  = NA
              )
   }
@@ -378,7 +380,9 @@ SetUpPercentagePlot <- function(use_columns,
                                                           ),
                                 points_centered    = FALSE,
                                 side_legend_x      = 1.25,
-                                side_legend_x_gap  = 0
+                                side_legend_x_gap  = 0,
+                                legend_fills       = NULL,
+                                grid_lwd           = 1
                                 ) {
 
   stopifnot("column_labels_list" %in% ls(envir = globalenv()))
@@ -417,7 +421,8 @@ SetUpPercentagePlot <- function(use_columns,
   ## Draw the grid
   if (draw_grid) {
     DrawGridlines(numeric_limits,
-                  extra_grid_lines = extra_grid_lines
+                  extra_grid_lines = extra_grid_lines,
+                  grid_lwd = grid_lwd
                   )
   }
 
@@ -521,7 +526,7 @@ SetUpPercentagePlot <- function(use_columns,
            y   = if (points_centered) y_pos[c(2, 5)] else y_pos[c(1, 4)],
            cex = point_cex,
            pch = legend_pch,
-           bg  = colors_mat[, "opaque_fill"],
+           bg  = if (is.null(legend_fills)) colors_mat[, "opaque_fill"] else legend_fills,
            col = colors_mat[, "opaque_outline"],
            xpd = NA
            )
@@ -668,63 +673,64 @@ CustomBoxPlot <- function(input_list,
                           use_wex       = 0.4,
                           draw_whiskers = TRUE,
                           median_lwd    = 3,
-                          dark_whiskers = FALSE
+                          mini_box      = FALSE,
+                          dark_whiskers = mini_box,
+                          box_lwd       = if (mini_box) 1.25 else 1.5
                           ) {
+
+ light_color <- brewer.pal(9, use_brewer_pal)[[2]]
+  if (mini_box) {
+    dark_color <- brewer.pal(9, use_brewer_pal)[[8]]
+  } else {
+    dark_color <- brewer.pal(9, use_brewer_pal)[[9]]
+  }
 
   if (draw_whiskers) {
     quantile_mat <- t(sapply(input_list, quantile, probs = c(0.05, 0.95), na.rm = TRUE))
     if (dark_whiskers) {
-      whisker_color <- brewer.pal(9, use_brewer_pal)[[9]]
+      whisker_color <- dark_color
     } else {
-      whisker_color <- brewer.pal(9, use_brewer_pal)[[5]]
+      whisker_color <-  brewer.pal(9, use_brewer_pal)[[5]]
     }
-
     segments(x0   = at_positions,
              y0   = quantile_mat[, 1],
              y1   = quantile_mat[, 2],
              col  = whisker_color,
-             lwd  = par("lwd") * 1.5,
+             lwd  = par("lwd") * box_lwd,
              xpd  = NA,
              lend = "butt"
              )
-    # whisker_half_width <- 0.025
-    # segments(x0   = at_positions - whisker_half_width,
-    #          x1   = at_positions + whisker_half_width,
-    #          y0   = quantile_mat[, 1],
-    #          col  = whisker_color,
-    #          lwd  = par("lwd"),
-    #          xpd  = NA,
-    #          lend = "butt"
-    #          )
-    # segments(x0   = at_positions - whisker_half_width,
-    #          x1   = at_positions + whisker_half_width,
-    #          y0   = quantile_mat[, 2],
-    #          col  = whisker_color,
-    #          lwd  = par("lwd"),
-    #          xpd  = NA,
-    #          lend = "butt"
-    #          )
   }
 
   boxplot(input_list,
           at         = at_positions,
-          boxwex     = use_wex * 0.4,
+          boxwex     = use_wex * (if (mini_box) 0.35 else 0.4),
           outline    = FALSE,
           names      = rep.int("", length(at_positions)),
           whisklty   = "blank",
           staplewex  = 0,
           whisklwd   = 0,
           staplelty  = 0,
-          medlwd     = par("lwd") * median_lwd,
-          col        = brewer.pal(9, use_brewer_pal)[[2]],
-          border     = brewer.pal(9, use_brewer_pal)[[9]],
+          medlwd     = if (mini_box) NA else par("lwd") * median_lwd,
+          col        = if (mini_box) dark_color else light_color,
+          border     = if (mini_box) NA else dark_color,
           add        = TRUE,
           axes       = FALSE,
-          lwd        = par("lwd") * 1.5
+          lwd        = par("lwd") * box_lwd
           )
 
+  if (mini_box) {
+    points(x    = at_positions,
+           y    = vapply(input_list, median, numeric(1)),
+           col  = dark_color,
+           bg   = light_color,
+           pch  = 23,
+           cex  = 0.8,
+           lwd  = par("lwd") * 1.15,
+           xpd  = NA
+           )
+  }
   return(invisible(NULL))
-
 }
 
 
@@ -826,7 +832,7 @@ DoSinaPlot <- function(numeric_list, x_positions, point_color, wex, add_jitter =
                                 )
   x_vec <- rep(x_positions, lengths(numeric_list))
   if (add_jitter) {
-    x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.0075)
+    x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = 0.01)
   }
   points(x_vec + (sina_df[, "scaled"] - sina_df[, "x"]),
          sina_df[, "y"],
@@ -859,6 +865,8 @@ SummaryBoxPlot <- function(input_df,
                            sina_plot         = FALSE,
                            sina_jitter       = TRUE,
                            shift_left        = 0,
+                           box_lwd           = 1.5,
+                           grid_lwd          = 1,
                            ...
                            ) {
 
@@ -893,6 +901,21 @@ SummaryBoxPlot <- function(input_df,
   } else {
     use_title <- custom_title
   }
+
+  use_brewer_pals <- c("Purples", "Blues")
+  if (draw_whiskers) {
+    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[3]], "")
+    point_colors <- vapply(use_brewer_pals, function(x) {
+      colorRampPalette(brewer.pal(9, x))(101)[[80]]
+    }, "")
+  } else {
+    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[4]], "")
+    point_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[8]], "")
+  }
+  if (sina_plot) {
+    point_colors <- c("#a39edb", "#a3c7eb")
+  }
+
   ## Prepare the raster graphics device
   if (embed_PNG) {
     PDF_mar <- par("mar")
@@ -912,12 +935,14 @@ SummaryBoxPlot <- function(input_df,
     par(cex = current_par[["cex"]])
     par(mar = rep(0, 4))
     SetUpPercentagePlot(use_columns, use_y_limits, NULL, side_gap = use_side_gap,
-                        for_embedded_PNG = TRUE, extra_grid_lines = TRUE
+                        for_embedded_PNG = TRUE, extra_grid_lines = TRUE,
+                        grid_lwd = grid_lwd
                         )
   } else {
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         side_gap = use_side_gap, legend_pch = 22, extra_grid_lines = TRUE,
-                        ...
+                        legend_fills = if (sina_plot) point_colors else NULL,,
+                        grid_lwd = grid_lwd, ...
                         )
   }
 
@@ -939,20 +964,8 @@ SummaryBoxPlot <- function(input_df,
     })
   }
 
-  use_brewer_pals <- c("Purples", "Blues")
-
-  if (draw_whiskers) {
-    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[3]], "")
-    point_colors <- vapply(use_brewer_pals, function(x) {
-      colorRampPalette(brewer.pal(9, x))(101)[[80]]
-    }, "")
-  } else {
-    violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[4]], "")
-    point_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[8]], "")
-  }
 
   if (sina_plot) {
-    point_colors <- c(brewer.pal(9, use_brewer_pals[[1]])[[5]], "#a9cbea")
     DoSinaPlot(control_list, control_pos, point_colors[[1]], wex = violin_wex * 0.5, add_jitter = sina_jitter)
     DoSinaPlot(selected_list, selected_pos, point_colors[[2]], wex = violin_wex, add_jitter = sina_jitter)
   } else {
@@ -1017,7 +1030,6 @@ SummaryBoxPlot <- function(input_df,
            )
   }
 
-
   if (embed_PNG) {
     dev.off()
     raster_array <- readPNG(temp_path)
@@ -1028,18 +1040,17 @@ SummaryBoxPlot <- function(input_df,
                         side_gap = use_side_gap,
                         for_embedded_PNG = TRUE, draw_grid = FALSE
                         )
-    rasterImage(raster_array,
-                xleft   = par("usr")[[1]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
-                xright  = par("usr")[[2]] + diff(grconvertX(c(0, PNG_adjust), from = "in", to = "user")),
-                ybottom = par("usr")[[3]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
-                ytop    = par("usr")[[4]] - diff(grconvertY(c(0, PNG_adjust), from = "in", to = "user")),
-                xpd     = NA
+    rasterImage(raster_array, xleft = par("usr")[[1]], xright = par("usr")[[2]],
+                ybottom = par("usr")[[3]], ytop = par("usr")[[4]], xpd = NA
                 )
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         legend_pch = 22, draw_grid = FALSE,
-                        make_plot = FALSE, ...
+                        make_plot = FALSE,
+                        legend_fills = if (sina_plot) point_colors else NULL,
+                        ...
                         )
   }
+
 
   ## Draw the superimposed borders of the violin plots
   if (!(sina_plot)) {
@@ -1058,13 +1069,13 @@ SummaryBoxPlot <- function(input_df,
   assign("delete_control_list", control_list, envir = globalenv())
   CustomBoxPlot(control_list, control_pos, use_brewer_pals[[1]],
                 use_wex = box_wex, draw_whiskers = draw_whiskers,
-                dark_whiskers = sina_plot
+                mini_box = sina_plot, box_lwd = box_lwd
                 )
 
   if (!(all(is.na(selected_mat)))) {
     CustomBoxPlot(selected_list, selected_pos, use_brewer_pals[[2]],
                   use_wex = box_wex, draw_whiskers = draw_whiskers,
-                  dark_whiskers = sina_plot
+                  mini_box = sina_plot, box_lwd = box_lwd
                   )
   }
 
@@ -1103,6 +1114,8 @@ SummaryStackedBars <- function(summary_df,
                                y_label_line       = 3,
                                x_labels_line      = 0.5,
                                use_side_gap       = 0.5,
+                               grid_lwd           = 1,
+                               four_colors        = c("#F9F4EC", "#DB678B", "#91C3DE", "#601A4A", NA),
                                ...
                                ) {
 
@@ -1185,7 +1198,7 @@ SummaryStackedBars <- function(summary_df,
        axes = FALSE,
        ann  = FALSE
        )
-  DrawGridlines(numeric_limits, extra_grid_lines = TRUE)
+  DrawGridlines(numeric_limits, extra_grid_lines = TRUE, grid_lwd = grid_lwd)
 
   ## Draw the title and/or sub-title
   if (!(is.null(sub_title))) {
@@ -1218,7 +1231,7 @@ SummaryStackedBars <- function(summary_df,
   mtext(text = "Percentage of reads", side = 2, line = y_label_line, cex = par("cex"))
 
   ## Prepare for drawing the bars
-  four_colors <- c("#F9F4EC", "#DB678B", colorRampPalette(brewer.pal(9, "Blues")[c(4, 5)])(5)[[2]], "#601A4A", NA)
+  # four_colors <- c("#F9F4EC", "#DB678B", colorRampPalette(brewer.pal(9, "Blues")[c(4, 5)])(5)[[2]], "#601A4A", NA)
 
   num_categories <- nrow(fractions_mat)
   lower_borders_vec_list <- lapply(seq_len(num_categories), function(x) {

@@ -32,6 +32,7 @@ SetUpBoxPlot <- function(num_groups,
                          zero_color    = "gray80",
                          grid_color    = "gray91",
                          grid_lty      = "solid",
+                         grid_lwd      = 1,
                          side_gap      = 0.5,
                          right_gap     = side_gap,
                          num_ticks     = 5,
@@ -43,7 +44,6 @@ SetUpBoxPlot <- function(num_groups,
   group_limits <- c((min(group_positions) - side_gap)  - (num_groups * 0.04),
                      max(group_positions) + right_gap  + (num_groups * 0.04)
                     )
-  print(group_limits)
 
   ## Prepare the data axis
   if (is.null(use_y_limits)) {
@@ -87,6 +87,7 @@ SetUpBoxPlot <- function(num_groups,
              x1  = par("usr")[[2]],
              y0  = grid_lines,
              col = grid_color,
+             lwd = par("lwd") * grid_lwd,
              lty = grid_lty,
              xpd = NA
              )
@@ -115,7 +116,6 @@ SetUpBoxPlot <- function(num_groups,
   if (draw_box) {
     box(bty = "l")
   }
-
   return(invisible(NULL))
 }
 
@@ -334,8 +334,10 @@ BeeViolinPlot <- function(input_list,
                           point_cex       = 0.4,
                           use_spacing     = 0.8,
                           swarm_method    = "swarm",
+                          sina_plot       = FALSE,
                           sina_wex_factor = 1,
-                          sina_jitter     = 0.0075,
+                          sina_jitter     = 0.01,
+                          mini_box        = FALSE,
                           y_limits        = NULL,
                           lower_bound     = NULL,
                           upper_bound     = NULL,
@@ -346,6 +348,7 @@ BeeViolinPlot <- function(input_list,
                           zero_color      = "gray80",
                           grid_color      = "gray91",
                           grid_lty        = "solid",
+                          grid_lwd        = 1,
                           draw_groups_n   = TRUE,
                           draw_points     = TRUE,
                           use_swarm       = TRUE,
@@ -444,11 +447,12 @@ BeeViolinPlot <- function(input_list,
                zero_color    = zero_color,
                grid_color    = grid_color,
                grid_lty      = grid_lty,
+               grid_lwd      = grid_lwd,
                num_ticks     = num_ticks,
                GridFunction  = GridFunction
                )
 
-  if (use_swarm != "sina") {
+  if (!(sina_plot)) {
     for (i in seq_along(numeric_list)) {
       SingleViolin(numeric_list[[i]][are_finite_list[[i]]],
                    at            = x_positions[[i]],
@@ -464,7 +468,7 @@ BeeViolinPlot <- function(input_list,
 
   if (draw_points) {
     set.seed(1)
-    if (use_swarm == "sina") {
+    if (sina_plot) {
       sina_df <- sinaplot::sinaplot(numeric_list,
                                     col       = adjustcolor(violin_colors, alpha.f = 0.4),
                                     plot      = FALSE,
@@ -483,18 +487,7 @@ BeeViolinPlot <- function(input_list,
              cex = point_cex,
              xpd = NA
              )
-      for (i in seq_along(numeric_list)) {
-        SingleViolin(numeric_list[[i]][are_finite_list[[i]]],
-                     at            = x_positions[[i]],
-                     violin_color  = NA,
-                     line_color    = line_colors[[i]],
-                     border_color  = NA,
-                     quantiles_lty = c("21", "solid", "21"),
-                     wex           = wex,
-                     ...
-                     )
-      }
-    } else if (isTRUE(use_swarm)) {
+    } else if (use_swarm) {
       beeswarm_df <- beeswarm::beeswarm(numeric_list,
                                         at       = x_positions,
                                         method   = swarm_method, #compactswarm
@@ -537,6 +530,7 @@ BeeViolinPlot <- function(input_list,
     }
   }
 
+
   if (embed_PNG) {
     dev.off()
     raster_array <- png::readPNG(temp_path)
@@ -563,6 +557,57 @@ BeeViolinPlot <- function(input_list,
       segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]],
                y0 = par("usr")[[3]], xpd = NA
                )
+    }
+  }
+
+  if (sina_plot) {
+    if (mini_box) {
+      quantile_mat <- t(sapply(input_list, quantile, probs = c(0.05, 0.95), na.rm = TRUE))
+      segments(x0   = x_positions,
+               y0   = quantile_mat[, 1],
+               y1   = quantile_mat[, 2],
+               col  = line_colors,
+               lend = "butt",
+               lwd  = par("lwd"),
+               xpd  = NA
+               )
+      point_radius <- (par("cxy")[2] / pi) * par("cex")
+      boxplot(input_list,
+              at         = x_positions,
+              boxwex     = point_radius * 2.5,
+              outline    = FALSE,
+              names      = rep.int("", length(x_positions)),
+              whisklty   = "blank",
+              staplewex  = 0,
+              whisklwd   = 0,
+              staplelty  = 0,
+              medlwd     = NA,
+              col        = line_colors,
+              border     = NA,
+              add        = TRUE,
+              axes       = FALSE
+              )
+      points(x    = x_positions,
+             y    = vapply(input_list, median, numeric(1)),
+             col  = line_colors,
+             bg   = point_colors,
+             pch  = 23,
+             cex  = par("cex") * 0.8,
+             lwd  = par("lwd") * 0.5,
+             xpd  = NA
+             )
+    } else {
+      for (i in seq_along(numeric_list)) {
+        SingleViolin(numeric_list[[i]][are_finite_list[[i]]],
+                     at            = x_positions[[i]],
+                     violin_color  = NA,
+                     line_color    = line_colors[[i]],
+                     border_color  = NA,
+                     quantiles_lty = quantiles_lty,
+                     wex           = wex,
+                     ...
+                     )
+      }
     }
   }
 
