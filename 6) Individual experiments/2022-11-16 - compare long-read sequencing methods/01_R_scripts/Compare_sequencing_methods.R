@@ -878,3 +878,12 @@ sum(pb_counts_df[, "Count_perfect"], na.rm = TRUE)
 
 
 
+
+# Calculate additional metrics of interest --------------------------------
+
+colSums(num_targeted_plasmids_mat[3, , drop = FALSE]) / colSums(num_switches_mat[3:4, , drop = FALSE]) * 100
+
+
+
+
+

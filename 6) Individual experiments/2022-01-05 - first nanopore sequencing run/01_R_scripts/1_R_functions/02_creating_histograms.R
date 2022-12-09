@@ -140,25 +140,9 @@ DrawHistogram <- function(numeric_input,
   ## Draw histogram
 
   if (embed_PNG) {
-    PDF_mar <- par("mar")
-    PDF_device <- dev.cur()
-    temp_path <- file.path(figures_dir, "temp.png")
-    temp_width  <- par("pin")[[1]]
-    temp_height <- par("pin")[[2]]
-    current_par <- par(no.readonly = TRUE)
-    png(filename = temp_path,
-        width    = temp_width,
-        height   = temp_height,
-        units    = "in",
-        res      = 900,
-        bg       = "white"
-        )
-    par(lwd = current_par[["lwd"]])
-    par(cex = current_par[["cex"]])
-    par(mar = rep(0, 4))
+    current_device <- StartEmbedPNG(figures_dir)
   }
-  plot(NA, ann = FALSE, axes = FALSE,
-       xlim = x_axis_limits, ylim = y_axis_limits,
+  plot(NA, ann = FALSE, axes = FALSE, xlim = x_axis_limits, ylim = y_axis_limits,
        xaxs = "i", yaxs = "i"
        )
 
@@ -197,19 +181,7 @@ DrawHistogram <- function(numeric_input,
   }
 
   if (embed_PNG) {
-    dev.off()
-    raster_array <- png::readPNG(temp_path)
-    file.remove(temp_path)
-    dev.set(PDF_device)
-    par(PDF_mar)
-    plot(NA, ann = FALSE, axes = FALSE,
-         xlim = x_axis_limits, ylim = y_axis_limits,
-         xaxs = "i", yaxs = "i"
-         )
-    rasterImage(raster_array,
-                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
-                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
-                )
+    StopEmbedPNG(current_device, figures_dir)
   }
 
   ## Draw x axis

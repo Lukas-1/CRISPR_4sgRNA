@@ -1318,22 +1318,7 @@ ReplicateScatterPlot <- function(input_df,
   old_mar <- par(mar = use_mar)
 
   if (embed_PNG) {
-    PDF_mar <- par("mar")
-    PDF_device <- dev.cur()
-    temp_path <- file.path(figures_dir, "temp.png")
-    temp_width  <- par("pin")[[1]]
-    temp_height <- par("pin")[[2]]
-    current_par <- par(no.readonly = TRUE)
-    png(filename = temp_path,
-        width    = temp_width,
-        height   = temp_height,
-        units    = "in",
-        res      = 900,
-        bg       = "white"
-        )
-    par(lwd = current_par[["lwd"]])
-    par(cex = current_par[["cex"]])
-    par(mar = rep(0, 4))
+    current_device <- StartEmbedPNG(figures_dir)
   }
 
   ## Set up plot canvas
@@ -1361,18 +1346,7 @@ ReplicateScatterPlot <- function(input_df,
   }
 
   if (embed_PNG) {
-    dev.off()
-    raster_array <- png::readPNG(temp_path)
-    file.remove(temp_path)
-    dev.set(PDF_device)
-    par(PDF_mar)
-    plot(NA, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i",
-         axes = FALSE, ann = FALSE
-         )
-    rasterImage(raster_array,
-                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
-                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
-                )
+    StopEmbedPNG(current_device, figures_dir)
   }
 
   ## Annotate plot
@@ -2278,26 +2252,11 @@ TwoDensities <- function(show_GC               = TRUE,
 
   ## Draw the two density plots
   for (i in 1:2) {
+
     MakeEmptyPlot(x_limits, y_limits)
 
     if (embed_PNG) {
-      PDF_mar <- par("mar")
-      PDF_device <- dev.cur()
-      temp_path <- file.path(figures_dir, "temp.png")
-      temp_width  <- par("pin")[[1]] + 0.02
-      temp_height <- par("pin")[[2]] + 0.02
-      current_par <- par(no.readonly = TRUE)
-      png(filename = temp_path,
-          width    = temp_width,
-          height   = temp_height,
-          units    = "in",
-          res      = 900,
-          bg       = "white",
-          type     = "cairo-png"
-          )
-      par(lwd = current_par[["lwd"]])
-      par(cex = current_par[["cex"]])
-      par(mai = rep(0.01, 4))
+      current_device <- StartEmbedPNG(figures_dir, use_cairo = TRUE, add_padding = TRUE)
       MakeEmptyPlot(x_limits, y_limits)
     }
 
@@ -2403,18 +2362,9 @@ TwoDensities <- function(show_GC               = TRUE,
     }
 
     if (embed_PNG) {
-      dev.off()
-      raster_array <- png::readPNG(temp_path)
-      file.remove(temp_path)
-      dev.set(PDF_device)
-      par(PDF_mar)
-      rasterImage(raster_array,
-                  xleft   = par("usr")[[1]] - diff(grconvertX(c(0, 0.01), from = "inches", to = "user")),
-                  xright  = par("usr")[[2]] + diff(grconvertX(c(0, 0.01), from = "inches", to = "user")),
-                  ybottom = par("usr")[[3]] - diff(grconvertY(c(0, 0.01), from = "inches", to = "user")),
-                  ytop    = par("usr")[[4]] + diff(grconvertY(c(0, 0.01), from = "inches", to = "user")),
-                  xpd = NA
-                  )
+      StopEmbedPNG(current_device, figures_dir, add_padding = TRUE,
+                   make_empty_plot = FALSE
+                   )
     }
 
     ## Draw the y axis
@@ -2556,23 +2506,7 @@ PerBaseQuality <- function(qual_mat,
     use_indices <- which(are_this_read)[are_included]
 
     if (embed_PNG) {
-      PDF_mar <- par("mar")
-      PDF_device <- dev.cur()
-      temp_path <- file.path(figures_dir, "temp.png")
-      temp_width  <- par("pin")[[1]] + 0.02
-      temp_height <- par("pin")[[2]] + 0.02
-      current_par <- par(no.readonly = TRUE)
-      png(filename = temp_path,
-          width    = temp_width,
-          height   = temp_height,
-          units    = "in",
-          res      = 900,
-          bg       = "white",
-          type     = "cairo-png"
-          )
-      par(lwd = current_par[["lwd"]])
-      par(cex = current_par[["cex"]])
-      par(mar = rep(0, 4))
+      current_device <- StartEmbedPNG(figures_dir, use_cairo = TRUE)
       MakeEmptyPlot(x_limits = c(0, 21), y_limits = c(0, 40))
     }
 
@@ -2581,21 +2515,21 @@ PerBaseQuality <- function(qual_mat,
          xright  = if (i == 1) 20 else par("usr")[[2]],
          ybottom = 28,
          ytop    = 40,
-         col     = adjustcolor("#C6E8BF", alpha.f = 0.4),
+         col     = Palify("#C6E8BF", fraction_pale = 0.6),
          border  = NA
          )
     rect(xleft   = par("usr")[[1]],
          xright  = if (i == 1) 20 else par("usr")[[2]],
          ybottom = 20,
          ytop    = 28,
-         col     = adjustcolor("#FFEDA0", alpha.f = 0.4),
+         col     = Palify("#FFEDA0", fraction_pale = 0.6),
          border  = NA
          )
     rect(xleft   = par("usr")[[1]],
          xright  = if (i == 1) 20 else par("usr")[[2]],
          ybottom = 0,
          ytop    = 20,
-         col     = adjustcolor("#FCC9B3", alpha.f = 0.4),
+         col     = Palify("#FCC9B3", fraction_pale = 0.6),
          border  = NA
          )
 
@@ -2611,15 +2545,7 @@ PerBaseQuality <- function(qual_mat,
     }
 
     if (embed_PNG) {
-      dev.off()
-      raster_array <- png::readPNG(temp_path)
-      file.remove(temp_path)
-      dev.set(PDF_device)
-      par(PDF_mar)
-      rasterImage(raster_array,
-                  xleft   = par("usr")[[1]], xright = par("usr")[[2]],
-                  ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
-                  )
+      StopEmbedPNG(current_device, figures_dir, make_empty_plot = FALSE)
     }
 
     ## Draw the x axis

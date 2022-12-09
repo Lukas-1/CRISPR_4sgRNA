@@ -199,22 +199,7 @@ ThreeScatterPlots <- function(logfc_1_df,
     MakeEmptyPlot(xy_lim, xy_lim)
 
     if (embed_PNG) {
-      PDF_mar <- par("mar")
-      PDF_device <- dev.cur()
-      temp_path <- file.path(output_dir, "temp.png")
-      temp_width  <- par("pin")[[1]]
-      temp_height <- par("pin")[[2]]
-      current_par <- par(no.readonly = TRUE)
-      png(filename = temp_path,
-          width    = temp_width,
-          height   = temp_height,
-          units    = "in",
-          res      = 900,
-          bg       = "white"
-          )
-      par(lwd = current_par[["lwd"]])
-      par(cex = current_par[["cex"]])
-      par(mar = rep(0, 4))
+      current_device <- StartEmbedPNG(output_dir)
       MakeEmptyPlot(xy_lim, xy_lim)
     }
 
@@ -232,15 +217,7 @@ ThreeScatterPlots <- function(logfc_1_df,
            )
 
     if (embed_PNG) {
-      dev.off()
-      raster_array <- png::readPNG(temp_path)
-      file.remove(temp_path)
-      dev.set(PDF_device)
-      par(PDF_mar)
-      rasterImage(raster_array,
-                  xleft   = par("usr")[[1]], xright = par("usr")[[2]],
-                  ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
-                  )
+      StopEmbedPNG(current_device, output_dir, make_empty_plot = FALSE)
     }
 
     ## Annotate plot
@@ -593,23 +570,7 @@ ThreeLinesROC <- function(ROC_df_list,
   }
 
   if (embed_PNG) {
-    PDF_mar <- par("mar")
-    PDF_device <- dev.cur()
-    temp_path <- file.path(figures_dir, "temp.png")
-    temp_width  <- par("pin")[[1]]
-    temp_height <- par("pin")[[2]]
-    current_par <- par(no.readonly = TRUE)
-    png(filename = temp_path,
-        width    = temp_width,
-        height   = temp_height,
-        units    = "in",
-        res      = 900,
-        bg       = "white",
-        type     = "cairo-png"
-        )
-    par(lwd = current_par[["lwd"]])
-    par(cex = current_par[["cex"]])
-    par(mar = rep(0, 4))
+    current_device <- StartEmbedPNG(figures_dir)
   }
 
   MakeEmptyPlot(axis_limits, axis_limits)
@@ -634,16 +595,7 @@ ThreeLinesROC <- function(ROC_df_list,
   }
 
   if (embed_PNG) {
-    dev.off()
-    raster_array <- png::readPNG(temp_path)
-    file.remove(temp_path)
-    dev.set(PDF_device)
-    par(PDF_mar)
-    MakeEmptyPlot(axis_limits, axis_limits)
-    rasterImage(raster_array,
-                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
-                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
-                )
+    StopEmbedPNG(current_device, figures_dir)
   }
 
   if (embed_PNG) {

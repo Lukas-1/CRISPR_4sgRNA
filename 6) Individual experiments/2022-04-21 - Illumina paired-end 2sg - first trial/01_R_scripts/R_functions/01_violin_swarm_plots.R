@@ -152,6 +152,81 @@ GetHalfLineWidth <- function(y_axis = FALSE) {
 
 
 
+StartEmbedPNG <- function(temp_dir,
+                          png_res           = 900,
+                          use_cairo         = FALSE,
+                          transparent_bg    = FALSE,
+                          add_padding       = FALSE,
+                          padding_in_inches = 0.01
+                          ) {
+  previous_device <- dev.cur()
+  current_par <- par(no.readonly = TRUE)
+  png_width <- par("pin")[[1]]
+  png_height <- par("pin")[[2]]
+  if (add_padding) {
+    png_width <- padding_in_inches * 2
+    png_height <- padding_in_inches * 2
+  }
+  png(filename = file.path(temp_dir, "temp.png"),
+      width    = par("pin")[[1]],
+      height   = par("pin")[[2]],
+      units    = "in",
+      res      = png_res,
+      bg       = if (transparent_bg) "transparent" else "white",
+      type     = if (use_cairo) "cairo-png" else "windows"
+      )
+  par(lwd = current_par[["lwd"]])
+  par(cex = current_par[["cex"]])
+  if (add_padding) {
+    par(mai = rep(padding_in_inches, 4))
+  } else {
+    par(mai = rep(0, 4))
+  }
+  return(previous_device)
+}
+
+
+
+StopEmbedPNG <- function(current_device,
+                         temp_dir,
+                         draw_image        = TRUE,
+                         add_padding       = FALSE,
+                         padding_in_inches = 0.01,
+                         make_empty_plot   = TRUE
+                         ) {
+  previous_usr <- par("usr")
+  dev.off()
+  temp_path <- file.path(temp_dir, "temp.png")
+  raster_array <- png::readPNG(temp_path)
+  file.remove(temp_path)
+  dev.set(current_device)
+  if (draw_image) {
+    if (make_empty_plot) {
+      plot(NA, xlim = previous_usr[c(1, 2)], ylim = previous_usr[c(3, 4)],
+           xaxs = "i", yaxs = "i", ann = FALSE, axes = FALSE
+           )
+    }
+    if (add_padding) {
+      x_padding <- diff(grconvertX(c(0, padding_in_inches), from = "inches", to = "user"))
+      y_padding <- diff(grconvertY(c(0, padding_in_inches), from = "inches", to = "user"))
+      rasterImage(raster_array,
+                  xleft   = par("usr")[[1]] - x_padding,
+                  xright  = par("usr")[[2]] + x_padding,
+                  ybottom = par("usr")[[3]] - y_padding,
+                  ytop    = par("usr")[[4]] + y_padding,
+                  xpd     = NA
+                  )
+    } else {
+      rasterImage(raster_array, xleft = par("usr")[[1]], xright = par("usr")[[2]],
+                  ybottom = par("usr")[[3]], ytop = par("usr")[[4]]
+                  )
+    }
+    return(invisible(NULL))
+  } else {
+    return(invisible(raster_array))
+  }
+}
+
 
 
 # Functions for drawing violin plots --------------------------------------
@@ -318,6 +393,7 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
 
 
 
+
 BeeViolinPlot <- function(input_list,
                           groups_vec      = NULL,
                           gap_ratio       = 1.25,
@@ -415,22 +491,7 @@ BeeViolinPlot <- function(input_list,
   }
 
   if (embed_PNG) {
-    PDF_mar <- par("mar")
-    PDF_device <- dev.cur()
-    temp_path <- file.path(figures_dir, "temp.png")
-    temp_width  <- par("pin")[[1]]
-    temp_height <- par("pin")[[2]]
-    current_par <- par(no.readonly = TRUE)
-    png(filename = temp_path,
-        width    = temp_width,
-        height   = temp_height,
-        units    = "in",
-        res      = png_res,
-        bg       = "white"
-        )
-    par(lwd = current_par[["lwd"]])
-    par(cex = current_par[["cex"]])
-    par(mar = rep(0, 4))
+    current_device <- StartEmbedPNG(figures_dir)
   }
 
   SetUpBoxPlot(num_groups,
@@ -532,25 +593,7 @@ BeeViolinPlot <- function(input_list,
 
 
   if (embed_PNG) {
-    dev.off()
-    raster_array <- png::readPNG(temp_path)
-    file.remove(temp_path)
-    dev.set(PDF_device)
-    par(PDF_mar)
-    SetUpBoxPlot(num_groups,
-                 data_range    = range(numeric_vec),
-                 use_y_limits  = y_limits,
-                 side_gap      = side_gap,
-                 right_gap     = right_gap,
-                 draw_grid     = draw_grid,
-                 draw_box      = FALSE,
-                 draw_axis     = FALSE,
-                 indicate_zero = FALSE,
-                 )
-    rasterImage(raster_array,
-                xleft   = par("usr")[[1]], xright = par("usr")[[2]],
-                ybottom = par("usr")[[3]], ytop   = par("usr")[[4]]
-                )
+    StopEmbedPNG(current_device, figures_dir)
     if (show_x_axis) {
       box(bty = "l")
     } else {
