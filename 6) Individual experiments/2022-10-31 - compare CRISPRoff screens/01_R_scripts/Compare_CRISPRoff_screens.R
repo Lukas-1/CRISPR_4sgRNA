@@ -1174,34 +1174,187 @@ datasets_vec <- c(
   "T.gonfio library"  = "common_logfc_4sg_df"
 )
 
-
 for (i in seq_along(datasets_vec)) {
   file_name <- paste0("4) Bidirectional violins - ",
                       tolower(as.character(as.roman(i))), ") ",
                       names(datasets_vec)[[i]]
                       )
   devEMF::emf(file.path(thesis_dir, paste0(file_name, ".emf")),
-              width = 66, height = 42, emfPlus = FALSE
+              width = 66, height = 42, emfPlus = FALSE, coordDPI = 3000
               )
-  old_par <- par(mar = c(3, 4, 2, 1), cex = 10.6, lwd = 10.5)
-  BidirectionalViolins(bidirectional_df, get(datasets_vec[[i]]), max_distance = 20000,
-                       num_controls = 30L, compare_across = FALSE, point_cex = 0.8,
-                       zero_lty = "solid", zero_color = "gray86",
-                       quantiles_lty = c("dotted", "dashed", "dotted"), # compatibility with emf device
-                       annotation_cex = 1, draw_groups_n = FALSE, swarm_method = "compactswarm",
-                       y_limits = c(-0.52, 0.2), label_points = TRUE,
-                       gap_ratio = 1.2, wex = 0.86,
-                       side_gap = 0.4, right_gap = 0.3, use_spacing = 0.85,
-                       y_start_adj = -0.6, y_line_adj = +0.1
+  par(cex = 10.6, lwd = 10.5)
+  BidirectionalViolins(bidirect_df       = bidirectional_df,
+                       logfc_df          = get(datasets_vec[[i]]),
+                       max_distance      = 20000,
+                       num_controls      = 30L,
+                       compare_across    = FALSE,
+                       point_cex         = 0.8,
+                       draw_grid         = TRUE,
+                       grid_color        = "gray88",
+                       zero_lty          = "solid",
+                       zero_color        = "gray68",
+                       show_x_axis       = FALSE,
+                       quantiles_lty     = c("dotted", "dashed", "dotted"), # compatibility with emf device
+                       annotation_cex    = 1,
+                       draw_groups_n     = FALSE,
+                       swarm_method      = "compactswarm",
+                       wex               = 0.86,
+                       y_limits          = c(-0.6, 0.2),
+                       lower_bound       = -0.6,
+                       label_points      = TRUE,
+                       gap_ratio         = 1.2,
+                       side_gap          = 0.4,
+                       right_gap         = 0.3,
+                       use_spacing       = 0.85,
+                       y_start_adj       = -0.8,
+                       y_line_adj        = 0.1,
+                       p_value_cex       = 0.8,
+                       draw_group_labels = i == 3,
+                       show_title        = names(datasets_vec)[[i]]
                        )
-  mtext(names(datasets_vec)[[i]], at = 0.7, adj = 0, line = -0.3,
-        cex = par("cex"), font = 2
-        )
-  par(old_par)
   dev.off()
 }
 
 
+
+# Analyze the effect of proximity to essential genes ----------------------
+
+## Compute distances to the nearest essential gene
+distances_original_data_df    <- DistanceToEssential(common_logfc_original_df, TSS_df,  use_data_for_essential = TRUE)
+distances_CRISPRoff_data_df   <- DistanceToEssential(common_logfc_CRISPRoff_df, TSS_df, use_data_for_essential = TRUE)
+distances_4sg_data_df         <- DistanceToEssential(common_logfc_4sg_df, TSS_df,       use_data_for_essential = TRUE)
+
+distances_original_depmap_df  <- DistanceToEssential(common_logfc_original_df, TSS_df,  use_data_for_essential = FALSE)
+distances_CRISPRoff_depmap_df <- DistanceToEssential(common_logfc_CRISPRoff_df, TSS_df, use_data_for_essential = FALSE)
+distances_4sg_depmap_df       <- DistanceToEssential(common_logfc_4sg_df, TSS_df,       use_data_for_essential = FALSE)
+
+
+## Compare the range of distances between datasets and
+## different definitions of gene essentiality
+range(abs(distances_original_data_df[, "Distance"]), na.rm = TRUE)
+range(abs(distances_CRISPRoff_data_df[, "Distance"]), na.rm = TRUE)
+range(abs(distances_4sg_data_df[, "Distance"]), na.rm = TRUE)
+range(abs(distances_original_depmap_df[, "Distance"]), na.rm = TRUE)
+range(abs(distances_CRISPRoff_depmap_df[, "Distance"]), na.rm = TRUE)
+range(abs(distances_4sg_depmap_df[, "Distance"]), na.rm = TRUE)
+
+
+## Visualize the phenotype score versus the distance to
+## the nearest essential gene
+DistanceScatter(distances_original_data_df,  x_limit = 7.625)
+DistanceScatter(distances_CRISPRoff_data_df, x_limit = 7.625)
+DistanceScatter(distances_4sg_data_df,       x_limit = 7.625)
+DistanceScatter(distances_original_depmap_df)
+DistanceScatter(distances_CRISPRoff_depmap_df)
+DistanceScatter(distances_4sg_depmap_df)
+
+DistanceScatter(distances_original_depmap_df, x_grid = TRUE)
+
+
+## Perform visualizations for subsets of genes
+DistanceScatter(distances_original_depmap_df[distances_original_depmap_df[, "DepMap_essentiality"] %in% "Essential", ],
+                use_hue = "#6c4cbd"
+                )
+DistanceScatter(distances_original_depmap_df[distances_original_depmap_df[, "DepMap_essentiality"] %in% "Non-essential", ],
+                use_hue = "#3c9f5d"
+                )
+DistanceScatter(distances_4sg_depmap_df[distances_4sg_depmap_df[, "DepMap_essentiality"] %in% "Essential", ],
+                use_hue = "#6c4cbd"
+                )
+DistanceScatter(distances_4sg_depmap_df[distances_4sg_depmap_df[, "DepMap_essentiality"] %in% "Non-essential", ],
+                use_hue = "#3c9f5d"
+                )
+
+are_low <- distances_original_data_df[, "Mean_log2FC"] < -2
+DistanceScatter(distances_original_data_df[, "Distance"][are_low],
+                distances_original_data_df[, "Nearest_mean_log2FC"][are_low],
+                x_limit = 7.625
+                )
+DistanceScatter(distances_original_data_df[, "Distance"][are_low],
+                distances_original_data_df[, "Mean_log2FC"][are_low],
+                x_limit = 7.625
+                )
+
+
+## Export plots for a multi-figure panel
+
+datasets_vec <- c(
+  "Data re-analysis"  = "distances_original_depmap_df",
+  "CRISPRoff library" = "distances_CRISPRoff_depmap_df",
+  "T.gonfio library"  = "distances_4sg_depmap_df"
+)
+
+for (i in seq_along(datasets_vec)) {
+  file_name <- paste0("4) Scatter plots of distance - ",
+                      tolower(as.character(as.roman(i))), ") ",
+                      names(datasets_vec)[[i]]
+                      )
+  devEMF::emf(file.path(thesis_dir, paste0(file_name, ".emf")),
+              width = 66, height = 42, emfPlus = FALSE, coordDPI = 3000
+              )
+  par(mai = c(12.72, 8.48, 6.36, 3.18), cex = 10.6, lwd = 10.5)
+  DistanceScatter(get(datasets_vec[[i]]),
+                  point_cex = 0.6, #point_color = "#2a4d98", median_color = "black",
+                  embed_PNG = TRUE, png_res = 50, png_padding = 1,
+                  grid_lwd = 0.6, median_lwd = 1.4, x_grid = TRUE,
+                  show_x_label = i == 3, grid_color = "gray88",
+                  grid_highlight = "gray68"
+                  )
+
+  mtext(VerticalAdjust(names(datasets_vec)[[i]]),
+        at = grconvertX(0.015, from = "npc", to = "user"),
+        adj = 0, line = -0.05, cex = par("cex")
+        )
+  dev.off()
+}
+
+use_x_limit <- max(log10(abs(distances_4sg_depmap_df[, "Distance"])), na.rm = TRUE)
+use_x_limit <- use_x_limit + ((use_x_limit - 1) * 0.015)
+
+file_name <- paste0("4) Scatter plots of distance - ",
+                    "iv) essential genes"
+                    )
+devEMF::emf(file.path(thesis_dir, paste0(file_name, ".emf")),
+            width = 66, height = 42, emfPlus = FALSE, coordDPI = 3000
+            )
+par(mai = c(12.72, 8.48, 6.36, 3.18), cex = 10.6, lwd = 10.5)
+DistanceScatter(distances_4sg_depmap_df[distances_4sg_depmap_df[, "DepMap_essentiality"] %in% "Essential", ],
+                use_hue = "#6c4cbd",
+                point_cex = 0.6, #point_color = "#2a4d98", median_color = "black",
+                embed_PNG = TRUE, png_res = 50, png_padding = 1,
+                grid_lwd = 0.6, median_lwd = 1.4, x_grid = TRUE,
+                grid_color = "gray88",
+                grid_highlight = "gray68",
+                x_limit = use_x_limit
+                )
+mtext(VerticalAdjust("T.gonfio library: essential genes"),
+      at = grconvertX(0.015, from = "npc", to = "user"),
+      adj = 0, line = -0.05, cex = par("cex")
+      )
+dev.off()
+
+
+file_name <- paste0("4) Scatter plots of distance - ",
+                    "v) non-essential genes"
+                    )
+devEMF::emf(file.path(thesis_dir, paste0(file_name, ".emf")),
+            width = 66, height = 42, emfPlus = FALSE, coordDPI = 3000
+            )
+par(mai = c(12.72, 8.48, 6.36, 3.18), cex = 10.6, lwd = 10.5)
+DistanceScatter(distances_4sg_depmap_df[distances_4sg_depmap_df[, "DepMap_essentiality"] %in% "Non-essential", ],
+                use_hue = "#3c9f5d",
+                point_cex = 0.6, #point_color = "#2a4d98", median_color = "black",
+                embed_PNG = TRUE, png_res = 50, png_padding = 1,
+                grid_lwd = 0.6, median_lwd = 1.4, x_grid = TRUE,
+                grid_color = "gray88",
+                grid_highlight = "gray68",
+                x_limit = use_x_limit
+                )
+mtext(VerticalAdjust("T.gonfio library: non-essential genes"),
+      at = grconvertX(0.015, from = "npc", to = "user"),
+      adj = 0, line = -0.05, cex = par("cex")
+      )
+dev.off()
 
 
 

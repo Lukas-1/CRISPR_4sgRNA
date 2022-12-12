@@ -660,36 +660,58 @@ PrettyScientific <- function(input_number, digits = 0, scientific = 4) {
 
 
 
-IndicatePValue <- function(x_1, x_2, vec_1, vec_2, paired = FALSE, y_line_adj = 0, y_start_adj = 0) {
+IndicatePValue <- function(x_1,
+                           x_2,
+                           vec_1,
+                           vec_2,
+                           paired      = FALSE,
+                           y_line_adj  = 0,
+                           y_start_adj = 0,
+                           p_value_cex = 0.3
+                           ) {
 
-  ## Draw brackets to indicate between-group comparison
+  ## Compute statistics
+  p_val <- t.test(vec_1, vec_2, paired = paired)[["p.value"]]
+  p_value_label <- PrettyScientific(p_val)
+  p_value_label <- ConcatenateExpressions(list(expression(italic("p")), p_value_label), my_sep = " = ")
+
+  ## Determine x and y positions
   y_pos <- par("usr")[[4]] + diff(grconvertY(c(0, 0.5 + y_start_adj), from = "lines", to = "user"))
   y_pos_line <- y_pos + diff(grconvertY(c(0, y_line_adj), from = "lines", to = "user"))
+  y_text_pos <- y_pos + diff(grconvertY(c(0, 0.5), from = "lines", to = "user"))
+  y_bottom_line <-  y_pos_line - diff(grconvertY(c(0, 0.25), from = "lines", to = "user"))
+
+  ## Draw a white background rectangle over the grid
+  rect(xleft   = x_1 - diff(grconvertX(c(0, 1.5), from = "lines", to = "user")),
+       xright  = x_2 + diff(grconvertX(c(0, 1.5), from = "lines", to = "user")),
+       ybottom = y_bottom_line,
+       ytop    = y_text_pos + diff(grconvertY(c(0, 0.5), from = "lines", to = "user")),
+       col     = "white",
+       border  = NA,
+       xpd     = NA
+       )
+
+  ## Draw brackets to indicate between-group comparison
   segments(x0  = x_1,
            x1  = x_2,
            y0  = y_pos_line,
-           col = "gray50",
+           col = "gray60",
            xpd = NA
            )
   segments(x0  = c(x_1, x_2),
            y0  = y_pos_line,
-           y1  = y_pos_line - diff(grconvertY(c(0, 0.25), from = "lines", to = "user")),
-           col = "gray50",
+           y1  = y_bottom_line,
+           col = "gray60",
            xpd = NA
            )
 
   ## Show p values
-  p_val <- t.test(vec_1, vec_2, paired = paired)[["p.value"]]
-  p_value_label <- PrettyScientific(p_val)
-  p_value_label <- ConcatenateExpressions(list(expression(italic("p")), p_value_label), my_sep = " = ")
-  y_text_pos <- y_pos + diff(grconvertY(c(0, 0.5), from = "lines", to = "user"))
   text(x      = mean(c(x_1, x_2)),
        y      = y_text_pos,
        labels = VerticalAdjust(p_value_label),
-       cex    = 0.7,
+       cex    = p_value_cex,
        xpd    = NA
        )
-
   return(invisible(NULL))
 }
 
@@ -714,6 +736,8 @@ BidirectionalViolins <- function(bidirect_df,
                                  gap_ratio            = 1.35,
                                  y_start_adj          = 0,
                                  y_line_adj           = 0,
+                                 p_value_cex          = 0.7,
+                                 show_title           = NULL,
                                  ...
                                  ) {
 
@@ -820,15 +844,18 @@ BidirectionalViolins <- function(bidirect_df,
   if (draw_group_labels) {
     label_positions <- tapply(x_positions, groups_vec, mean)
     more_space <- annotation_cex > 0.7
-    mtext(rep(c(as.expression(bquote("" <= .(distance_cutoff / 1000) * scriptscriptstyle(" ") * "kb")),
-                as.expression(bquote("1\u2013" * .(max_distance / 1000) * scriptscriptstyle(" ") * "kb"))
-                ), 3),
-          side = 1, at = x_positions, line = if (more_space) 0.4 else 0.1, cex = par("cex") * annotation_cex
+    distance_labels <- c(
+      as.expression(bquote("" <= .(distance_cutoff / 1000) * scriptscriptstyle(" ") * "kb")),
+      as.expression(bquote("1\u2013" * .(max_distance / 1000) * scriptscriptstyle(" ") * "kb"))
+    )
+    distance_labels <- sapply(distance_labels, VerticalAdjust)
+    mtext(rep(distance_labels, 3),
+          side = 1, at = x_positions, line = 0.75, cex = par("cex") * annotation_cex
           )
     segments(x0  = label_positions - 0.7,
              x1  = label_positions + 0.7,
              y0  = par("usr")[[3]] - diff(grconvertY(c(0, if (more_space) 1.65 else 1.3), from = "lines", to = "user")),
-             col = "gray50",
+             col = "gray60",
              xpd = NA
              )
     old_lheight <- par("lheight" = 1.15)
@@ -851,26 +878,33 @@ BidirectionalViolins <- function(bidirect_df,
                    numeric_list[[1]],
                    numeric_list[[3]],
                    paired = TRUE,
-                   y_line_adj = y_line_adj,
-                   y_start_adj = y_start_adj
+                   y_line_adj  = y_line_adj,
+                   y_start_adj = y_start_adj,
+                   p_value_cex = p_value_cex
                    )
     IndicatePValue(x_positions[[3]] + x_space,
                    x_positions[[5]],
                    numeric_list[[3]],
                    numeric_list[[5]],
-                   y_line_adj = y_line_adj,
-                   y_start_adj = y_start_adj
+                   y_line_adj  = y_line_adj,
+                   y_start_adj = y_start_adj,
+                   p_value_cex = p_value_cex
                    )
   } else {
     IndicatePValue(x_positions[[3]],
                    x_positions[[4]],
                    numeric_list[[3]],
                    numeric_list[[4]],
-                   y_line_adj = y_line_adj - 0.1,
-                   y_start_adj = y_start_adj
+                   y_line_adj  = y_line_adj - 0.1,
+                   y_start_adj = y_start_adj,
+                   p_value_cex = p_value_cex
                    )
   }
 
+  mtext(VerticalAdjust(show_title),
+        at = grconvertX(0.015, from = "npc", to = "user"),
+        adj = 0, line = -0.05, cex = par("cex")
+        )
   par(old_mar)
   return(invisible(NULL))
 }
@@ -1426,6 +1460,378 @@ Log2FCScatterPlot <- function(allow_switch         = FALSE,
 
 
 
+
+# Functions for analyzing the proximity to essential genes ----------------
+
+DistanceToEssential <- function(logfc_df,
+                                use_TSS_df,
+                                use_data_for_essential = FALSE,
+                                essential_logfc_cutoff = -2
+                                ) {
+
+  ## Check assumptions
+  stopifnot(!(anyNA(logfc_df[, "Gene_symbol"])))
+  stopifnot(!(any(duplicated(logfc_df[, "Gene_symbol"]))))
+  stopifnot(!(anyNA(use_TSS_df[, "Gene_symbol"])))
+  stopifnot(!(any(duplicated(use_TSS_df[, "Gene_symbol"]))))
+  stopifnot(!(anyNA(use_TSS_df[, "Chromosome"])))
+
+  ## Prepare the TSS positions of essential genes
+  if (use_data_for_essential) {
+    matches_vec <- match(use_TSS_df[, "Entrez_ID"], logfc_df[, "Entrez_ID"])
+    are_essential <- (logfc_df[, "Mean_log2FC"][matches_vec] <= essential_logfc_cutoff) %in% TRUE
+  } else {
+    are_essential <- use_TSS_df[, "Essentiality"] %in% "Essential"
+  }
+  positions_vec <- use_TSS_df[, "TSS"]
+  names(positions_vec) <- use_TSS_df[, "Gene_symbol"]
+  essential_positions_list <- split(positions_vec[are_essential],
+                                    use_TSS_df[, "Chromosome"][are_essential]
+                                    )
+
+  ## Find the nearest essential genes
+  df_list <- lapply(names(essential_positions_list), function(chromosome) {
+    essential_positions_vec <- essential_positions_list[[chromosome]]
+    are_this_chromosome <- use_TSS_df[, "Chromosome"] == chromosome
+    nearest_list <- lapply(which(are_this_chromosome), function(x) {
+      this_symbol <- use_TSS_df[, "Gene_symbol"][[x]]
+      use_positions_vec <- essential_positions_vec[names(essential_positions_vec) != this_symbol]
+      distances_vec <- use_TSS_df[, "TSS"][[x]] - use_positions_vec
+      nearest_index <- which.min(abs(distances_vec))
+      results_list <- list(
+        "Gene_symbol"    = this_symbol,
+        "Nearest_symbol" = names(distances_vec)[[nearest_index]],
+        "Distance"       = distances_vec[[nearest_index]]
+      )
+      return(results_list)
+    })
+    results_df <- do.call(rbind.data.frame,
+                          c(nearest_list, list(stringsAsFactors = FALSE, make.row.names = FALSE))
+                          )
+    return(results_df)
+  })
+  results_df <- do.call(rbind.data.frame,
+                        c(df_list, list(stringsAsFactors = FALSE, make.row.names = FALSE))
+                        )
+
+  ## Integrate with TSS data
+  symbol_matches <- match(results_df[, "Gene_symbol"], use_TSS_df[, "Gene_symbol"])
+  nearest_matches <- match(results_df[, "Nearest_symbol"], use_TSS_df[, "Gene_symbol"])
+  results_df <- data.frame(
+    use_TSS_df[symbol_matches, "Chromosome", drop = FALSE],
+    results_df["Gene_symbol"],
+    "Entrez_ID" = use_TSS_df[, "Entrez_ID"][symbol_matches],
+    "DepMap_essentiality" = use_TSS_df[, "Essentiality"][symbol_matches],
+    results_df["Nearest_symbol"],
+    "Nearest_entrez" = use_TSS_df[, "Entrez_ID"][nearest_matches],
+    results_df["Distance"],
+    stringsAsFactors = FALSE
+  )
+
+  ## Integrate with log2 fold change data
+  matches_vec <- match(logfc_df[, "Entrez_ID"], results_df[, "Entrez_ID"])
+  are_numeric <- vapply(logfc_df, is.numeric, logical(1)) & (!(vapply(logfc_df, is.integer, logical(1))))
+  results_df <- data.frame(
+    logfc_df[, !(are_numeric)],
+    logfc_df["Mean_log2FC"],
+    "Nearest_mean_log2FC" = NA,
+    results_df[matches_vec, !(names(results_df) %in% c("Entrez_ID", "Gene_symbol"))],
+    stringsAsFactors = FALSE,
+    check.names = FALSE,
+    row.names = NULL
+  )
+  matches_vec <- match(results_df[, "Nearest_entrez"], results_df[, "Entrez_ID"])
+  results_df[, "Nearest_mean_log2FC"] <- results_df[, "Mean_log2FC"][matches_vec]
+  return(results_df)
+}
+
+
+
+RollingQuantiles <- function(x_vec,
+                             y_vec,
+                             use_window = 20L,
+                             all_quantiles = c(0.05, 0.25, 0.5, 0.75, 0.95)
+                             ) {
+  use_order <- order(x_vec)
+  x_vec <- x_vec[use_order]
+  y_vec <- y_vec[use_order]
+  fill_vec <- rep(NA, use_window - 1L)
+  padded_y_vec <- c(fill_vec, y_vec, fill_vec)
+  start_vec <- seq(from = 1, to = length(padded_y_vec) - use_window + 1L)
+  stop_vec <- seq(from = use_window, to = length(padded_y_vec))
+  indices_list <- mapply(function(x, y) seq(x, y), start_vec, stop_vec, SIMPLIFY = FALSE)
+  data_list <- lapply(indices_list, function(x) padded_y_vec[x])
+  quantile_mat <- t(vapply(data_list, quantile, probs = all_quantiles, na.rm = TRUE, numeric(5)))
+  use_indices <- seq(from = use_window / 2, to = (use_window / 2) + length(y_vec) - 1)
+  quantile_mat <- quantile_mat[use_indices, ]
+  results_mat <- cbind(
+    "x" = x_vec,
+    "y" = y_vec,
+    quantile_mat
+  )
+  return(results_mat)
+}
+
+
+
+DistanceScatter <- function(distance_vec,
+                            logfc_vec       = NULL,
+                            lower_bound     = -0.6,
+                            upper_bound     = 0.2,
+                            num_ticks       = 5L,
+                            x_lower_bound   = 10L,
+                            y_axis_label    = NULL,
+                            x_limit         = NULL,
+                            y_limits        = c(lower_bound, upper_bound),
+                            loess_span      = 0.5,
+                            use_hue         = "#275dd3", #2777d3
+                            point_cex       = 0.4,
+                            point_color     = "black",
+                            show_x_labels   = TRUE,
+                            x_grid          = FALSE,
+                            grid_lwd        = 1,
+                            grid_color      = "gray85",
+                            grid_highlight  = grid_color,
+                            median_lwd      = 1.5,
+                            median_color    = NULL,
+                            embed_PNG       = FALSE,
+                            png_res         = 900,
+                            png_padding     = 0.1
+                            ) {
+
+  ## Prepare data
+  if (is.null(logfc_vec) && ("data.frame" %in% class(distance_vec))) {
+    logfc_vec <- distance_vec[, "Mean_log2FC"]
+    distance_vec <- distance_vec[, "Distance"]
+    if (is.null(y_axis_label)) {
+      y_axis_label <- expression("Mean phenotype (" * gamma * ")")
+    }
+  } else {
+    y_axis_label <- expression("Phenotype (" * gamma * ")")
+  }
+  x_vec <- abs(distance_vec)
+  y_vec <- logfc_vec / 10
+
+  are_NA <- is.na(x_vec) | (is.na(y_vec))
+  x_vec <- x_vec[!(are_NA)]
+  y_vec <- y_vec[!(are_NA)]
+  use_order <- order(x_vec)
+  x_vec <- x_vec[use_order]
+  y_vec <- y_vec[use_order]
+
+  ## Truncate very low distances (if there is only a single outlier)
+  are_outliers <- x_vec < x_lower_bound
+  truncated_x_vec <- x_vec
+  if (length(unique(x_vec[are_outliers])) == 1) {
+    curtailed_x <- TRUE
+    truncated_x_vec[are_outliers] <- x_lower_bound
+  } else {
+    curtailed_x <- FALSE
+  }
+  x_vec <- log10(x_vec)
+  truncated_x_vec <- log10(truncated_x_vec)
+
+  ## Compute smoothened quantile estimates
+  ## Inspired by: https://www.r-statistics.com/2010/04/quantile-loess-combining-a-moving-quantile-window-with-loess-r-function/
+  finite_y_vec <- ifelse(y_vec == -Inf, -0.6, y_vec)
+  quant_mat <- RollingQuantiles(x_vec, finite_y_vec, use_window = 20)
+  loess_mat <- sapply(setdiff(colnames(quant_mat), c("x", "y")), function(x) {
+    loess(quant_mat[, x] ~ quant_mat[, "x"], family = "symmetric", span = loess_span)[["fitted"]]
+  })
+
+  ## Ensure that the quantile estimates do not intersect
+  loess_mat[, "25%"] <- ifelse(loess_mat[, "50%"] < loess_mat[, "25%"], loess_mat[, "50%"], loess_mat[, "25%"])
+  loess_mat[, "5%"]  <- ifelse(loess_mat[, "25%"] < loess_mat[, "5%"],  loess_mat[, "25%"], loess_mat[, "5%"])
+  loess_mat[, "75%"] <- ifelse(loess_mat[, "50%"] > loess_mat[, "75%"],  loess_mat[, "50%"], loess_mat[, "75%"])
+  loess_mat[, "95%"] <- ifelse(loess_mat[, "75%"] > loess_mat[, "95%"],  loess_mat[, "75%"], loess_mat[, "95%"])
+
+  ## Determine axis limits
+  curtailed_y_list <- BringWithinLimits(y_vec, lower_bound = lower_bound, upper_bound = upper_bound)
+  truncated_y_vec <- curtailed_y_list[["curtailed_vec"]]
+  x_range <- range(truncated_x_vec)
+  if (x_range[[1]] > 1) {
+    x_range[[1]] <- 1
+  }
+  if ((!(is.null(x_limit))) && (x_range[[2]] < x_limit)) {
+    x_range[[2]] <- x_limit
+  }
+  y_range <- range(truncated_y_vec)
+  if (!(is.null(y_limits))) {
+    if (y_range[[1]] > y_limits[[1]]) {
+      y_range[[1]] <- y_limits[[1]]
+    }
+    if (y_range[[2]] < y_limits[[2]]) {
+      y_range[[2]] <- y_limits[[2]]
+    }
+  }
+
+  ## Set up the plot region and grid
+  if (embed_PNG) {
+    current_device <- StartEmbedPNG(figures_dir, png_res = png_res, add_padding = TRUE, padding_in_inches = png_padding)
+  }
+  MakeEmptyPlot(x_limits = x_range + (diff(x_range) * c(-0.015, if (is.null(x_limit)) 0.015 else 0)),
+                y_limits = y_range + (diff(y_range) * c(if (x_grid) 0 else -0.025, 0))
+                )
+  x_ticks <- pretty(axTicks(1), n = 6)
+  y_ticks <- pretty(axTicks(2), n = num_ticks)
+  if (x_grid) {
+    x_grid_bottom <- par("usr")[[3]]
+    if (show_x_labels) {
+      x_grid_bottom <- x_grid_bottom - diff(grconvertY(c(0, 0.275), from = "lines", to = "user"))
+    }
+    segments(x0  = x_ticks,
+             y0  = x_grid_bottom,
+             y1  = par("usr")[[4]],
+             col = ifelse(x_ticks == log10(1000), grid_color, grid_color),
+             lwd = grid_lwd * par("lwd"),
+             xpd = NA
+             )
+  }
+  segments(x0  = par("usr")[[1]],
+           x1  = par("usr")[[2]],
+           y0  = y_ticks,
+           col = ifelse(y_ticks == 0, grid_highlight, grid_color),
+           lwd = grid_lwd * par("lwd"),
+           xpd = NA
+           )
+
+  ## Draw shading for the quantile estimates
+  polygon(x      = c(quant_mat[, "x"], rev(quant_mat[, "x"])),
+          y      = c(loess_mat[, "5%"], rev(loess_mat[, "95%"])),
+          col    = adjustcolor(use_hue, alpha.f = 0.2),
+          border = NA
+          )
+  polygon(x      = c(quant_mat[, "x"], rev(quant_mat[, "x"])),
+          y      = c(loess_mat[, "25%"], rev(loess_mat[, "75%"])),
+          col    =  adjustcolor(use_hue, alpha.f = 0.25),
+          border = NA
+          )
+
+  ## Draw points and mean line
+  points(x   = truncated_x_vec,
+         y   = truncated_y_vec,
+         pch = 16,
+         cex = point_cex,
+         col = adjustcolor(point_color, alpha.f = 0.4),
+         xpd = NA
+         )
+  lines(x    = quant_mat[, "x"],
+        y    = loess_mat[, "50%"],
+        col  = if (is.null(median_color)) adjustcolor(use_hue, alpha.f = 0.85) else median_color,
+        lwd  = median_lwd * par("lwd"),
+        lend = "butt"
+        )
+  if (embed_PNG) {
+    StopEmbedPNG(current_device, output_dir, add_padding = TRUE, padding_in_inches = png_padding)
+  }
+
+  ## Prepare axis labels
+  old_scipen <- options(scipen = -1)
+  x_axis_labels <- as.character(10^x_ticks)
+  x_axis_labels <- sub("e+0", "0^", x_axis_labels, fixed = TRUE)
+  if ((x_axis_labels[[1]] == "10") && (x_axis_labels[[length(x_axis_labels)]] == "10^7")) {
+    x_axis_labels <- c("10 bp", "100 bp", "1 kb", "10 kb", "100 kb",
+                       "1 Mb", "10 Mb"
+                       )
+    if (curtailed_x && (x_lower_bound == 10)) {
+      x_axis_labels <- sapply(x_axis_labels, function(x) VerticalAdjust(x))
+      x_axis_labels[1] <- VerticalAdjust(expression("" <= "10 bp"))
+    }
+  } else {
+    x_axis_labels <- parse(text = x_axis_labels)
+  }
+  options(old_scipen)
+  y_axis_labels <- CurtailedAxisLabels(
+    y_ticks,
+    lower_bound          = lower_bound,
+    upper_bound          = upper_bound,
+    lower_bound_enforced = curtailed_y_list[["lower_bound_enforced"]],
+    upper_bound_enforced = curtailed_y_list[["upper_bound_enforced"]]
+  )
+
+  ## Draw axes
+  if (show_x_labels) {
+    axis(1,
+         at     = x_ticks,
+         labels = x_axis_labels,
+         mgp    = c(3, if (is.expression(x_axis_labels)) 0.75 else 0.45, 0),
+         tcl    = -0.35,
+         lwd    = par("lwd"),
+         tick   = !(x_grid)
+         )
+    mtext("Distance to nearest essential gene", side = 1, line = 1.45,
+          cex = par("cex"), padj = 1
+          )
+  }
+  axis(2,
+       at       = y_ticks,
+       labels   = y_axis_labels,
+       mgp      = c(3, 0.5, 0),
+       tcl      = -0.35,
+       las      = 1,
+       lwd      = par("lwd"),
+       cex.axis = 1 / 0.7
+       )
+  mtext(y_axis_label, side = 2, line = 2.5, cex = par("cex"))
+  if (!(x_grid)) {
+    box(bty = "l")
+  }
+  return(invisible(NULL))
+}
+
+
+# Quantile.loess <- function(Y,
+#                            X = NULL,
+#                            number.of.splits = NULL,
+#                            window.size = 20,
+#                            percent.of.overlap.between.two.windows = NULL,
+#                            the.distance.between.each.window = NULL,
+#                            the.quant = .95,
+#                            window.alignment = c("center"),
+#                            window.function = function(x) {quantile(x, the.quant)},
+#                            # If you wish to use this with a running average instead of a running quantile, you could simply use:
+#                            # window.function = mean,
+#                            ...
+#                            ) {
+#
+#   library("zoo")
+#
+#   # input: Y and X, and smoothing parameters
+#   # output: new y and x
+#   # Extra parameter "..." goes to the loess
+#   # window.size ==  the number of observation in the window (not the window length!)
+#   # "number.of.splits" will override "window.size"
+#   # let's compute the window.size:
+#   if (!is.null(number.of.splits)) {
+#     window.size <- ceiling(length(Y) / number.of.splits)
+#   }
+#   # If the.distance.between.each.window is not specified, let's make the distances fully distinct
+#   if (is.null(the.distance.between.each.window)) {
+#     the.distance.between.each.window <- window.size
+#   }
+#   # If percent.of.overlap.between.windows is not null, it will override the.distance.between.each.window
+#   if (!is.null(percent.of.overlap.between.two.windows)) {
+#     the.distance.between.each.window <- window.size * (1 - percent.of.overlap.between.two.windows)
+#   }
+#   if(is.null(X)) {
+#     X <- index(Y)
+#   } # if we don't have any X, then Y must be ordered, in which case, we can use the indexes of Y as X.
+#   # creating our new X and Y
+#   zoo.Y <- zoo(x = Y, order.by = X)
+#   assign("delete_zoo_y", zoo.Y, envir = globalenv())
+#   #zoo.X <- attributes(zoo.Y)$index
+#   new.Y <- rollapply(zoo.Y, width = window.size,
+#                      FUN = window.function,
+#                      by = the.distance.between.each.window,
+#                      align = window.alignment
+#                      )
+#   new.X <- attributes(new.Y)[["index"]]
+#   new.Y.loess <- loess(new.Y ~ new.X, family = "symmetric", ...)[["fitted"]]
+#   return(list(y = new.Y, x = new.X, y.loess = new.Y.loess))
+# }
+
+
+
 # Functions for creating bar charts for missing plasmids ------------------
 
 FormatPercentages <- function(percentages_vec) {
@@ -1520,7 +1926,6 @@ FourBars <- function(bar_values,
 
 
 
-
 # Helper functions for plotting QC data -----------------------------------
 
 PlotBarplotMat <- function(barplot_mat,
@@ -1582,7 +1987,6 @@ DrawBottomLabels <- function(x_positions, groups_vec, are_included) {
         )
   return(invisible(NULL))
 }
-
 
 
 
@@ -1861,7 +2265,6 @@ GammaBoxPlot <- function(use_counts_df,
 
 
 
-
 # Functions for displaying read-level QC data -----------------------------
 
 MappedReadsBarPlot <- function(num_reads_mat,
@@ -2031,7 +2434,6 @@ MappedReadsBarPlot <- function(num_reads_mat,
   }
   return(invisible(NULL))
 }
-
 
 
 
@@ -2422,7 +2824,6 @@ TwoDensities <- function(show_GC               = TRUE,
 
 
 
-
 PerBaseQuality <- function(qual_mat,
                            include_timepoints    = 1:3,
                            semitransparent_lines = TRUE,
@@ -2629,7 +3030,6 @@ PerBaseQuality <- function(qual_mat,
   layout(1)
   return(invisible(NULL))
 }
-
 
 
 
