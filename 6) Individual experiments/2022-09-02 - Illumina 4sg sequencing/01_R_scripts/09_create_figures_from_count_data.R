@@ -68,7 +68,7 @@ counts_df <- counts_df[new_order, ]
 row.names(counts_df) <- NULL
 
 sg_mat <- as.matrix(CRISPRoff_df[, c("Sequence_sg2", "Sequence_sg3")])
-library_densities <- GetLibraryDensities(sg_mat[!(are_obsolete), ])
+library_densities <- GetLibraryDensities(sg_mat)
 
 
 
@@ -601,6 +601,7 @@ percent_1MM_mat <- prop.table(percent_1MM_mat, margin = 2)
 
 
 ## Prepare count data
+are_obsolete <- CRISPRoff_df[, "Is_obsolete"] %in% "Yes"
 counts_mat <- GetCountsMat(counts_df[!(are_obsolete), ],
                            allow_switch = FALSE,
                            allow_1MM    = TRUE,
