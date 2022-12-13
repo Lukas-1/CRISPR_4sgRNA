@@ -120,8 +120,15 @@ table(Nunez_df[, "mutant_hit"])
 
 matches_vec <- match(Nunez_df[, "sgID"], CRISPRoff_df[, "sgID_AB"])
 stopifnot(!(anyNA(matches_vec)))
-Nunez_df[, "Entrez_ID"] <- CRISPRoff_df[, "Entrez_ID"][matches_vec]
-Nunez_df[, "Gene_symbol"] <- CRISPRoff_df[, "Gene_symbol"][matches_vec]
+for (column_name in c("Entrez_ID", "Gene_symbol", "Is_preferred_plasmid")) {
+  Nunez_df[, column_name] <- CRISPRoff_df[, column_name][matches_vec]
+}
+new_order <- order(
+  match(Nunez_df[, "Entrez_ID"], Nunez_df[, "Entrez_ID"]),
+  !(Nunez_df[, "Is_preferred_plasmid"])
+)
+Nunez_df <- Nunez_df[new_order, ]
+row.names(Nunez_df) <- NULL
 
 
 

@@ -104,9 +104,9 @@ CRISPRoff_df[, "Has_shared_sgRNA"] <- (num_occurrences_sg1 > 1) | (num_occurrenc
 
 
 
-# Calculate the number of plasmids for each Entrez ID ---------------------
+# Choose between multiple plasmids for some Entrez IDs --------------------
 
-CRISPRoff_df[, "Num_plasmids_for_Entrez"] <- table(CRISPRoff_df[, "Entrez_ID"])[CRISPRoff_df[, "Entrez_ID"]]
+CRISPRoff_df <- ChooseBetweenMultiplePlasmids(CRISPRoff_df)
 
 
 

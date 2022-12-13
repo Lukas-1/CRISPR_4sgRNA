@@ -47,6 +47,15 @@ load(file.path(CRISPR_root_directory, "3) RData files", "1) General",
 
 # Prepare R objects -------------------------------------------------------
 
+new_order <- order(
+  match(CRISPRoff_df[, "Entrez_ID"], CRISPRoff_df[, "Entrez_ID"]),
+  !(CRISPRoff_df[, "Is_preferred_plasmid"])
+)
+CRISPRoff_df <- CRISPRoff_df[new_order, ]
+row.names(CRISPRoff_df) <- NULL
+counts_df <- counts_df[new_order, ]
+row.names(counts_df) <- NULL
+
 sg_mat <- as.matrix(CRISPRoff_df[, c("protospacer_A", "protospacer_B")])
 library_densities <- GetLibraryDensities(sg_mat)
 
