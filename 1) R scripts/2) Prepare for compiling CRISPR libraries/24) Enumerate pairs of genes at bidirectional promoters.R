@@ -192,7 +192,7 @@ pairs_df[, "Combination"] <- three_classes
 
 bidirectional_df <- pairs_df
 
-save(bidirectional_df,
+save(list = c("bidirectional_df", "TSS_df"),
      file = file.path(general_RData_directory,
                       "24) Enumerate pairs of genes at bidirectional promoters.RData"
                       )
