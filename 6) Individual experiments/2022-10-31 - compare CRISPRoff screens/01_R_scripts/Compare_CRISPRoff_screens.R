@@ -791,10 +791,10 @@ this_bars_vec <- abs(c(separation_original_mat["Robust SSMD", ],
 bar_positions <- CompareScreenBars(
   this_bars_vec,
   short_labels = TRUE,
-  use_tcl = 0.35, y_axis_label_line = 2, y_axis_mgp = 0.525,
+  use_tcl = 0.35, y_axis_label_line = 1.9, y_axis_mgp = 0.525,
   gini_index = FALSE, y_axis_label = "SSMD*",
   y_upper_limit = 1.5, draw_grid = TRUE,
-  y_axis_n = 3, bar_color = "#7b98b7", stem_color = "#e8edf2",
+  y_axis_n = 3, bar_color = "#407ab5", stem_color = "#e0ebf5",
   gap_ratio = 1.7, side_gap = 0.6,
   bar_width = 0.4, lollipop = TRUE, point_size_factor = 1.25,
   group_labels_y = 1.75
@@ -1136,8 +1136,8 @@ devEMF::emf(file.path(thesis_dir, "3B) ROC curves.emf"),
 old_par <- par(mar = c(3, 4, 2, 7), cex = 0.6, lwd = 0.7)
 ThreeLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_multiplier = 1.5,
               transparency = FALSE, use_lwd = 1.75, legend_lwd = 2.5,
-              line_x_distance = -0.5, legend_order = c(3, 1, 2), legend_inside = FALSE,
-              length_in_lines = 0.55, lines_x_start = 1
+              line_x_distance = -0.4, legend_order = c(3, 1, 2), legend_inside = FALSE,
+              length_in_lines = 0.55, lines_x_start = 0.9
               )
 par(old_par)
 dev.off()
