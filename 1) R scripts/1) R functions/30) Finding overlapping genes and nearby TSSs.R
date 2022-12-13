@@ -832,6 +832,15 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
                           }
                         })
   summary_df[["Affected_genes_strand"]] <- strands_vec
+  if ("Is_main_TSS" %in% names(by_gene_df)) {
+    entrezs_splits <- strsplit(by_gene_df[, "Affected_Entrez_IDs"], ", ", fixed = TRUE)
+    indices_list <- split(seq_len(nrow(by_gene_df)), by_gene_df[, "Index"])
+    summary_df[["Affects_intended_main_TSS"]] <- vapply(indices_list, function(x) {
+      are_main_TSS <- by_gene_df[["Is_main_TSS"]][x]
+      main_TSS_entrezs <- unlist(entrezs_splits[x][are_main_TSS])
+      by_gene_df[["Intended_Entrez_ID"]][x][[1]] %in% main_TSS_entrezs
+    }, logical(1))
+  }
 
   ## List all perfect-match loci that target a gene
   loci_list <- tapply(by_gene_df[["Guide_locus"]], by_gene_df[["Index"]], unique)
