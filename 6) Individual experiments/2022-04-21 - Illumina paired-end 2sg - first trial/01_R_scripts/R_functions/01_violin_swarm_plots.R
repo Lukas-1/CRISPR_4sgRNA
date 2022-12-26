@@ -105,7 +105,7 @@ SetUpBoxPlot <- function(num_groups,
   if (draw_axis) {
     axis(2,
          at     = tick_locations,
-         labels = format(tick_locations),
+         labels = format(tick_locations, trim = TRUE),
          mgp    = c(3, 0.55, 0),
          tcl    = -0.375,
          las    = 1,
@@ -164,12 +164,12 @@ StartEmbedPNG <- function(temp_dir,
   png_width <- par("pin")[[1]]
   png_height <- par("pin")[[2]]
   if (add_padding) {
-    png_width <- padding_in_inches * 2
-    png_height <- padding_in_inches * 2
+    png_width <- png_width + (padding_in_inches * 2)
+    png_height <- png_height + (padding_in_inches * 2)
   }
   png(filename = file.path(temp_dir, "temp.png"),
-      width    = par("pin")[[1]],
-      height   = par("pin")[[2]],
+      width    = png_width,
+      height   = png_height,
       units    = "in",
       res      = png_res,
       bg       = if (transparent_bg) "transparent" else "white",
@@ -373,19 +373,30 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
                                 lower_bound_enforced, upper_bound_enforced
                                 ) {
   plain_axis_labels <- format(tick_positions, trim = TRUE)
-  axis_labels <- lapply(plain_axis_labels, function(x) as.expression(bquote(""[.(x)])))
+  plain_no_minus <- sub("-", "", plain_axis_labels, fixed = TRUE)
+  axis_labels <- lapply(seq_along(tick_positions), function(x) {
+    if (tick_positions[[x]] < 0) {
+      as.expression(bquote(""["" - .(plain_no_minus[[x]])]))
+    } else {
+      as.expression(bquote(""[.(plain_axis_labels[[x]])]))
+    }
+  })
   axis_labels <- sapply(axis_labels, function(x) x)
   if (lower_bound_enforced && (abs(lower_bound - tick_positions[[1]]) < 1e-15)) {
-    axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(.(if (tick_positions[[1]] < 0) "" else " "))
-                                              * .(plain_axis_labels[[1]])]
-    ))
+    if (tick_positions[[1]] < 0) {
+      axis_labels[1] <- as.expression(bquote(""["" <= "" - "" * .(plain_no_minus[[1]])]))
+    } else {
+      axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(" ") * .(plain_axis_labels[[1]])]))
+    }
   }
   if (upper_bound_enforced) {
     num_ticks <- length(tick_positions)
     if (abs(upper_bound - tick_positions[[num_ticks]]) < 1e-15) {
-      axis_labels[num_ticks] <- as.expression(bquote(""["" >= scriptscriptstyle(" ") *
-                                                          .(plain_axis_labels[[num_ticks]])]
-      ))
+      if (tick_positions[[num_ticks]] < 0) {
+        axis_labels[num_ticks] <- as.expression(bquote(""["" >= "" - "" * .(plain_no_minus[[num_ticks]])]))
+      } else {
+        axis_labels[num_ticks] <- as.expression(bquote(""["" >= scriptscriptstyle(" ") * .(plain_axis_labels[[num_ticks]])]))
+      }
     }
   }
   return(axis_labels)
@@ -478,7 +489,6 @@ BeeViolinPlot <- function(input_list,
   numeric_vec <- curtailed_list[["curtailed_vec"]]
   lower_bound_enforced <- curtailed_list[["lower_bound_enforced"]]
   upper_bound_enforced <- curtailed_list[["upper_bound_enforced"]]
-  assign("delete_curtailed_list", curtailed_list, envir = globalenv())
   numeric_list <- split(numeric_vec, group_indices)
   are_finite_list <- split(are_finite, group_indices)
 
