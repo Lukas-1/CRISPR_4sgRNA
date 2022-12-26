@@ -832,9 +832,10 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
                           }
                         })
   summary_df[["Affected_genes_strand"]] <- strands_vec
+
+  entrezs_splits <- strsplit(by_gene_df[, "Affected_Entrez_IDs"], ", ", fixed = TRUE)
+  indices_list <- split(seq_len(nrow(by_gene_df)), by_gene_df[, "Index"])
   if ("Is_main_TSS" %in% names(by_gene_df)) {
-    entrezs_splits <- strsplit(by_gene_df[, "Affected_Entrez_IDs"], ", ", fixed = TRUE)
-    indices_list <- split(seq_len(nrow(by_gene_df)), by_gene_df[, "Index"])
     summary_df[["Affects_intended_main_TSS"]] <- vapply(indices_list, function(x) {
       are_main_TSS <- by_gene_df[["Is_main_TSS"]][x]
       main_TSS_entrezs <- unlist(entrezs_splits[x][are_main_TSS])
@@ -845,6 +846,14 @@ SummarizeFullDf <- function(full_df, tolerate_num_affected = FALSE) {
   ## List all perfect-match loci that target a gene
   loci_list <- tapply(by_gene_df[["Guide_locus"]], by_gene_df[["Index"]], unique)
   summary_df[["Targeting_loci"]] <- CollapseList(loci_list)
+  summary_df[["Intended_loci"]] <- vapply(indices_list, function(x) {
+    target_intended <- entrezs_splits[x] %in% by_gene_df[["Intended_Entrez_ID"]][x][[1]]
+    if (any(target_intended)) {
+      paste0(unique(by_gene_df[["Guide_locus"]][x][target_intended]), collapse = ", ")
+    } else {
+      NA_character_
+    }
+  }, "")
 
   ## List perfect-match loci that target a gene,
   ## but only list a maximum of 3 loci (and truncate the rest)
