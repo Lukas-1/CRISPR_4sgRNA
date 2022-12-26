@@ -120,7 +120,11 @@ table(Nunez_df[, "mutant_hit"])
 
 matches_vec <- match(Nunez_df[, "sgID"], CRISPRoff_df[, "sgID_AB"])
 stopifnot(!(anyNA(matches_vec)))
-for (column_name in c("Entrez_ID", "Gene_symbol", "Is_preferred_plasmid")) {
+transfer_columns <- c(
+  "Entrez_ID", "Gene_symbol", "Is_preferred_plasmid",
+  "Specificity_sg1", "Specificity_sg2", "Min_specificity", "Combined_specificity"
+)
+for (column_name in transfer_columns) {
   Nunez_df[, column_name] <- CRISPRoff_df[, column_name][matches_vec]
 }
 new_order <- order(
@@ -267,14 +271,19 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 # Create violin plots for CRISPRoff only ----------------------------------
 
+scaling_factor <- 20
 devEMF::emf(file.path(thesis_dir, "3A) Violin plot - i) re-analysis.emf"),
-            width = 2, height = 2, emfPlus = FALSE, coordDPI = 3000
+            width = 2 * scaling_factor, height = 2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(cex = 0.6, lwd = 0.7, lheight = 0.9, mar = c(3, 4, 4, 1))
+old_par <- par(cex = 0.6 * scaling_factor * 0.95,
+               lwd = 0.7 * scaling_factor * 0.95,
+               mar = c(3, 4, 4, 1)
+               )
 custom_y_limits <- c(-0.6 - (0.86 * 0.02), 0.25)
 x_positions <- BeeViolinPlot(
   rep_list[1:4],
-  point_cex        = 0.175,
+  point_cex        = 0.2,
   use_spacing      = 0.5,
   wex              = 0.88,
   violin_colors    = rep(c(brewer.pal(9, "Purples")[[3]], "#c7e7c0"), each = 2),
@@ -298,8 +307,8 @@ x_positions <- BeeViolinPlot(
 mtext(expression("Phenotype (" * gamma * ")"), side = 2, line = 2.1, cex = par("cex"))
 segments(x0  = x_positions[c(1, 3)] - 0.25,
          x1  = x_positions[c(2, 4)] + 0.25,
-         y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.45), from = "lines", to = "user")),
-         col = "gray50",
+         y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.4), from = "lines", to = "user")),
+         col = "gray60",
          xpd = NA
          )
 mtext(c("Essential\ngenes", "Non-essential\ngenes"),
@@ -380,10 +389,11 @@ separation_original_mat <- SeparationMetrics(
 logfc_original_df <- data.frame(
   Nunez_df[, c("sgID", "Gene_symbol")],
   "Entrez_ID" = as.integer(Nunez_df[, "Entrez_ID"]),
+  Nunez_df[, c("Min_specificity", "Combined_specificity")],
   "Mean_log2FC" = rowMeans(Nunez_df[, c("CRISPRoff_Rep1", "CRISPRoff_Rep2")]) * 10,
   "Log2FC_rep1" = Nunez_df[, "CRISPRoff_Rep1"] * 10,
   "Log2FC_rep2" = Nunez_df[, "CRISPRoff_Rep2"] * 10,
-  "Is_NT" = Nunez_df[, "gene"] == "non-targeting",
+  "Is_NT"       = Nunez_df[, "gene"] == "non-targeting",
   stringsAsFactors = FALSE
 )
 
