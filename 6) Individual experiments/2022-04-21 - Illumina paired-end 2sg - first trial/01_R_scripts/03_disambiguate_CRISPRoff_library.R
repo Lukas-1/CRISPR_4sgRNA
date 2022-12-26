@@ -11,6 +11,7 @@ R_functions_dir             <- file.path(project_dir, "01_R_scripts", "R_functio
 source(file.path(R_functions_dir, "03_disambiguating_and_annotating_guides.R"))
 source(file.path(general_functions_directory, "05) Mapping sequences to the human genome.R"))
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))
+source(file.path(general_functions_directory, "19) Using CRISPOR.R"))
 source(file.path(general_functions_directory, "30) Finding overlapping genes and nearby TSSs.R"))
 
 
@@ -107,6 +108,37 @@ CRISPRoff_df[, "Has_shared_sgRNA"] <- (num_occurrences_sg1 > 1) | (num_occurrenc
 # Choose between multiple plasmids for some Entrez IDs --------------------
 
 CRISPRoff_df <- ChooseBetweenMultiplePlasmids(CRISPRoff_df)
+
+
+
+# Export input for GuideScan2 ---------------------------------------------
+
+assembly_df <- read.delim("~/GCF_000001405.39_GRCh38.p13_assembly_report.txt",
+                          skip = 63, stringsAsFactors  = FALSE,
+                          check.names = FALSE, na.strings = c("na", "NA")
+                          )
+
+long_df <- DataForGuideScan2(CRISPRoff_df)
+guidescan2_df <- FormatForGuideScan2(long_df, add5prime = TRUE)
+matches_vec <- match(guidescan2_df[, "chromosome"], assembly_df[, "UCSC-style-name"])
+guidescan2_df[, "chromosome"] <- assembly_df[, "RefSeq-Accn"][matches_vec]
+
+write.csv(guidescan2_df,
+          file.path(project_dir, "05_intermediate_files", "original_CRISPRoff_for_GuideScan2.csv"),
+          quote = FALSE, row.names = FALSE
+          )
+
+
+
+
+# Import output from GuideScan2 -------------------------------------------
+
+GuideScan2_output_df <- read.csv(file.path(project_dir, "05_intermediate_files", "original_CRISPRoff_output.csv"),
+                                 stringsAsFactors = FALSE, quote = ""
+                                 )
+
+CRISPRoff_df <- AddGuideScan2Output(CRISPRoff_df, GuideScan2_output_df)
+
 
 
 

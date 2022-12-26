@@ -113,6 +113,36 @@ CRISPRoff_df <- ChooseBetweenMultiplePlasmids(CRISPRoff_df)
 
 
 
+# Export input for GuideScan2 ---------------------------------------------
+
+assembly_df <- read.delim("~/GCF_000001405.39_GRCh38.p13_assembly_report.txt",
+                          skip = 63, stringsAsFactors  = FALSE,
+                          check.names = FALSE, na.strings = c("na", "NA")
+                          )
+
+guidescan2_df <- FormatForGuideScan2(DataForGuideScan2(CRISPRoff_df), add5prime = TRUE)
+matches_vec <- match(guidescan2_df[, "chromosome"], assembly_df[, "UCSC-style-name"])
+guidescan2_df[, "chromosome"] <- assembly_df[, "RefSeq-Accn"][matches_vec]
+
+write.csv(guidescan2_df,
+          file.path(project_dir, "05_intermediate_files", "dJR072_CRISPRoff_for_GuideScan2.csv"),
+          quote = FALSE, row.names = FALSE
+          )
+
+
+
+
+# Import output from GuideScan2 -------------------------------------------
+
+GuideScan2_output_df <- read.csv(file.path(project_dir, "05_intermediate_files", "dJR072_CRISPRoff_output.csv"),
+                                 stringsAsFactors = FALSE, quote = ""
+                                 )
+
+CRISPRoff_df <- AddGuideScan2Output(CRISPRoff_df, GuideScan2_output_df)
+
+
+
+
 # Save data ---------------------------------------------------------------
 
 save(list = "CRISPRoff_df",
