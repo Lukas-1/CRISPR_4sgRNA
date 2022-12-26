@@ -232,6 +232,7 @@ StandardLog2FCDf <- function(input_counts_df) {
   results_df <- data.frame(
     input_counts_df[, c("Plasmid_ID", "Gene_symbol", "Entrez_ID")],
     "Is_NT" = CRISPRoff_df[, "gene"] == "negative_control",
+    CRISPRoff_df[, c("Min_specificity", "Combined_specificity")],
     results_df,
     "Log2FC_rep1" = GetLog2FC(input_counts_df,
                               baseline_indices = 1:2,
@@ -269,7 +270,8 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                 write_rep             = FALSE,
                                 wex                   = 0.85,
                                 use_blomen_hart       = TRUE,
-                                bracket_color         = "black",
+                                bracket_y_lines       = 0.45,
+                                bracket_color         = "gray50",
                                 ...
                                 ) {
 
@@ -317,7 +319,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
 
   segments(x0  = x_positions[c(1, 3)] - 0.25,
            x1  = x_positions[c(2, 4)] + 0.25,
-           y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.45), from = "lines", to = "user")),
+           y0  = par("usr")[[4]] + diff(grconvertY(c(0, bracket_y_lines), from = "lines", to = "user")),
            col = bracket_color,
            xpd = NA
            )
@@ -1075,6 +1077,7 @@ DrawSideLegend <- function(labels_list,
                            border_colors        = NULL,
                            use_pch              = 16,
                            use_point_size       = 1.2,
+                           border_lwd           = 1,
                            lines_x_start        = 0.75,
                            y_mid                = 0.5,
                            small_gap_size       = 1.25,
@@ -1157,6 +1160,7 @@ DrawSideLegend <- function(labels_list,
            pch = use_pch,
            col = if (!(is.null(border_colors))) border_colors else use_colors,
            bg  = use_colors,
+           lwd = par("lwd") * border_lwd,
            xpd = NA
            )
   }
@@ -1165,28 +1169,6 @@ DrawSideLegend <- function(labels_list,
 }
 
 
-
-CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
-                                lower_bound_enforced, upper_bound_enforced
-                                ) {
-  plain_axis_labels <- format(tick_positions, trim = TRUE)
-  axis_labels <- lapply(plain_axis_labels, function(x) as.expression(bquote(""[.(x)])))
-  axis_labels <- sapply(axis_labels, function(x) x)
-  if (lower_bound_enforced && (abs(lower_bound - tick_positions[[1]]) < 1e-15)) {
-    axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(.(if (tick_positions[[1]] < 0) "" else " "))
-                                              * .(plain_axis_labels[[1]])]
-    ))
-  }
-  if (upper_bound_enforced) {
-    num_ticks <- length(tick_positions)
-    if (abs(upper_bound - tick_positions[[num_ticks]]) < 1e-15) {
-      axis_labels[num_ticks] <- as.expression(bquote(""["" >= scriptscriptstyle(" ") *
-                                                          .(plain_axis_labels[[num_ticks]])]
-      ))
-    }
-  }
-  return(axis_labels)
-}
 
 
 
@@ -2235,6 +2217,8 @@ MappedReadsBarPlot <- function(num_reads_mat,
                                unit_in_axis          = TRUE,
                                show_percentage       = FALSE,
                                large_gap_multiplier  = 1.5,
+                               grid_lwd              = 1,
+                               legend_lwd            = 1,
                                ...
                                ) {
 
@@ -2287,6 +2271,7 @@ MappedReadsBarPlot <- function(num_reads_mat,
              col = ifelse(rep_len(c(TRUE, FALSE), length.out = length(grid_pos)),
                           "gray88", "gray95"
                           ),
+             lwd = grid_lwd * par("lwd"),
              xpd = NA
              )
   }
@@ -2361,6 +2346,7 @@ MappedReadsBarPlot <- function(num_reads_mat,
                    lines_x_start  = legend_lines_x_start,
                    title_vec      = title_vec,
                    large_gap_multiplier = large_gap_multiplier,
+                   border_lwd     = legend_lwd,
                    ...
                    )
   }
@@ -2502,6 +2488,7 @@ TwoDensities <- function(show_GC               = TRUE,
                          legend_x_lines        = 1,
                          legend_y_lines        = 1,
                          embed_PNG             = FALSE,
+                         only_annotation       = NULL,
                          grid_lwd              = 1,
                          title_y_pos           = 0.5,
                          darker_box            = FALSE,
@@ -2594,7 +2581,7 @@ TwoDensities <- function(show_GC               = TRUE,
          )
   old_mar <- par(mar = rep(0, 4), cex = original_cex * par("cex") * (1 / 0.66))
   MakeEmptyPlot()
-  if (show_title) {
+  if (show_title && (!(isFALSE(only_annotation)))) {
     text(x = 0.5, y = title_y_pos, labels = use_title)
   }
   for (i in 1:4) {
@@ -2611,32 +2598,6 @@ TwoDensities <- function(show_GC               = TRUE,
       MakeEmptyPlot(x_limits, y_limits)
     }
 
-    if (!(show_GC)) {
-      ## Draw the background
-      rect(xleft   = 28,
-           xright  = 40,
-           ybottom = par("usr")[[3]],
-           ytop    = par("usr")[[4]],
-           col     = adjustcolor("#C6E8BF", alpha.f = 0.4),
-           border  = NA
-           )
-      rect(xleft   = 20,
-           xright  = 28,
-           ybottom = par("usr")[[3]],
-           ytop    = par("usr")[[4]],
-           col     = adjustcolor("#FFEDA0", alpha.f = 0.4),
-           border  = NA
-           )
-      rect(xleft   = 0,
-           xright  = 20,
-           ybottom = par("usr")[[3]],
-           ytop    = par("usr")[[4]],
-           col     = adjustcolor("#FCC9B3", alpha.f = 0.4),
-           border  = NA
-           )
-    }
-
-    ## Draw the grid
     if (show_legend) {
       if (label_read_on_y_axis) {
         are_behind_read <- rep(FALSE, length(x_grid))
@@ -2652,7 +2613,7 @@ TwoDensities <- function(show_GC               = TRUE,
         timepoints_seq <- seq_along(timepoint_colors) - 1L
         legend_y_vec <- legend_y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq
 
-        legend_x_end <- legend_text_x + max(strwidth(timepoint_labels)) + strwidth("OO")
+        legend_x_end <- legend_text_x + max(strwidth(timepoint_labels)) #+ strwidth("OO")
         are_behind_legend <- x_grid < legend_x_end
         legend_y_end <- min(legend_y_vec) - (strheight(timepoint_labels[[length(timepoint_labels)]])) * 1.2
         if ((length(include_timepoints) == 2) && (grconvertY(legend_y_end, from = "user", to = "npc") > 0.5)) {
@@ -2660,56 +2621,97 @@ TwoDensities <- function(show_GC               = TRUE,
         } else {
           grid_top <- 1/3
         }
-        segments(x0   = x_grid[are_behind_legend & !(are_behind_read)],
-                 y0   = par("usr")[[3]],
-                 y1   = grconvertY(grid_top, from = "npc", to = "user"),
-                 col  = grid_color,
-                 lend = "butt",
-                 lwd  = par("lwd") * grid_lwd
-                 )
       } else {
         are_behind_legend <- rep(FALSE, length(x_grid))
-        if (!(label_read_on_y_axis)) {
-          segments(x0   = x_grid[are_behind_read],
-                   y0   = grconvertY(1/3, from = "npc", to = "user"),
-                   y1   = par("usr")[[4]],
-                   col  = grid_color,
-                   lend = "butt",
-                   lwd  = par("lwd") * grid_lwd
-                   )
-        }
       }
     } else {
       are_behind_legend <- rep(FALSE, length(x_grid))
       are_behind_read <- rep(FALSE, length(x_grid))
     }
-    abline(v = x_grid[!(are_behind_legend | are_behind_read)],
-           col = grid_color, lwd = par("lwd") * grid_lwd
-           )
 
-    box(col = if (darker_box) "gray50" else grid_color,
-        lwd = par("lwd") * grid_lwd,
-        xpd = NA
-        )
+    if (!(isFALSE(only_annotation))) {
 
-    ## Draw the density lines
-    if (show_GC) {
-      ref_x_vec <- library_densities[[i]][["x"]]
-      polygon(x      = c(ref_x_vec[[1]], ref_x_vec, ref_x_vec[[length(ref_x_vec)]]),
-              y      = c(0, library_densities[[i]][["y"]], 0),
-              col    = adjustcolor("gray80", alpha.f = 0.25),
-              border = NA,
-              xpd    = NA
-              )
-      lines(library_densities[[i]], col = "gray80", lwd = par("lwd"))
+      if (!(show_GC)) {
+        ## Draw the background
+        rect(xleft   = 28,
+             xright  = 40,
+             ybottom = par("usr")[[3]],
+             ytop    = par("usr")[[4]],
+             col     = Palify("#C6E8BF", fraction_pale = 0.6),
+             border  = NA
+             )
+        rect(xleft   = 20,
+             xright  = 28,
+             ybottom = par("usr")[[3]],
+             ytop    = par("usr")[[4]],
+             col     = Palify("#FFEDA0", fraction_pale = 0.6),
+             border  = NA
+             )
+        rect(xleft   = 0,
+             xright  = 20,
+             ybottom = par("usr")[[3]],
+             ytop    = par("usr")[[4]],
+             col     = Palify("#FCC9B3", fraction_pale = 0.6),
+             border  = NA
+             )
+      }
+
+      ## Draw the grid
+      if (show_legend) {
+        if (i == 1) {
+          are_to_truncate <- are_behind_legend & !(are_behind_read)
+          if (any(are_to_truncate)) {
+            segments(x0   = x_grid[are_to_truncate],
+                     y0   = par("usr")[[3]],
+                     y1   = grconvertY(grid_top, from = "npc", to = "user"),
+                     col  = grid_color,
+                     lend = "butt",
+                     lwd  = par("lwd") * grid_lwd
+                     )
+          }
+        } else {
+          if (!(label_read_on_y_axis)) {
+            segments(x0   = x_grid[are_behind_read],
+                     y0   = grconvertY(1/3, from = "npc", to = "user"),
+                     y1   = par("usr")[[4]],
+                     col  = grid_color,
+                     lend = "butt",
+                     lwd  = par("lwd") * grid_lwd
+                     )
+          }
+        }
+      }
+      abline(v = x_grid[!(are_behind_legend | are_behind_read)],
+             col = grid_color, lwd = par("lwd") * grid_lwd
+             )
+
+      box(col = if (darker_box) "gray50" else grid_color,
+          lwd = par("lwd") * grid_lwd,
+          xpd = NA
+          )
     }
 
-    for (j in seq_along(density_list[[i]])) {
-      lines(density_list[[i]][[j]],
-            col  = colors_vec[[j]],
-            lwd  = par("lwd") * 2,
-            xpd  = NA
-            )
+    if (!(isTRUE(only_annotation))) {
+
+      ## Draw the density lines
+      if (show_GC) {
+        ref_x_vec <- library_densities[[i]][["x"]]
+        polygon(x      = c(ref_x_vec[[1]], ref_x_vec, ref_x_vec[[length(ref_x_vec)]]),
+                y      = c(0, library_densities[[i]][["y"]], 0),
+                col    = adjustcolor("gray80", alpha.f = 0.25),
+                border = NA,
+                xpd    = NA
+                )
+        lines(library_densities[[i]], col = "gray80", lwd = par("lwd"))
+      }
+
+      for (j in seq_along(density_list[[i]])) {
+        lines(density_list[[i]][[j]],
+              col  = colors_vec[[j]],
+              lwd  = par("lwd") * 2,
+              xpd  = NA
+              )
+      }
     }
 
     if (embed_PNG) {
@@ -2718,50 +2720,53 @@ TwoDensities <- function(show_GC               = TRUE,
                    )
     }
 
-    ## Draw the y axis
-    if (show_y_axis_label) {
-      mtext(if (label_read_on_y_axis) paste0("Read ", i) else "Density",
-            side = 2,
-            line = y_axis_label_line,
-            cex  = par("cex")
-            )
-    }
+    if (!(isFALSE(only_annotation))) {
 
-    if (show_legend && (i == 1)) {
-      ## Draw the legend
-      segments(x0  = legend_x_start,
-               x1  = legend_x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
-               y0  = legend_y_vec,
-               col = if (embed_PNG) original_colors else timepoint_colors,
-               lwd = par("lwd") * 2,
-               xpd = NA
-               )
-      text(x      = legend_text_x,
-           y      = legend_y_vec,
-           labels = timepoint_labels,
-           adj    = c(0, 0.5),
-           xpd    = NA
-           )
-    } else if (i == 2) {
-      ## Draw the x axis
-      axis(1,
-           at       = x_ticks,
-           labels   = x_tick_labels,
-           mgp      = c(3, x_axis_mgp, 0.3),
-           tcl      = -0.375,
-           gap.axis = 0.5,
-           lwd      = par("lwd")
-           )
-      mtext(x_axis_label,
-            side = 1,
-            line = x_axis_label_line,
-            cex  = par("cex")
-            )
-    }
-    if (show_legend && !(label_read_on_y_axis)) {
-      mtext(paste0("Read ", i), side = 1, line = -1.5,
-            at = grconvertX(0.15, from = "npc", to = "user"), cex = par("cex")
-            )
+      ## Draw the y axis
+      if (show_y_axis_label) {
+        mtext(if (label_read_on_y_axis) paste0("Read ", i) else "Density",
+              side = 2,
+              line = y_axis_label_line,
+              cex  = par("cex")
+              )
+      }
+
+      if (show_legend && (i == 1)) {
+        ## Draw the legend
+        segments(x0  = legend_x_start,
+                 x1  = legend_x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
+                 y0  = legend_y_vec,
+                 col = if (embed_PNG || isTRUE(only_annotation)) original_colors else timepoint_colors,
+                 lwd = par("lwd") * 2,
+                 xpd = NA
+                 )
+        text(x      = legend_text_x,
+             y      = legend_y_vec,
+             labels = timepoint_labels,
+             adj    = c(0, 0.5),
+             xpd    = NA
+             )
+      } else if (i == 2) {
+        ## Draw the x axis
+        axis(1,
+             at       = x_ticks,
+             labels   = x_tick_labels,
+             mgp      = c(3, x_axis_mgp, 0.3),
+             tcl      = -0.375,
+             gap.axis = 0.5,
+             lwd      = par("lwd")
+             )
+        mtext(x_axis_label,
+              side = 1,
+              line = x_axis_label_line,
+              cex  = par("cex")
+              )
+      }
+      if (show_legend && !(label_read_on_y_axis)) {
+        mtext(paste0("Read ", i), side = 1, line = -1.5,
+              at = grconvertX(0.15, from = "npc", to = "user"), cex = par("cex")
+              )
+      }
     }
   }
 
@@ -2790,6 +2795,7 @@ PerBaseQuality <- function(qual_mat,
                            legend_x_lines        = 2.5,
                            legend_y_lines        = 3,
                            embed_PNG             = FALSE,
+                           only_annotation       = NULL,
                            small_middle_gap      = FALSE,
                            broad_margins         = FALSE,
                            x_axis_tcl            = 0.375
@@ -2840,7 +2846,7 @@ PerBaseQuality <- function(qual_mat,
          )
   old_mar <- par(mar = rep(0, 4), cex = original_cex * par("cex") * (1 / 0.66))
   MakeEmptyPlot()
-  if (show_title) {
+  if (show_title && (!(isFALSE(only_annotation)))) {
     text(x = 0.5, y = title_y_pos, labels = use_title)
   }
   for (i in 1:4) {
@@ -2860,118 +2866,126 @@ PerBaseQuality <- function(qual_mat,
       MakeEmptyPlot(x_limits = c(0, 21), y_limits = c(0, 40))
     }
 
-    ## Draw the background
-    rect(xleft   = par("usr")[[1]],
-         xright  = if (i == 1) 20 else par("usr")[[2]],
-         ybottom = 28,
-         ytop    = 40,
-         col     = Palify("#C6E8BF", fraction_pale = 0.6),
-         border  = NA
-         )
-    rect(xleft   = par("usr")[[1]],
-         xright  = if (i == 1) 20 else par("usr")[[2]],
-         ybottom = 20,
-         ytop    = 28,
-         col     = Palify("#FFEDA0", fraction_pale = 0.6),
-         border  = NA
-         )
-    rect(xleft   = par("usr")[[1]],
-         xright  = if (i == 1) 20 else par("usr")[[2]],
-         ybottom = 0,
-         ytop    = 20,
-         col     = Palify("#FCC9B3", fraction_pale = 0.6),
-         border  = NA
-         )
+    if (!(isFALSE(only_annotation))) {
+      ## Draw the background
+      rect(xleft   = par("usr")[[1]],
+           xright  = if (i == 1) 20 else par("usr")[[2]],
+           ybottom = 28,
+           ytop    = 40,
+           col     = Palify("#C6E8BF", fraction_pale = 0.6),
+           border  = NA
+           )
+      rect(xleft   = par("usr")[[1]],
+           xright  = if (i == 1) 20 else par("usr")[[2]],
+           ybottom = 20,
+           ytop    = 28,
+           col     = Palify("#FFEDA0", fraction_pale = 0.6),
+           border  = NA
+           )
+      rect(xleft   = par("usr")[[1]],
+           xright  = if (i == 1) 20 else par("usr")[[2]],
+           ybottom = 0,
+           ytop    = 20,
+           col     = Palify("#FCC9B3", fraction_pale = 0.6),
+           border  = NA
+           )
+    }
 
-    ## Draw the lines
-    for (j in seq_along(use_indices)) {
-      lines(x    = seq_len(nrow(qual_mat)),
-            y    = qual_mat[, use_indices[[j]]],
-            col  = colors_vec[[j]],
-            lwd  = par("lwd") * 2,
-            lend = "butt",
-            xpd  = NA
-            )
+    if (!(isTRUE(only_annotation))) {
+      ## Draw the lines
+      for (j in seq_along(use_indices)) {
+        lines(x    = seq_len(nrow(qual_mat)),
+              y    = qual_mat[, use_indices[[j]]],
+              col  = colors_vec[[j]],
+              lwd  = par("lwd") * 2,
+              lend = "butt",
+              xpd  = NA
+              )
+      }
     }
 
     if (embed_PNG) {
       StopEmbedPNG(current_device, figures_dir, make_empty_plot = FALSE)
     }
 
-    ## Draw the x axis
-    x_ticks <- axTicks(1)
-    x_tick_labels <- x_ticks
-    if (omit_zero_label && (i == 2)) {
-      x_tick_labels[x_tick_labels == 0] <- NA
-    }
-    axis(1,
-         at       = x_ticks,
-         labels   = x_tick_labels,
-         mgp      = c(3, x_axis_mgp, 0),
-         tcl      = -(x_axis_tcl),
-         gap.axis = 0.5,
-         lwd      = par("lwd")
-         )
-    mtext(if (separate_x_labels) "Base" else paste0("Read ", i, " (base)"),
-          side = 1,
-          line = x_axis_label_line,
-          cex  = par("cex")
-          )
-    if (separate_x_labels) {
-      text(x      = grconvertX(0.5, from = "npc", to = "user"),
-           y      = grconvertY(0.6, from = "npc", to = "user"),
-           labels = paste0("Read ", i),
-           xpd     = NA
+    if (!(isFALSE(only_annotation))) {
+
+      ## Draw the x axis
+      x_ticks <- axTicks(1)
+      x_tick_labels <- x_ticks
+      if (omit_zero_label && (i == 2)) {
+        x_tick_labels[x_tick_labels == 0] <- NA
+      }
+      axis(1,
+           at       = x_ticks,
+           labels   = x_tick_labels,
+           mgp      = c(3, x_axis_mgp, 0),
+           tcl      = -(x_axis_tcl),
+           gap.axis = 0.5,
+           lwd      = par("lwd")
            )
+      mtext(if (separate_x_labels) "Base" else paste0("Read ", i, " (base)"),
+            side = 1,
+            line = x_axis_label_line,
+            cex  = par("cex")
+            )
+      if (separate_x_labels) {
+        text(x      = grconvertX(0.5, from = "npc", to = "user"),
+             y      = grconvertY(0.6, from = "npc", to = "user"),
+             labels = paste0("Read ", i),
+             xpd     = NA
+             )
+      }
+
+      if (i == 1) {
+        ## Draw the y axis
+        if (show_y_axis) {
+          axis(2,
+               las = 2,
+               mgp = c(3, y_axis_mgp, 0),
+               tcl = -0.375,
+               lwd = par("lwd")
+               )
+          mtext(VerticalAdjust("Mean quality"),
+                side = 2,
+                line = y_axis_label_line,
+                cex  = par("cex")
+                )
+        } else {
+          segments(x0 = par("usr")[[1]], y0 = par("usr")[[3]],
+                   y1 = par("usr")[[4]], xpd = NA
+                   )
+        }
+        segments(x0 = par("usr")[[1]], x1 = 20,
+                 y0 = par("usr")[[4]], xpd = NA
+                 )
+      } else if (i == 2) {
+        box(bty = "]")
+        if (show_legend) {
+          ## Draw the legend
+          x_start <- par("usr")[[2]] -
+                     max(strwidth(timepoint_labels)) -
+                     diff(grconvertX(c(0, legend_x_lines), from = "lines", to = "user"))
+          y_start <- par("usr")[[3]] + diff(grconvertY(c(0, legend_y_lines), from = "lines", to = "user"))
+          timepoints_seq <- seq_along(timepoint_colors) - 1L
+          y_vec <- rev(y_start + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq)
+          segments(x0  = x_start,
+                   x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
+                   y0  = y_vec,
+                   col = if (embed_PNG || (isTRUE(only_annotation))) original_colors else timepoint_colors,
+                   lwd = par("lwd") * 2,
+                   xpd = NA
+                   )
+          text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
+               y      = y_vec,
+               labels = timepoint_labels,
+               adj    = c(0, 0.5),
+               xpd    = NA
+               )
+        }
+      }
     }
 
-    if (i == 1) {
-      ## Draw the y axis
-      if (show_y_axis) {
-        axis(2,
-             las = 2,
-             mgp = c(3, y_axis_mgp, 0),
-             tcl = -0.375,
-             lwd = par("lwd")
-             )
-        mtext(VerticalAdjust("Mean quality"),
-              side = 2,
-              line = y_axis_label_line,
-              cex  = par("cex")
-              )
-      } else {
-        segments(x0 = par("usr")[[1]], y0 = par("usr")[[3]],
-                 y1 = par("usr")[[4]], xpd = NA
-                 )
-      }
-      segments(x0 = par("usr")[[1]], x1 = 20,
-               y0 = par("usr")[[4]], xpd = NA
-               )
-    } else if (i == 2) {
-      box(bty = "]")
-      if (show_legend) {
-        ## Draw the legend
-        x_start <- par("usr")[[2]] -
-                   max(strwidth(timepoint_labels)) -
-                   diff(grconvertX(c(0, legend_x_lines), from = "lines", to = "user"))
-        y_start <- par("usr")[[3]] + diff(grconvertY(c(0, legend_y_lines), from = "lines", to = "user"))
-        timepoints_seq <- seq_along(timepoint_colors) - 1L
-        y_vec <- rev(y_start + diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * timepoints_seq)
-        segments(x0  = x_start,
-                 x1  = x_start + diff(grconvertX(c(0, 0.45), from = "lines", to = "user")),
-                 y0  = y_vec,
-                 col = if (embed_PNG) original_colors else timepoint_colors,
-                 lwd = par("lwd") * 2,
-                 xpd = NA
-                 )
-        text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
-             y      = y_vec,
-             labels = timepoint_labels,
-             adj    = c(0, 0.5),
-             xpd    = NA
-             )
-      }
-    }
   }
 
   ## Final steps

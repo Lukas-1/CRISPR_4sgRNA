@@ -60,7 +60,10 @@ ChooseOnePerEntrez <- function(input_df) {
 }
 
 
+
 ScatterInputDf <- function(logfc_1_df, logfc_2_df, choose_rep = NULL) {
+  required_objects <- c("essentials_2020Q2_df", "non_essentials_2020Q2_df")
+  stopifnot(all(required_objects %in% ls(envir = globalenv())))
   if (is.null(choose_rep)) {
     logfc_column <- "Mean_log2FC"
   } else {
@@ -73,11 +76,22 @@ ScatterInputDf <- function(logfc_1_df, logfc_2_df, choose_rep = NULL) {
   common_entrezs <- sort(common_entrezs)
   logfc_1_df <- logfc_1_df[match(common_entrezs, logfc_1_df[, "Entrez_ID"]), ]
   logfc_2_df <- logfc_2_df[match(common_entrezs, logfc_2_df[, "Entrez_ID"]), ]
+  are_essential <- common_entrezs %in% essentials_2020Q2_df[, "Entrez_ID"]
+  are_non_essential <- common_entrezs %in% non_essentials_2020Q2_df[, "Entrez_ID"]
   results_df <- data.frame(
-    "Entrez_ID" = common_entrezs,
-    "Is_NT"     = FALSE,
-    "Rep1_data" = logfc_1_df[, logfc_column],
-    "Rep2_data" = logfc_2_df[, logfc_column]
+    "Entrez_ID"      = common_entrezs,
+    "Essentiality"   = ifelse(are_essential,
+                              "essential",
+                              ifelse(are_non_essential, "non-essential", "neither")
+                              ),
+    "Is_NT"          = FALSE,
+    "Rep1_data"      = logfc_1_df[, logfc_column],
+    "Rep2_data"      = logfc_2_df[, logfc_column],
+    "Rep1_min_spec"  = logfc_1_df[, "Min_specificity"],
+    "Rep2_min_spec"  = logfc_2_df[, "Min_specificity"],
+    "Rep1_comb_spec" = logfc_1_df[, "Combined_specificity"],
+    "Rep2_comb_spec" = logfc_2_df[, "Combined_specificity"],
+    stringsAsFactors = FALSE
   )
   return(results_df)
 }
@@ -101,11 +115,9 @@ ThreeScatterPlots <- function(logfc_1_df,
                               x_axis_label_line    = 1.8,
                               y_axis_label_line    = 2.2,
                               label_gene_sets      = TRUE,
-                              show_empty_ticks     = TRUE
+                              show_empty_ticks     = TRUE,
+                              point_cex            = 0.5
                               ) {
-
-  required_objects <- c("essentials_2020Q2_df", "non_essentials_2020Q2_df")
-  stopifnot(all(required_objects %in% ls(envir = globalenv())))
 
   ## Prepare data
   scatter_df <- ScatterInputDf(logfc_1_df, logfc_2_df, choose_rep = choose_rep)
@@ -115,8 +127,8 @@ ThreeScatterPlots <- function(logfc_1_df,
   }
 
   ## Categorize genes
-  are_essential <- scatter_df[, "Entrez_ID"] %in% essentials_2020Q2_df[, "Entrez_ID"]
-  are_non_essential <- scatter_df[, "Entrez_ID"] %in% non_essentials_2020Q2_df[, "Entrez_ID"]
+  are_essential <- scatter_df[, "Essentiality"] %in% "essential"
+  are_non_essential <- scatter_df[, "Essentiality"] %in% "non-essential"
 
   ## Adjust axis limits
   xy_list <- lapply(1:2, function(x) {
@@ -211,7 +223,7 @@ ThreeScatterPlots <- function(logfc_1_df,
     ## Draw points
     points(xy_mat[are_selected_mat[, i], ],
            pch = 16,
-           cex = 0.5,
+           cex = point_cex,
            col = point_colors[[i]],
            xpd = NA
            )
@@ -294,7 +306,8 @@ CompareScreenBars <- function(bars_vec,
                               point_size_factor = 1,
                               label_libraries   = TRUE,
                               brackets_y_line   = 1.375,
-                              group_labels_y    = 1.7
+                              group_labels_y    = 1.7,
+                              bracket_color     = "gray50"
                               ) {
 
   stopifnot(length(bars_vec) %in% c(4, 6))
@@ -350,7 +363,7 @@ CompareScreenBars <- function(bars_vec,
       points(x   = bar_positions,
              y   = bars_vec,
              col = bar_color,
-             cex = par("cex") * 1.5 * point_size_factor,
+             cex = 1 * point_size_factor,
              pch = lollipop_pch,
              xpd = NA
              )
@@ -359,7 +372,7 @@ CompareScreenBars <- function(bars_vec,
              y   = bars_vec,
              col = bar_color,
              bg  = stem_color,
-             cex = par("cex") * 1.7 * point_size_factor,
+             cex = 1.2 * point_size_factor,
              pch = 21,
              xpd = NA
              )
@@ -374,14 +387,14 @@ CompareScreenBars <- function(bars_vec,
       points(x   = bar_positions,
              y   = bars_vec,
              col = bar_color,
-             cex = par("cex") * 1.7 * point_size_factor,
+             cex = 1.2 * point_size_factor,
              pch = 16,
              xpd = NA
              )
       points(x   = bar_positions,
              y   = bars_vec,
              col = stem_color,
-             cex = par("cex") * 0.25 * point_size_factor,
+             cex = 0.175 * point_size_factor,
              pch = 16,
              xpd = NA
              )
@@ -420,7 +433,7 @@ CompareScreenBars <- function(bars_vec,
     segments(x0  = tapply(bar_positions, groups_vec, min) - 0.2,
              x1  = tapply(bar_positions, groups_vec, max) + 0.2,
              y0  = par("usr")[[3]] - diff(grconvertY(c(0, brackets_y_line), from = "lines", to = "user")),
-             col = "gray50",
+             col = bracket_color,
              xpd = NA
              )
     group_labels <- c("CRISPRoff", "T.gonfio")
@@ -529,28 +542,31 @@ DrawBottomLegend <- function(labels_list,
 
 
 ThreeLinesROC <- function(ROC_df_list,
-                          flip          = TRUE,
-                          embed_PNG     = FALSE,
-                          transparency  = TRUE,
-                          use_lwd       = 2,
-                          legend_lwd    = use_lwd * 1.25,
-                          legend_order  = seq_along(ROC_df_list),
-                          axis_limits   = c(0, 1),
-                          legend_inside = TRUE,
-                          middle_line   = !(legend_inside),
+                          flip            = TRUE,
+                          embed_PNG       = FALSE,
+                          only_annotation = NULL,
+                          transparency    = TRUE,
+                          use_lwd         = 2,
+                          legend_lwd      = use_lwd * 1.25,
+                          legend_order    = seq_along(ROC_df_list),
+                          axis_limits     = c(0, 1),
+                          legend_inside   = TRUE,
+                          middle_line     = !(legend_inside),
+                          use_colors      = c(brewer.pal(9, "Greys")[[7]],
+                                              brewer.pal(9, "Blues")[[6]],
+                                              "#B8363F"
+                                              ),
+                          black_alpha     = 0.55,
+                          colors_alpha    = 0.8,
                           ...
                           ) {
 
-  use_colors <- c(brewer.pal(9, "Greys")[[7]],
-                  brewer.pal(9, "Blues")[[6]],
-                  "#B8363F"
-                  )
   if (transparency) {
-    legend_colors <- c(Palify("black", fraction_pale = 1 - 0.55),
-                       Palify(use_colors[-1], fraction_pale = 1 - 0.8)
+    legend_colors <- c(Palify("black", fraction_pale = 1 - black_alpha),
+                       Palify(use_colors[-1], fraction_pale = 1 - colors_alpha)
                        )
-    line_colors <- c(adjustcolor("black", alpha.f = 0.55),
-                     adjustcolor(use_colors[-1], alpha.f = 0.8)
+    line_colors <- c(adjustcolor("black", alpha.f = black_alpha),
+                     adjustcolor(use_colors[-1], alpha.f = colors_alpha)
                      )
   } else {
     legend_colors <- use_colors
@@ -574,24 +590,29 @@ ThreeLinesROC <- function(ROC_df_list,
   }
 
   MakeEmptyPlot(axis_limits, axis_limits)
-  if (middle_line) {
-    abline(a = 0, b = 1, col = "gray78", lty = "dashed")
+  if (!(isFALSE(only_annotation))) {
+    if (middle_line) {
+      abline(a = 0, b = 1, col = "gray78", lty = "dashed")
+    }
+    if (!(embed_PNG)) {
+      use_tcl <- -0.36
+      axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
+      mtext("False positive rate", side = 1, line = 1.75, cex = par("cex"))
+      axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
+      mtext("True positive rate", side = 2, line = 2.3, cex = par("cex"))
+      box()
+    }
   }
-  if (!(embed_PNG)) {
-    use_tcl <- -0.36
-    axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
-    mtext("False positive rate", side = 1, line = 1.75, cex = par("cex"))
-    axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
-    mtext("True positive rate", side = 2, line = 2.3, cex = par("cex"))
-    box()
-  }
-  for (i in seq_along(ROC_mat_list)) {
-    lines(x   = 1 - ROC_mat_list[[i]][, "Specificity"],
-          y   = ROC_mat_list[[i]][, "Sensitivity"],
-          lwd = use_lwd,
-          col = line_colors[[i]],
-          xpd = NA
-          )
+
+  if (!(isTRUE(only_annotation))) {
+    for (i in seq_along(ROC_mat_list)) {
+      lines(x   = 1 - ROC_mat_list[[i]][, "Specificity"],
+            y   = ROC_mat_list[[i]][, "Sensitivity"],
+            lwd = use_lwd * par("lwd"),
+            col = line_colors[[i]],
+            xpd = NA
+            )
+    }
   }
 
   if (embed_PNG) {
@@ -607,27 +628,30 @@ ThreeLinesROC <- function(ROC_df_list,
     box()
   }
 
-  ## Draw legend
-  legend_vec <- c("Re-analysis", "CRISPRoff", "T.gonfio")
-  AUC_legend_vec <- format(round(AUC_vec, digits = 2), nsmall = 2)
-  AUC_legend_vec <- sapply(AUC_legend_vec, function(x) {
-    as.expression(bquote("(AUC" * scriptscriptstyle(" ") * "=" * scriptscriptstyle(" ") * .(x) * ")"))
-  })
-  labels_list <- lapply(seq_along(legend_vec), function(x) c(as.expression(legend_vec[[x]]), AUC_legend_vec[[x]]))
 
-  if (legend_inside) {
-    DrawBottomLegend(labels_list = labels_list[legend_order],
+  if (!(isFALSE(only_annotation))) {
+    ## Draw legend
+    legend_vec <- c("Re-analysis", "CRISPRoff", "T.gonfio")
+    AUC_legend_vec <- format(round(AUC_vec, digits = 2), nsmall = 2)
+    AUC_legend_vec <- sapply(AUC_legend_vec, function(x) {
+      as.expression(bquote("(AUC" * scriptscriptstyle(" ") * "=" * scriptscriptstyle(" ") * .(x) * ")"))
+    })
+    labels_list <- lapply(seq_along(legend_vec), function(x) c(as.expression(legend_vec[[x]]), AUC_legend_vec[[x]]))
+
+    if (legend_inside) {
+      DrawBottomLegend(labels_list = labels_list[legend_order],
+                       use_colors = legend_colors[legend_order],
+                       use_lwd = legend_lwd,
+                       ...
+                       )
+    } else {
+      DrawSideLegend(labels_list = labels_list[legend_order],
                      use_colors = legend_colors[legend_order],
                      use_lwd = legend_lwd,
+                     draw_lines = TRUE,
                      ...
                      )
-  } else {
-    DrawSideLegend(labels_list = labels_list[legend_order],
-                   use_colors = legend_colors[legend_order],
-                   use_lwd = legend_lwd,
-                   draw_lines = TRUE,
-                   ...
-                   )
+    }
   }
 
   return(invisible(NULL))
@@ -667,7 +691,7 @@ CompareScreenBars(c(gini_indices_CRISPRoff[c(1, 2)], gini_indices_4sg[c(1, 2)]),
                   short_labels = TRUE, use_title = "",
                   use_tcl = 0.35, y_axis_label_line = 1.8, y_axis_mgp = 0.525,
                   lollipop = TRUE, lollipop_pch = 18,
-                  gap_ratio = 1.7, side_gap = 0.6, point_size_factor = 1.25,
+                  gap_ratio = 1.7, side_gap = 0.6, point_size_factor = 1.2,
                   grid_lwd = 0.7
                   )
 title("Count heterogeneity", cex.main = 1, font.main = 1)
@@ -779,11 +803,15 @@ CompareScreenBars(this_bars_vec,
 dev.off()
 
 
-
+scaling_factor <- 20
 devEMF::emf(file.path(thesis_dir, "3C) SSMD - bar chart.emf"),
-            width = 2.3, height = 2, emfPlus = FALSE, coordDPI = 3000
+            width = 2.3 * scaling_factor, height = 2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(mar = c(3, 4, 2, 1), cex = 0.6, lwd = 0.7)
+old_par <- par(mar = c(3, 4, 2, 1),
+               cex = 0.6 * scaling_factor * 0.95,
+               lwd = 0.7 * scaling_factor * 0.95
+               )
 this_bars_vec <- abs(c(separation_original_mat["Robust SSMD", ],
                        separation_CRISPRoff_mat["Robust SSMD", ],
                        separation_4sg_mat["Robust SSMD", ]
@@ -797,7 +825,7 @@ bar_positions <- CompareScreenBars(
   y_axis_n = 3, bar_color = "#407ab5", stem_color = "#e0ebf5",
   gap_ratio = 1.7, side_gap = 0.6,
   bar_width = 0.4, lollipop = TRUE, point_size_factor = 1.25,
-  group_labels_y = 1.75
+  group_labels_y = 1.75, bracket_color = "gray60"
 )
 dev.off()
 
@@ -1060,7 +1088,7 @@ for (i in 1:6) {
                       if (is.null(use_rep)) "both replicates" else paste0("replicate ", use_rep)
                       )
   devEMF::emf(file = file.path(thesis_dir, paste0(file_name, ".emf")),
-              width = PDF_width, height = PDF_height, emfPlus = FALSE, coordDPI = 1500
+              width = PDF_width, height = PDF_height, emfPlus = FALSE, coordDPI = 6000
               )
   par(cex = 0.6, lwd = 0.7)
   data1_name <- dataset_combos[[use_index]][[1]]
@@ -1078,7 +1106,8 @@ for (i in 1:6) {
                     layout_widths        = use_widths,
                     layout_heights       = use_heights,
                     show_empty_ticks     = FALSE,
-                    embed_PNG            = TRUE
+                    embed_PNG            = TRUE,
+                    point_cex            = 0.6
                     )
   dev.off()
 }
@@ -1090,6 +1119,20 @@ for (i in 1:6) {
 
 essential_entrezs     <- intersect(essentials_2020Q2_df[, "Entrez_ID"], non_NA_common_genes)
 non_essential_entrezs <- intersect(non_essentials_2020Q2_df[, "Entrez_ID"], non_NA_common_genes)
+
+
+essential_fraction <- essential_df[["CRISPR_num_essential"]] /
+                      essential_df[["CRISPR_num_cell_lines"]]
+are_inclusive_ess <- essential_fraction > 0.95
+are_inclusive_noness <- (essential_fraction == 0) &
+                        (essential_df[, "CRISPR_mean_probability"] <= 0.03)
+inclusive_essentials <- intersect(essential_df[, "Entrez_ID"][are_inclusive_ess],
+                                  non_NA_common_genes
+                                  )
+inclusive_non_essentials <- intersect(essential_df[, "Entrez_ID"][are_inclusive_noness],
+                                      non_NA_common_genes
+                                     )
+
 
 ROC_original_input_df  <- ROCInputDf(logfc_original_df, essential_entrezs, non_essential_entrezs)
 ROC_CRISPRoff_input_df <- ROCInputDf(logfc_CRISPRoff_df, essential_entrezs, non_essential_entrezs)
@@ -1135,12 +1178,60 @@ devEMF::emf(file.path(thesis_dir, "3B) ROC curves.emf"),
             )
 old_par <- par(mar = c(3, 4, 2, 7), cex = 0.6, lwd = 0.7)
 ThreeLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_multiplier = 1.5,
-              transparency = FALSE, use_lwd = 1.75, legend_lwd = 2.5,
+              transparency = FALSE, use_lwd = 2.5, legend_lwd = 2.5,
               line_x_distance = -0.4, legend_order = c(3, 1, 2), legend_inside = FALSE,
               length_in_lines = 0.55, lines_x_start = 0.9
               )
 par(old_par)
 dev.off()
+
+
+
+scaling_factor <- 20
+scaled_width <- 2.72 * scaling_factor
+scaled_height <- 2 * scaling_factor
+scaled_cex <- 0.6 * scaling_factor * 0.95
+scaled_lwd <- 0.7 * scaling_factor * 0.95
+
+use_mar <- c(3, 4, 2, 7)
+
+plot_height <- (2 * scaling_factor) - (sum(use_mar[c(1, 3)]) * scaled_cex * 0.2)
+plot_width <- (2.72 * scaling_factor) - (sum(use_mar[c(2, 4)]) * scaled_cex * 0.2)
+width_diff <- plot_width - plot_height
+use_mar[[4]] <- use_mar[[4]] + (width_diff / scaled_cex * 5)
+
+
+
+custom_colors <- c("black", "#0664ef", "#da0b0b")
+devEMF::emf(file.path(thesis_dir, "3B) ROC curves - only annotation.emf"),
+            width = scaled_width, height = scaled_height,
+            emfPlus = FALSE, coordDPI = 3000
+            )
+old_par <- par(mar = use_mar, cex = scaled_cex, lwd = scaled_lwd)
+ThreeLinesROC(ROC_df_list, small_gap_size = 1.25, large_gap_multiplier = 1.5,
+              transparency = TRUE, legend_lwd = 2.5,
+              line_x_distance = -0.4, legend_order = c(3, 2, 1), legend_inside = FALSE,
+              length_in_lines = 0.55, lines_x_start = 0.9,
+              use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
+              only_annotation = TRUE
+              )
+par(old_par)
+dev.off()
+
+
+svglite::svglite(file.path(thesis_dir, "3B) ROC curves.svg"),
+            width = scaled_width, height = scaled_height, bg = "transparent"
+            )
+old_par <- par(mar = use_mar, cex = scaled_cex, lwd = scaled_lwd)
+ThreeLinesROC(ROC_df_list,
+              transparency = TRUE, use_lwd = 2.5,
+              use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
+              only_annotation = FALSE
+              )
+par(old_par)
+dev.off()
+
+
 
 
 
@@ -1214,6 +1305,68 @@ for (i in seq_along(datasets_vec)) {
                        )
   dev.off()
 }
+
+
+
+
+# Try stuff ---------------------------------------------------------------
+
+essential_fraction <- essential_df[["CRISPR_num_essential"]] /
+                      essential_df[["CRISPR_num_cell_lines"]]
+
+logfc_df <- common_logfc_CRISPRoff_df
+
+are_essential <- logfc_df[, "Entrez_ID"] %in% essentials_2020Q2_df[, "Entrez_ID"]
+are_non_essential <- logfc_df[, "Entrez_ID"] %in% non_essentials_2020Q2_df[, "Entrez_ID"]
+are_unspecific <- logfc_df[, "Combined_specificity"] < 0.05
+
+table(are_non_essential, are_unspecific)
+beeswarm(split(logfc_df[are_non_essential, "Mean_log2FC"], are_unspecific[are_non_essential]), cex = 0.5, pch = 16)
+beeswarm(try_list, cex = 0.5, pch = 16)
+
+
+pairs_df <- ScatterInputDf(common_logfc_CRISPRoff_df, common_logfc_4sg_df)
+pairs_df <- pairs_df[pairs_df[, "Essentiality"] != "neither", ]
+are_E <- pairs_df[, "Essentiality"] == "essential"
+are_NE <- pairs_df[, "Essentiality"] == "non-essential"
+pairs_df[, "Rep1_quantile"] <- rank(pairs_df[, "Rep1_data"]) / nrow(pairs_df)
+pairs_df[, "Rep2_quantile"] <- rank(pairs_df[, "Rep2_data"]) / nrow(pairs_df)
+pairs_df[, "Delta_quantile"] <- pairs_df[, "Rep1_quantile"] - pairs_df[, "Rep2_quantile"]
+pairs_df[, "Delta_specificity"] <- pairs_df[, "Rep1_min_spec"] - pairs_df[, "Rep2_min_spec"]
+
+
+MakeEmptyPlot(); abline(a = 0, b = 1); abline(v = 0.5, h = 0.5)
+points(pairs_df[are_NE, "Rep1_quantile"], pairs_df[are_NE, "Rep2_quantile"])
+MakeEmptyPlot(); abline(a = 0, b = 1); abline(v = 0.5, h = 0.5)
+points(pairs_df[are_E, "Rep1_quantile"], pairs_df[are_E, "Rep2_quantile"])
+
+
+
+MakeEmptyPlot()
+abline(a = 0, b = 1)
+abline(v = 0.5, h = 0.5, col = "gray50")
+are_E <- pairs_df[, "Essentiality"] == "essential"
+are_NE <- pairs_df[, "Essentiality"] == "non-essential"
+points(pairs_df[are_E, "Rep1_quantile"], pairs_df[are_E, "Rep2_quantile"], pch = 16, cex = 0.5)
+MakeEmptyPlot()
+abline(a = 0, b = 1)
+points(pairs_df[are_NE, "Rep1_quantile"], pairs_df[are_NE, "Rep2_quantile"], pch = 16, cex = 0.5)
+abline(v = 0.5, h = 0.5, col = "gray50")
+
+beeswarm(list(pairs_df[are_E, "Delta_quantile"], pairs_df[are_NE, "Delta_quantile"]),
+         cex = 0.5, pch = 16
+         )
+boxplot(list(pairs_df[are_E, "Delta_quantile"], pairs_df[are_NE, "Delta_quantile"]), add = TRUE)
+
+non_essential_entrezs <- essential_df[(essential_fraction == 0) &
+                                      (essential_df[, "CRISPR_mean_probability"] <= 0.03), "Entrez_ID"]
+are_non_essential <- logfc_df[, "Entrez_ID"] %in% non_essential_entrezs
+table(are_non_essential, are_unspecific)
+split_list <- split(logfc_df[are_non_essential, "Mean_log2FC"], are_unspecific[are_non_essential])
+split_list <- lapply(split_list, function(x) x[is.finite(x)])
+beeswarm(split_list, cex = 0.5, pch = 16)
+
+
 
 
 
@@ -1295,7 +1448,7 @@ for (i in seq_along(datasets_vec)) {
   par(mai = c(12.72, 8.48, 6.36, 3.18), cex = 10.6, lwd = 10.5)
   DistanceScatter(get(datasets_vec[[i]]),
                   point_cex = 0.6, #point_color = "#2a4d98", median_color = "black",
-                  embed_PNG = TRUE, png_res = 50, png_padding = 1,
+                  embed_PNG = TRUE, png_res = 50, png_padding = 0.7,
                   grid_lwd = 0.6, median_lwd = 1.4, x_grid = TRUE,
                   show_x_label = i == 3, grid_color = "gray88",
                   grid_highlight = "gray68"
@@ -1321,7 +1474,7 @@ par(mai = c(12.72, 8.48, 6.36, 3.18), cex = 10.6, lwd = 10.5)
 DistanceScatter(distances_4sg_depmap_df[distances_4sg_depmap_df[, "DepMap_essentiality"] %in% "Essential", ],
                 use_hue = "#6c4cbd",
                 point_cex = 0.6, #point_color = "#2a4d98", median_color = "black",
-                embed_PNG = TRUE, png_res = 50, png_padding = 1,
+                embed_PNG = TRUE, png_res = 50, png_padding = 0.7,
                 grid_lwd = 0.6, median_lwd = 1.4, x_grid = TRUE,
                 grid_color = "gray88",
                 grid_highlight = "gray68",
@@ -1344,7 +1497,7 @@ par(mai = c(12.72, 8.48, 6.36, 3.18), cex = 10.6, lwd = 10.5)
 DistanceScatter(distances_4sg_depmap_df[distances_4sg_depmap_df[, "DepMap_essentiality"] %in% "Non-essential", ],
                 use_hue = "#3c9f5d",
                 point_cex = 0.6, #point_color = "#2a4d98", median_color = "black",
-                embed_PNG = TRUE, png_res = 50, png_padding = 1,
+                embed_PNG = TRUE, png_res = 50, png_padding = 0.7,
                 grid_lwd = 0.6, median_lwd = 1.4, x_grid = TRUE,
                 grid_color = "gray88",
                 grid_highlight = "gray68",

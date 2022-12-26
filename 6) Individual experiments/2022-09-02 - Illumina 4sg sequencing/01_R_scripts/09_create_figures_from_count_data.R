@@ -3,6 +3,8 @@
 
 # Load packages and source code -------------------------------------------
 
+library("devEMF")
+library("svglite")
 CRISPR_root_directory    <- "~/CRISPR"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
@@ -72,8 +74,7 @@ library_densities <- GetLibraryDensities(sg_mat)
 
 
 
-
-# Examine only the genes used in Nunez et al. (intersection of Blo --------
+# Examine only the genes used in Nunez et al. -----------------------------
 ## (intersection of Blomen and Hart)
 
 are_missing <- rowSums(counts_df[, c("NoSwitch_0MM_Tbefore_R1", "NoSwitch_0MM_Tbefore_R2")]) == 0
@@ -747,66 +748,113 @@ dev.off()
 
 # Export plots for the thesis ---------------------------------------------
 
-devEMF::emf(file.path(thesis_dir, "1A - GC content.emf"),
-            width  = 2.15, height = 2.27, emfPlus = FALSE
+scaling_factor <- 20
+scaled_width <- 2.15 * scaling_factor
+scaled_height <- 2.27 * scaling_factor
+scaled_cex <- 0.7 * scaling_factor * 0.93
+scaled_lwd <- 0.8 * scaling_factor
+
+devEMF::emf(file.path(thesis_dir, "1A - GC content - only annotation.emf"),
+            width = scaled_width, height = scaled_height,
+            emfPlus = FALSE, coordDPI = 1500
             )
-par("cex" = 0.7, "lwd" = 0.8)
+par("cex" = scaled_cex, "lwd" = scaled_lwd)
 TwoDensities(show_GC = TRUE, include_timepoints = c(1, 3),
-             semitransparent_lines = TRUE, use_title = "T.gonfio library",
-             legend_x_lines = 0.7, legend_y_lines = 0.8, broad_margins = TRUE,
-             label_read_on_y_axis = FALSE, embed_PNG = TRUE, grid_lwd = 0.75,
+             use_title = "T.gonfio library",
+             y_axis_label_line = 0.4,
+             label_read_on_y_axis = FALSE, grid_lwd = 0.75,
+             broad_margins = TRUE,
              title_y_pos = 0.4, x_axis_label_line = 1.8, x_axis_mgp = 0.39,
-             show_y_axis_label = FALSE, omit_zero_label = TRUE,
-             show_legend = FALSE
+             only_annotation = TRUE, show_legend = FALSE,
+             omit_zero_label = TRUE, show_y_axis_label = FALSE
+             )
+dev.off()
+
+
+svglite::svglite(file.path(thesis_dir, "1A - GC content.svg"),
+                 width = scaled_width, height = scaled_height, bg = "transparent"
+                 )
+par("cex" = scaled_cex, "lwd" = scaled_lwd)
+TwoDensities(show_GC = TRUE, include_timepoints = c(1, 3),
+             broad_margins = TRUE, only_annotation = FALSE
              )
 dev.off()
 
 
 
-devEMF::emf(file.path(thesis_dir, "1B - Per-base quality.emf"),
-            width  = 2.15, height = 2.27, emfPlus = FALSE
+devEMF::emf(file.path(thesis_dir, "1B - Per-base quality - only annotation.emf"),
+            width = scaled_width, height = scaled_height,
+            emfPlus = FALSE, coordDPI = 1500
             )
-
-par("cex" = 0.7, "lwd" = 0.8)
+par("cex" = scaled_cex, "lwd" = scaled_lwd)
 PerBaseQuality(base_qual_mat, include_timepoints = c(1, 3),
-               semitransparent_lines = FALSE, use_title = "T.gonfio library",
+               use_title = "T.gonfio library",
                x_axis_label_line = 1.5,
                broad_margins = TRUE, x_axis_tcl = 0.35,
                title_y_pos = 0.4, separate_x_labels = TRUE, x_axis_mgp = 0.39,
-               embed_PNG = TRUE, small_middle_gap = TRUE, omit_zero_label = TRUE,
-               show_y_axis = FALSE, legend_x_lines = 1.5, legend_y_lines = 1.7
+               small_middle_gap = TRUE, omit_zero_label = TRUE,
+               show_y_axis = FALSE, legend_x_lines = 1.5, legend_y_lines = 1.7,
+               only_annotation = TRUE
+               )
+dev.off()
+
+
+svglite::svglite(file.path(thesis_dir, "1B - Per-base quality.svg"),
+                 width = scaled_width, height = scaled_height, bg = "transparent"
+                 )
+par("cex" = scaled_cex, "lwd" = scaled_lwd)
+PerBaseQuality(base_qual_mat, include_timepoints = c(1, 3),
+               broad_margins = TRUE, small_middle_gap = TRUE,
+               only_annotation = FALSE
                )
 dev.off()
 
 
 
-devEMF::emf(file.path(thesis_dir, "1C - Mean sequence quality.emf"),
-            width  = 2.15, height = 2.27, emfPlus = FALSE
+
+
+devEMF::emf(file.path(thesis_dir, "1C - Mean sequence quality - only annotation.emf"),
+            width = scaled_width, height = scaled_height,
+            emfPlus = FALSE, coordDPI = 1500
             )
-par("cex" = 0.7, "lwd" = 0.8)
+par("cex" = scaled_cex, "lwd" = scaled_lwd)
 TwoDensities(show_GC = FALSE, include_timepoints = c(1, 3),
-             semitransparent_lines = TRUE, use_title = "T.gonfio library",
+             use_title = "T.gonfio library",
              legend_x_lines = 0.7, legend_y_lines = 0.8, broad_margins = TRUE,
-             label_read_on_y_axis = FALSE, embed_PNG = TRUE, grid_lwd = 0.75,
+             label_read_on_y_axis = FALSE, grid_lwd = 0.75,
              title_y_pos = 0.4, x_axis_label_line = 1.8, x_axis_mgp = 0.39,
              show_y_axis_label = FALSE, omit_zero_label = TRUE,
-             show_legend = FALSE, darker_box = TRUE
+             show_legend = FALSE, darker_box = TRUE, only_annotation = TRUE
+             )
+dev.off()
+
+
+svglite::svglite(file.path(thesis_dir, "1C - Mean sequence quality.svg"),
+                 width  = scaled_width, height = scaled_height, bg = "transparent"
+                 )
+par("cex" = scaled_cex, "lwd" = scaled_lwd)
+TwoDensities(show_GC = FALSE, include_timepoints = c(1, 3),
+             broad_margins = TRUE, only_annotation = FALSE
              )
 dev.off()
 
 
 
+
 devEMF::emf(file.path(thesis_dir, "1D - Percentage of mapped reads.emf"),
-            width  = 2.5, height = 2.27, emfPlus = FALSE
+            width = 2.5 * scaling_factor, height = 2.27 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
+par("cex" = scaled_cex, "lwd" = scaled_lwd,
+    "mai" = c(0.412, 0.48375, 0.2724, 0.88) * scaling_factor
+    )
 MappedReadsBarPlot(num_reads_detailed_mat, include_timepoints = c(1, 3),
                    set_mar = FALSE, use_title = NA,
                    legend_point_x_start = -0.1, legend_lines_x_start = 1,
                    use_point_size = 1.45, small_gap_size = 1,
                    large_gap_multiplier = 1.6, y_upper_limit = 80 * 10^6,
                    bar_width = 0.6, gap_ratio = 1.4,
-                   side_gap = 0.6, show_y_axis = FALSE
+                   side_gap = 0.6, show_y_axis = FALSE, legend_lwd = 0.8
                    )
 text(x      = grconvertX(0.5, from = "npc", to = "user"),
      y      = par("usr")[[4]] + (diff(grconvertY(c(0, par("mai")[[3]]), from = "inches", to = "user")) * 0.4),
@@ -818,16 +866,20 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1E - Percentage of 1MM reads.emf"),
-            width  = 2.5, height = 2.27, emfPlus = FALSE
+            width = 2.5 * scaling_factor, height = 2.27 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
+par("cex" = scaled_cex, "lwd" = scaled_lwd,
+    "mai" = c(0.412, 0.48375, 0.2724, 0.88) * scaling_factor
+    )
 MappedReadsBarPlot(percent_1MM_mat, include_timepoints = c(1, 3),
                    set_mar = FALSE, use_title = NA,
                    legend_point_x_start = -0.1, legend_lines_x_start = 1,
                    use_point_size = 1.45, small_gap_size = 1.15,
                    large_gap_multiplier = 1.35, y_upper_limit = 1,
                    bar_width = 0.6, gap_ratio = 1.4,
-                   side_gap = 0.6, show_percentage = TRUE, show_y_axis = FALSE
+                   side_gap = 0.6, show_percentage = TRUE, show_y_axis = FALSE,
+                   grid_lwd = 0.8, legend_lwd = 0.8
                    )
 text(x      = grconvertX(0.5, from = "npc", to = "user"),
      y      = par("usr")[[4]] + (diff(grconvertY(c(0, par("mai")[[3]]), from = "inches", to = "user")) * 0.4),
@@ -839,9 +891,12 @@ dev.off()
 
 
 devEMF::emf(file.path(thesis_dir, "1F - Template switch.emf"),
-            width  = 2.5, height = 2.27, emfPlus = FALSE
+            width = 2.5 * scaling_factor, height = 2.27 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-par("cex" = 0.7, "lwd" = 0.8, mai = c(0.412, 0.48375, 0.2724, 0.88))
+par("cex" = scaled_cex, "lwd" = scaled_lwd,
+    "mai" = c(0.412, 0.48375, 0.2724, 0.88) * scaling_factor
+    )
 MappedReadsBarPlot(rbind(percent_switch_vec, 1 - percent_switch_vec),
                    include_timepoints = c(1, 3),
                    set_mar = FALSE, use_title = NA,
@@ -850,7 +905,8 @@ MappedReadsBarPlot(rbind(percent_switch_vec, 1 - percent_switch_vec),
                    large_gap_multiplier = 1.4, y_upper_limit = 1,
                    bar_width = 0.6, gap_ratio = 1.4,
                    side_gap = 0.6, show_percentage = TRUE, show_y_axis = FALSE,
-                   use_colors = brewer.pal(9, "Blues")[c(3, 6)]
+                   use_colors = brewer.pal(9, "Blues")[c(3, 6)],
+                   grid_lwd = 0.8, legend_lwd = 0.8
                    )
 text(x      = grconvertX(0.5, from = "npc", to = "user"),
      y      = par("usr")[[4]] + (diff(grconvertY(c(0, par("mai")[[3]]), from = "inches", to = "user")) * 0.4),
@@ -858,6 +914,7 @@ text(x      = grconvertX(0.5, from = "npc", to = "user"),
      xpd    = NA
      )
 dev.off()
+
 
 
 
@@ -970,10 +1027,12 @@ dev.off()
 # Export main figures for the thesis --------------------------------------
 
 devEMF::emf(file.path(thesis_dir, "3A) Violin plot - iii) T.gonfio.emf"),
-            width = 2, height = 2, emfPlus = FALSE, coordDPI = 3000
+            width = 2 * scaling_factor, height = 2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 3000
             )
-old_par <- par(cex = 0.6, lwd = 0.7, lheight = 0.9)
-
+old_par <- par(cex = 0.6 * scaling_factor * 0.95,
+               lwd = 0.7 * scaling_factor * 0.95
+               )
 reps_list <- RepEssentialViolins(
   1:2, 5:6,
   use_title        = expression(bold("T.gonfio library")),
@@ -987,20 +1046,20 @@ reps_list <- RepEssentialViolins(
   rep_label_line   = 0.2,
   genes_label_line = 0.6,
   draw_groups_n    = FALSE,
-  point_cex        = 0.175,
+  point_cex        = 0.2,
   title_line       = 3.3,
   draw_border      = TRUE,
   wex              = 0.88,
   quantiles_lty    = c("dotted", "dashed", "dotted"), # compatibility with emf device
   right_gap        = 0.4,
-  bracket_color    = "gray50",
+  bracket_color    = "gray60",
+  bracket_y_lines  = 0.4,
   draw_grid        = TRUE,
   indicate_zero    = FALSE,
   show_x_axis      = FALSE,
   show_y_axis      = FALSE,
   grid_lwd         = 0.8
 )
-par(old_par)
 dev.off()
 
 

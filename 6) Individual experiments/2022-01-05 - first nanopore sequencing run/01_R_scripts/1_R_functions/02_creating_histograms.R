@@ -71,7 +71,8 @@ DrawHistogram <- function(numeric_input,
                           x_axis_mgp          = 0.5,
                           y_axis_mgp          = 0.5,
                           show_y_axis         = TRUE,
-                          embed_PNG           = FALSE
+                          embed_PNG           = FALSE,
+                          only_annotation     = NULL
                           ) {
 
   if (!(is.list(numeric_input))) {
@@ -145,37 +146,38 @@ DrawHistogram <- function(numeric_input,
   plot(NA, ann = FALSE, axes = FALSE, xlim = x_axis_limits, ylim = y_axis_limits,
        xaxs = "i", yaxs = "i"
        )
-
-  for (i in seq_along(hist_list)) {
-    polygon_mat_list <- MakeHistogramPolygons(hist_list[[i]])
-    if (show_outline) {
-      for (polygon_mat in polygon_mat_list) {
-        lines(polygon_mat[, "x"],
-              polygon_mat[, "y"],
-              col  = hist_colors[[i]],
-              lwd  = par("lwd") * use_lwd,
-              lend = "butt",
-              xpd  = NA
-              )
-      }
-    } else if (!(show_both)) {
-      for (polygon_mat in polygon_mat_list) {
-        polygon(polygon_mat[, "x"],
+  if (!(isTRUE(only_annotation))) {
+    for (i in seq_along(hist_list)) {
+      polygon_mat_list <- MakeHistogramPolygons(hist_list[[i]])
+      if (show_outline) {
+        for (polygon_mat in polygon_mat_list) {
+          lines(polygon_mat[, "x"],
                 polygon_mat[, "y"],
-                col    = hist_colors[[i]],
-                border = NA,
-                xpd    = NA
+                col  = hist_colors[[i]],
+                lwd  = par("lwd") * use_lwd,
+                lend = "butt",
+                xpd  = NA
                 )
+        }
+      } else if (!(show_both)) {
+        for (polygon_mat in polygon_mat_list) {
+          polygon(polygon_mat[, "x"],
+                  polygon_mat[, "y"],
+                  col    = hist_colors[[i]],
+                  border = NA,
+                  xpd    = NA
+                  )
+        }
       }
-    }
-    if (show_both) {
-      for (polygon_mat in polygon_mat_list) {
-        polygon(polygon_mat[, "x"],
-                polygon_mat[, "y"],
-                col    = adjustcolor(hist_colors[[i]], alpha.f = 0.05),
-                border = NA,
-                xpd    = NA
-                )
+      if (show_both) {
+        for (polygon_mat in polygon_mat_list) {
+          polygon(polygon_mat[, "x"],
+                  polygon_mat[, "y"],
+                  col    = adjustcolor(hist_colors[[i]], alpha.f = 0.05),
+                  border = NA,
+                  xpd    = NA
+                  )
+        }
       }
     }
   }
@@ -185,39 +187,40 @@ DrawHistogram <- function(numeric_input,
   }
 
   ## Draw x axis
-  x_axis_ticks <- axTicks(1)
-  x_axis_labels <- format(x_axis_ticks)
-  if (is.null(truncation_limit)) {
+  if (!(isFALSE(only_annotation))) {
+    x_axis_ticks <- axTicks(1)
     x_axis_labels <- format(x_axis_ticks)
-  } else {
-    x_axis_labels <- ifelse(x_axis_ticks >= truncation_limit,
-                            as.expression(bquote("" >= .(as.character(truncation_limit)))),
-                            format(x_axis_ticks)
-                            )
-  }
-
-  axis(1, mgp = c(3, x_axis_mgp, 0), tcl = -(use_tcl),
-       at = x_axis_ticks, labels = x_axis_labels, lwd = par("lwd")
-       )
-  mtext(x_axis_label, side = 1, line = x_axis_label_line, cex = par("cex"))
-
-  ## Draw y axis
-  if (show_y_axis) {
-    axis(2, las = 1, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl),
-         at = y_axis_ticks, labels = y_axis_labels, lwd = par("lwd")
-         )
-    mtext(y_axis_label, side = 2, line = y_axis_label_line, cex = par("cex"))
-    if (draw_box) {
-      box(bty = "l")
+    if (is.null(truncation_limit)) {
+      x_axis_labels <- format(x_axis_ticks)
+    } else {
+      x_axis_labels <- ifelse(x_axis_ticks >= truncation_limit,
+                              as.expression(bquote("" >= .(as.character(truncation_limit)))),
+                              format(x_axis_ticks)
+                              )
     }
-  } else if (draw_box) {
-    segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = par("usr")[[3]],
-             xpd = NA
-             )
-  }
 
-  ## Final steps
-  title(title_text, cex.main = 1, font.main = title_font)
+    axis(1, mgp = c(3, x_axis_mgp, 0), tcl = -(use_tcl),
+         at = x_axis_ticks, labels = x_axis_labels, lwd = par("lwd")
+         )
+    mtext(x_axis_label, side = 1, line = x_axis_label_line, cex = par("cex"))
+
+    ## Draw y axis
+    if (show_y_axis) {
+      axis(2, las = 1, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl),
+           at = y_axis_ticks, labels = y_axis_labels, lwd = par("lwd")
+           )
+      mtext(y_axis_label, side = 2, line = y_axis_label_line, cex = par("cex"))
+      if (draw_box) {
+        box(bty = "l")
+      }
+    } else if (draw_box) {
+      segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = par("usr")[[3]],
+               xpd = NA
+               )
+    }
+    ## Final steps
+    title(title_text, cex.main = 1, font.main = title_font)
+  }
 
   return(invisible(NULL))
 }

@@ -108,7 +108,9 @@ StackedBars <- function(bars_mat,
                         lines_x_start      = 1.4,
                         title_x_start      = 0.0,
                         side_gap           = 0.5,
-                        gap_ratio          = 2
+                        gap_ratio          = 2,
+                        grid_lwd           = 1,
+                        legend_lwd         = 1
                         ) {
 
   ## Prepare data
@@ -170,18 +172,15 @@ StackedBars <- function(bars_mat,
   ## Draw the grid
   grid_pos <- pretty(use_numeric_limits, n = 30)
   if ((use_numeric_limits[[1]] == 0) && (use_numeric_limits[[2]] == 1)) {
-    print(grid_pos)
-    assign("delete_grid_pos", grid_pos, envir = globalenv())
     are_major <- vapply(grid_pos, function(x) any(abs(seq(0, 1, by = 0.1) - x) < (10^-12)), logical(1))
-    print(are_major)
   } else {
     are_major <- grid_pos %in% axTicks(2)
   }
-  print(are_major)
   segments(x0  = par("usr")[[1]],
            x1  = par("usr")[[2]],
            y0  = grid_pos,
            col = ifelse(are_major, "gray88", "gray95"),
+           lwd = par("lwd") * grid_lwd,
            xpd = NA
            )
   PlotBarplotMat(bars_mat,
@@ -234,7 +233,8 @@ StackedBars <- function(bars_mat,
                    title_x_start = title_x_start,
                    large_gap_multiplier = 1.25,
                    small_gap_size = 1.15,
-                   use_point_size = 1.3
+                   use_point_size = 1.4,
+                   border_lwd     = legend_lwd
                    )
   }
 
@@ -246,13 +246,14 @@ StackedBars <- function(bars_mat,
 
 
 
-Percent1MMBars <- function(bars_vec) {
+Percent1MMBars <- function(bars_vec, ...) {
 
   bar_positions <- StackedBars(bars_vec,
                                convert_to_percent = TRUE,
                                invert_colors      = TRUE,
                                y_axis_label       = "Percentage of mapped sgRNAs",
-                               show_legend        = FALSE
+                               show_legend        = FALSE,
+                               ...
                                )
 
   ## Label the percentages
@@ -356,7 +357,7 @@ BarsOrLollipop <- function(bars_vec,
 
 
 
-ThreeHistograms <- function(numeric_list, x_axis_label_line = 2, ...) {
+ThreeHistograms <- function(numeric_list, x_axis_label_line = 2, only_annotation = NULL, ...) {
 
   new_order <- order(match(c("PacBio", "Nanopore Q20+", "Nanopore"), names(numeric_list)))
   numeric_list <- numeric_list[new_order]
@@ -377,7 +378,7 @@ ThreeHistograms <- function(numeric_list, x_axis_label_line = 2, ...) {
                 y_axis_label        = VerticalAdjust("Frequency"),
                 title_font          = 1,
                 truncation_limit    = 250,
-                x_axis_upper_limit  = 250,
+                # x_axis_upper_limit  = 250,
                 y_axis_upper_limit  = 1600,
                 fixed_y_upper_limit = TRUE,
                 x_axis_mgp          = 0.4,
@@ -385,27 +386,31 @@ ThreeHistograms <- function(numeric_list, x_axis_label_line = 2, ...) {
                 x_axis_label_line   = x_axis_label_line,
                 y_axis_label_line   = 2.3,
                 show_both           = TRUE,
+                only_annotation     = only_annotation,
                 ...
                 )
 
   ## Draw legend
-  x_start <- par("usr")[[2]] - strwidth("Nanopore Q20") - diff(grconvertX(c(0, 1.8), from = "lines", to = "user"))
-  y_start <- par("usr")[[4]] - diff(grconvertY(c(0, 1), from = "lines", to = "user"))
-  lines_seq <- seq_along(hist_colors) - 1L
-  y_vec <- y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * lines_seq
-  segments(x0  = x_start,
-           x1  = x_start + diff(grconvertX(c(0, 0.5), from = "lines", to = "user")),
-           y0  = y_vec,
-           col = hist_colors,
-           lwd = par("lwd") * 2,
-           xpd = NA
-           )
-  text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
-       y      = y_vec,
-       labels = names(numeric_list),
-       adj    = c(0, 0.5),
-       xpd    = NA
-       )
+  if (!(isFALSE(only_annotation))) {
+    x_start <- par("usr")[[2]] - strwidth("Nanopore Q20") - diff(grconvertX(c(0, 1.8), from = "lines", to = "user"))
+    y_start <- par("usr")[[4]] - diff(grconvertY(c(0, 1), from = "lines", to = "user"))
+    lines_seq <- seq_along(hist_colors) - 1L
+    y_vec <- y_start - diff(grconvertY(c(0, 1.2), from = "lines", to = "user")) * lines_seq
+    segments(x0  = x_start,
+             x1  = x_start + diff(grconvertX(c(0, 0.5), from = "lines", to = "user")),
+             y0  = y_vec,
+             col = hist_colors,
+             lwd = par("lwd") * 2,
+             xpd = NA
+             )
+    text(x      = x_start + diff(grconvertX(c(0, 0.9), from = "lines", to = "user")),
+         y      = y_vec,
+         labels = names(numeric_list),
+         adj    = c(0, 0.5),
+         xpd    = NA
+         )
+  }
+
   return(invisible(NULL))
 }
 
@@ -704,6 +709,9 @@ NumSgRNAsPerPair(num_matching_mat_list)
 
 # Export plots ------------------------------------------------------------
 
+scaling_factor <- 20L
+correction_factor <- 0.95
+
 legend_par_list <- list(
   "mai" = c(0.45, 0.5, 0.35, 0.6),
   "lwd" = 0.8,
@@ -714,52 +722,78 @@ no_legend_par_list <- c(
   legend_par_list[c("lwd", "cex")]
 )
 
+scaled_legend_par_list <- list(
+  "mar" = legend_par_list[["mai"]] * 5 / (legend_par_list[["cex"]] * correction_factor),
+  "lwd" = legend_par_list[["lwd"]] * scaling_factor,
+  "cex" = legend_par_list[["cex"]] * scaling_factor * correction_factor
+)
+scaled_no_legend_par_list <- c(
+  list("mar" = c(0.45, 0.5, 0.35, 0.2) * 5 / (legend_par_list[["cex"]] * correction_factor)),
+  scaled_legend_par_list[c("lwd", "cex")]
+)
+
 
 devEMF::emf(file.path(output_dir, "1A) Number of mapped sgRNAs.emf"),
-            width = 3, height = 2.2, emfPlus = FALSE
+            width = 3 * scaling_factor, height = 2.2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-do.call(par, legend_par_list)
+do.call(par, scaled_legend_par_list)
 StackedBars(read_counts_mat,
             legend_title_vec = c("Mapped", "sgRNAs"),
-            y_axis_label = "Number of reads", set_mar = FALSE
+            y_axis_label = "Number of reads", set_mar = FALSE, grid_lwd = 0.7
             )
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "1B) Percentage 1MM.emf"),
-            width = 2.6, height = 2.2, emfPlus = FALSE
+            width = 2.6 * scaling_factor, height = 2.2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-do.call(par, no_legend_par_list)
-Percent1MMBars(fraction_1MM_vec)
+do.call(par, scaled_no_legend_par_list)
+Percent1MMBars(fraction_1MM_vec, grid_lwd = 0.7)
 dev.off()
 
 
 
-devEMF::emf(file.path(output_dir, "1C) Plasmid count histograms.emf"),
-            width = 3, height = 2.2, emfPlus = FALSE
+
+
+devEMF::emf(file.path(output_dir, "1C) Plasmid count histograms - only annotation.emf"),
+            width = 3 * scaling_factor, height = 2.2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-do.call(par, no_legend_par_list)
-ThreeHistograms(counts_vec_list, embed_PNG = TRUE, use_lwd = 1,
-                x_axis_label_line = 1.7
+do.call(par, scaled_no_legend_par_list)
+ThreeHistograms(counts_vec_list, use_lwd = 1, x_axis_label_line = 1.7,
+                only_annotation = TRUE
+                )
+dev.off()
+
+
+
+svglite::svglite(file.path(output_dir, "1C) Plasmid count histograms.svg"),
+                 width = 3 * scaling_factor, height = 2.2 * scaling_factor,
+                 bg = "transparent"
+                 )
+do.call(par, scaled_no_legend_par_list)
+ThreeHistograms(counts_vec_list, use_lwd = 0.9, x_axis_label_line = 1.7,
+                only_annotation = FALSE
                 )
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "1D) Number of missing plasmids.emf"),
-            width = 2.6, height = 2.2, emfPlus = FALSE
+            width = 2.6 * scaling_factor, height = 2.2 * scaling_factor,
+            emfPlus = FALSE, coordDPI = 1500
             )
-do.call(par, no_legend_par_list)
-# abbr_num_missing_vec <- num_missing_vec
-# names(abbr_num_missing_vec) <- c("Nano\npore", "Nano\nQ20", "PacBio")
+do.call(par, scaled_no_legend_par_list)
 MissingBarPlot(num_missing_vec)
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "2A) Number of template switches.emf"),
-            width = 2.4, height = 2.2, emfPlus = FALSE
+            width = 2.4, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 do.call(par, legend_par_list)
 abbr_num_switches_mat <- num_switches_mat
@@ -769,30 +803,31 @@ StackedBars(abbr_num_switches_mat,
             convert_to_percent = TRUE,
             y_axis_label = "Reads",
             set_mar = FALSE,
-            point_x_start = -0.2,
+            point_x_start = -0.07, legend_lwd = 0.8,
             lines_x_start = 1.2,
-            title_x_start = -0.2, y_label_line = 2.2
+            title_x_start = -0.2, y_label_line = 2.2, grid_lwd = 0.7
             )
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "2B) Template switches between sgRNAs.emf"),
-            width = 2.4, height = 2.2, emfPlus = FALSE
+            width = 2.4, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 do.call(par, legend_par_list)
 TemplateSwitchPerRegion(fraction_switched_vec_list,
                         use_title = "Switch rate",
                         y_axis_label = "Reads",
                         title_line = 0.5, side_gap = 0.6, gap_ratio = 1.5,
-                        bar_width = 0.725, NQP_in_gray = TRUE, y_label_line = 2.2
+                        bar_width = 0.725, NQP_in_gray = TRUE, y_label_line = 2.2,
+                        grid_lwd = 0.7
                         )
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "2C) Distances between sgRNAs.emf"),
-            width = 2, height = 2.2, emfPlus = FALSE
+            width = 2, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 do.call(par, no_legend_par_list)
 DistancesBarPlot(sg_distances_vec, add_bp = FALSE, use_title = "Distance",
@@ -803,7 +838,7 @@ dev.off()
 
 
 devEMF::emf(file.path(output_dir, "2D) Number of targeted plasmids.emf"),
-            width = 2.4, height = 2.2, emfPlus = FALSE
+            width = 2.4, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 do.call(par, legend_par_list)
 abbr_num_targeted_plasmids_mat <- num_targeted_plasmids_mat
@@ -813,16 +848,16 @@ StackedBars(abbr_num_targeted_plasmids_mat,
             convert_to_percent = TRUE,
             y_axis_label = "Reads",
             draw_box = FALSE, set_mar = FALSE,
-            point_x_start = -0.2,
+            point_x_start = -0.07, legend_lwd = 0.8,
             lines_x_start = 1.2,
-            title_x_start = -0.2, y_label_line = 2.2
+            title_x_start = -0.2, y_label_line = 2.2, grid_lwd = 0.7
             )
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "2E) Number of switch-backs.emf"),
-            width = 2.4, height = 2.2, emfPlus = FALSE
+            width = 2.4, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 do.call(par, legend_par_list)
 abbr_num_switch_backs_mat <- num_switch_backs_mat
@@ -831,24 +866,24 @@ StackedBars(abbr_num_switch_backs_mat,
             legend_title_vec = c("Switch-", "backs"),
             convert_to_percent = TRUE,
             y_axis_label = "Reads", set_mar = FALSE,
-            point_x_start = -0.2,
+            point_x_start = -0.07, legend_lwd = 0.8,
             lines_x_start = 1.2,
-            title_x_start = -0.2, y_label_line = 2.2
+            title_x_start = -0.2, y_label_line = 2.2, grid_lwd = 0.7
             )
 dev.off()
 
 
 
 devEMF::emf(file.path(output_dir, "2F) Number of matching sgRNAs.emf"),
-            width = 2.4, height = 2.2, emfPlus = FALSE
+            width = 2.4, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 do.call(par, legend_par_list)
 NumSgRNAsPerPair(num_matching_mat_list, set_mar = FALSE,
-                 point_x_start = -0.2,
+                 point_x_start = -0.07, legend_lwd = 0.8,
                  lines_x_start = 1.2,
                  title_x_start = -0.2, side_gap = 0.6, gap_ratio = 1.5,
                  bar_width = 0.725, NQP_in_gray = TRUE,
-                 y_axis_label = "Reads", y_label_line = 2.2
+                 y_axis_label = "Reads", y_label_line = 2.2, grid_lwd = 0.7
                  )
 dev.off()
 
