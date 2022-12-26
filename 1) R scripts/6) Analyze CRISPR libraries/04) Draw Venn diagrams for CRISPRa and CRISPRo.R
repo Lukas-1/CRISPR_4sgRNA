@@ -451,33 +451,33 @@ dev.off()
 
 
 
-library("devEMF")
 
-emf(file.path(file_output_directory, paste0("CRISPRa Venn diagram", ".emf")),
-    width = horizontal_width, height = horizontal_height, emfPlus = FALSE
+
+svglite::svglite(file.path(file_output_directory, paste0("CRISPRa Venn diagram", ".svg")),
+    width = horizontal_width, height = horizontal_height, fix_text_size = FALSE
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 ThreeSetsVenn(CRISPRa_fac, flip_vertical = TRUE, rotate_by = 188,
               scale_by = length(CRISPRa_fac) / length(CRISPRko_fac),
               positions_list = CRISPRa_number_labels_list,
               line_positions = CRISPRa_line_positions,
-              shift_x = -0.08, shift_y = -0.015,
-              embed_PNG = TRUE
+              shift_x = -0.08, shift_y = -0.015
               )
 dev.off()
 
 
-emf(file.path(file_output_directory, paste0("CRISPRko Venn diagram", ".emf")),
-    width = horizontal_width, height = horizontal_height, emfPlus = FALSE
+svglite::svglite(file.path(file_output_directory, paste0("CRISPRko Venn diagram", ".svg")),
+    width = horizontal_width, height = horizontal_height, fix_text_size = FALSE
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 ThreeSetsVenn(CRISPRko_fac, rotate_by = 170,
               positions_list = CRISPRko_number_labels_list,
               line_positions = CRISPRko_line_positions,
-              shift_x = -0.05,
-              embed_PNG = TRUE
+              shift_x = -0.05
               )
 dev.off()
+
+
 
 
 
