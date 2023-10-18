@@ -5,7 +5,7 @@
 
 library("RColorBrewer")
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 project_dir <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
 source(file.path(project_dir, "01_R_scripts", "1_R_functions", "02_creating_histograms.R"))

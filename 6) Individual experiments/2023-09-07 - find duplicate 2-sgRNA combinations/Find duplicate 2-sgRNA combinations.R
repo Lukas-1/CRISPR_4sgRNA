@@ -4,7 +4,7 @@
 
 # Define folder paths -----------------------------------------------------
 
-project_dir <- "~/CRISPR/6) Individual experiments/2023-09-07 - find duplicate 2-sgRNA combinations"
+project_dir <- "~/CRISPR_4sgRNA/6) Individual experiments/2023-09-07 - find duplicate 2-sgRNA combinations"
 input_dir <- file.path(project_dir, "1_input")
 output_dir <- file.path(project_dir, "2_output")
 

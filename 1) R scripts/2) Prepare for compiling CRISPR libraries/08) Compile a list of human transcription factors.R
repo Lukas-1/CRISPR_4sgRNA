@@ -5,7 +5,7 @@
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "23) Translating between Ensembl IDs, gene symbols and Entrez IDs.R"))
 
 
@@ -14,7 +14,7 @@ source(file.path(general_functions_directory, "23) Translating between Ensembl I
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
+CRISPR_root_directory   <- "~/CRISPR_4sgRNA"
 CRISPR_input_directory  <- file.path(CRISPR_root_directory, "2) Input data")
 human_TFs_directory     <- file.path(CRISPR_input_directory, "Sublibraries", "Human TFs - Lambert and Jolma")
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")

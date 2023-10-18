@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R")) # For CRISPRaAreTop4Mat
@@ -14,7 +14,7 @@ source(file.path(general_functions_directory, "32) Compiling data on essential g
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory  <- file.path(RData_directory, "1) General")
 CRISPRa_RData_directory  <- file.path(RData_directory, "2) CRISPRa")

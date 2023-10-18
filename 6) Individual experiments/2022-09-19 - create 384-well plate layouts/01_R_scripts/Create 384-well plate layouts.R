@@ -10,7 +10,7 @@ library("writexl")
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 project_dir           <- file.path(experiments_directory, "2022-09-19 - create 384-well plate layouts")
 input_dir             <- file.path(project_dir, "02_input_data")

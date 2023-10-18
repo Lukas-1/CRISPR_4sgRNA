@@ -6,7 +6,7 @@
 
 library("BSgenome.Mmusculus.UCSC.mm10")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "05) Mapping sequences to the human genome.R"))
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))
 
@@ -15,7 +15,7 @@ source(file.path(general_functions_directory, "07) Annotating mapped sequences w
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
+CRISPR_root_directory   <- "~/CRISPR_4sgRNA"
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory <- file.path(RData_directory, "6) Mouse - General")
 CRISPRa_RData_directory <- file.path(RData_directory, "7) Mouse - CRISPRa")

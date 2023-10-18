@@ -34,7 +34,7 @@ number_of_cores <- parallel::detectCores() - 3L
 
 # Define functions --------------------------------------------------------
 
-AlignReads <- function(use_reference, use_sequences, opening_penalty = 30) {
+AlignReads <- function(use_reference, use_sequences, opening_penalty = 30, align_reverse = TRUE) {
 
   assign("delete_use_reference", use_reference, envir = globalenv())
   assign("delete_use_sequences", use_sequences, envir = globalenv())
@@ -51,24 +51,30 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30) {
                                       gapOpening = opening_penalty
                                       )
 
-  message("Computing reverse alignments...")
-  rev_alignments <- pairwiseAlignment(reverseComplement(use_sequences), use_reference,
-                                      type = "global",
-                                      gapOpening = opening_penalty
-                                      )
+  if (align_reverse) {
+    message("Computing reverse alignments...")
+    rev_alignments <- pairwiseAlignment(reverseComplement(use_sequences), use_reference,
+                                        type = "global",
+                                        gapOpening = opening_penalty
+                                        )
+  }
 
 
   message("Compiling results...")
-  are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
-
-  new_order <- order(c(which(are_forward_vec), which(!(are_forward_vec))))
-
-  aligned_plasmid_vec <- c(as.character(alignedSubject(fwd_alignments)[are_forward_vec]),
-                           as.character(alignedSubject(rev_alignments)[!(are_forward_vec)])
-                           )[new_order]
-  aligned_read_vec <- c(as.character(alignedPattern(fwd_alignments)[are_forward_vec]),
-                        as.character(alignedPattern(rev_alignments)[!(are_forward_vec)])
-                        )[new_order]
+  if (align_reverse) {
+    are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
+    new_order <- order(c(which(are_forward_vec), which(!(are_forward_vec))))
+    aligned_plasmid_vec <- c(as.character(alignedSubject(fwd_alignments)[are_forward_vec]),
+                             as.character(alignedSubject(rev_alignments)[!(are_forward_vec)])
+                             )[new_order]
+    aligned_read_vec <- c(as.character(alignedPattern(fwd_alignments)[are_forward_vec]),
+                          as.character(alignedPattern(rev_alignments)[!(are_forward_vec)])
+                          )[new_order]
+  } else {
+    aligned_plasmid_vec <- as.character(alignedSubject(fwd_alignments))
+    aligned_read_vec <- as.character(alignedPattern(fwd_alignments))
+    are_forward_vec <- NA
+  }
 
   alignments_df <- data.frame("Read_number"     = seq_along(use_sequences),
                               "Orientation_fwd" = are_forward_vec,
@@ -80,13 +86,16 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30) {
                               )
   old_order <- order(alignments_df[, "Read_number"])
   alignments_df <- alignments_df[old_order, names(alignments_df) != "Read_number"]
+  if (!(align_reverse)) {
+    alignments_df[["Orientation_fwd"]] <- NULL
+  }
   row.names(alignments_df) <- NULL
   return(alignments_df)
 }
 
 
 
-ParallelAlign <- function(use_reference, use_sequences, opening_penalty = 30, num_cores = NULL) {
+ParallelAlign <- function(use_reference, use_sequences, opening_penalty = 30, num_cores = NULL, align_reverse = TRUE) {
 
   ### See https://github.com/NathanSkene/EWCE/issues/5#issuecomment-497616095
   if (is.null(num_cores)) {
@@ -108,15 +117,17 @@ ParallelAlign <- function(use_reference, use_sequences, opening_penalty = 30, nu
                           varlist = c("DNAStringSet", "pairwiseAlignment",
                                       "reverseComplement", "score",
                                       "alignedSubject", "alignedPattern",
-                                      "AlignReads", "use_reference", "opening_penalty"
-                          ),
+                                      "AlignReads", "use_reference", "opening_penalty",
+                                      "align_reverse"
+                                      ),
                           envir = environment()
                           )
   alignments_df_list <- parallel::parLapply(cl,
                                             use_seq_list,
                                             function(x) AlignReads(use_reference,
                                                                    x,
-                                                                   opening_penalty = opening_penalty
+                                                                   opening_penalty = opening_penalty,
+                                                                   align_reverse = align_reverse
                                                                    )
                                             )
   parallel::stopCluster(cl)
@@ -129,9 +140,7 @@ ParallelAlign <- function(use_reference, use_sequences, opening_penalty = 30, nu
 
 
 
-ParallelAlignInChunks <- function(all_reads) {
-
-  print(class(all_reads))
+ParallelAlignInChunks <- function(all_reads, align_reverse = TRUE) {
 
   if ("data.frame" %in% class(all_reads)) {
     reads_vec <- all_reads[, "Sequence"]
@@ -150,8 +159,6 @@ ParallelAlignInChunks <- function(all_reads) {
   last_vec  <- format(tapply(seq_len(num_reads), chunks_vec, function(x) x[[length(x)]]))
   chunk_numbers <- format(seq_len(num_chunks))
 
-  print(class(all_reads))
-
   for (i in seq_len(num_chunks)) {
     are_this_chunk <- chunks_vec == i
     message("Processing chunk #", chunk_numbers[[i]], " of ",
@@ -160,6 +167,7 @@ ParallelAlignInChunks <- function(all_reads) {
             )
     sub_df <- ParallelAlign(amplicon_ref,
                             reads_vec[are_this_chunk],
+                            align_reverse = align_reverse,
                             num_cores = number_of_cores # See https://github.com/NathanSkene/EWCE/issues/5#issuecomment-497616095
                             )
     chunks_list[[i]] <- sub_df

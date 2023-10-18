@@ -7,7 +7,7 @@
 
 library("readxl")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
@@ -19,7 +19,7 @@ source(file.path(general_functions_directory, "18) Using the Broad Institute's G
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory        <- "~/CRISPR"
+CRISPR_root_directory        <- "~/CRISPR_4sgRNA"
 CRISPR_input_directory       <- file.path(CRISPR_root_directory, "2) Input data")
 CRISPR_libraries_directory   <- file.path(CRISPR_input_directory, "Mouse CRISPR libraries")
 CRISPRko_datasets_directory  <- file.path(CRISPR_libraries_directory, "CRISPRko")

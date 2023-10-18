@@ -7,7 +7,7 @@
 library("Matrix")
 library("igraph")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R")) # For MakeLocationStrings
 source(file.path(general_functions_directory, "11) Merging data from multiple sources to annotate CRISPR libraries.R")) # For GetCutLocations
 

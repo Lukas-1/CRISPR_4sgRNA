@@ -5,7 +5,7 @@
 
 library("beeswarm")
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 R_functions_dir          <- file.path(first_illumina_trial_dir, "01_R_scripts", "R_functions")

@@ -5,7 +5,7 @@
 # Import packages and source code -----------------------------------------
 
 library("readxl")
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria

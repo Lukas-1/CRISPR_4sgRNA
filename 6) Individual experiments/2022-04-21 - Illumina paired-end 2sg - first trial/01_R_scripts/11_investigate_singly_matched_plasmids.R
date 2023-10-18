@@ -4,7 +4,7 @@
 
 # Load packages and source code -------------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
 source(file.path(general_functions_directory, "05) Mapping sequences to the human genome.R"))
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))

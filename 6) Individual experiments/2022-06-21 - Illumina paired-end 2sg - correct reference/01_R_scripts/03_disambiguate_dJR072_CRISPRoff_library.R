@@ -5,7 +5,7 @@
 
 library("readxl")
 
-CRISPR_root_directory       <- "~/CRISPR"
+CRISPR_root_directory       <- "~/CRISPR_4sgRNA"
 general_functions_directory <- file.path(CRISPR_root_directory, "1) R scripts", "1) R functions")
 experiments_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir    <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")

@@ -5,7 +5,7 @@
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "18) Using the Broad Institute's GPP sgRNA designer.R"))
 source(file.path(general_functions_directory, "21) Splitting sgRNAs into chunks for parallel analysis.R"))
 
@@ -15,7 +15,7 @@ source(file.path(general_functions_directory, "21) Splitting sgRNAs into chunks 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
+CRISPR_root_directory     <- "~/CRISPR_4sgRNA"
 RData_directory           <- file.path(CRISPR_root_directory, "3) RData files")
 general_RData_directory   <- file.path(RData_directory, "1) General")
 CRISPRko_RData_directory  <- file.path(RData_directory, "3) CRISPRko")

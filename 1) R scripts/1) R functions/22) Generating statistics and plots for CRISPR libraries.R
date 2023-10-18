@@ -13,7 +13,7 @@ library("gridExtra") # For grid.arrange
 library("ggplot2")
 library("RColorBrewer")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R")) # For GetMinEntrez
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R"))
 

@@ -3,7 +3,7 @@
 
 # Load packages and source code -------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 source(file.path(first_illumina_trial_dir, "01_R_scripts", "R_functions", "04_obtaining_counts_for_2sg_plasmids.R"))

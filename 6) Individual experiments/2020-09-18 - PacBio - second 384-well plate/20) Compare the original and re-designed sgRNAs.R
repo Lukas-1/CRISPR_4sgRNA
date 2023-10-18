@@ -13,7 +13,7 @@ library("RColorBrewer")
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 plate1_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 plate2_directory       <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
 p1_R_objects_directory <- file.path(plate1_directory, "3) R objects")

@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 plate1_directory      <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory <- file.path(plate1_directory, "1) R functions")
@@ -17,7 +17,7 @@ source(file.path(R_functions_directory, "08) Processing demultiplexed PacBio rea
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 s2rI_directory           <- file.path(experiments_directory, "2021-12-08 - integrate PacBio data")
 s2rI_R_objects_directory <- file.path(s2rI_directory, "3) R objects")

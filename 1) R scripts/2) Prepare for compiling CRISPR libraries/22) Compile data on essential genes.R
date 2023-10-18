@@ -8,7 +8,7 @@
 library("readxl")
 library("RColorBrewer")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "23) Translating between Ensembl IDs, gene symbols and Entrez IDs.R"))
 source(file.path(general_functions_directory, "32) Compiling data on essential genes.R"))
 
@@ -17,7 +17,7 @@ source(file.path(general_functions_directory, "32) Compiling data on essential g
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
+CRISPR_root_directory     <- "~/CRISPR_4sgRNA"
 CRISPR_input_directory    <- file.path(CRISPR_root_directory, "2) Input data")
 essential_genes_directory <- file.path(CRISPR_input_directory, "Human genome", "Essential genes")
 RData_directory           <- file.path(CRISPR_root_directory, "3) RData files")

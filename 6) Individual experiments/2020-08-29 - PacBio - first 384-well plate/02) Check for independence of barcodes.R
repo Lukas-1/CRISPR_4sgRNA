@@ -5,7 +5,7 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 file_directory        <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-08-29 - PacBio - first 384-well plate")
 R_functions_directory <- file.path(file_directory, "1) R functions")
 
@@ -16,7 +16,7 @@ source(file.path(R_functions_directory, "15) Examining the Hamming distances of 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory  <- "~/CRISPR"
+CRISPR_root_directory  <- "~/CRISPR_4sgRNA"
 R_objects_directory    <- file.path(file_directory, "3) R objects")
 
 file_output_directory  <- file.path(file_directory, "5) Output")

@@ -5,7 +5,7 @@
 
 library("readxl")
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 pacbio_seq_functions_directory  <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate", "1) R functions")
 source(file.path(pacbio_seq_functions_directory, "02) Analyzing reads.R")) # For GetMeanQuality

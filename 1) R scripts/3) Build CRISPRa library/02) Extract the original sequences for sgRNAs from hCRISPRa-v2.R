@@ -9,7 +9,7 @@ library("BSgenome.Hsapiens.UCSC.hg19")
 library("TxDb.Hsapiens.UCSC.hg19.knownGene")
 library("liftOver")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
 source(file.path(general_functions_directory, "07) Annotating mapped sequences with additional information.R"))
@@ -20,7 +20,7 @@ source(file.path(general_functions_directory, "07) Annotating mapped sequences w
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 CRISPR_input_directory   <- file.path(CRISPR_root_directory, "2) Input data")
 liftOver_input_directory <- file.path(CRISPR_input_directory, "Human genome", "liftOver")
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")

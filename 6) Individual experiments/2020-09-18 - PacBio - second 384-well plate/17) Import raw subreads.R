@@ -13,7 +13,7 @@ library("Rsamtools")
 # Define folder paths -----------------------------------------------------
 
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 plate2_directory      <- file.path(CRISPR_root_directory, "6) Individual experiments/2020-09-18 - PacBio - second 384-well plate")
 file_input_directory  <- file.path(plate2_directory, "1) Input")
 raw_data_directory    <- file.path(file_input_directory, "Raw data", "4sg_control_and_ko_efficiency_1_B01")

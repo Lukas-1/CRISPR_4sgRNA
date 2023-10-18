@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 
 
@@ -12,7 +12,7 @@ source(file.path(general_functions_directory, "14) Checking for identical subseq
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 CRISPRa_RData_directory  <- file.path(RData_directory, "2) CRISPRa")
 file_output_directory    <- file.path(CRISPR_root_directory, "5) Output", "CRISPRa")

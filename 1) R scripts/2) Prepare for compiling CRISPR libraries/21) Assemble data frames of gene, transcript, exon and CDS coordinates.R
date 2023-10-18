@@ -7,7 +7,7 @@
 library("TxDb.Hsapiens.UCSC.hg38.knownGene")
 library("biomaRt")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
 source(file.path(general_functions_directory, "29) Determining gene types.R"))
@@ -17,7 +17,7 @@ source(file.path(general_functions_directory, "29) Determining gene types.R"))
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
+CRISPR_root_directory   <- "~/CRISPR_4sgRNA"
 general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
 
 

@@ -6,7 +6,7 @@
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
+CRISPR_root_directory   <- "~/CRISPR_4sgRNA"
 general_RData_directory <- file.path(CRISPR_root_directory, "3) RData files", "1) General")
 
 

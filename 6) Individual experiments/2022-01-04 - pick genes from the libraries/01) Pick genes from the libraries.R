@@ -3,7 +3,7 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 project_directory     <- file.path(experiments_directory, "2022-01-04 - pick genes from the libraries")
 R_functions_directory <- file.path(project_directory, "1) R functions")

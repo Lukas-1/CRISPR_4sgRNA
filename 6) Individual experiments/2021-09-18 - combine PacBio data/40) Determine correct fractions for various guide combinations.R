@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 
 
 

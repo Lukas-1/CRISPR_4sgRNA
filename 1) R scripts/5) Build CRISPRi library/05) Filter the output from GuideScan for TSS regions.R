@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "04) Using GuideScan.R"))
 
 
@@ -13,7 +13,7 @@ source(file.path(general_functions_directory, "04) Using GuideScan.R"))
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory     <- "~/CRISPR"
+CRISPR_root_directory     <- "~/CRISPR_4sgRNA"
 RData_directory           <- file.path(CRISPR_root_directory, "3) RData files")
 CRISPRi_RData_directory   <- file.path(RData_directory, "4) CRISPRi")
 GuideScan_files_directory <- file.path(CRISPR_root_directory, "4) Intermediate files", "CRISPRi", "GuideScan")

@@ -7,7 +7,7 @@
 
 library("circRNAprofiler") # For getRegexPattern
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R")) # For CheckThatFactorIsInOrder
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))
 
@@ -17,7 +17,7 @@ source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory    <- "~/CRISPR"
+CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 RData_directory          <- file.path(CRISPR_root_directory, "3) RData files")
 CRISPRa_RData_directory  <- file.path(RData_directory, "2) CRISPRa")
 CRISPRko_RData_directory <- file.path(RData_directory, "3) CRISPRko")

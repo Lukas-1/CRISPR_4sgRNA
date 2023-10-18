@@ -7,7 +7,7 @@
 
 library("readxl")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 
 
@@ -16,7 +16,7 @@ source(file.path(general_functions_directory, "14) Checking for identical subseq
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory            <- "~/CRISPR"
+CRISPR_root_directory            <- "~/CRISPR_4sgRNA"
 file_directory                   <- file.path(CRISPR_root_directory, "6) Individual experiments/2019-12-19 - Accuracy of Gibson assembly - 384-well plate")
 file_input_directory             <- file.path(file_directory, "1) Input")
 intermediate_R_objects_directory <- file.path(file_directory, "2) Intermediate R objects")

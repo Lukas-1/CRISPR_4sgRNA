@@ -10,7 +10,7 @@ library("BSgenome.Hsapiens.UCSC.hg38")
 library("TxDb.Hsapiens.UCSC.hg38.knownGene")
 library("motifRG")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R")) # For ExpandList
 source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R"))
 source(file.path(general_functions_directory, "09) Constants and settings.R")) # For SNP_column_names

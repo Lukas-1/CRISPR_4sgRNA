@@ -6,7 +6,7 @@
 
 library("parallel")
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 
 source(file.path(general_functions_directory, "09) Constants and settings.R"))
 source(file.path(general_functions_directory, "12) Re-ordering sgRNAs based on their genomic location.R"))

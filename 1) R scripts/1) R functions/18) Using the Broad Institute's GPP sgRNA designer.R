@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "01) Retrieving annotation data for a gene.R"))            # For EntrezIDsToSymbols (for the status message)
 source(file.path(general_functions_directory, "16) Producing per-gene summaries of CRISPR libraries.R")) # For MeetCriteria
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R"))         # For FormatFixedWidthInteger

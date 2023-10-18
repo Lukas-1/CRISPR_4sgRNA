@@ -4,7 +4,7 @@
 
 # Import packages and source code -----------------------------------------
 
-CRISPR_root_directory <- "~/CRISPR"
+CRISPR_root_directory <- "~/CRISPR_4sgRNA"
 experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
 s2rC_directory        <- file.path(experiments_directory, "2021-09-18 - combine PacBio data")
 R_functions_directory <- file.path(s2rC_directory, "1) R functions")

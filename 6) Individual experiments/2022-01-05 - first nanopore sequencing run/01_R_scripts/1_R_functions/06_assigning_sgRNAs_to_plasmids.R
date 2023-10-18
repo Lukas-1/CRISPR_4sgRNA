@@ -3,7 +3,7 @@
 
 # Load packages and source code -------------------------------------------
 
-root_directory        <- "~/CRISPR/6) Individual experiments"
+root_directory        <- "~/CRISPR_4sgRNA/6) Individual experiments"
 R_functions_directory <- file.path(root_directory, "2020-08-29 - PacBio - first 384-well plate/1) R functions")
 source(file.path(R_functions_directory, "02) Analyzing reads.R"))
 

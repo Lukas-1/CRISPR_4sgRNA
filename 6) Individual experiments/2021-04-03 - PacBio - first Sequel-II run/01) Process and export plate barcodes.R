@@ -11,7 +11,7 @@ library("Biostrings") # For taking the reverse complement
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory  <- "~/CRISPR"
+CRISPR_root_directory  <- "~/CRISPR_4sgRNA"
 file_directory         <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
 file_input_directory   <- file.path(file_directory, "2) Input")
 intermediate_directory <- file.path(file_directory, "4) Intermediate files")

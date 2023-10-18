@@ -12,7 +12,7 @@ library("BSgenome.Hsapiens.UCSC.hg38")
 
 # Import packages and source code -----------------------------------------
 
-general_functions_directory <- "~/CRISPR/1) R scripts/1) R functions"
+general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
 source(file.path(general_functions_directory, "02) Translating between Entrez IDs and gene symbols.R"))
 source(file.path(general_functions_directory, "03) Compiling CRISPR libraries.R"))
 source(file.path(general_functions_directory, "06) Helper functions for genomic ranges.R"))
@@ -22,7 +22,7 @@ source(file.path(general_functions_directory, "06) Helper functions for genomic 
 
 # Define folder paths -----------------------------------------------------
 
-CRISPR_root_directory   <- "~/CRISPR"
+CRISPR_root_directory   <- "~/CRISPR_4sgRNA"
 RData_directory         <- file.path(CRISPR_root_directory, "3) RData files")
 CRISPRi_RData_directory <- file.path(RData_directory, "4) CRISPRi")
 
