@@ -92,7 +92,7 @@ RocOffvMutant <- function(CRISPRoff_ROC_df,
   title(title_text, cex.main = par("cex"), line = 1.7)
 
   par(old_mar)
-  return(invisible(NULL))
+  return(invisible(c("AUC_CRISPRoff" = CRISPRoff_AUC, "AUC_mutant" = mutant_AUC)))
 }
 
 
@@ -176,15 +176,15 @@ for (create_PDF in c(FALSE, TRUE)) {
         )
   }
 
-  RocOffvMutant(CRISPRoff_both_reps_ROC_df, mutant_both_reps_ROC_df)
-  RocOffvMutant(CRISPRoff_rep1_ROC_df, mutant_rep1_ROC_df,
-                title_text = expression(bold("Nu\u00f1ez" ~ bolditalic("et al.") ~ bold("\u2013 replicate 1"))),
-                num_digits_AUC = 4
-                )
-  RocOffvMutant(CRISPRoff_rep2_ROC_df, mutant_rep2_ROC_df,
-                title_text = expression(bold("Nu\u00f1ez" ~ bolditalic("et al.") ~ bold("\u2013 replicate 2"))),
-                num_digits_AUC = 4
-                )
+  AUC_both_reps <- RocOffvMutant(CRISPRoff_both_reps_ROC_df, mutant_both_reps_ROC_df)
+  AUC_rep1      <- RocOffvMutant(CRISPRoff_rep1_ROC_df, mutant_rep1_ROC_df,
+                                 title_text = expression(bold("Nu\u00f1ez" ~ bolditalic("et al.") ~ bold("\u2013 replicate 1"))),
+                                 num_digits_AUC = 4
+                                 )
+  AUC_rep2      <- RocOffvMutant(CRISPRoff_rep2_ROC_df, mutant_rep2_ROC_df,
+                                 title_text = expression(bold("Nu\u00f1ez" ~ bolditalic("et al.") ~ bold("\u2013 replicate 2"))),
+                                 num_digits_AUC = 4
+                                 )
 
   if (create_PDF) {
     dev.off()
@@ -399,7 +399,15 @@ logfc_original_df <- data.frame(
 
 ROC_original_df <- CRISPRoff_both_reps_ROC_df
 
-save(list = c("logfc_original_df", "separation_original_mat", "ROC_original_df"),
+AUC_original_vec <- c(
+  "both_reps" = AUC_both_reps[["AUC_CRISPRoff"]],
+  "rep1"      = AUC_rep1[["AUC_CRISPRoff"]],
+  "rep2"      = AUC_rep2[["AUC_CRISPRoff"]]
+)
+
+save(list = c("logfc_original_df", "separation_original_mat", "AUC_original_vec",
+              "ROC_original_df"
+              ),
      file = file.path(rdata_dir, "10_recreate_figures_of_Nunez_et_al.RData")
      )
 
