@@ -686,7 +686,7 @@ for (prepooled in c(TRUE, FALSE)) {
     }
 
     ## Display read-level data
-    TwoDensities(show_GC = TRUE, semitransparent_lines = make_PDF, include_timepoints = 2:3, x_axis_mgp = 0.8)
+    TwoDensities(show_GC = TRUE, semitransparent_lines = make_PDF, include_timepoints = 2:3)
     PerBaseQuality(base_qual_mat[, if (prepooled) 1:8 else 9:16], semitransparent_lines = make_PDF, include_timepoints = 2:3)
     TwoDensities(show_GC = FALSE, semitransparent_lines = make_PDF, include_timepoints = 2:3)
     MappedReadsBarPlot(num_reads_detailed_mat[, four_indices], include_timepoints = 2:3, y_upper_limit = 60 * 10^6)
