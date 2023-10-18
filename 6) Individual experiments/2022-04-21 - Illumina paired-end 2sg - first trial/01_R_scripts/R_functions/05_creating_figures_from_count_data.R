@@ -219,10 +219,11 @@ AllSamplesLog2FC <- function(entrezs_vec, normalize_to_reps = 1:2, ...) {
 
 
 
-StandardLog2FCDf <- function(input_counts_df) {
+StandardLog2FCDf <- function(input_counts_df, intervention_indices = 5:6) {
   stopifnot(identical(input_counts_df[, "Entrez_ID"], CRISPRoff_df[, "Entrez_ID"]))
   results_df <- GetLog2FC(input_counts_df,
                           baseline_indices = 1:2,
+                          intervention_indices = intervention_indices,
                           allow_switch = FALSE
                           )[, c("Count_baseline", "Count_intervention", "Log2FC")]
   names(results_df) <- paste0("Mean_",
@@ -232,19 +233,26 @@ StandardLog2FCDf <- function(input_counts_df) {
   results_df <- data.frame(
     input_counts_df[, c("Plasmid_ID", "Gene_symbol", "Entrez_ID")],
     "Is_NT" = CRISPRoff_df[, "gene"] == "negative_control",
-    CRISPRoff_df[, c("Min_specificity", "Combined_specificity")],
     results_df,
     "Log2FC_rep1" = GetLog2FC(input_counts_df,
                               baseline_indices = 1:2,
+                              intervention_indices = intervention_indices,
                               allow_switch = FALSE,
                               choose_rep = 1
                               )[, "Log2FC"],
     "Log2FC_rep2" = GetLog2FC(input_counts_df,
                               baseline_indices = 1:2,
+                              intervention_indices = intervention_indices,
                               allow_switch = FALSE,
                               choose_rep = 2
                               )[, "Log2FC"]
   )
+  if (all(c("Min_specificity", "Combined_specificity") %in% names(CRISPRoff_df))) {
+    results_df <- data.frame(results_df[, 1:4],
+                             CRISPRoff_df[, c("Min_specificity", "Combined_specificity")],
+                             results_df[, 5:ncol(results_df)]
+                             )
+  }
   return(results_df)
 }
 
@@ -272,6 +280,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                 use_blomen_hart       = TRUE,
                                 bracket_y_lines       = 0.45,
                                 bracket_color         = "gray50",
+                                essential_labels      = c("Essential\ngenes", "Non-essential\ngenes"),
                                 ...
                                 ) {
 
@@ -323,7 +332,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
            col = bracket_color,
            xpd = NA
            )
-  mtext(c("Essential\ngenes", "Non-essential\ngenes"),
+  mtext(essential_labels,
         at = c(mean(x_positions[1:2]), mean(x_positions[3:4])),
         line = genes_label_line, padj = 0, cex = par("cex")
         )
@@ -968,13 +977,13 @@ PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with C
 
   old_mar <- par(mar = c(3.7, 3.95, 4.1, 1.75))
 
-  PlotROCDf(use_ROC_df, flip = TRUE)
+  AUC_value <- PlotROCDf(use_ROC_df, flip = TRUE)
 
   title(as.expression(use_title), cex.main = par("cex"), line = 2.5)
   mtext(numbers_text, line = 0.75, cex = par("cex") * 0.75, adj = 0.5)
 
   par(old_mar)
-  return(invisible(NULL))
+  return(invisible(AUC_value))
 }
 
 
@@ -1188,6 +1197,8 @@ ReplicateScatterPlot <- function(input_df,
                                  lower_bound          = -8 * (if (show_phenotype_score) 0.1 else 1),
                                  upper_bound          = 8  * (if (show_phenotype_score) 0.1 else 1),
                                  axis_limits          = c(lower_bound, upper_bound),
+                                 axis_ticks_pretty_n  = 6,
+                                 show_axis_truncation = TRUE,
                                  highlight_essential  = TRUE,
                                  use_blomen_hart      = TRUE,
                                  highlight_NT         = TRUE,
@@ -1201,13 +1212,17 @@ ReplicateScatterPlot <- function(input_df,
                                  x_axis_label_line    = 2,
                                  y_axis_label_line    = 2.3,
                                  sparse_x_axis_labels = FALSE,
+                                 axis_line_color      = "gray85",
                                  use_tcl              = 0.375,
                                  x_axis_mgp           = 0.4,
                                  y_axis_mgp           = 0.55,
                                  legend_point_x_start = 0,
                                  legend_lines_x_start = 0.8,
                                  abbreviate_NT        = FALSE,
-                                 show_y_labels        = TRUE
+                                 break_lines          = FALSE,
+                                 capitalize_legend    = TRUE,
+                                 show_y_labels        = TRUE,
+                                 ...
                                  ) {
 
   required_objects <- c("essential_df", "essentials_2020Q2_df",
@@ -1241,13 +1256,14 @@ ReplicateScatterPlot <- function(input_df,
   xy_lim <- c(axis_limits[[1]] - xy_space, axis_limits[[2]] + xy_space)
 
   ## Prepare axis tick labels
-  tick_locations <- pretty(axis_limits, n = 6)
+  tick_locations <- pretty(axis_limits, n = axis_ticks_pretty_n)
   tick_labels_list <- lapply(1:2, function(i) {
     CurtailedAxisLabels(tick_locations,
                         lower_bound          = lower_bound,
                         upper_bound          = upper_bound,
                         lower_bound_enforced = xy_list[[i]][["lower_bound_enforced"]],
-                        upper_bound_enforced = xy_list[[i]][["lower_bound_enforced"]]
+                        upper_bound_enforced = xy_list[[i]][["lower_bound_enforced"]],
+                        show_axis_truncation = show_axis_truncation
                         )
   })
   ## Prepare axis labels
@@ -1279,6 +1295,9 @@ ReplicateScatterPlot <- function(input_df,
           "essential" = c("Essential", "genes", AddSum(highlight_mat[, "is_essential"])),
           "non-essential" = c("Non-essential", "genes", AddSum(highlight_mat[, "is_non_essential"]))
         )
+        if (break_lines) {
+           labels_list[["non-essential"]] <- c("Non\uad", "essential", "genes", AddSum(highlight_mat[, "is_non_essential"]))
+        }
       } else {
         matches_vec <- match(entrezs_vec, essential_df[, "Entrez_ID"])
         are_essential <- essential_df[, "CRISPR_common"][matches_vec] %in% "Essential"
@@ -1307,6 +1326,11 @@ ReplicateScatterPlot <- function(input_df,
                                      )
                             )
                        )
+    }
+    if (!(capitalize_legend)) {
+      if (identical(substr(labels_list[[1]], 2, 2), tolower(substr(labels_list[[1]], 2, 2)))) { # Check that the first word isn't all-caps
+        labels_list[[1]] <- paste0(tolower(substr(labels_list[[1]], 1, 1)), substr(labels_list[[1]], 2, nchar(labels_list[[1]])))
+      }
     }
     stopifnot(!(any(rowSums(highlight_mat) > 1)))
     are_highlighted <- rowSums(highlight_mat) == 1
@@ -1341,9 +1365,9 @@ ReplicateScatterPlot <- function(input_df,
   plot(NA, xlim = xy_lim, ylim = xy_lim, xaxs = "i", yaxs = "i",
        axes = FALSE, ann = FALSE
        )
-  abline(v = 0, h = 0,  col = "gray85", lend = "butt")
-  abline(a = 0, b = 1,  col = "gray85", lend = "butt")
-  abline(a = 0, b = -1, col = "gray85", lend = "butt")
+  abline(v = 0, h = 0,  col = axis_line_color, lend = "butt")
+  abline(a = 0, b = 1,  col = axis_line_color, lend = "butt")
+  abline(a = 0, b = -1, col = axis_line_color, lend = "butt")
 
   ## Draw points
   points(xy_mat[!(are_highlighted), ],
@@ -1398,7 +1422,7 @@ ReplicateScatterPlot <- function(input_df,
     DrawSideLegend(labels_list,
                    use_colors = vapply(label_colors, Palify, fraction_pale = 0.15, ""),
                    use_point_size = 1, point_x_start = legend_point_x_start,
-                   lines_x_start = legend_lines_x_start
+                   lines_x_start = legend_lines_x_start, ...
                    )
   }
   par(old_mar)
@@ -1930,7 +1954,8 @@ CountBarPlot <- function(use_counts_mat,
                          bar_color  = brewer.pal(9, "Blues")[[8]],
                          stem_color = brewer.pal(9, "Blues")[[2]],
                          use_title  = NULL,
-                         show_title = TRUE
+                         show_title = TRUE,
+                         y_limit    = NULL
                          ) {
 
   ## Prepare the timepoints included
@@ -1967,7 +1992,10 @@ CountBarPlot <- function(use_counts_mat,
     y_axis_label <- "Number of missed plasmids"
   }
 
-  use_numeric_limits <- c(0, max(bars_vec) * 1.00)
+  if (is.null(y_limit)) {
+    y_limit <- max(bars_vec)
+  }
+  use_numeric_limits <- c(0, y_limit)
   numeric_axis_pos <- pretty(use_numeric_limits)
   numeric_limits <- c(numeric_axis_pos[[1]], numeric_axis_pos[[length(numeric_axis_pos)]])
 
@@ -2036,7 +2064,8 @@ CountBarPlot <- function(use_counts_mat,
 CountBoxPlot <- function(use_counts_mat,
                          include_timepoints = 1:3,
                          embed_PNG = FALSE,
-                         use_title = "Plasmid count"
+                         use_title = "Plasmid count",
+                         ...
                          ) {
 
   ## Prepare the timepoints included
@@ -2057,7 +2086,8 @@ CountBoxPlot <- function(use_counts_mat,
                 point_colors  = "#518dc2",
                 # upper_bound   = 4,
                 embed_PNG     = embed_PNG,
-                draw_groups_n = FALSE
+                draw_groups_n = FALSE,
+                ...
                 )
 
   mtext(VerticalAdjust(expression("Log"[10] ~ "normalized count")),
@@ -3092,3 +3122,40 @@ SeparationMetrics <- function(input_list) {
 
 
 
+# Functions for exporting data --------------------------------------------
+
+PrepareTgonfioForExport <- function(library_df) {
+  include_columns <- c(
+    "Plasmid_ID", "Plate_ID", "Well_number", "Gene_symbol", "Entrez_ID",
+    "TSS_ID", "Is_main_TSS", "Is_obsolete"
+  )
+  results_df <- library_df[, include_columns]
+  for (use_column in c("TSS_ID", "Is_obsolete")) {
+    results_df[, use_column] <- ifelse(is.na(results_df[, use_column]), "", results_df[, use_column])
+  }
+  return(results_df)
+}
+
+
+ExportResultsDf <- function(tidy_library_df, logfc_df, use_counts_df, file_path, add_first_line = NULL) {
+  stopifnot(identical(tidy_library_df[, "Plasmid_ID"], logfc_df[, "Plasmid_ID"]))
+  export_df <- data.frame(
+    tidy_library_df,
+    "Non_targeting" = logfc_df[, "Is_NT"],
+    logfc_df["Mean_count_baseline"],
+    "Mean_count_endpoint" = logfc_df[, "Mean_count_intervention"],
+    "Log2FC" = logfc_df[, "Mean_log2FC"],
+    logfc_df[, c("Log2FC_rep1", "Log2FC_rep2")],
+    use_counts_df
+  )
+  if (!(is.null(add_first_line))) {
+    export_df <- rbind.data.frame(
+      c(add_first_line, rep("", ncol(export_df) - 1)),
+      names(export_df),
+      export_df,
+      make.row.names = FALSE, stringsAsFactors = FALSE
+    )
+  }
+  write.csv(export_df, quote = FALSE, row.names = FALSE, file = file_path)
+  return(invisible(export_df))
+}
