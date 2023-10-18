@@ -131,7 +131,7 @@ both_reps_more_genes_ROC_df_list_list <- MakeROCDfListList(use_blomen_hart = FAL
 rep1_ROC_more_genes_df_list_list <- MakeROCDfListList(choose_rep = 1, use_blomen_hart = FALSE)
 rep2_ROC_more_genes_df_list_list <- MakeROCDfListList(choose_rep = 2, use_blomen_hart = FALSE)
 
-for (allow_switch in c(FALSE, TRUE)) {
+AUC_list <- lapply(c(TRUE, FALSE), function(allow_switch) {
 
   if (allow_switch) {
     use_dir <- file.path(PDFs_dir, "Including template switch")
@@ -147,7 +147,7 @@ for (allow_switch in c(FALSE, TRUE)) {
           )
     }
     PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = T0vT12_title)
-    PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title)
+    AUC_both_reps <- PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title)
     PlotEssentialROCDf(both_reps_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = BvT0_title)
     PlotEssentialROCDf(both_reps_more_genes_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = T0vT12_title)
     PlotEssentialROCDf(both_reps_more_genes_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = BvT12_title)
@@ -159,7 +159,7 @@ for (allow_switch in c(FALSE, TRUE)) {
           )
     }
     PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 1)")))
-    PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 1)")))
+    AUC_rep1 <- PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 1)")))
     PlotEssentialROCDf(rep1_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 1)")))
     PlotEssentialROCDf(rep1_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 1)")))
     PlotEssentialROCDf(rep1_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 1)")))
@@ -171,7 +171,7 @@ for (allow_switch in c(FALSE, TRUE)) {
           )
     }
     PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 2)")))
-    PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 2)")))
+    AUC_rep2 <- PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 2)")))
     PlotEssentialROCDf(rep2_ROC_df_list_list[[allow_switch + 1]][["ROC_BvT0"]],   use_title = expression(bold("Tbefore vs. T0 (replicate 2)")))
     PlotEssentialROCDf(rep2_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_T0vT12"]], use_title = expression(bold("T0 vs. T12 (replicate 2)")))
     PlotEssentialROCDf(rep2_ROC_more_genes_df_list_list[[allow_switch + 1]][["ROC_BvT12"]],  use_title = expression(bold("Tbefore vs. T12 (replicate 2)")))
@@ -181,7 +181,10 @@ for (allow_switch in c(FALSE, TRUE)) {
     }
   }
   par(old_oma)
-}
+  return(c("both_reps" = AUC_both_reps, "rep1" = AUC_rep1, "rep2" = AUC_rep2))
+})
+
+AUC_CRISPRoff_vec <- AUC_list[[2]]
 
 
 use_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12"]]
@@ -202,7 +205,7 @@ y_span <- 0.7 * 0.02
 custom_y_limits <- c(-0.5 - y_span, 0.2)
 custom_args <- list(lower_bound = -0.5, upper_bound = 0.2, y_limits = custom_y_limits)
 
-for (allow_switch in c(FALSE, TRUE)) {
+for (allow_switch in c(TRUE, FALSE)) {
 
   if (allow_switch) {
     use_dir <- file.path(PDFs_dir, "Including template switch")
@@ -242,7 +245,7 @@ RepEssentialViolins(1:2, 5:6, use_title = BvT12_title,  lower_bound = -0.6, uppe
 
 
 custom_y_limits <- c(-0.6 - (0.86 * 0.02), 0.25)
-for (allow_switch in c(FALSE, TRUE)) {
+for (allow_switch in c(TRUE, FALSE)) {
   for (create_PDF in c(FALSE, TRUE)) {
     if (allow_switch) {
       use_dir <- file.path(PDFs_dir, "Including template switch")
@@ -285,8 +288,9 @@ reps_list <- RepEssentialViolins(
   1:2, 5:6,
   use_title        = expression(bold("CRISPRoff library")),
   lower_bound      = -0.6,
-  upper_bound      = 0.25,
-  y_limits         = custom_y_limits,
+  upper_bound      = 0.2,
+  y_limits         = c(custom_y_limits[[1]], 0.2),
+  show_truncation  = FALSE,
   allow_switch     = FALSE,
   use_mar          = c(3, 4, 4, 1),
   y_axis_label     = expression("Phenotype (" * gamma * ")"),
@@ -297,7 +301,8 @@ reps_list <- RepEssentialViolins(
   point_cex        = 0.175,
   title_line       = 3.3,
   draw_border      = TRUE,
-  wex              = 0.88
+  wex              = 0.88,
+  essential_labels = c("essential\ngenes", "non-essential\ngenes")
 )
 par(old_par)
 dev.off()
@@ -318,7 +323,7 @@ non_essential_entrezs <- GetAvailableGenes(non_essentials_2020Q2_df[, "Entrez_ID
 # essential_entrezs     <- intersect_essential_entrezs
 # non_essential_entrezs <- intersect_non_essential_entrezs
 
-for (allow_switch in c(FALSE, TRUE)) {
+for (allow_switch in c(TRUE, FALSE)) {
 
   essential_allsamples_mat     <- AllSamplesLog2FC(essential_entrezs, normalize_to_reps = 1, allow_switch = allow_switch)
   non_essential_allsamples_mat <- AllSamplesLog2FC(non_essential_entrezs, normalize_to_reps = 1, allow_switch = allow_switch)
@@ -360,7 +365,7 @@ for (allow_switch in c(FALSE, TRUE)) {
 
 # Draw violin plots showing normalized count data -------------------------
 
-for (allow_switch in c(FALSE, TRUE)) {
+for (allow_switch in c(TRUE, FALSE)) {
 
   essential_mat     <- CountsMatForGenes(essential_entrezs, allow_switch = allow_switch)
   non_essential_mat <- CountsMatForGenes(non_essential_entrezs, allow_switch = allow_switch)
@@ -408,7 +413,7 @@ Log2FCScatterPlot(baseline_indices = 1:2, intervention_indices = 5:6,
                   show_phenotype_score = TRUE
                   )
 
-for (allow_switch in c(FALSE, TRUE)) {
+for (allow_switch in c(TRUE, FALSE)) {
   if (allow_switch) {
     use_dir <- file.path(PDFs_dir, "Including template switch")
   } else {
@@ -482,7 +487,7 @@ DrawHistogram(counts_df[, "Sum_MaySwitch_xMM"] / 6,
               y_axis_label = "Number of plasmids"
               )
 
-for (allow_switch in c(FALSE, TRUE)) {
+for (allow_switch in c(TRUE, FALSE)) {
   if (allow_switch) {
     use_dir <- file.path(PDFs_dir, "Including template switch")
   } else {
@@ -1037,6 +1042,39 @@ BidirectionalViolins(bidirectional_df, logfc_CRISPRoff_df, max_distance = 20000,
 
 
 
+
+# Export data -------------------------------------------------------------
+
+stopifnot(identical(counts_df[, "Plasmid_ID"], logfc_CRISPRoff_df[, "Plasmid_ID"]))
+
+export_count_columns <- c(
+  "MaySwitch_xMM_Tbefore_R1", "MaySwitch_xMM_Tbefore_R2",
+  "MaySwitch_xMM_T12_R1", "MaySwitch_xMM_T12_R2"
+)
+export_counts_df <- counts_df[, export_count_columns]
+export_new_column_names <- c(
+  "Count_baseline_rep1", "Count_baseline_rep2",
+  "Count_endpoint_rep1", "Count_endpoint_rep2"
+)
+names(export_counts_df) <- export_new_column_names
+
+
+
+tidy_CRISPRoff_df <- CRISPRoff_df[, c("sgID_AB", "Plasmid_ID", "Gene_symbol", "Entrez_ID")]
+names(tidy_CRISPRoff_df)[names(tidy_CRISPRoff_df) == "sgID_AB"] <- "sgID"
+tables_dir <- file.path(project_dir, "04_output_data", "Tables")
+
+ExportResultsDf(tidy_CRISPRoff_df, logfc_CRISPRoff_df, export_counts_df,
+                file_path = file.path(tables_dir, "Dual_sgRNA_CRISPRoff_counts.csv")
+                )
+
+ExportResultsDf(tidy_CRISPRoff_df, logfc_CRISPRoff_df, export_counts_df,
+                add_first_line = "Supplementary Table 12_CRISPRoff_screen_CRISPRoff_library_counts",
+                file_path = file.path(tables_dir, "Supplementary Table 12.csv")
+                )
+
+
+
 # Save data ---------------------------------------------------------------
 
 num_missing_CRISPRoff <- num_missing
@@ -1044,9 +1082,9 @@ gini_indices_CRISPRoff <- gini_indices
 separation_CRISPRoff_mat <- separation_mat
 ROC_CRISPRoff_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12"]]
 
-save(list = c("logfc_CRISPRoff_df", "gini_indices_CRISPRoff",
-              "separation_CRISPRoff_mat", "num_missing_CRISPRoff",
-              "ROC_CRISPRoff_df"
+save(list = c("logfc_CRISPRoff_df",
+              "gini_indices_CRISPRoff", "separation_CRISPRoff_mat",
+              "num_missing_CRISPRoff", "AUC_CRISPRoff_vec", "ROC_CRISPRoff_df",
               ),
      file = file.path(rdata_dir, "09_create_figures_from_count_data.RData")
      )
