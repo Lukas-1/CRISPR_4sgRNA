@@ -648,7 +648,9 @@ for (all_timepoints in c(FALSE, TRUE)) {
                        semitransparent_lines = make_PDF
                        )
     CountBoxPlot(counts_mat, include_timepoints = use_timepoints, embed_PNG = TRUE)
-    gini_indices <- CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints)
+    gini_indices <- CountBarPlot(raw_counts_mat, gini_index = TRUE, include_timepoints = use_timepoints,
+                                 lollipop = TRUE
+                                 )
     num_missing <- CountBarPlot(raw_counts_mat, include_timepoints = use_timepoints)
     par(old_par)
 
@@ -1084,7 +1086,7 @@ ROC_CRISPRoff_df <- both_reps_ROC_df_list_list[[1]][["ROC_BvT12"]]
 
 save(list = c("logfc_CRISPRoff_df",
               "gini_indices_CRISPRoff", "separation_CRISPRoff_mat",
-              "num_missing_CRISPRoff", "AUC_CRISPRoff_vec", "ROC_CRISPRoff_df",
+              "num_missing_CRISPRoff", "AUC_CRISPRoff_vec", "ROC_CRISPRoff_df"
               ),
      file = file.path(rdata_dir, "09_create_figures_from_count_data.RData")
      )
