@@ -28,8 +28,10 @@ ExtendSamplesDf <- function(samples_df) {
 
 
 
-MeanBaseQuality <- function(all_reads_list) {
-  samples_df <- ExtendSamplesDf(ProcessSamples(all_reads_list))
+MeanBaseQuality <- function(all_reads_list, samples_df) {
+  if (is.null(samples_df)) {
+    samples_df <- ExtendSamplesDf(ProcessSamples(all_reads_list))
+  }
   base_vec_list <- lapply(all_reads_list, function(x) {
     qualities_mat <- as(Biostrings::quality(x), "matrix")
     colMeans(qualities_mat)
@@ -42,8 +44,10 @@ MeanBaseQuality <- function(all_reads_list) {
 
 
 
-QualityDensities <- function(all_reads_list, use_reads = 1:2) {
-  samples_df <- ExtendSamplesDf(ProcessSamples(all_reads_list))
+QualityDensities <- function(all_reads_list, use_reads = 1:2, samples_df = NULL) {
+  if (is.null(samples_df)) {
+    samples_df <- ExtendSamplesDf(ProcessSamples(all_reads_list))
+  }
   all_reads_list <- all_reads_list[order(samples_df[, "Rank"])]
   samples_df <- samples_df[order(samples_df[, "Rank"]), ]
   samples_df[, "Sample_number"] <- match(samples_df[, "Sample_number"], unique(samples_df[, "Sample_number"]))
@@ -60,14 +64,16 @@ QualityDensities <- function(all_reads_list, use_reads = 1:2) {
     assign("delete_qualities_vec", qualities_vec, envir = globalenv())
     density(qualities_vec, adj = 5)
   })
-  names(density_output_list) <- unique(paste0(samples_df[, "Timepoint"], "_rep", samples_df[, "Replicate"]))
+  names(density_output_list) <- unique(sub("_read[12]$", "", samples_df[, "Long_name"]))
   return(density_output_list)
 }
 
 
 
-GC_Densities <- function(all_reads_list, use_reads = 1:2) {
-  samples_df <- ExtendSamplesDf(ProcessSamples(all_reads_list))
+GC_Densities <- function(all_reads_list, use_reads = 1:2, samples_df = NULL) {
+  if (is.null(samples_df)) {
+    samples_df <- ExtendSamplesDf(ProcessSamples(all_reads_list))
+  }
   all_reads_list <- all_reads_list[order(samples_df[, "Rank"])]
   samples_df <- samples_df[order(samples_df[, "Rank"]), ]
   samples_df[, "Sample_number"] <- match(samples_df[, "Sample_number"], unique(samples_df[, "Sample_number"]))
@@ -83,7 +89,7 @@ GC_Densities <- function(all_reads_list, use_reads = 1:2) {
     }))
     density(GC_vec, adj = 10, from = 0, to = 1)
   })
-  names(density_output_list) <- unique(paste0(samples_df[, "Timepoint"], "_rep", samples_df[, "Replicate"]))
+  names(density_output_list) <- unique(sub("_read[12]$", "", samples_df[, "Long_name"]))
   return(density_output_list)
 }
 
