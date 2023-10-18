@@ -1207,7 +1207,6 @@ are_unspecific <- logfc_df[, "Combined_specificity"] < 0.05
 
 table(are_non_essential, are_unspecific)
 beeswarm(split(logfc_df[are_non_essential, "Mean_log2FC"], are_unspecific[are_non_essential]), cex = 0.5, pch = 16)
-beeswarm(try_list, cex = 0.5, pch = 16)
 
 
 pairs_df <- ScatterInputDf(common_logfc_CRISPRoff_df, common_logfc_4sg_df)
