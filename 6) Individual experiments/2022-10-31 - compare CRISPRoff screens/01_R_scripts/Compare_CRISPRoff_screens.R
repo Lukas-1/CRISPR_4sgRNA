@@ -13,6 +13,7 @@ R_functions_dir          <- file.path(first_illumina_trial_dir, "01_R_scripts", 
 source(file.path(R_functions_dir, "01_violin_swarm_plots.R"))
 source(file.path(R_functions_dir, "02_ROC_curves.R"))
 source(file.path(R_functions_dir, "05_creating_figures_from_count_data.R"))
+source(file.path(R_functions_dir, "07_comparing_CRISPRoff_screens.R"))
 
 
 
@@ -471,191 +472,39 @@ CompareScreenBars <- function(bars_vec,
 
 
 
-DrawBottomLegend <- function(labels_list,
-                             use_colors,
-                             border_colors        = NULL,
-                             use_pch              = 16,
-                             use_point_size       = 1.2,
-                             lines_x_start        = 0.7,
-                             lines_y_start        = 1.3,
-                             y_mid                = 0.5,
-                             small_gap_size       = 1.25,
-                             large_gap_multiplier = 1.4,
-                             use_lwd              = 2,
-                             line_x_distance      = -0.2
-                             ) {
 
-  lines_x_start <- lines_x_start - diff(grconvertX(c(0, strwidth(expression(""^"gh"))), from = "user", to = "lines"))
+# Prioritize plasmids included in the new CRISPRoff 2sg library -----------
 
-  ## Perform checks
-  stopifnot(identical(length(labels_list), length(use_colors)))
-
-  ## Prepare for drawing legend
-  small_gap <- diff(grconvertY(c(0, small_gap_size), from = "char", to = "npc"))
-  medium_gap <- small_gap * 1.25
-  large_gap <- small_gap * large_gap_multiplier
-
-  text_list <- labels_list
-  if (all(lengths(text_list) == 1)) {
-    gaps_vec <- rep(medium_gap, length(text_list))
-    are_first <- rep(TRUE, length(text_list))
-  } else {
-    are_first <- unlist(lapply(text_list, function(x) {
-      c(TRUE, rep(FALSE, length(x) - 1))
-    }))
-    gaps_vec <- ifelse(are_first, large_gap, small_gap)
-  }
-  gaps_vec[[1]] <- 0
-  total_span <- sum(gaps_vec)
-  start_y <- total_span + diff(grconvertY(c(0, lines_y_start), from = "lines", to = "npc"))
-  y_sequence <- start_y - cumsum(gaps_vec)
-  y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
-
-  all_expressions <- sapply(unlist(labels_list), VerticalAdjust)
-
-  x_text  <- par("usr")[[2]] -
-             diff(grconvertX(c(0, lines_x_start), from = "lines", to = "user")) -
-             max(strwidth(all_expressions))
-
-  ## Draw legend
-  x_user <- grconvertX(x = x_text, from = "npc", to = "user")
-  text(x      = grconvertX(x = x_text, from = "npc", to = "user"),
-       y      = y_pos,
-       labels = all_expressions,
-       adj    = c(0, 0.5),
-       xpd    = NA
-       )
-  groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
-  length_in_lines <- 0.5
-  line_x_start <- x_user + diff(grconvertX(c(0, line_x_distance), from = "lines", to = "user"))
-  segments(x0  = line_x_start,
-           x1  = line_x_start + diff(grconvertX(c(0, length_in_lines), from = "lines", to = "user")),
-           y0  = tapply(y_pos, groups_vec, mean),
-           col = use_colors,
-           lwd = par("lwd") * use_lwd,
-           xpd = NA
-           )
-
-  return(invisible(NULL))
-}
+intersect_plasmids <- intersect(logfc_CRISPRoff_df[, "sgID"], logfc_original_df[, "sgID"])
+matches_vec <- match(logfc_original_df[, "sgID"], logfc_CRISPRoff_df[, "sgID"])
+logfc_original_df <- logfc_original_df[order(matches_vec), ]
+row.names(logfc_original_df) <- NULL
 
 
 
-ThreeLinesROC <- function(ROC_df_list,
-                          flip            = TRUE,
-                          embed_PNG       = FALSE,
-                          only_annotation = NULL,
-                          transparency    = TRUE,
-                          use_lwd         = 2,
-                          legend_lwd      = use_lwd * 1.25,
-                          legend_order    = seq_along(ROC_df_list),
-                          axis_limits     = c(0, 1),
-                          legend_inside   = TRUE,
-                          middle_line     = !(legend_inside),
-                          use_colors      = c(brewer.pal(9, "Greys")[[7]],
-                                              brewer.pal(9, "Blues")[[6]],
-                                              "#B8363F"
-                                              ),
-                          black_alpha     = 0.55,
-                          colors_alpha    = 0.8,
-                          ...
-                          ) {
 
-  if (transparency) {
-    legend_colors <- c(Palify("black", fraction_pale = 1 - black_alpha),
-                       Palify(use_colors[-1], fraction_pale = 1 - colors_alpha)
-                       )
-    line_colors <- c(adjustcolor("black", alpha.f = black_alpha),
-                     adjustcolor(use_colors[-1], alpha.f = colors_alpha)
-                     )
-  } else {
-    legend_colors <- use_colors
-    line_colors <- use_colors
-  }
+# Choose one plasmid for each Entrez gene ID ------------------------------
 
-  ROC_mat_list <- lapply(ROC_df_list, GetROCMat)
-  AUC_vec <- vapply(ROC_mat_list, GetAUC, numeric(1))
+logfc_4sg_df       <- ChooseOnePerEntrez(logfc_4sg_df)
+logfc_CRISPRoff_df <- ChooseOnePerEntrez(logfc_CRISPRoff_df)
+logfc_original_df  <- ChooseOnePerEntrez(logfc_original_df)
 
-  if (flip) {
-    for (i in seq_along(ROC_mat_list)) {
-      sens_vec <- ROC_mat_list[[i]][, "Sensitivity"]
-      spec_vec <- ROC_mat_list[[i]][, "Specificity"]
-      ROC_mat_list[[i]][, "Sensitivity"] <- spec_vec
-      ROC_mat_list[[i]][, "Specificity"] <- sens_vec
-    }
-  }
+new_common_genes <- intersect(logfc_CRISPRoff_df[, "Entrez_ID"], logfc_4sg_df[, "Entrez_ID"])
+common_genes <- intersect(logfc_original_df[, "Entrez_ID"], new_common_genes)
 
-  if (embed_PNG) {
-    current_device <- StartEmbedPNG(figures_dir)
-  }
+present_CRISPRoff_genes <- logfc_CRISPRoff_df[, "Entrez_ID"][!(is.na(logfc_CRISPRoff_df[, "Mean_log2FC"]))]
+present_4sg_genes <- logfc_4sg_df[, "Entrez_ID"][!(is.na(logfc_4sg_df[, "Mean_log2FC"]))]
 
-  MakeEmptyPlot(axis_limits, axis_limits)
-  if (!(isFALSE(only_annotation))) {
-    if (middle_line) {
-      abline(a = 0, b = 1, col = "gray78", lty = "dashed")
-    }
-    if (!(embed_PNG)) {
-      use_tcl <- -0.36
-      axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
-      mtext("False positive rate", side = 1, line = 1.75, cex = par("cex"))
-      axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
-      mtext("True positive rate", side = 2, line = 2.3, cex = par("cex"))
-      box()
-    }
-  }
-
-  if (!(isTRUE(only_annotation))) {
-    for (i in seq_along(ROC_mat_list)) {
-      lines(x   = 1 - ROC_mat_list[[i]][, "Specificity"],
-            y   = ROC_mat_list[[i]][, "Sensitivity"],
-            lwd = use_lwd * par("lwd"),
-            col = line_colors[[i]],
-            xpd = NA
-            )
-    }
-  }
-
-  if (embed_PNG) {
-    StopEmbedPNG(current_device, figures_dir)
-  }
-
-  if (embed_PNG) {
-    use_tcl <- -0.36
-    axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
-    mtext("False positive rate", side = 1, line = 2, cex = par("cex"))
-    axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
-    mtext("True positive rate", side = 2, line = 2.3, cex = par("cex"))
-    box()
-  }
+non_NA_common_genes <- intersect(common_genes, present_CRISPRoff_genes)
+non_NA_common_genes <- intersect(non_NA_common_genes, present_4sg_genes)
 
 
-  if (!(isFALSE(only_annotation))) {
-    ## Draw legend
-    legend_vec <- c("Re-analysis", "CRISPRoff", "T.gonfio")
-    AUC_legend_vec <- format(round(AUC_vec, digits = 2), nsmall = 2)
-    AUC_legend_vec <- sapply(AUC_legend_vec, function(x) {
-      as.expression(bquote("(AUC" * scriptscriptstyle(" ") * "=" * scriptscriptstyle(" ") * .(x) * ")"))
-    })
-    labels_list <- lapply(seq_along(legend_vec), function(x) c(as.expression(legend_vec[[x]]), AUC_legend_vec[[x]]))
+new_common_genes <- intersect(logfc_CRISPRoff_df[, "Entrez_ID"], logfc_4sg_df[, "Entrez_ID"])
 
-    if (legend_inside) {
-      DrawBottomLegend(labels_list = labels_list[legend_order],
-                       use_colors = legend_colors[legend_order],
-                       use_lwd = legend_lwd,
-                       ...
-                       )
-    } else {
-      DrawSideLegend(labels_list = labels_list[legend_order],
-                     use_colors = legend_colors[legend_order],
-                     use_lwd = legend_lwd,
-                     draw_lines = TRUE,
-                     ...
-                     )
-    }
-  }
+new_non_NA_common_genes <- intersect(new_common_genes, present_CRISPRoff_genes)
+new_non_NA_common_genes <- intersect(new_non_NA_common_genes, present_4sg_genes)
 
-  return(invisible(NULL))
-}
+
 
 
 
@@ -785,7 +634,7 @@ for (lollipop_style in c("standard", "bullseye", "bisected")) {
 
 
 
-pdf(file.path(manuscript_dir, "Figure 7H - SSMD - bar chart.pdf"),
+pdf(file.path(manuscript_dir, "SSMD - bar chart.pdf"),
     width = 2, height = 2
     )
 old_par <- par(mar = c(3, 4, 4, 1), cex = 0.6, lwd = 0.8)
@@ -831,30 +680,21 @@ dev.off()
 
 
 
-# Prioritize plasmids included in the new CRISPRoff 2sg library -----------
-
-intersect_plasmids <- intersect(logfc_CRISPRoff_df[, "sgID"], logfc_original_df[, "sgID"])
-matches_vec <- match(logfc_original_df[, "sgID"], logfc_CRISPRoff_df[, "sgID"])
-logfc_original_df <- logfc_original_df[order(matches_vec), ]
-row.names(logfc_original_df) <- NULL
 
 
+# Plot the separation between E and NE genes for the manuscript -----------
 
-# Choose one plasmid for each Entrez gene ID ------------------------------
+this_points_vec <- this_bars_vec[3:6]
 
-logfc_4sg_df       <- ChooseOnePerEntrez(logfc_4sg_df)
-logfc_CRISPRoff_df <- ChooseOnePerEntrez(logfc_CRISPRoff_df)
-logfc_original_df  <- ChooseOnePerEntrez(logfc_original_df)
+pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6H - SSMD.pdf"),
+    width = 1.1, height = 2
+    )
+old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.1))
+ComparePoints(this_points_vec, left_gap = 0.55, right_gap = 0.45)
+par(old_par)
+dev.off()
 
-common_genes <- intersect(logfc_CRISPRoff_df[, "Entrez_ID"], logfc_4sg_df[, "Entrez_ID"])
-common_genes <- intersect(logfc_original_df[, "Entrez_ID"], common_genes)
 
-non_NA_common_genes <- intersect(common_genes,
-                                 logfc_CRISPRoff_df[, "Entrez_ID"][!(is.na(logfc_CRISPRoff_df[, "Mean_log2FC"]))]
-                                 )
-non_NA_common_genes <- intersect(non_NA_common_genes,
-                                 logfc_4sg_df[, "Entrez_ID"][!(is.na(logfc_4sg_df[, "Mean_log2FC"]))]
-                                 )
 
 
 
@@ -1120,19 +960,17 @@ for (i in 1:6) {
 essential_entrezs     <- intersect(essentials_2020Q2_df[, "Entrez_ID"], non_NA_common_genes)
 non_essential_entrezs <- intersect(non_essentials_2020Q2_df[, "Entrez_ID"], non_NA_common_genes)
 
-
-essential_fraction <- essential_df[["CRISPR_num_essential"]] /
-                      essential_df[["CRISPR_num_cell_lines"]]
-are_inclusive_ess <- essential_fraction > 0.95
-are_inclusive_noness <- (essential_fraction == 0) &
-                        (essential_df[, "CRISPR_mean_probability"] <= 0.03)
-inclusive_essentials <- intersect(essential_df[, "Entrez_ID"][are_inclusive_ess],
-                                  non_NA_common_genes
-                                  )
-inclusive_non_essentials <- intersect(essential_df[, "Entrez_ID"][are_inclusive_noness],
-                                      non_NA_common_genes
-                                     )
-
+# essential_fraction <- essential_df[["CRISPR_num_essential"]] /
+#                       essential_df[["CRISPR_num_cell_lines"]]
+# are_inclusive_ess <- essential_fraction > 0.95
+# are_inclusive_noness <- (essential_fraction == 0) &
+#                         (essential_df[, "CRISPR_mean_probability"] <= 0.03)
+# inclusive_essentials <- intersect(essential_df[, "Entrez_ID"][are_inclusive_ess],
+#                                   non_NA_common_genes
+#                                   )
+# inclusive_non_essentials <- intersect(essential_df[, "Entrez_ID"][are_inclusive_noness],
+#                                       non_NA_common_genes
+#                                      )
 
 ROC_original_input_df  <- ROCInputDf(logfc_original_df, essential_entrezs, non_essential_entrezs)
 ROC_CRISPRoff_input_df <- ROCInputDf(logfc_CRISPRoff_df, essential_entrezs, non_essential_entrezs)
@@ -1232,6 +1070,53 @@ par(old_par)
 dev.off()
 
 
+
+# Export combined ROC curves for the manuscript ---------------------------
+
+new_essential_entrezs     <- intersect(essentials_2020Q2_df[, "Entrez_ID"], new_non_NA_common_genes)
+new_non_essential_entrezs <- intersect(non_essentials_2020Q2_df[, "Entrez_ID"], new_non_NA_common_genes)
+
+new_ROC_CRISPRoff_input_df <- ROCInputDf(logfc_CRISPRoff_df, new_essential_entrezs, new_non_essential_entrezs)
+new_ROC_4sg_input_df       <- ROCInputDf(logfc_4sg_df, new_essential_entrezs, new_non_essential_entrezs)
+
+new_common_ROC_CRISPRoff_df <- ROCDfForColumn(ROC_CRISPRoff_input_df, "Mean_log2FC")
+new_common_ROC_4sg_df       <- ROCDfForColumn(ROC_4sg_input_df, "Mean_log2FC")
+
+
+custom_colors <- c("black", "#0664ef")
+
+pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6I - ROC curves.pdf"),
+    width = 2, height = 2
+    )
+old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.3))
+ThreeLinesROC(list(new_common_ROC_CRISPRoff_df, new_common_ROC_4sg_df),
+              transparency = TRUE, use_lwd = 2.5,
+              use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
+              y_label_line = 2.1, x_label_line = 1.7,
+              middle_line = TRUE,
+              legend_inside = TRUE, long_labels = FALSE,
+              lines_x_start = -0.225, lines_y_start = 0.8,
+              large_gap_multiplier = 1.2, small_gap_size = 0.88,
+              text_cex = 0.9
+              )
+par(old_par)
+dev.off()
+
+
+
+# Export mean gamma violin plots for the manuscript -----------------------
+
+rep_list <- c(split(new_common_ROC_CRISPRoff_df[, "Mean_log2FC"], !(new_common_ROC_CRISPRoff_df[, "Is_essential"])),
+              split(new_common_ROC_4sg_df[, "Mean_log2FC"], !(new_common_ROC_4sg_df[, "Is_essential"]))
+              )
+
+cairo_pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6G - violin plots.pdf"),
+          width = 1.9, height = 2
+          )
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
+MeanSwarms(rep_list, show_truncation = FALSE)
+par(old_par)
+dev.off()
 
 
 
