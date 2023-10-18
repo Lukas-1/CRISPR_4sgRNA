@@ -300,6 +300,7 @@ reps_list_list <- lapply(c(TRUE, FALSE), function(prepooled) {
     use_title        = as.expression(bquote(bold(.(use_title)))),
     lower_bound      = -0.6,
     upper_bound      = 0.2,
+    y_limits         = custom_y_limits,
     show_truncation  = FALSE,
     allow_switch     = FALSE,
     use_mar          = c(3, 4, 4, 1),
@@ -312,7 +313,6 @@ reps_list_list <- lapply(c(TRUE, FALSE), function(prepooled) {
     title_line       = 3.3,
     draw_border      = TRUE,
     wex              = 0.88,
-    y_limits         = custom_y_limits,
     essential_labels = c("essential\ngenes", "non-essential\ngenes")
   )
   par(old_par)
@@ -901,54 +901,42 @@ BidirectionalViolins(bidirectional_df, logfc_postpooled_df, max_distance = 20000
 stopifnot(identical(counts_df[, "Plasmid_ID"], logfc_prepooled_df[, "Plasmid_ID"]))
 stopifnot(identical(counts_df[, "Plasmid_ID"], logfc_postpooled_df[, "Plasmid_ID"]))
 
-
 prepooled_count_columns <- c(
   "MaySwitch_xMM_Prepool_T0_R1", "MaySwitch_xMM_Prepool_T0_R2",
   "MaySwitch_xMM_Prepool_T12_R2", "MaySwitch_xMM_Prepool_T12_R2"
 )
 prepooled_counts_df <- counts_df[, prepooled_count_columns]
-selected_new_column_names <- c(
+export_new_column_names <- c(
   "Count_baseline_rep1", "Count_baseline_rep2",
   "Count_endpoint_rep1", "Count_endpoint_rep2"
 )
-names(prepooled_counts_df) <- selected_new_column_names
+names(prepooled_counts_df) <- export_new_column_names
 
 
 postpooled_count_columns <- sub("_Prepool_", "_Postpool_", prepooled_count_columns, fixed = TRUE)
 postpooled_counts_df <- counts_df[, postpooled_count_columns]
-names(postpooled_counts_df) <- selected_new_column_names
+names(postpooled_counts_df) <- export_new_column_names
 
 
-prepooled_export_df <- TidyTgonfioExportDf(CRISPRoff_df, logfc_prepooled_df, prepooled_counts_df)
-postpooled_export_df <- TidyTgonfioExportDf(CRISPRoff_df, logfc_postpooled_df, postpooled_counts_df)
+tidy_tgonfio_df <- PrepareTgonfioForExport(CRISPRoff_df)
+tables_dir <- file.path(project_dir, "04_output", "Tables")
 
-write.table(prepooled_export_df, sep = ",", quote = FALSE, row.names = FALSE,
-            file = file.path(project_dir, "04_output", "Tables", "prepooled_counts.csv")
-            )
-write.table(postpooled_export_df, sep = ",", quote = FALSE, row.names = FALSE,
-            file = file.path(project_dir, "04_output", "Tables", "postpooled_counts.csv")
-            )
+ExportResultsDf(tidy_tgonfio_df, logfc_prepooled_df, prepooled_counts_df,
+                file_path = file.path(tables_dir, "prepooled_counts.csv")
+                )
+ExportResultsDf(tidy_tgonfio_df, logfc_postpooled_df, postpooled_counts_df,
+                file_path = file.path(tables_dir, "postpooled_counts.csv")
+                )
 
+ExportResultsDf(tidy_tgonfio_df, logfc_prepooled_df, prepooled_counts_df,
+                add_first_line = "Supplementary Table 14_CRISPRoff_screen_prepooled_counts",
+                file_path = file.path(tables_dir, "Supplementary Table 14.csv")
+                )
+ExportResultsDf(tidy_tgonfio_df, logfc_postpooled_df, postpooled_counts_df,
+                add_first_line = "Supplementary Table 15_CRISPRoff_screen_postpooled_counts",
+                file_path = file.path(tables_dir, "Supplementary Table 15.csv")
+                )
 
-supp_prepooled_export_df <- rbind.data.frame(
-  c("Supplementary Table 14_CRISPRoff_screen_prepooled_counts", rep("", ncol(prepooled_export_df) - 1)),
-  names(prepooled_export_df),
-  prepooled_export_df,
-  make.row.names = FALSE, stringsAsFactors = FALSE
-)
-write.table(supp_prepooled_export_df, sep = ",", quote = FALSE, row.names = FALSE, col.names = FALSE,
-            file = file.path(project_dir, "04_output", "Tables", "Supplementary Table 14.csv")
-            )
-
-supp_postpooled_export_df <- rbind.data.frame(
-  c("Supplementary Table 15_CRISPRoff_screen_postpooled_counts", rep("", ncol(postpooled_export_df) - 1)),
-  names(postpooled_export_df),
-  postpooled_export_df,
-  make.row.names = FALSE, stringsAsFactors = FALSE
-)
-write.table(supp_postpooled_export_df, sep = ",", quote = FALSE, row.names = FALSE, col.names = FALSE,
-            file = file.path(project_dir, "04_output", "Tables", "Supplementary Table 15.csv")
-            )
 
 
 
