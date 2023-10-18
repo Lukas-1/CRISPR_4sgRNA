@@ -5305,6 +5305,7 @@ TSSHistogram <- function(distances_vec,
     } else {
       x_axis_pos <- axTicks(1)
       x_axis_labels <- as.character(x_axis_pos)
+      x_axis_labels <- sub("-", "\u2212", x_axis_labels, fixed = TRUE)
     }
 
     rect(xleft   = highlight_range[[1]],
@@ -5370,7 +5371,7 @@ TSSHistogram <- function(distances_vec,
          )
     axis(2, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl), las = 1, lwd = par("lwd"))
     box(bty = "l")
-    mtext("Position relative to the TSS", side = 1, line = x_label_line, cex = par("cex"))
+    mtext("Position relative to the TSS (bp)", side = 1, line = x_label_line, cex = par("cex"))
     mtext("Count (gRNAs)", side = 2, line = y_label_line, cex = par("cex"))
 
   }
