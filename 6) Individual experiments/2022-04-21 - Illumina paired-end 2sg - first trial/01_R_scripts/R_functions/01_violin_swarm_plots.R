@@ -122,7 +122,7 @@ SetUpBoxPlot <- function(num_groups,
 
 
 RepositionByGroups <- function(groups_vec, gap_ratio = 1.25) {
-  stopifnot(gap_ratio > 1)
+  stopifnot(gap_ratio >= 1)
   group_lengths <- rle(groups_vec)[["lengths"]]
   rle_vec <- rep(seq_along(group_lengths), group_lengths)
   group_span <- length(groups_vec) - 1L
@@ -370,7 +370,8 @@ BringWithinLimits <- function(numeric_vec, lower_bound = NULL, upper_bound = NUL
 
 
 CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
-                                lower_bound_enforced, upper_bound_enforced
+                                lower_bound_enforced, upper_bound_enforced,
+                                show_axis_truncation = TRUE
                                 ) {
   plain_axis_labels <- format(tick_positions, trim = TRUE)
   plain_no_minus <- sub("-", "", plain_axis_labels, fixed = TRUE)
@@ -382,14 +383,14 @@ CurtailedAxisLabels <- function(tick_positions, upper_bound, lower_bound,
     }
   })
   axis_labels <- sapply(axis_labels, function(x) x)
-  if (lower_bound_enforced && (abs(lower_bound - tick_positions[[1]]) < 1e-15)) {
+  if (show_axis_truncation && lower_bound_enforced && (abs(lower_bound - tick_positions[[1]]) < 1e-15)) {
     if (tick_positions[[1]] < 0) {
       axis_labels[1] <- as.expression(bquote(""["" <= "" - "" * .(plain_no_minus[[1]])]))
     } else {
       axis_labels[1] <- as.expression(bquote(""["" <= scriptscriptstyle(" ") * .(plain_axis_labels[[1]])]))
     }
   }
-  if (upper_bound_enforced) {
+  if (show_axis_truncation && upper_bound_enforced) {
     num_ticks <- length(tick_positions)
     if (abs(upper_bound - tick_positions[[num_ticks]]) < 1e-15) {
       if (tick_positions[[num_ticks]] < 0) {
@@ -428,6 +429,7 @@ BeeViolinPlot <- function(input_list,
                           y_limits        = NULL,
                           lower_bound     = NULL,
                           upper_bound     = NULL,
+                          show_truncation = TRUE,
                           draw_grid       = FALSE,
                           indicate_zero   = TRUE,
                           zero_lty        = "dotted",
@@ -670,7 +672,8 @@ BeeViolinPlot <- function(input_list,
                                      lower_bound          = lower_bound,
                                      upper_bound          = upper_bound,
                                      lower_bound_enforced = lower_bound_enforced,
-                                     upper_bound_enforced = upper_bound_enforced
+                                     upper_bound_enforced = upper_bound_enforced,
+                                     show_axis_truncation = show_truncation
                                      )
   if (show_y_axis) {
     axis(2,
