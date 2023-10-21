@@ -76,19 +76,25 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30, align
     are_forward_vec <- NA
   }
 
-  alignments_df <- data.frame("Read_number"     = seq_along(use_sequences),
-                              "Orientation_fwd" = are_forward_vec,
-                              "Score_fwd"       = score(fwd_alignments),
-                              "Score_rev"       = score(rev_alignments),
-                              "Aligned_ref"     = aligned_plasmid_vec,
-                              "Aligned_read"    = aligned_read_vec,
-                              stringsAsFactors  = FALSE
-                              )
+  if (align_reverse) {
+    alignments_df <- data.frame("Read_number"     = seq_along(use_sequences),
+                                "Score"           = score(fwd_alignments),
+                                "Aligned_ref"     = aligned_plasmid_vec,
+                                "Aligned_read"    = aligned_read_vec,
+                                stringsAsFactors  = FALSE
+                                )
+  } else {
+    alignments_df <- data.frame("Read_number"     = seq_along(use_sequences),
+                                "Orientation_fwd" = are_forward_vec,
+                                "Score_fwd"       = score(fwd_alignments),
+                                "Score_rev"       = score(rev_alignments),
+                                "Aligned_ref"     = aligned_plasmid_vec,
+                                "Aligned_read"    = aligned_read_vec,
+                                stringsAsFactors  = FALSE
+                                )
+  }
   old_order <- order(alignments_df[, "Read_number"])
   alignments_df <- alignments_df[old_order, names(alignments_df) != "Read_number"]
-  if (!(align_reverse)) {
-    alignments_df[["Orientation_fwd"]] <- NULL
-  }
   row.names(alignments_df) <- NULL
   return(alignments_df)
 }
