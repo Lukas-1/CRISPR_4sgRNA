@@ -46,30 +46,90 @@ ScatterInputDf <- function(logfc_1_df, logfc_2_df, choose_rep = NULL) {
 
 
 
-ThreeLinesROC <- function(ROC_df_list,
-                          flip            = TRUE,
-                          embed_PNG       = FALSE,
-                          only_annotation = NULL,
-                          transparency    = TRUE,
-                          use_lwd         = 2,
-                          legend_lwd      = use_lwd * 1.25,
-                          legend_order    = seq_along(ROC_df_list),
-                          axis_limits     = c(0, 1),
-                          legend_inside   = TRUE,
-                          middle_line     = !(legend_inside),
-                          use_colors      = c(brewer.pal(9, "Greys")[[7]],
-                                              brewer.pal(9, "Blues")[[6]],
-                                              "#B8363F"
-                                              ),
-                          black_alpha     = 0.55,
-                          colors_alpha    = 0.8,
-                          long_labels     = FALSE,
-                          GapFunction     = NULL,
-                          x_label_line    = 1.75,
-                          y_label_line    = 2.3,
-                          legend_vec      = c("Re-analysis", "CRISPRoff", "T.gonfio"),
+IsWholeNumber <- function(x, tolerance = .Machine[["double.eps"]]^0.9) {
+  abs(x - round(x)) < tolerance
+}
+
+
+Log10Axis <- function(axis_side = 1, minor_ticks = 1:10, tick_mgp = 0.5, tick_length = 0.4) {
+
+  raw_ticks <- axTicks(axis_side)
+  raw_ticks <- raw_ticks[IsWholeNumber(raw_ticks)]
+
+  extended_log10_ticks <- 10^c(raw_ticks[[1]] - 1, raw_ticks, raw_ticks[[length(raw_ticks)]] + 1)
+
+  minor_ticks_list <- lapply(extended_log10_ticks, function(x) x * minor_ticks)
+  minor_ticks_vec <- unique(unlist(minor_ticks_list))
+  minor_ticks_vec <- minor_ticks_vec[!(minor_ticks_vec %in% 10^raw_ticks)]
+  if (axis_side == 1) {
+    axis_limits <- par("usr")[1:2]
+  } else if (axis_side == 2) {
+    axis_limits <- par("usr")[3:4]
+  }
+  axis_range <- axis_limits[[2]] - axis_limits[[1]]
+  side_space <- axis_range * 0.01
+  final_limits <- c(axis_limits[[1]] + side_space, axis_limits[[2]] - side_space)
+  minor_ticks_vec <- minor_ticks_vec[(log10(minor_ticks_vec) > final_limits[[1]]) & (log10(minor_ticks_vec) < final_limits[[2]])]
+
+  axis_labels <- formatC(10^raw_ticks, format = "e", digits = 0)
+  axis_labels <- sub("e+0", "0^", axis_labels, fixed = TRUE)
+  axis_labels <- sub("e-0", "0^-", axis_labels, fixed = TRUE)
+  axis_labels <- parse(text = axis_labels)
+
+  axis(axis_side, at = raw_ticks, labels = axis_labels,
+       mgp = c(3, tick_mgp, 0), tcl = -(tick_length), lwd = NA, lwd.ticks = par("lwd")
+       )
+
+  axis(axis_side, at = log10(minor_ticks_vec), labels = rep(NA, length(minor_ticks_vec)),
+       lwd = NA, lwd.ticks = par("lwd"), tcl = -(tick_length) * 0.4
+       )
+  return(invisible(NULL))
+}
+
+
+
+MultiLinesROC <- function(ROC_df_list,
+                          flip             = TRUE,
+                          embed_PNG        = FALSE,
+                          only_annotation  = NULL,
+                          transparency     = TRUE,
+                          use_lwd          = 2,
+                          legend_lwd       = use_lwd * 1.25,
+                          legend_order     = seq_along(ROC_df_list),
+                          x_axis_limits    = c(0, 1),
+                          y_axis_limits    = NULL,
+                          legend_inside    = TRUE,
+                          middle_line      = !(legend_inside),
+                          use_colors       = c(brewer.pal(9, "Greys")[[7]],
+                                               brewer.pal(9, "Blues")[[6]],
+                                               "#B8363F"
+                                               ),
+                          black_alpha      = 0.55,
+                          colors_alpha     = 0.8,
+                          long_labels      = FALSE,
+                          GapFunction      = NULL,
+                          x_label_line     = 1.75,
+                          y_label_line     = 2.3,
+                          legend_vec       = c("Re-analysis", "CRISPRoff", "T.gonfio"),
+                          lines_y_start    = 1.3,
+                          draw_legend      = TRUE,
+                          AUC_num_digits   = 2,
+                          log_FPR          = FALSE,
+                          precision_recall = FALSE,
                           ...
                           ) {
+
+  if (log_FPR && precision_recall) {
+    stop("The 'logFPR' and 'precision_recall' options are mutually exclusive!")
+  }
+
+  if (is.null(y_axis_limits)) {
+    if (log_FPR) {
+      y_axis_limits <- c(0, 1)
+    } else {
+      y_axis_limits <- x_axis_limits
+    }
+  }
 
   if (transparency) {
     legend_colors <- Palify(use_colors, fraction_pale = 1 - colors_alpha)
@@ -83,66 +143,127 @@ ThreeLinesROC <- function(ROC_df_list,
     line_colors <- use_colors
   }
 
-  ROC_mat_list <- lapply(ROC_df_list, GetROCMat)
-  AUC_vec <- vapply(ROC_mat_list, GetAUC, numeric(1))
+  if (precision_recall) {
+    xy_mat_list <- lapply(ROC_df_list, function(x) {
+      if (flip) {
+        cbind("Recall"    = x[, "Specificity"],
+              "Precision" = x[, "Precision_flipped"]
+              )
+      } else {
+        cbind("Recall"    = x[, "Sensitivity"],
+              "Precision" = x[, "Precision"]
+              )
+      }
+    })
+    AUC_vec <- vapply(ROC_df_list, function(x) {
+      if ("Log2FC" %in% names(x)) {
+        use_numeric_vec <- x[, "Log2FC"]
+      } else {
+        use_numeric_vec <- x[, "Mean_log2FC"]
+      }
+      AUCForROCdf(numeric_vec = use_numeric_vec,
+                  logical_vec = x[, "Is_essential"],
+                  precision_recall = TRUE,
+                  flip = flip
+                  )
+    }, numeric(1))
+  } else {
+    ROC_mat_list <- lapply(ROC_df_list, GetROCMat)
+    AUC_vec <- vapply(ROC_mat_list, GetAUC, numeric(1))
 
-  if (flip) {
-    for (i in seq_along(ROC_mat_list)) {
-      sens_vec <- ROC_mat_list[[i]][, "Sensitivity"]
-      spec_vec <- ROC_mat_list[[i]][, "Specificity"]
-      ROC_mat_list[[i]][, "Sensitivity"] <- spec_vec
-      ROC_mat_list[[i]][, "Specificity"] <- sens_vec
+    if (flip) {
+      for (i in seq_along(ROC_mat_list)) {
+        sens_vec <- ROC_mat_list[[i]][, "Sensitivity"]
+        spec_vec <- ROC_mat_list[[i]][, "Specificity"]
+        ROC_mat_list[[i]][, "Sensitivity"] <- spec_vec
+        ROC_mat_list[[i]][, "Specificity"] <- sens_vec
+      }
     }
+
+    xy_mat_list <- lapply(ROC_mat_list, function(x) {
+      cbind("FPR"         = 1 - x[, "Specificity"],
+            "Sensitivity" = x[, "Sensitivity"]
+            )
+    })
+
+    if (log_FPR) {
+      min_log10_FPR_vec <- vapply(xy_mat_list, function(x) {
+        log10_FPR_vec <- log10(x[, "FPR"])
+        min(log10_FPR_vec[is.finite(log10_FPR_vec)])
+      }, numeric(1))
+      x_axis_lower_limit <- min(min_log10_FPR_vec)
+      x_axis_lower_limit <- x_axis_lower_limit - (abs(x_axis_lower_limit) * 0.025)
+      x_axis_limits <- c(x_axis_lower_limit, 0)
+
+      for (i in seq_along(xy_mat_list)) {
+        if (log_FPR) {
+          x_vec <- log10(xy_mat_list[[i]][, 1])
+          x_vec[x_vec == "-Inf"] <- x_axis_limits[[1]]
+          xy_mat_list[[i]][, 1] <- x_vec
+        }
+      }
+    }
+  }
+
+  DrawAxes <- function() {
+    use_tcl <- -0.36
+    x_axis_mgp <- 0.4
+    if (precision_recall) {
+      x_axis_label <- "Recall"
+      y_axis_label <- "Precision"
+    } else {
+      x_axis_label <- "False positive rate"
+      y_axis_label <- "True positive rate"
+    }
+    if (log_FPR) {
+      Log10Axis(1, tick_mgp = x_axis_mgp, tick_length = -(use_tcl))
+      x_axis_label <- "False positive rate (log scale)"
+    } else {
+      axis(1, mgp = c(3, x_axis_mgp, 0), tcl = use_tcl, lwd = par("lwd"))
+    }
+    mtext(x_axis_label, side = 1, line = x_label_line, cex = par("cex"))
+    axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
+    mtext(y_axis_label, side = 2, line = y_label_line, cex = par("cex"))
+    box()
   }
 
   if (embed_PNG) {
     current_device <- StartEmbedPNG(figures_dir)
   }
 
-  MakeEmptyPlot(axis_limits, axis_limits)
+  MakeEmptyPlot(x_axis_limits, y_axis_limits)
+
   if (!(isFALSE(only_annotation))) {
-    if (middle_line) {
+    if (middle_line && (!(log_FPR)) && (!(precision_recall))) {
       abline(a = 0, b = 1, col = "gray78", lty = "dashed")
     }
     if (!(is.null(GapFunction))) {
       GapFunction()
     }
     if (!(embed_PNG)) {
-      use_tcl <- -0.36
-      axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
-      mtext("False positive rate", side = 1, line = x_label_line, cex = par("cex"))
-      axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
-      mtext("True positive rate", side = 2, line = y_label_line, cex = par("cex"))
-      box()
+      DrawAxes()
     }
   }
 
+  clip_lines <- (!(log_FPR)) && (length(unique(list(c(0, 1), x_axis_limits, y_axis_limits))) != 1)
+
   if (!(isTRUE(only_annotation))) {
-    for (i in seq_along(ROC_mat_list)) {
-      lines(x   = 1 - ROC_mat_list[[i]][, "Specificity"],
-            y   = ROC_mat_list[[i]][, "Sensitivity"],
+    for (i in seq_along(xy_mat_list)) {
+      lines(x   = xy_mat_list[[i]][, 1],
+            y   = xy_mat_list[[i]][, 2],
             lwd = use_lwd * par("lwd"),
             col = line_colors[[i]],
-            xpd = NA
+            xpd = if (clip_lines) FALSE else NA
             )
     }
   }
 
   if (embed_PNG) {
     StopEmbedPNG(current_device, figures_dir)
+    DrawAxes()
   }
 
-  if (embed_PNG) {
-    use_tcl <- -0.36
-    axis(1, mgp = c(3, 0.4, 0), tcl = use_tcl, lwd = par("lwd"))
-    mtext("False positive rate", side = 1, line = x_label_line, cex = par("cex"))
-    axis(2, mgp = c(3, 0.5, 0), tcl = use_tcl, las = 1, lwd = par("lwd"))
-    mtext("True positive rate", side = 2, line = y_label_line, cex = par("cex"))
-    box()
-  }
-
-
-  if (!(isFALSE(only_annotation))) {
+  if (draw_legend && (!(isFALSE(only_annotation)))) {
     ## Draw legend
     if (length(AUC_vec) == 2) {
       legend_vec <- legend_vec[-1]
@@ -150,17 +271,17 @@ ThreeLinesROC <- function(ROC_df_list,
         legend_vec <- list(expression("CRISPRoff", "library"), expression("T.gonfio", "library"))
       }
     }
-    AUC_legend_vec <- format(round(AUC_vec, digits = 2), nsmall = 2)
+    AUC_legend_vec <- format(round(AUC_vec, digits = AUC_num_digits), nsmall = AUC_num_digits)
     AUC_legend_vec <- sapply(AUC_legend_vec, function(x) {
       as.expression(bquote("(AUC" * scriptscriptstyle(" ") * "=" * scriptscriptstyle(" ") * .(x) * ")"))
     })
     labels_list <- lapply(seq_along(legend_vec), function(x) c(as.expression(legend_vec[[x]]), AUC_legend_vec[[x]]))
-    assign("delete_labels_list", labels_list, envir = globalenv())
 
     if (legend_inside) {
       DrawBottomLegend(labels_list = labels_list[legend_order],
                        use_colors = legend_colors[legend_order],
                        use_lwd = legend_lwd,
+                       lines_y_start = lines_y_start,
                        ...
                        )
     } else {
@@ -174,7 +295,6 @@ ThreeLinesROC <- function(ROC_df_list,
   }
   return(invisible(NULL))
 }
-
 
 
 
@@ -227,8 +347,7 @@ DrawBottomLegend <- function(labels_list,
              max(strwidth(all_expressions))
 
   ## Draw legend
-  x_user <- grconvertX(x = x_text, from = "npc", to = "user")
-  text(x      = grconvertX(x = x_text, from = "npc", to = "user"),
+  text(x      = x_text,
        y      = y_pos,
        labels = all_expressions,
        adj    = c(0, 0.5),
@@ -237,7 +356,7 @@ DrawBottomLegend <- function(labels_list,
        )
   groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
   length_in_lines <- 0.5
-  line_x_start <- x_user + diff(grconvertX(c(0, line_x_distance), from = "lines", to = "user"))
+  line_x_start <- x_text + diff(grconvertX(c(0, line_x_distance), from = "lines", to = "user"))
   segments(x0  = line_x_start,
            x1  = line_x_start + diff(grconvertX(c(0, length_in_lines), from = "lines", to = "user")),
            y0  = tapply(y_pos, groups_vec, mean),
@@ -292,11 +411,68 @@ MeanSwarms <- function(rep_list, group_labels = c("CRISPRoff", "T.gonfio"), ...)
        srt    = 45,
        xpd    = NA
        )
-  return(invisible(NULL))
+  return(invisible(x_positions))
 }
 
 
 
+CommonRocDfList <- function(ROC_df_list) {
+  common_entrezs <- Reduce(intersect, lapply(ROC_df_list, function(x) x[, "Entrez_ID"]))
+  results_df_list <- lapply(ROC_df_list, function(x) {
+    are_common <- x[, "Entrez_ID"] %in% common_entrezs
+    x <- x[are_common, ]
+    row.names(x) <- NULL
+    return(x)
+  })
+  return(results_df_list)
+}
+
+
+
+CommonPlasmidsRocDfList <- function(logfc_df_list, first_plasmid_only = FALSE) {
+
+  CheckPlasmids <- function(df_list) {
+    stopifnot(length(unique(lapply(df_list, function(x) x[, "Plasmid_ID"]))) == 1)
+  }
+
+  CheckPlasmids(logfc_df_list)
+
+  if (first_plasmid_only) {
+    entrezs_vec <- logfc_df_list[[1]][, "Entrez_ID"]
+    are_selected <- !(duplicated(entrezs_vec) | is.na(entrezs_vec))
+    logfc_df_list <- lapply(logfc_df_list, function(x) {
+      x <- x[are_selected, ]
+      row.names(x) <- NULL
+      return(x)
+    })
+  }
+  non_NA_plasmids_list <- lapply(logfc_df_list, function(x) {
+    are_non_NA <- !(is.na(x[, "Mean_log2FC"]))
+    x[, "Plasmid_ID"][are_non_NA]
+  })
+  common_plasmids <- Reduce(intersect, non_NA_plasmids_list)
+  matches_vec <- match(common_plasmids, logfc_df_list[[1]][, "Plasmid_ID"])
+  corresponding_entrezs <- logfc_df_list[[1]][, "Entrez_ID"][matches_vec]
+  are_selected <- !(duplicated(corresponding_entrezs) | is.na(corresponding_entrezs))
+  selected_plasmids <- common_plasmids[are_selected]
+  logfc_df_list <- lapply(logfc_df_list, function(x) {
+    x <- x[x[, "Plasmid_ID"] %in% selected_plasmids, ]
+    row.names(x) <- NULL
+    return(x)
+  })
+
+  CheckPlasmids(logfc_df_list)
+
+  return(logfc_df_list)
+}
+
+
+
+LogFcDfListToRocDfList <- function(logfc_df_list, essential_entrezs, non_essential_entrezs) {
+  roc_input_df_list <- lapply(logfc_df_list, function(x) ROCInputDf(x, essential_entrezs, non_essential_entrezs))
+  roc_df_list <- lapply(roc_input_df_list, function(x) ROCDfForColumn(x, "Mean_log2FC"))
+  return(roc_df_list)
+}
 
 
 
