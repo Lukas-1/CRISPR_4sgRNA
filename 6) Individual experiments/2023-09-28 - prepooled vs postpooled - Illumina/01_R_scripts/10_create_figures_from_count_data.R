@@ -3,7 +3,7 @@
 
 # Load packages and source code -------------------------------------------
 
-library("scales")
+library("scales") # for CombinedTemplateSwitch
 
 CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
@@ -895,6 +895,71 @@ BidirectionalViolins(bidirectional_df, logfc_postpooled_df, max_distance = 20000
 
 
 
+# Explore packages for ROC and precision-recall analysis ------------------
+
+library("pROC")
+library("PRROC")
+
+roc_object <- roc(as.integer(ROC_prepooled_df[, "Is_essential"]),
+                  ifelse(ROC_prepooled_df[, "Log2FC"] == -Inf, -10, ROC_prepooled_df[, "Log2FC"])
+                  )
+
+roc_object <- roc(as.integer(ROC_postpooled_df[, "Is_essential"]),
+                  ifelse(ROC_postpooled_df[, "Log2FC"] == -Inf, -10, ROC_postpooled_df[, "Log2FC"])
+                  )
+
+plot(precision ~ recall, coords(roc_object, "all", ret = c("recall", "precision"), transpose = FALSE), type="l")
+
+
+use_ROC_df <- ROC_postpooled_df
+
+numeric_vec <- use_ROC_df[, "Log2FC"]
+finite_vec <- numeric_vec[is.finite(numeric_vec)]
+numeric_vec[numeric_vec == "-Inf"] <- min(finite_vec) - (diff(range(finite_vec)) / 100)
+logical_vec <- use_ROC_df[, "Is_essential"]
+
+
+roc_df <- coords(roc_object, "all", ret = c("recall", "precision"))
+
+plot(roc_df[, "recall"], roc_df[, "precision"])
+plot(use_ROC_df[, "Sensitivity"], use_ROC_df[, "Precision"])
+
+all.equal(sort(use_ROC_df[, "Sensitivity"]), sort(roc_df[, "recall"])[-(1)])
+
+
+
+## Non-essentials are positives
+roc_object <- pROC::roc(!(logical_vec), numeric_vec)
+plot(roc_object)
+plot(precision ~ recall, pROC::coords(roc_object, "all", ret = c("recall", "precision")), type="l")
+
+
+## Essentials are positives
+roc_object <- pROC::roc(logical_vec, numeric_vec)
+plot(roc_object, print.auc = TRUE)
+plot(precision ~ recall, pROC::coords(roc_object, "all", ret = c("recall", "precision")), type="l")
+roc_df <- pROC::coords(roc_object, ret = c("threshold", "sensitivity", "specificity", "tn", "tp", "fn", "fp", "accuracy", "precision", "recall"))
+
+
+
+## Non-essentials are positives
+scores_class_2 <- numeric_vec[logical_vec]
+scores_class_1 <- numeric_vec[!(logical_vec)]
+pr <- PRROC::roc.curve(scores_class_1, scores_class_2, curve = TRUE)
+plot(pr)
+pr <- PRROC::pr.curve(scores_class_1, scores_class_2, curve = TRUE)
+plot(pr)
+
+
+## Essentials are positives
+scores_class_1 <- (-(numeric_vec))[logical_vec]
+scores_class_2 <- (-(numeric_vec))[!(logical_vec)]
+pr <- PRROC::roc.curve(scores_class_1, scores_class_2, curve = TRUE)
+plot(pr)
+pr <- PRROC::pr.curve(scores_class_1, scores_class_2, curve = TRUE)
+plot(pr)
+
+
 
 # Export data -------------------------------------------------------------
 
@@ -936,7 +1001,6 @@ ExportResultsDf(tidy_tgonfio_df, logfc_postpooled_df, postpooled_counts_df,
                 add_first_line = "Supplementary Table 15_CRISPRoff_screen_postpooled_counts",
                 file_path = file.path(tables_dir, "Supplementary Table 15.csv")
                 )
-
 
 
 
