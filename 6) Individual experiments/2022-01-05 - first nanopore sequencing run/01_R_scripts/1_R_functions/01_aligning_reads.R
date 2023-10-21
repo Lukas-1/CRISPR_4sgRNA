@@ -61,10 +61,6 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30, align
 
   message("Compiling results...")
   if (align_reverse) {
-    aligned_plasmid_vec <- as.character(alignedSubject(fwd_alignments))
-    aligned_read_vec <- as.character(alignedPattern(fwd_alignments))
-    are_forward_vec <- NA
-  } else {
     are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
     new_order <- order(c(which(are_forward_vec), which(!(are_forward_vec))))
     aligned_plasmid_vec <- c(as.character(alignedSubject(fwd_alignments)[are_forward_vec]),
@@ -73,20 +69,23 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30, align
     aligned_read_vec <- c(as.character(alignedPattern(fwd_alignments)[are_forward_vec]),
                           as.character(alignedPattern(rev_alignments)[!(are_forward_vec)])
                           )[new_order]
+  } else {
+    aligned_plasmid_vec <- as.character(alignedSubject(fwd_alignments))
+    aligned_read_vec <- as.character(alignedPattern(fwd_alignments))
+    are_forward_vec <- NA
   }
-
   if (align_reverse) {
     alignments_df <- data.frame("Read_number"     = seq_along(use_sequences),
-                                "Score"           = score(fwd_alignments),
+                                "Orientation_fwd" = are_forward_vec,
+                                "Score_fwd"       = score(fwd_alignments),
+                                "Score_rev"       = score(rev_alignments),
                                 "Aligned_ref"     = aligned_plasmid_vec,
                                 "Aligned_read"    = aligned_read_vec,
                                 stringsAsFactors  = FALSE
                                 )
   } else {
     alignments_df <- data.frame("Read_number"     = seq_along(use_sequences),
-                                "Orientation_fwd" = are_forward_vec,
-                                "Score_fwd"       = score(fwd_alignments),
-                                "Score_rev"       = score(rev_alignments),
+                                "Score"           = score(fwd_alignments),
                                 "Aligned_ref"     = aligned_plasmid_vec,
                                 "Aligned_read"    = aligned_read_vec,
                                 stringsAsFactors  = FALSE
