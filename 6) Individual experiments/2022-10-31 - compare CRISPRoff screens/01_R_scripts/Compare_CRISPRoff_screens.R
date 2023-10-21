@@ -999,14 +999,14 @@ box()
 individual_ROC_df_list <- list(ROC_original_df, ROC_CRISPRoff_df, ROC_4sg_df)
 ROC_df_list <- list(common_ROC_original_df, common_ROC_CRISPRoff_df, common_ROC_4sg_df)
 
-ThreeLinesROC(individual_ROC_df_list)
-ThreeLinesROC(ROC_df_list)
+MultiLinesROC(individual_ROC_df_list)
+MultiLinesROC(ROC_df_list)
 
 
-ThreeLinesROC(ROC_df_list, embed_PNG = TRUE, small_gap_size = 1.2, large_gap_multiplier = 1.3,
-              use_lwd = 1.5, legend_lwd = 2.5,
+MultiLinesROC(ROC_df_list, embed_PNG = TRUE, small_gap_size = 1.2,
+              large_gap_multiplier = 1.3, use_lwd = 1.5, legend_lwd = 2.5,
               line_x_distance = -0.4, legend_order = c(3, 1, 2),
-              axis_limits = c(-0.02, 1.02)
+              x_axis_limits = c(-0.02, 1.02),
               )
 
 
@@ -1015,7 +1015,7 @@ devEMF::emf(file.path(thesis_dir, "3B) ROC curves.emf"),
             width = 2.72, height = 2, emfPlus = FALSE, coordDPI = 3000
             )
 old_par <- par(mar = c(3, 4, 2, 7), cex = 0.6, lwd = 0.7)
-ThreeLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_multiplier = 1.5,
+MultiLinesROC(ROC_df_list, embed_PNG = FALSE, small_gap_size = 1.25, large_gap_multiplier = 1.5,
               transparency = FALSE, use_lwd = 2.5, legend_lwd = 2.5,
               line_x_distance = -0.4, legend_order = c(3, 1, 2), legend_inside = FALSE,
               length_in_lines = 0.55, lines_x_start = 0.9
@@ -1046,7 +1046,7 @@ devEMF::emf(file.path(thesis_dir, "3B) ROC curves - only annotation.emf"),
             emfPlus = FALSE, coordDPI = 3000
             )
 old_par <- par(mar = use_mar, cex = scaled_cex, lwd = scaled_lwd)
-ThreeLinesROC(ROC_df_list, small_gap_size = 1.25, large_gap_multiplier = 1.5,
+MultiLinesROC(ROC_df_list, small_gap_size = 1.25, large_gap_multiplier = 1.5,
               transparency = TRUE, legend_lwd = 2.5,
               line_x_distance = -0.4, legend_order = c(3, 2, 1), legend_inside = FALSE,
               length_in_lines = 0.55, lines_x_start = 0.9,
@@ -1061,7 +1061,7 @@ svglite::svglite(file.path(thesis_dir, "3B) ROC curves.svg"),
             width = scaled_width, height = scaled_height, bg = "transparent"
             )
 old_par <- par(mar = use_mar, cex = scaled_cex, lwd = scaled_lwd)
-ThreeLinesROC(ROC_df_list,
+MultiLinesROC(ROC_df_list,
               transparency = TRUE, use_lwd = 2.5,
               use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
               only_annotation = FALSE
@@ -1089,15 +1089,15 @@ pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6I - ROC curves.pdf"),
     width = 2, height = 2
     )
 old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.3))
-ThreeLinesROC(list(new_common_ROC_CRISPRoff_df, new_common_ROC_4sg_df),
-              transparency = TRUE, use_lwd = 2.5,
+MultiLinesROC(list(new_common_ROC_CRISPRoff_df, new_common_ROC_4sg_df),
+              transparency = TRUE, use_lwd = 2,
               use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
               y_label_line = 2.1, x_label_line = 1.7,
               middle_line = TRUE,
               legend_inside = TRUE, long_labels = FALSE,
               lines_x_start = -0.225, lines_y_start = 0.8,
               large_gap_multiplier = 1.2, small_gap_size = 0.88,
-              text_cex = 0.9
+              text_cex = 0.9, AUC_num_digits = 3
               )
 par(old_par)
 dev.off()
