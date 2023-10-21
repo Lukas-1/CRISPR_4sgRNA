@@ -59,9 +59,12 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30, align
                                         )
   }
 
-
   message("Compiling results...")
   if (align_reverse) {
+    aligned_plasmid_vec <- as.character(alignedSubject(fwd_alignments))
+    aligned_read_vec <- as.character(alignedPattern(fwd_alignments))
+    are_forward_vec <- NA
+  } else {
     are_forward_vec <- score(fwd_alignments) > score(rev_alignments)
     new_order <- order(c(which(are_forward_vec), which(!(are_forward_vec))))
     aligned_plasmid_vec <- c(as.character(alignedSubject(fwd_alignments)[are_forward_vec]),
@@ -70,10 +73,6 @@ AlignReads <- function(use_reference, use_sequences, opening_penalty = 30, align
     aligned_read_vec <- c(as.character(alignedPattern(fwd_alignments)[are_forward_vec]),
                           as.character(alignedPattern(rev_alignments)[!(are_forward_vec)])
                           )[new_order]
-  } else {
-    aligned_plasmid_vec <- as.character(alignedSubject(fwd_alignments))
-    aligned_read_vec <- as.character(alignedPattern(fwd_alignments))
-    are_forward_vec <- NA
   }
 
   if (align_reverse) {
@@ -190,6 +189,5 @@ ParallelAlignInChunks <- function(all_reads, align_reverse = TRUE) {
   )
   return(alignments_df)
 }
-
 
 

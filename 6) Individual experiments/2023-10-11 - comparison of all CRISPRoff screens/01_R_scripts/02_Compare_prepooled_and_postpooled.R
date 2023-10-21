@@ -3,6 +3,8 @@
 
 # Load packages and source code -------------------------------------------
 
+library("pBrackets")
+
 CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
 experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual experiments")
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
@@ -27,6 +29,7 @@ output_dir      <- file.path(project_dir, "02_output")
 figures_dir     <- output_dir
 
 
+
 # Load data ---------------------------------------------------------------
 
 load(file.path(pool_rdata_dir, "10_create_figures_from_count_data.RData"))
@@ -35,24 +38,128 @@ load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_d
 
 
 
+# Define gene selections --------------------------------------------------
+
+ess_genes_blomen_hart    <- essentials_2020Q2_df[, "Entrez_ID"]
+noness_genes_blomen_hart <- non_essentials_2020Q2_df[, "Entrez_ID"]
+
+ess_genes_depmap <- essential_df[essential_df[, "Three_categories"] %in% "Essential", "Entrez_ID"]
+noness_genes_depmap <- essential_df[essential_df[, "Three_categories"] %in% "Non-essential", "Entrez_ID"]
+
+ess_genes_residual <- setdiff(ess_genes_depmap, ess_genes_blomen_hart)
+
+common_plasmids_logfc_df_list <- CommonPlasmidsRocDfList(list(logfc_prepooled_df, logfc_postpooled_df))
+
+blomen_hart_ROC_df_list <- LogFcDfListToRocDfList(
+  common_plasmids_logfc_df_list,
+  essential_entrezs = ess_genes_blomen_hart,
+  non_essential_entrezs = noness_genes_blomen_hart
+)
+
+EssResidual_NEBlomenHart_ROC_df_list <- LogFcDfListToRocDfList(
+  common_plasmids_logfc_df_list,
+  essential_entrezs = ess_genes_residual,
+  non_essential_entrezs = noness_genes_blomen_hart
+)
+
+EssDepMap_NEBlomenHart_ROC_df_list <- LogFcDfListToRocDfList(
+  common_plasmids_logfc_df_list,
+  essential_entrezs = ess_genes_depmap,
+  non_essential_entrezs = noness_genes_blomen_hart
+)
+
+demap_ROC_df_list <- LogFcDfListToRocDfList(
+  common_plasmids_logfc_df_list,
+  essential_entrezs = ess_genes_depmap,
+  non_essential_entrezs = noness_genes_depmap
+)
+
 
 
 # Export mean gamma violin plots for the manuscript -----------------------
 
-rep_list <- c(split(ROC_prepooled_df[, "Log2FC"], !(ROC_prepooled_df[, "Is_essential"])),
-              split(ROC_postpooled_df[, "Log2FC"], !(ROC_postpooled_df[, "Is_essential"]))
+rep_list <- c(split(blomen_hart_ROC_df_list[[1]][, "Mean_log2FC"], !(blomen_hart_ROC_df_list[[1]][, "Is_essential"])),
+              split(blomen_hart_ROC_df_list[[2]][, "Mean_log2FC"], !(blomen_hart_ROC_df_list[[2]][, "Is_essential"]))
               )
 
 cairo_pdf(file.path(output_dir, "Manuscript - Figure 6K - violin plots.pdf"),
           width = 1.9, height = 2
           )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
-MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
-           show_truncation = FALSE
-           )
+violin_positions <- MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
+                               show_truncation = FALSE
+                               )
 par(old_par)
 dev.off()
 
+
+
+
+IQR_vec <- vapply(blomen_hart_ROC_df_list, function(x) {
+  IQR(x[, "Mean_log2FC"][x[, "Is_essential"]] / 10)
+}, numeric(1))
+
+quantiles_list <- lapply(blomen_hart_ROC_df_list, function(x) {
+  quantile(x[, "Mean_log2FC"][x[, "Is_essential"]] / 10)
+})
+
+
+cairo_pdf(file.path(output_dir, "Violin plot variant - IQR indicated.pdf"),
+          width = 2.4, height = 2
+          )
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
+x_positions <- MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
+                          show_truncation = FALSE, x_limits = c(-1.35, 4.6),
+                          x_positions = violin_positions - c(rep(0.85, 2), rep(0, 2))
+                          )
+
+x_pos <-  x_positions[[1]] - diff(grconvertX(c(0, 1.35), from = "lines", to = "user"))
+pBrackets::brackets(x1 = x_pos,
+                    x2 = x_pos,
+                    y1 = quantiles_list[[1]][["25%"]],
+                    y2 = quantiles_list[[1]][["75%"]],
+                    lwd = par("lwd") * 0.8
+                    )
+par("lheight" = 0.925)
+text(x      = x_positions[[1]] - diff(grconvertX(c(0, 2.6), from = "lines", to = "user")),
+     y      = mean(c(quantiles_list[[1]][c("25%", "75%")])),
+     labels = paste0("IQR\n", format(round(IQR_vec[[1]], digits = 2), nsmall = 2)),
+     cex    = 0.9,
+     adj    = c(0.5, 0.5)
+     )
+
+x_pos <-  x_positions[[2]] + diff(grconvertX(c(0, 1.35), from = "lines", to = "user"))
+pBrackets::brackets(x1 = x_pos,
+                    x2 = x_pos,
+                    y1 = quantiles_list[[2]][["75%"]],
+                    y2 = quantiles_list[[2]][["25%"]],
+                    lwd = par("lwd") * 0.9
+                    )
+
+text(x      = x_positions[[2]] + diff(grconvertX(c(0, 2.6), from = "lines", to = "user")),
+     y      = mean(c(quantiles_list[[2]][c("25%", "75%")])),
+     labels = paste0("IQR\n", format(round(IQR_vec[[2]], digits = 2), nsmall = 2)),
+     cex    = 0.9,
+     adj    = c(0.5, 0.5)
+     )
+
+par(old_par)
+dev.off()
+
+
+
+rep_list <- c(split(EssResidual_NEBlomenHart_ROC_df_list[[1]][["Mean_log2FC"]], !(EssResidual_NEBlomenHart_ROC_df_list[[1]][, "Is_essential"])),
+              split(EssResidual_NEBlomenHart_ROC_df_list[[2]][["Mean_log2FC"]], !(EssResidual_NEBlomenHart_ROC_df_list[[2]][, "Is_essential"]))
+              )
+
+cairo_pdf(file.path(output_dir, "Violin plot variant - residual essential genes.pdf"),
+          width = 1.9, height = 2
+          )
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
+MeanSwarms(rep_list, group_labels = c("prepool", "postpool"))
+par(old_par)
+dev.off()
+rm(rep_list)
 
 
 
@@ -112,6 +219,136 @@ dev.off()
 
 
 
+# Create a custom scatter plot --------------------------------------------
+
+RegressionScatter <- function(x_vec,
+                              y_vec,
+                              identity_line = TRUE,
+                              same_limits = FALSE,
+                              zero_lines = TRUE,
+                              points_color = "black",
+                              points_alpha = 0.5,
+                              confint_level = 0.95,
+                              band_color = "#c0dcfc",
+                              line_color = "#0a5dbd",
+                              show_axes = TRUE
+                              ) {
+
+  ## Define axis limits
+  if (same_limits) {
+    x_limits <- range(x_vec, na.rm = TRUE)
+    y_limits <- range(y_vec, na.rm = TRUE)
+  } else {
+    x_limits <- range(c(x_vec, y_vec), na.rm = TRUE)
+    y_limits <- x_limits
+  }
+
+  ## Perform linear regression (and compute 95% confidence interval)
+  model_df <- data.frame("x_var" = x_vec, "y_var" = y_vec)
+  lm_model <- lm(y_var ~ x_var, data = model_df)
+  lm_summary <- summary(lm_model)
+  assign("delete_lm_summary", lm_summary, envir = globalenv())
+
+  new_seq <- seq(min(x_vec), max(x_vec), length.out = 200)
+  new_df <- data.frame("x_var" = new_seq)
+  conf_int_mat <- predict(lm_model,
+                          newdata = new_df,
+                          interval = "confidence",
+                          level = confint_level
+                          )
+
+  ## Prepare R-squared text
+  r_squared <- format(round(lm_summary[["r.squared"]], digits = 2), nsmall = 2)
+  p_value <- lm_summary[["coefficients"]][1, 4]
+  print(p_value)
+  scientific_split <- strsplit(formatC(p_value, format = "e", digits = 0),
+                               "e", fixed = TRUE
+                               )[[1]]
+  power_of_10 <- as.integer(scientific_split[[2]])
+  if (abs(power_of_10) <= 4) {
+    corr_text <- bquote(italic("R") * ""^2  ~ "=" ~ .(r_squared) *
+                        " (" * italic("p") * " = " * .(formatC(p_value, digits = 1, format = "fg")) * ")"
+                        )
+  } else {
+    corr_text <- bquote(italic("R") * ""^2  ~ "=" ~ .(r_squared) *
+                          " (" * italic("p") * " = " * .(scientific_split[[1]]) %*% 10^.(power_of_10) * ")"
+                        )
+  }
+
+  ## Set up plot region
+  plot(NA,
+       xlim = x_limits,
+       ylim = y_limits,
+       ann  = FALSE,
+       axes = FALSE
+       )
+
+  if (identity_line) {
+    abline(a = 0, b = 1, col = "gray60")
+  }
+  if (zero_lines) {
+    abline(h = 0, v = 0, col = "gray60")
+  }
+
+  ## Draw linear regression line and CI
+  polygon(c(new_df[, 1], rev(new_df[, 1])),
+          c(conf_int_mat[, 2], rev(conf_int_mat[, 3])),
+          col = band_color, border = NA
+          )
+  lines(new_df[, 1], conf_int_mat[, 1], col = line_color)
+
+  ## Draw points
+  points(x_vec, y_vec, pch = 16, col = adjustcolor(points_color, points_alpha), cex = 0.5)
+
+  ## Annotate plot
+  if (show_axes) {
+    axis(1, tcl = -0.375, mgp = c(3, 0.55, 0), lwd = par("lwd"), gap.axis = 0.25)
+    axis(2, tcl = -0.375, mgp = c(3, 0.55, 0), las = 1, lwd = par("lwd"))
+  }
+  box()
+  mtext(corr_text, line = 0.5, cex = par("cex"))
+
+  return(invisible(NULL))
+}
+
+
+vec_list <- lapply(1:2, function(x) {
+  logfc_df <- common_plasmids_logfc_df_list[[x]]
+  results_vec <- logfc_df[, "Mean_log2FC"][logfc_df[, "Entrez_ID"] %in% ess_genes_blomen_hart]
+  results_vec <- results_vec / 10
+  results_vec[results_vec > 0.2] <- 0.2
+  results_vec[results_vec < -0.6] <- -0.6
+  return(results_vec)
+})
+
+
+
+pdf(file.path(output_dir, "Scatter plot - only essential genes.pdf"),
+    width  = 2.1,
+    height = 2.1
+    )
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.3))
+RegressionScatter(vec_list[[1]], vec_list[[2]], same_limits = TRUE,
+                  points_color = "#4b357e",
+                  band_color = brewer.pal(9, "Purples")[[3]],
+                  line_color = "#3d2d67",
+                  confint_level = 0.99, show_axes = FALSE
+                  )
+
+tick_locations <- seq(-0.6, 0, by = 0.2)
+axis(1, at = tick_locations, tcl = -0.3, mgp = c(3, 0.35, 0), lwd = par("lwd"))
+axis(2, at = tick_locations, tcl = -0.3, mgp = c(3, 0.5, 0), las = 1, lwd = par("lwd"))
+mtext(VerticalAdjust(expression("Prepool" ~ "(" * gamma * ")")),
+      side = 1, line = 1.8, cex = par("cex")
+      )
+mtext(VerticalAdjust(expression("Postpool" ~ "(" * gamma * ")")),
+      side = 2, line = 2.1, cex = par("cex")
+      )
+dev.off()
+
+
+
+
 # Plot the separation between E and NE genes for the manuscript -----------
 
 this_points_vec <- c(separation_prepooled_mat["Robust SSMD", ],
@@ -132,27 +369,129 @@ dev.off()
 
 
 
-
 # Export combined ROC curves for the manuscript ---------------------------
 
-custom_colors <- c("#0664ef", "#da0b0b")
+manuscript_ROC_args <- list(
+  ROC_df_list = blomen_hart_ROC_df_list,
+  use_colors = c("#0664ef", "#da0b0b"),
+  black_alpha = 0.6, colors_alpha = 0.7,
+  y_label_line = 2.1, x_label_line = 1.7,
+  middle_line = TRUE,
+  legend_inside = TRUE, long_labels = FALSE,
+  lines_x_start = -0.225, lines_y_start = 0.8,
+  large_gap_multiplier = 1.2, small_gap_size = 0.88,
+  legend_vec = c(NA, "prepool", "postpool"), text_cex = 0.9,
+  AUC_num_digits = 3
+)
+
+
 
 pdf(file.path(output_dir, "Manuscript - Figure 6N - ROC curves.pdf"),
     width = 2, height = 2
     )
 old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.3))
-ThreeLinesROC(list(ROC_prepooled_df, ROC_postpooled_df),
-              transparency = TRUE, use_lwd = 2.5,
-              use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
-              y_label_line = 2.1, x_label_line = 1.7,
-              middle_line = TRUE,
-              legend_inside = TRUE, long_labels = FALSE,
-              lines_x_start = -0.225, lines_y_start = 0.8,
-              large_gap_multiplier = 1.2, small_gap_size = 0.88,
-              legend_vec = c(NA, "prepool", "postpool"), text_cex = 0.9
-              )
+do.call(MultiLinesROC, manuscript_ROC_args)
 par(old_par)
 dev.off()
+
+
+
+
+TallyEssNoness <- function(input_df) {
+  num_essential <- sum(input_df[, "Is_essential"])
+  num_nonessential <- sum(!(input_df[, "Is_essential"]))
+  result_text <- paste0(num_essential, " essential and ", num_nonessential, " non-essential genes")
+  return(result_text)
+}
+
+
+variant_list_list <- list(
+  list(file_suffix = " 1) standard (Blomen & Hart genes)",
+       df_list     = blomen_hart_ROC_df_list,
+       sub_text    = paste0("Intersection of Blomen and Hart, as in the CRISPRoff study by\nNu\u00f1ez et al. (", TallyEssNoness(blomen_hart_ROC_df_list[[1]]), ")")
+       ),
+  list(file_suffix = " 2) residual essential genes",
+       df_list     = EssResidual_NEBlomenHart_ROC_df_list,
+       sub_text    = paste0("Remaining essential genes from DepMap that are not part\nof Blomen and Hart; non-essential genes from Blomen and Hart\n(", TallyEssNoness(EssResidual_NEBlomenHart_ROC_df_list[[1]]), ")")
+       ),
+  list(file_suffix = " 3) DepMap essential genes",
+       df_list     = EssDepMap_NEBlomenHart_ROC_df_list,
+       sub_text    = paste0("Essential genes from DepMap; essential genes from Blomen and\nHart (", TallyEssNoness(EssDepMap_NEBlomenHart_ROC_df_list[[1]]), ")")
+       ),
+  list(file_suffix = " 4) DepMap essential and non-essential genes",
+       df_list     = demap_ROC_df_list,
+       sub_text    = paste0("Essential and non-essential genes defined by DepMap\n(", TallyEssNoness(demap_ROC_df_list[[1]]), ")")
+       )
+)
+
+
+
+QuickTitle <- function(title_text) {
+  title(title_text, font.main = 1, cex.main = 1)
+}
+
+
+
+for (variant_list in variant_list_list) {
+  DrawSubtext <- function() {
+    old_lheight <- par("lheight" = 1.15)
+    mtext(variant_list[["sub_text"]], side = 1, cex = par("cex") * 0.6,
+          line = 3.25, adj = 0, padj = 1,
+          at = par("usr")[[1]] - diff(grconvertX(c(0, 2), from = "lines", to = "user"))
+          )
+    par(old_lheight)
+  }
+  manuscript_ROC_args[["ROC_df_list"]] <- variant_list[["df_list"]]
+  pdf(file.path(output_dir, paste0("ROC curve variants - ", variant_list[["file_suffix"]], ".pdf")),
+      width = 2, height = 2.35
+      )
+  old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.77, 0.5, 0.38, 0.3))
+
+  do.call(MultiLinesROC, manuscript_ROC_args)
+  QuickTitle("ROC curve"); DrawSubtext()
+
+  do.call(MultiLinesROC, c(manuscript_ROC_args[names(manuscript_ROC_args) != "y_label_line"],
+                           list(x_axis_limits = c(0, 0.2), y_axis_limits = c(0.8, 1)), y_label_line = 2.5, draw_legend = FALSE))
+  QuickTitle("ROC curve (zoomed in)")
+
+  do.call(MultiLinesROC, c(manuscript_ROC_args, list(log_FPR = TRUE, draw_legend = FALSE)))
+  QuickTitle("ROC curve (logarithmic)")
+
+  do.call(MultiLinesROC, c(manuscript_ROC_args, list(precision_recall = TRUE)))
+  QuickTitle("PR curve (non-essential genes)")
+
+  do.call(MultiLinesROC, c(manuscript_ROC_args, list(precision_recall = TRUE, flip = FALSE)))
+  QuickTitle("PR curve (essential genes)")
+
+  par(old_par)
+  dev.off()
+}
+
+
+
+
+# Tabulate essential and non-essential genes ------------------------------
+
+use_roc_df_list <- blomen_hart_ROC_df_list
+use_cutoff <- -1
+
+use_roc_df_list <- lapply(use_roc_df_list, function(x) {
+  x <- x[order(x[, "Entrez_ID"]), ]
+  row.names(x) <- NULL
+  x
+})
+
+stopifnot(length(unique(lapply(use_roc_df_list, function(x) x[, "Plasmid_ID"]))) == 1)
+
+mean_mean_log2fc <- rowMeans(do.call(cbind, lapply(use_roc_df_list, function(x) x[, "Mean_log2FC"])))
+new_order <- order(!(use_roc_df_list[[1]][, "Is_essential"]),
+                   mean_mean_log2fc
+                   )
+use_roc_df_list <- lapply(use_roc_df_list, function(x) {
+  x <- x[new_order, ]
+  row.names(x) <- NULL
+  return(x)
+})
 
 
 
