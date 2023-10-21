@@ -12,7 +12,6 @@ library("Biostrings")
 
 # Define functions --------------------------------------------------------
 
-
 FormatFixedWidthInteger <- function(integer_vec, full_vec = integer_vec) {
   integer_width <- max(nchar(as.character(as.integer(full_vec))))
   result <- formatC(integer_vec, width = integer_width, flag = "0")
@@ -45,8 +44,6 @@ BuildChunksDf <- function(total_number, number_per_file = 20L) {
 
 
 
-
-
 NoteLongReads <- function(reads_object, are_too_long, export_dir, file_name, max_length) {
   assign("delete_reads_object", reads_object, envir = globalenv())
   assign("delete_are_too_long", are_too_long, envir = globalenv())
@@ -76,6 +73,7 @@ ExportFASTA <- function(export_fasta, export_dir, file_name, max_length = 20000L
 }
 
 
+
 ExportFASTQ <- function(export_fastq, export_dir, file_name, max_length = 20000L) {
   are_too_long <- lengths(export_fastq) > max_length
   NoteLongReads(export_fastq, are_too_long, export_dir, file_name, max_length)
@@ -84,8 +82,6 @@ ExportFASTQ <- function(export_fastq, export_dir, file_name, max_length = 20000L
                                )
   return(invisible(NULL))
 }
-
-
 
 
 
@@ -109,8 +105,6 @@ MakeCategoryString <- function(ccs_df, extracted_df) {
   results_vec[are_present] <- cat_vec
   return(results_vec)
 }
-
-
 
 
 
