@@ -22,6 +22,7 @@ Darken <- function(color, factor = 1.4) {
 
 SetUpBoxPlot <- function(num_groups,
                          data_range,
+                         group_limits  = NULL,
                          use_y_limits  = NULL,
                          draw_axis     = TRUE,
                          draw_box      = TRUE,
@@ -39,13 +40,15 @@ SetUpBoxPlot <- function(num_groups,
                          GridFunction  = NULL
                          ) {
 
-  ## Determine group positions
-  group_positions <- seq_len(num_groups)
-  group_limits <- c((min(group_positions) - side_gap)  - (num_groups * 0.04),
-                     max(group_positions) + right_gap  + (num_groups * 0.04)
-                    )
+  ## Determine x axis limits
+  if (is.null(group_limits)) {
+    group_positions <- seq_len(num_groups)
+    group_limits <- c((min(group_positions) - side_gap)  - (num_groups * 0.04),
+                      max(group_positions) + right_gap  + (num_groups * 0.04)
+    )
+  }
 
-  ## Prepare the data axis
+  ## Determine y axis limits
   if (is.null(use_y_limits)) {
     y_space <- (data_range[[2]] - data_range[[1]]) * 0.02
     use_y_limits <- c(data_range[[1]] - y_space, data_range[[2]] + y_space)
@@ -426,6 +429,7 @@ BeeViolinPlot <- function(input_list,
                           sina_wex_factor = 1,
                           sina_jitter     = 0.01,
                           mini_box        = FALSE,
+                          x_limits        = NULL,
                           y_limits        = NULL,
                           lower_bound     = NULL,
                           upper_bound     = NULL,
@@ -508,6 +512,7 @@ BeeViolinPlot <- function(input_list,
 
   SetUpBoxPlot(num_groups,
                data_range    = range(numeric_vec),
+               group_limits  = x_limits,
                use_y_limits  = y_limits,
                side_gap      = side_gap,
                right_gap     = right_gap,
