@@ -1093,7 +1093,8 @@ DrawSideLegend <- function(labels_list,
                            large_gap_multiplier = 1.75,
                            point_x_start        = 0.15,
                            title_vec            = NULL,
-                           title_x_start        = NULL
+                           title_x_start        = NULL,
+                           text_cex             = 1
                            ) {
 
   ## Perform checks
@@ -1149,6 +1150,7 @@ DrawSideLegend <- function(labels_list,
        y      = y_pos,
        labels = sapply(unlist(labels_list), VerticalAdjust),
        adj    = c(0, 0.5),
+       cex    = text_cex,
        xpd    = NA
        )
   groups_vec <- rep(seq_along(labels_list), lengths(labels_list))
@@ -1173,7 +1175,6 @@ DrawSideLegend <- function(labels_list,
            xpd = NA
            )
   }
-
   return(invisible(NULL))
 }
 
@@ -3121,7 +3122,6 @@ SeparationMetrics <- function(input_list) {
 
 
 
-
 # Functions for exporting data --------------------------------------------
 
 PrepareTgonfioForExport <- function(library_df) {
@@ -3159,3 +3159,4 @@ ExportResultsDf <- function(tidy_library_df, logfc_df, use_counts_df, file_path,
   write.csv(export_df, quote = FALSE, row.names = FALSE, file = file_path)
   return(invisible(export_df))
 }
+
