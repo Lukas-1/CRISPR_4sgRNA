@@ -4,25 +4,42 @@
 # Load packages and source code -------------------------------------------
 
 library("RColorBrewer")
+library("PRROC") # for AUCForROCdf
 
 
 
 # Define functions --------------------------------------------------------
 
 MakeROCDf <- function(input_df, numeric_column, logical_column = "Is_essential") {
-  input_df[, "Specificity"] <- vapply(input_df[, numeric_column], function(x) {
-    pass_threshold <- input_df[, numeric_column] <= x
-    count_TN <- sum((!(input_df[, logical_column])) & (!(pass_threshold)))
-    count_FP <- sum((!(input_df[, logical_column])) & pass_threshold)
-    count_TN / (count_TN + count_FP)
-  }, numeric(1))
-  input_df[, "Sensitivity"] <- vapply(input_df[, numeric_column], function(x) {
-    pass_threshold <- input_df[, numeric_column] <= x
-    count_TP <- sum(input_df[, logical_column] & pass_threshold)
-    count_FN <- sum(input_df[, logical_column] & (!(pass_threshold)))
-    count_TP / (count_TP + count_FN)
-  }, numeric(1))
-  return(input_df)
+  original_accuracy_mat <- BasicROCMat(input_df[, numeric_column], input_df[, logical_column])
+  flipped_accuracy_mat  <- BasicROCMat(input_df[, numeric_column], !(input_df[, logical_column]), reverse_threshold = FALSE)
+  colnames(flipped_accuracy_mat) <- paste0(colnames(flipped_accuracy_mat), "_flipped")
+  results_df <- data.frame(input_df, original_accuracy_mat,
+                           flipped_accuracy_mat[, "Precision_flipped", drop = FALSE], row.names = NULL
+                           )
+  return(results_df)
+}
+
+
+BasicROCMat <- function(numeric_vec, logical_vec, reverse_threshold = TRUE) {
+  stopifnot(length(numeric_vec) == length(logical_vec))
+  accuracy_list <- lapply(numeric_vec, function(x) {
+    if (reverse_threshold) {
+      pass_threshold <- numeric_vec <= x
+    } else {
+      pass_threshold <- numeric_vec > x
+    }
+    count_TN <- sum((!(logical_vec)) & (!(pass_threshold)))
+    count_TP <- sum(logical_vec & pass_threshold)
+    count_FN <- sum(logical_vec & (!(pass_threshold)))
+    count_FP <- sum((!(logical_vec)) & pass_threshold)
+    c("Specificity" = count_TN / (count_TN + count_FP),
+      "Sensitivity" = count_TP / (count_TP + count_FN),
+      "Precision"   = count_TP / (count_TP + count_FP)
+      )
+  })
+  accuracy_mat <- do.call(rbind, accuracy_list)
+  return(accuracy_mat)
 }
 
 
@@ -108,4 +125,41 @@ PlotROCDf <- function(use_ROC_df,
 }
 
 
+
+RemoveInfinite <- function(numeric_vec) {
+  finite_vec <- numeric_vec[is.finite(numeric_vec)]
+  min_value <- min(finite_vec)
+  max_value <- max(finite_vec)
+  data_span <- max_value - min_value
+  to_add <- data_span * 0.01
+  numeric_vec[numeric_vec == Inf] <- max_value + to_add
+  numeric_vec[numeric_vec == -Inf] <- min_value - to_add
+  return(numeric_vec)
+}
+
+
+
+AUCForROCdf <- function(numeric_vec, logical_vec, flip = TRUE, precision_recall = TRUE, return_curve = FALSE) {
+  numeric_vec <- RemoveInfinite(numeric_vec)
+  if (flip) {
+    scores_class_A <- numeric_vec[!(logical_vec)]
+    scores_class_B <- numeric_vec[logical_vec]
+  } else {
+    numeric_vec <- -(numeric_vec) # Because the PRROC::pr.curve function assumes that controls < cases, the values have to be inverted
+    scores_class_A <- numeric_vec[logical_vec]
+    scores_class_B <- numeric_vec[!(logical_vec)]
+  }
+  if (precision_recall) {
+    PRROC_object <- PRROC::pr.curve(scores_class_A, scores_class_B, curve = return_curve)
+    AUC_value <- PRROC_object[["auc.integral"]]
+  } else {
+    PRROC_object <- PRROC::roc.curve(scores_class_A, scores_class_B, curve = return_curve)
+    AUC_value <- PRROC_object[["auc"]]
+  }
+  if (return_curve) {
+    return(PRROC_object[["curve"]])
+  } else {
+    return(AUC_value)
+  }
+}
 
