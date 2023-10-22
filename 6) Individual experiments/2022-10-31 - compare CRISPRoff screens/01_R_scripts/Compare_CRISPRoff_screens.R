@@ -1097,7 +1097,7 @@ MultiLinesROC(list(new_common_ROC_CRISPRoff_df, new_common_ROC_4sg_df),
               legend_inside = TRUE, long_labels = FALSE,
               lines_x_start = -0.225, lines_y_start = 0.8,
               large_gap_multiplier = 1.2, small_gap_size = 0.88,
-              text_cex = 0.9, AUC_num_digits = 3
+              text_cex = 0.9, AUC_num_digits = 2
               )
 par(old_par)
 dev.off()
