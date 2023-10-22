@@ -280,11 +280,7 @@ SingleViolin <- function(numeric_vec,
     eval_points_vec <- density_output[["x"]]
     if (draw_lines) {
       dens_vec <- cumsum(estimates_vec) / sum(estimates_vec)
-      ecdf_Function <- stats::approxfun(dens_vec, eval_points_vec, ties = "ordered")
-      ys <- ecdf_Function(show_quantiles) # these are all the y-values for quantiles
-      ys <- quantile(numeric_vec, show_quantiles)
-      # Get the violin bounds for the requested quantiles.
-      line_estimates_vec <- (stats::approxfun(eval_points_vec, estimates_vec))(ys)
+      line_estimates_vec <- stats::approxfun(eval_points_vec, estimates_vec)(lines_vec) # get the violin bounds for the requested quantiles
     }
     if (trim) {
       are_within_bounds <- (eval_points_vec >= data_limits[[1]]) &
