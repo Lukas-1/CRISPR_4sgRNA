@@ -38,6 +38,64 @@ load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_d
 
 
 
+# Define functions --------------------------------------------------------
+
+BracketsCoords <- function(x1, y1, x2, y2, h = NULL, ticks = 0.5, curvature = 0.5, type = 1) {
+  ## copied from pBrackets::brackets
+    if (!is.numeric(curvature))
+        stop("curvature must be numeric")
+    if (!is.numeric(type))
+        stop("type must be a integer, 1 to 5")
+    if (curvature < 0)
+        curvature <- 0
+    if (curvature > 1)
+        curvature <- 1
+    if (length(ticks) == 1)
+        if (is.na(ticks))
+            ticks <- NULL
+    if (!is.numeric(ticks) & !is.null(ticks))
+        stop("ticks must be numeric or NULL")
+    if (length(ticks) > 1) {
+        if (any(duplicated(abs(ticks))))
+            stop("duplicated ticks")
+    }
+    xm <- mean(c(x1, x2))
+    ym <- mean(c(y1, y2))
+    coords <- par("usr")
+    xr <- abs(diff(coords[1:2]))
+    yr <- abs(diff(coords[3:4]))
+    if (is.null(h))
+        h <- sqrt(xr * yr)/20
+    dinps <- par("pin")
+    xtox <- dinps[2]/dinps[1]
+    rato <- xr/yr
+    mysig <- sign(h)
+    vx = (x2 - x1)/rato/xtox
+    vy = (y2 - y1) * rato * xtox
+    len = sqrt(vx^2 + vy^2)
+    ux = vy/len
+    uy = vx/len
+    x3 = xm + h * ux
+    y3 = ym - h * uy
+    ret <- pBrackets:::a_get_relative(c(xm, x3), c(ym, y3))
+    h <- mysig * dist(cbind(ret[, 1], ret[, 2]))
+    rvalues <- pBrackets:::a_get_relative(c(x1, x2), c(y1, y2))
+    x1 <- rvalues[1, 1]
+    x2 <- rvalues[2, 1]
+    y1 <- rvalues[1, 2]
+    y2 <- rvalues[2, 2]
+    brackets <- pBrackets:::a_cb_brackets(phi = curvature, ticks = ticks, type = type)
+    x <- brackets[1, ] * dist(cbind(c(x1, x2), c(y1, y2)))
+    y <- brackets[2, ] * h
+    rout <- pBrackets:::a_rotate(cbind(x, y), atan2(y2 - y1, x2 - x1))
+    xout <- rout[, 1] + x1
+    yout <- rout[, 2] + y1
+    native <- pBrackets:::a_get_native(xout, yout)
+    return(native)
+}
+
+
+
 # Define gene selections --------------------------------------------------
 
 ess_genes_blomen_hart    <- essentials_2020Q2_df[, "Entrez_ID"]
@@ -95,13 +153,67 @@ dev.off()
 
 
 
+CustomBracketsInBackground <- function(group_positions, quantiles_list, use_lwd = 1, x_distance = 1.5) {
+
+  x_pos <- group_positions[[1]] - diff(grconvertX(c(0, x_distance), from = "lines", to = "user"))
+  coords_mat <- BracketsCoords(x1 = x_pos,
+                               x2 = x_pos,
+                               y1 = quantiles_list[[1]][["25%"]],
+                               y2 = quantiles_list[[1]][["75%"]]
+                               )
+  polygon(x      = c(coords_mat[, 1], group_positions[[1]], group_positions[[1]]),
+          y      = c(coords_mat[, 2], coords_mat[[length(coords_mat)]], coords_mat[, 2][[1]]),
+          col    = "gray96",
+          border = NA
+          )
+  segments(x0  = coords_mat[1, 1],
+           x1  = group_positions[[1]],
+           y0  = c(quantiles_list[[1]][["25%"]], quantiles_list[[1]][["75%"]]),
+           lty = "21",,
+           lwd = par("lwd") * 0.7,
+           col = "gray80"
+           )
+  lines(coords_mat, col = "black")
+
+
+  x_pos <- group_positions[[2]] + diff(grconvertX(c(0, x_distance - 0.025), from = "lines", to = "user"))
+  coords_mat <- BracketsCoords(x1 = x_pos,
+                               x2 = x_pos,
+                               y1 = quantiles_list[[2]][["75%"]],
+                               y2 = quantiles_list[[2]][["25%"]]
+                               )
+  polygon(x      = c(coords_mat[, 1], group_positions[[2]], group_positions[[2]]),
+          y      = c(coords_mat[, 2], coords_mat[[length(coords_mat)]], coords_mat[, 2][[1]]),
+          col    = "gray96",
+          border = NA
+          )
+  segments(x0  = coords_mat[1, 1],
+           x1  = group_positions[[2]],
+           y0  = c(quantiles_list[[2]][["25%"]], quantiles_list[[2]][["75%"]]),
+           lty = "21",
+           lwd = par("lwd") * 0.7,
+           col = "gray80"
+           )
+  lines(coords_mat, col = "black")
+}
+
+
+
 IQR_vec <- vapply(blomen_hart_ROC_df_list, function(x) {
   IQR(x[, "Mean_log2FC"][x[, "Is_essential"]] / 10)
 }, numeric(1))
 
-quantiles_list <- lapply(blomen_hart_ROC_df_list, function(x) {
+two_quantiles_list <- lapply(blomen_hart_ROC_df_list, function(x) {
   quantile(x[, "Mean_log2FC"][x[, "Is_essential"]] / 10)
 })
+
+
+x_positions <- MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
+                          show_truncation = FALSE, x_limits = c(-1.35, 4.6),
+                          x_positions = violin_positions - c(rep(0.85, 2), rep(0, 2))
+                          )
+
+
 
 
 cairo_pdf(file.path(output_dir, "Violin plot variant - IQR indicated.pdf"),
@@ -110,39 +222,23 @@ cairo_pdf(file.path(output_dir, "Violin plot variant - IQR indicated.pdf"),
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 x_positions <- MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
                           show_truncation = FALSE, x_limits = c(-1.35, 4.6),
-                          x_positions = violin_positions - c(rep(0.85, 2), rep(0, 2))
+                          x_positions = violin_positions - c(rep(0.85, 2), rep(0, 2)),
+                          GridFunction = CustomBracketsInBackground(x_positions, two_quantiles_list)
                           )
-
-x_pos <-  x_positions[[1]] - diff(grconvertX(c(0, 1.35), from = "lines", to = "user"))
-pBrackets::brackets(x1 = x_pos,
-                    x2 = x_pos,
-                    y1 = quantiles_list[[1]][["25%"]],
-                    y2 = quantiles_list[[1]][["75%"]],
-                    lwd = par("lwd") * 0.8
-                    )
-par("lheight" = 0.925)
-text(x      = x_positions[[1]] - diff(grconvertX(c(0, 2.6), from = "lines", to = "user")),
-     y      = mean(c(quantiles_list[[1]][c("25%", "75%")])),
+old_lheight <- par("lheight" = 0.925)
+text(x      = x_positions[[1]] - diff(grconvertX(c(0, 2.65), from = "lines", to = "user")),
+     y      = mean(c(two_quantiles_list[[1]][c("25%", "75%")])),
      labels = paste0("IQR\n", format(round(IQR_vec[[1]], digits = 2), nsmall = 2)),
      cex    = 0.9,
      adj    = c(0.5, 0.5)
      )
-
-x_pos <-  x_positions[[2]] + diff(grconvertX(c(0, 1.35), from = "lines", to = "user"))
-pBrackets::brackets(x1 = x_pos,
-                    x2 = x_pos,
-                    y1 = quantiles_list[[2]][["75%"]],
-                    y2 = quantiles_list[[2]][["25%"]],
-                    lwd = par("lwd") * 0.9
-                    )
-
-text(x      = x_positions[[2]] + diff(grconvertX(c(0, 2.6), from = "lines", to = "user")),
-     y      = mean(c(quantiles_list[[2]][c("25%", "75%")])),
+text(x      = x_positions[[2]] + diff(grconvertX(c(0, 2.625), from = "lines", to = "user")),
+     y      = mean(c(two_quantiles_list[[2]][c("25%", "75%")])),
      labels = paste0("IQR\n", format(round(IQR_vec[[2]], digits = 2), nsmall = 2)),
      cex    = 0.9,
      adj    = c(0.5, 0.5)
      )
-
+par(old_lheight)
 par(old_par)
 dev.off()
 
@@ -156,7 +252,9 @@ cairo_pdf(file.path(output_dir, "Violin plot variant - residual essential genes.
           width = 1.9, height = 2
           )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
-MeanSwarms(rep_list, group_labels = c("prepool", "postpool"))
+MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
+           GridFunction = rect(xleft = 1, xright = 2, ybottom = -0.4, ytop = 0, border = NA, col = "red")
+           )
 par(old_par)
 dev.off()
 rm(rep_list)
@@ -223,15 +321,18 @@ dev.off()
 
 RegressionScatter <- function(x_vec,
                               y_vec,
-                              identity_line = TRUE,
-                              same_limits = FALSE,
-                              zero_lines = TRUE,
-                              points_color = "black",
-                              points_alpha = 0.5,
-                              confint_level = 0.95,
-                              band_color = "#c0dcfc",
-                              line_color = "#0a5dbd",
-                              show_axes = TRUE
+                              identity_line   = TRUE,
+                              same_limits     = FALSE,
+                              grid_lines      = FALSE,
+                              zero_lines      = TRUE,
+                              points_color    = "black",
+                              points_alpha    = 0.5,
+                              regression_line = TRUE,
+                              confint_level   = 0.95,
+                              band_color      = "#c0dcfc",
+                              line_color      = "#0a5dbd",
+                              show_axes       = TRUE,
+                              GridFunction    = NULL
                               ) {
 
   ## Define axis limits
@@ -243,36 +344,38 @@ RegressionScatter <- function(x_vec,
     y_limits <- x_limits
   }
 
-  ## Perform linear regression (and compute 95% confidence interval)
-  model_df <- data.frame("x_var" = x_vec, "y_var" = y_vec)
-  lm_model <- lm(y_var ~ x_var, data = model_df)
-  lm_summary <- summary(lm_model)
-  assign("delete_lm_summary", lm_summary, envir = globalenv())
+  if (regression_line) {
+    ## Perform linear regression (and compute 95% confidence interval)
+    model_df <- data.frame("x_var" = x_vec, "y_var" = y_vec)
+    lm_model <- lm(y_var ~ x_var, data = model_df)
+    lm_summary <- summary(lm_model)
+    assign("delete_lm_summary", lm_summary, envir = globalenv())
 
-  new_seq <- seq(min(x_vec), max(x_vec), length.out = 200)
-  new_df <- data.frame("x_var" = new_seq)
-  conf_int_mat <- predict(lm_model,
-                          newdata = new_df,
-                          interval = "confidence",
-                          level = confint_level
+    new_seq <- seq(min(x_vec), max(x_vec), length.out = 200)
+    new_df <- data.frame("x_var" = new_seq)
+    conf_int_mat <- predict(lm_model,
+                            newdata = new_df,
+                            interval = "confidence",
+                            level = confint_level
+                            )
+
+    ## Prepare R-squared text
+    r_squared <- format(round(lm_summary[["r.squared"]], digits = 2), nsmall = 2)
+    p_value <- lm_summary[["coefficients"]][1, 4]
+    print(p_value)
+    scientific_split <- strsplit(formatC(p_value, format = "e", digits = 0),
+                                 "e", fixed = TRUE
+                                 )[[1]]
+    power_of_10 <- as.integer(scientific_split[[2]])
+    if (abs(power_of_10) <= 4) {
+      corr_text <- bquote(italic("R") * ""^2  ~ "=" ~ .(r_squared) *
+                          " (" * italic("p") * " = " * .(formatC(p_value, digits = 1, format = "fg")) * ")"
                           )
-
-  ## Prepare R-squared text
-  r_squared <- format(round(lm_summary[["r.squared"]], digits = 2), nsmall = 2)
-  p_value <- lm_summary[["coefficients"]][1, 4]
-  print(p_value)
-  scientific_split <- strsplit(formatC(p_value, format = "e", digits = 0),
-                               "e", fixed = TRUE
-                               )[[1]]
-  power_of_10 <- as.integer(scientific_split[[2]])
-  if (abs(power_of_10) <= 4) {
-    corr_text <- bquote(italic("R") * ""^2  ~ "=" ~ .(r_squared) *
-                        " (" * italic("p") * " = " * .(formatC(p_value, digits = 1, format = "fg")) * ")"
-                        )
-  } else {
-    corr_text <- bquote(italic("R") * ""^2  ~ "=" ~ .(r_squared) *
-                          " (" * italic("p") * " = " * .(scientific_split[[1]]) %*% 10^.(power_of_10) * ")"
-                        )
+    } else {
+      corr_text <- bquote(italic("R") * ""^2  ~ "=" ~ .(r_squared) *
+                            " (" * italic("p") * " = " * .(scientific_split[[1]]) %*% 10^.(power_of_10) * ")"
+                          )
+    }
   }
 
   ## Set up plot region
@@ -283,19 +386,25 @@ RegressionScatter <- function(x_vec,
        axes = FALSE
        )
 
+  if (!(is.null(GridFunction))) {
+    GridFunction()
+  }
   if (identity_line) {
-    abline(a = 0, b = 1, col = "gray60")
+    abline(a = 0, b = 1, col = "gray50")
   }
   if (zero_lines) {
     abline(h = 0, v = 0, col = "gray60")
   }
 
-  ## Draw linear regression line and CI
-  polygon(c(new_df[, 1], rev(new_df[, 1])),
-          c(conf_int_mat[, 2], rev(conf_int_mat[, 3])),
-          col = band_color, border = NA
-          )
-  lines(new_df[, 1], conf_int_mat[, 1], col = line_color)
+  if (regression_line) {
+    ## Draw linear regression line and CI
+    polygon(c(new_df[, 1], rev(new_df[, 1])),
+            c(conf_int_mat[, 2], rev(conf_int_mat[, 3])),
+            col = band_color, border = NA
+            )
+    lines(new_df[, 1], conf_int_mat[, 1], col = line_color)
+    mtext(corr_text, line = 0.5, cex = par("cex"))
+  }
 
   ## Draw points
   points(x_vec, y_vec, pch = 16, col = adjustcolor(points_color, points_alpha), cex = 0.5)
@@ -306,7 +415,6 @@ RegressionScatter <- function(x_vec,
     axis(2, tcl = -0.375, mgp = c(3, 0.55, 0), las = 1, lwd = par("lwd"))
   }
   box()
-  mtext(corr_text, line = 0.5, cex = par("cex"))
 
   return(invisible(NULL))
 }
@@ -344,6 +452,256 @@ mtext(VerticalAdjust(expression("Prepool" ~ "(" * gamma * ")")),
 mtext(VerticalAdjust(expression("Postpool" ~ "(" * gamma * ")")),
       side = 2, line = 2.1, cex = par("cex")
       )
+dev.off()
+
+
+
+
+# Draw a scatter plot with density plots on the side ----------------------
+
+GetDensityMat <- function(numeric_vec) {
+  density_output <- density(numeric_vec)
+  height_vec <- density_output[["y"]]
+  values_vec <- density_output[["x"]]
+
+  data_limits <- range(numeric_vec)
+  are_within_bounds <- (values_vec >= data_limits[[1]]) &
+    (values_vec <= data_limits[[2]])
+  values_vec <- values_vec[are_within_bounds]
+  height_vec <- height_vec[are_within_bounds]
+  results_mat <- cbind(
+    "value"  = values_vec,
+    "height" = height_vec
+  )
+  return(results_mat)
+}
+
+GetQuantilesMat <- function(numeric_vec, show_quantiles = c(0.25, 0.5, 0.75)) {
+  quantile_values <- quantile(numeric_vec, probs = show_quantiles)
+  density_mat <- GetDensityMat(numeric_vec)
+  dens_vec <- cumsum(density_mat[, "height"]) / sum(density_mat[, "height"])
+  quantile_heights <- stats::approxfun(density_mat[, "value"], density_mat[, "height"])(quantile_values)
+  results_mat <- cbind(
+    "quantile" = show_quantiles,
+    "value"    = quantile_values,
+    "height"   = quantile_heights
+  )
+  return(results_mat)
+}
+
+
+
+TwoCustomTrapezoids <- function(quantiles_list, overlay = FALSE) {
+
+  fill_color <- adjustcolor(brewer.pal(9, "Purples")[[3]], alpha.f = if (overlay) 0.1 else 0.5)
+  border_color <- if (overlay) NA else adjustcolor("#7c7198", alpha.f = 0.5)
+
+  x_vec <- c(quantiles_list[[1]][["25%"]],
+             quantiles_list[[1]][["75%"]],
+             quantiles_list[[1]][["75%"]],
+             quantiles_list[[1]][["25%"]]
+             )
+  y_vec <- c(par("usr")[[4]],
+             par("usr")[[4]],
+             quantiles_list[[1]][["75%"]],
+             quantiles_list[[1]][["25%"]]
+             )
+  polygon(x      = x_vec,
+          y      = y_vec,
+          border = border_color,
+          col    = fill_color,
+          lwd    = par("lwd") * 0.75,
+          lty    = "21"
+          )
+
+  x_vec <- c(par("usr")[[2]],
+             par("usr")[[2]],
+             quantiles_list[[2]][["25%"]],
+             quantiles_list[[2]][["75%"]]
+             )
+  y_vec <- c(quantiles_list[[2]][["75%"]],
+             quantiles_list[[2]][["25%"]],
+             quantiles_list[[2]][["25%"]],
+             quantiles_list[[2]][["75%"]]
+             )
+
+  x_vec <- c(quantiles_list[[1]][["25%"]],
+             two_quantiles_list[[1]][["75%"]],
+             two_quantiles_list[[1]][["75%"]],
+             two_quantiles_list[[1]][["25%"]]
+             )
+  y_vec <- c(par("usr")[[4]],
+             par("usr")[[4]],
+             two_quantiles_list[[1]][["75%"]],
+             two_quantiles_list[[1]][["25%"]]
+             )
+  polygon(x      = x_vec,
+          y      = y_vec,
+          border = border_color,
+          col    = fill_color
+          )
+
+  x_vec <- c(par("usr")[[2]],
+             par("usr")[[2]],
+             two_quantiles_list[[2]][["25%"]],
+             two_quantiles_list[[2]][["75%"]]
+             )
+  y_vec <- c(two_quantiles_list[[2]][["75%"]],
+             two_quantiles_list[[2]][["25%"]],
+             two_quantiles_list[[2]][["25%"]],
+             two_quantiles_list[[2]][["75%"]]
+             )
+  polygon(x      = x_vec,
+          y      = y_vec,
+          border = border_color,
+          col    = fill_color
+          )
+}
+
+
+tick_locations <- seq(-0.6, 0, by = 0.2)
+two_quantiles_list <- lapply(vec_list, function(x) quantile(x, probs = c(0.25, 0.75)))
+
+UseGridFunction <- function() {
+  abline(v = tick_locations, h = tick_locations, col = "gray86")
+  TwoCustomTrapezoids(two_quantiles_list)
+}
+
+
+
+pdf(file.path(output_dir, "Scatter plot - with side density plots.pdf"),
+    width  = 2.15,
+    height = 2
+    )
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.45))
+
+RegressionScatter(vec_list[[1]], vec_list[[2]], same_limits = TRUE,
+                  points_color = "#4b357e",
+                  regression_line = FALSE, show_axes = FALSE, zero_lines = FALSE,
+                  GridFunction = UseGridFunction,
+                  identity_line = FALSE
+                  )
+
+TwoCustomTrapezoids(two_quantiles_list, overlay = TRUE)
+abline(a = 0, b = 1, col = adjustcolor("black", alpha.f = 0.4), lwd = par("lwd") * 1.25)
+axis(1, at = tick_locations, tcl = -0.35, mgp = c(3, 0.35, 0), lwd = par("lwd"))
+axis(2, at = tick_locations, tcl = -0.35, mgp = c(3, 0.5, 0), las = 1, lwd = par("lwd"))
+mtext(VerticalAdjust(expression("Prepool" ~ "(" * gamma * ")")),
+      side = 1, line = 1.8, cex = par("cex")
+      )
+mtext(VerticalAdjust(expression("Postpool" ~ "(" * gamma * ")")),
+      side = 2, line = 2.1, cex = par("cex")
+      )
+
+
+x_density_mat <- GetDensityMat(vec_list[[1]])
+y_density_mat <- GetDensityMat(vec_list[[2]])
+
+height_factor <- 1 / max(x_density_mat[, "height"], y_density_mat[, "height"])
+density_gap <- 0.25
+density_height <- 2.3
+beeswarm_spacing <- 0.375
+quantiles_lty <- c("21", "solid", "21")
+beeswarm_cex <- 0.2
+
+
+
+start_pos <- par("usr")[[4]] + diff(grconvertY(c(0, density_gap), from = "lines", to = "user"))
+end_pos <- start_pos + diff(grconvertY(c(0, density_gap + density_height), from = "lines", to = "user"))
+height_range <- end_pos - start_pos
+height_scale <- height_factor * height_range
+values_vec <- x_density_mat[, "value"]
+polygon(x      = c(values_vec[[1]], values_vec, values_vec[[length(values_vec)]]),
+        y      = start_pos + c(0, x_density_mat[, "height"] * height_scale, 0),
+        col    = brewer.pal(9, "Purples")[[3]],
+        border = NA,
+        xpd    = NA
+        )
+
+numeric_vec <- vec_list[[1]]
+quantiles_mat <- GetQuantilesMat(numeric_vec)
+line_heights_vec <- quantiles_mat[, "height"] * height_scale - GetHalfLineWidth()
+
+for (i in seq_len(ncol(quantiles_mat))) {
+  segments(x0   = quantiles_mat[, "value"][[i]],
+           y0   = start_pos,
+           y1   = start_pos + line_heights_vec[[i]],
+           lty  = quantiles_lty[[i]],
+           col  = "#7c7198",
+           lend = "butt",
+           xpd  = NA
+           )
+}
+
+set.seed(1)
+swarm_df <- beeswarm(numeric_vec,
+                     cex      = beeswarm_cex,
+                     spacing  = beeswarm_spacing,
+                     side     = 1,
+                     priority = "random",
+                     do.plot  = FALSE
+                     )
+displacement_vec <- swarm_df[, "x"] - 1
+point_radius <- (par("cxy")[2] / pi) * par("cex") * 0.25
+points(x   = swarm_df[, "y"],
+       y   = start_pos + point_radius + displacement_vec,
+       cex = 0.2,
+       pch = 21,
+       col = "#7c7198",
+       bg  = brewer.pal(9, "Purples")[[3]],
+       lwd = par("lwd") * 0.5,
+       xpd = NA
+       )
+
+
+
+start_pos <- par("usr")[[2]] + diff(grconvertX(c(0, density_gap), from = "lines", to = "user"))
+end_pos <- start_pos + diff(grconvertX(c(0, density_gap + density_height), from = "lines", to = "user"))
+height_range <- end_pos - start_pos
+height_scale <- height_factor * height_range * 0.75
+values_vec <- y_density_mat[, "value"]
+polygon(x      = start_pos + c(0, y_density_mat[, "height"] * height_scale, 0),
+        y      = c(values_vec[[1]], values_vec, values_vec[[length(values_vec)]]),
+        col    = brewer.pal(9, "Purples")[[3]],
+        border = NA,
+        xpd    = NA
+        )
+
+
+numeric_vec <- vec_list[[2]]
+quantiles_mat <- GetQuantilesMat(numeric_vec)
+line_heights_vec <- quantiles_mat[, "height"] * height_scale - GetHalfLineWidth()
+for (i in seq_len(ncol(quantiles_mat))) {
+  segments(x0   = start_pos,
+           x1   = start_pos + line_heights_vec[[i]],
+           y0   = quantiles_mat[, "value"][[i]],
+           lty  = quantiles_lty[[i]],
+           col  = "#7c7198",
+           lend = "butt",
+           xpd  = NA
+           )
+}
+
+set.seed(1)
+swarm_df <- beeswarm(numeric_vec,
+                     cex      = beeswarm_cex,
+                     spacing  = beeswarm_spacing,
+                     side     = 1,
+                     priority = "random",
+                     do.plot  = FALSE
+                     )
+displacement_vec <- swarm_df[, "x"] - 1
+point_radius <- (par("cxy")[2] / pi) * par("cex") * beeswarm_cex
+points(x   = start_pos + point_radius + displacement_vec,
+       y   = swarm_df[, "y"],
+       cex = 0.2,
+       pch = 21,
+       col = "#7c7198",
+       bg  = brewer.pal(9, "Purples")[[3]],
+       lwd = par("lwd") * 0.5,
+       xpd = NA
+       )
+
 dev.off()
 
 
@@ -470,7 +828,7 @@ for (variant_list in variant_list_list) {
 
 
 
-# Tabulate essential and non-essential genes ------------------------------
+# Tabulate essential and non-essential genes (not complete...) ------------
 
 use_roc_df_list <- blomen_hart_ROC_df_list
 use_cutoff <- -1
@@ -492,7 +850,6 @@ use_roc_df_list <- lapply(use_roc_df_list, function(x) {
   row.names(x) <- NULL
   return(x)
 })
-
 
 
 
