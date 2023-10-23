@@ -1,12 +1,9 @@
 ### 20th October 2020 ###
 
 
-
-
 # Import packages and source code -----------------------------------------
 
 library("Biostrings")
-
 
 
 
@@ -63,6 +60,7 @@ NoteLongReads <- function(reads_object, are_too_long, export_dir, file_name, max
 }
 
 
+
 ExportFASTA <- function(export_fasta, export_dir, file_name, max_length = 20000L) {
   are_too_long <- lengths(export_fasta) > max_length
   NoteLongReads(export_fasta, are_too_long, export_dir, file_name, max_length)
@@ -71,7 +69,6 @@ ExportFASTA <- function(export_fasta, export_dir, file_name, max_length = 20000L
                   )
   return(invisible(NULL))
 }
-
 
 
 ExportFASTQ <- function(export_fastq, export_dir, file_name, max_length = 20000L) {
