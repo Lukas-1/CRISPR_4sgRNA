@@ -313,7 +313,7 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
 
       if (draw_figure == "A") {
         custom_labels <- list(
-          "Count_at_least_1" = expression("" >= "1 gRNA",  "correct"),
+          "Count_at_least_1" = expression("" >= "1 sgRNA",  "correct"),
           "Count_at_least_2" = expression("" >= "2", "correct"),
           "Count_at_least_3" = expression("" >= "3", "correct"),
           "Count_all_4"      = expression("All 4", "correct")
@@ -380,7 +380,8 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
                      violin_wex         = if (draw_figure %in% c("E", "F")) 0.4 else 0.52,
                      box_wex            = if (draw_figure == "E") 0.55 else if (draw_figure == "F") 1 else 0.6,
                      use_side_gap       = if (draw_figure == "E") 0.5 else if (draw_figure == "F") 0.8 else 0.3,
-                     controls_x_gap     = if (draw_figure == "F") 0.425 else 0.35
+                     controls_x_gap     = if (draw_figure == "F") 0.425 else 0.35,
+                     use_brewer_pals    = c("RdPu", "Blues")
                      )
       par(old_par)
       dev.off()
@@ -478,6 +479,8 @@ ReadCountsBoxPlot(use_df, c("CRISPRa", "CRISPRko"),
                   embed_PNG     = TRUE
                   )
 dev.off()
+
+
 
 
 
