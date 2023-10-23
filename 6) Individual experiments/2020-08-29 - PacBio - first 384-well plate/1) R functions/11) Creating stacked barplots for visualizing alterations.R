@@ -73,24 +73,24 @@ titles_list[["Count_all_4_promoters"]] <- "Percentage of reads for which all 4 g
 
 eCDF_combos_list <- list(
   "4_guides" = list(
-    "Count_all_4"       = expression(scriptscriptstyle(" ") * "All 4 gRNAs",
+    "Count_all_4"       = expression(scriptscriptstyle(" ") * "All 4 sgRNAs",
                                      scriptscriptstyle(" ") * "correct in",
                                      scriptscriptstyle(" ") * "same read"
                                      ),
     "All4_sg_cr_pass"   = expression(scriptscriptstyle(" ") * "Correct %",
                                      "" >=  "cutoff for",
-                                     scriptscriptstyle(" ") * "all 4 gRNAs"
+                                     scriptscriptstyle(" ") * "all 4 sgRNAs"
                                      )#,
     # "Count_mean_sg1to4" = c("Mean correct", "percentage", "(sg1-4)")
   ),
   "4_guides_with_promoters" = list(
-    "Count_pr_all_4"       = expression(scriptscriptstyle(" ") * "All 4 gRNAs",
+    "Count_pr_all_4"       = expression(scriptscriptstyle(" ") * "All 4 sgRNAs",
                                         scriptscriptstyle(" ") * "correct in",
                                         scriptscriptstyle(" ") * "same read"
                                         ),
     "All4_pr_sg_cr_pass"   = expression(scriptscriptstyle(" ") * "Correct %",
                                         "" >=  "cutoff for",
-                                        scriptscriptstyle(" ") * "all 4 gRNAs"
+                                        scriptscriptstyle(" ") * "all 4 sgRNAs"
                                         )#,
     # "Count_mean_pr_sg1to4" = c("Mean correct", "percentage", "(sg1-4)")
   ),
@@ -1236,7 +1236,7 @@ SingleSandPlot <- function(summary_df,
                    use_pch = 22, small_y_gap = legend_y_gap,
                    lines_x_start = legend_x_start,
                    lines_x_title = legend_x_title,
-                   top_labels = c("Correct", "gRNAs:")
+                   top_labels = c("Correct", "sgRNAs:")
                    )
   } else {
     MakeEmptyPlot()
