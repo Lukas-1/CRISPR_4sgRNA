@@ -289,7 +289,7 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
 # Create box plots for the manuscript -------------------------------------
 
 manuscript_side_labels <- list(
-  c("Colony-", "picked", "controls"),
+  gsub("-", "\uad", c("Colony-", "picked", "controls"), fixed = TRUE),
   c("Wells in", "CRISPR", "library")
 )
 

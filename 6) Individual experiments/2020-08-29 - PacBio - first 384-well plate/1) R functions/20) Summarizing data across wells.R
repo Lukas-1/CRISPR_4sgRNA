@@ -375,7 +375,7 @@ SetUpPercentagePlot <- function(use_columns,
                                 bottom_y_gap       = 2.5,
                                 bottom_large_y     = 1,
                                 side_y_gap         = bottom_y_gap,
-                                side_labels_list   = list(c("Colony-", "picked", "controls"),
+                                side_labels_list   = list(gsub("-", "\uad", c("Colony-", "picked", "controls"), fixed = TRUE),
                                                           c("Polyclonal", "plasmid", "population")
                                                           ),
                                 points_centered    = FALSE,
@@ -1039,7 +1039,7 @@ SummaryBoxPlot <- function(input_df,
     raster_array <- readPNG(temp_path)
     file.remove(temp_path)
     dev.set(PDF_device)
-    par(PDF_mar)
+    par(mar = PDF_mar)
     SetUpPercentagePlot(use_columns, use_y_limits, main_title = "",
                         side_gap = use_side_gap,
                         for_embedded_PNG = TRUE, draw_grid = FALSE
