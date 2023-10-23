@@ -140,7 +140,7 @@ rep_list <- c(split(blomen_hart_ROC_df_list[[1]][, "Mean_log2FC"], !(blomen_hart
               split(blomen_hart_ROC_df_list[[2]][, "Mean_log2FC"], !(blomen_hart_ROC_df_list[[2]][, "Is_essential"]))
               )
 
-cairo_pdf(file.path(output_dir, "Manuscript - Figure 6K - violin plots.pdf"),
+pdf(file.path(output_dir, "Manuscript - Figure 6K - violin plots.pdf"),
           width = 1.9, height = 2
           )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
@@ -213,28 +213,28 @@ x_positions <- MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
                           x_positions = violin_positions - c(rep(0.85, 2), rep(0, 2))
                           )
 
+num_digits_IQR <- 3L
 
 
-
-cairo_pdf(file.path(output_dir, "Violin plot variant - IQR indicated.pdf"),
-          width = 2.4, height = 2
-          )
+pdf(file.path(output_dir, "Violin plot variant - IQR indicated.pdf"),
+    width = 2.5, height = 2
+    )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 x_positions <- MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
-                          show_truncation = FALSE, x_limits = c(-1.35, 4.6),
+                          show_truncation = FALSE, x_limits = c(-1.45, 4.6),
                           x_positions = violin_positions - c(rep(0.85, 2), rep(0, 2)),
                           GridFunction = CustomBracketsInBackground(x_positions, two_quantiles_list)
                           )
 old_lheight <- par("lheight" = 0.925)
-text(x      = x_positions[[1]] - diff(grconvertX(c(0, 2.65), from = "lines", to = "user")),
+text(x      = x_positions[[1]] - diff(grconvertX(c(0, 2.85), from = "lines", to = "user")),
      y      = mean(c(two_quantiles_list[[1]][c("25%", "75%")])),
-     labels = paste0("IQR\n", format(round(IQR_vec[[1]], digits = 2), nsmall = 2)),
+     labels = paste0("IQR\n", format(round(IQR_vec[[1]], digits = num_digits_IQR), nsmall = num_digits_IQR)),
      cex    = 0.9,
      adj    = c(0.5, 0.5)
      )
-text(x      = x_positions[[2]] + diff(grconvertX(c(0, 2.625), from = "lines", to = "user")),
+text(x      = x_positions[[2]] + diff(grconvertX(c(0, 2.9), from = "lines", to = "user")),
      y      = mean(c(two_quantiles_list[[2]][c("25%", "75%")])),
-     labels = paste0("IQR\n", format(round(IQR_vec[[2]], digits = 2), nsmall = 2)),
+     labels = paste0("IQR\n", format(round(IQR_vec[[2]], digits = num_digits_IQR), nsmall = num_digits_IQR)),
      cex    = 0.9,
      adj    = c(0.5, 0.5)
      )
@@ -248,9 +248,9 @@ rep_list <- c(split(EssResidual_NEBlomenHart_ROC_df_list[[1]][["Mean_log2FC"]], 
               split(EssResidual_NEBlomenHart_ROC_df_list[[2]][["Mean_log2FC"]], !(EssResidual_NEBlomenHart_ROC_df_list[[2]][, "Is_essential"]))
               )
 
-cairo_pdf(file.path(output_dir, "Violin plot variant - residual essential genes.pdf"),
-          width = 1.9, height = 2
-          )
+pdf(file.path(output_dir, "Violin plot variant - residual essential genes.pdf"),
+    width = 1.9, height = 2
+    )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 MeanSwarms(rep_list, group_labels = c("prepool", "postpool"),
            GridFunction = rect(xleft = 1, xright = 2, ybottom = -0.4, ytop = 0, border = NA, col = "red")
@@ -490,11 +490,20 @@ GetQuantilesMat <- function(numeric_vec, show_quantiles = c(0.25, 0.5, 0.75)) {
 }
 
 
+prepool_fill_color <- brewer.pal(9, "Blues")[[3]]
+postpool_fill_color <- brewer.pal(9, "RdPu")[[4]]
+
+prepool_line_color <- brewer.pal(9, "Blues")[[7]]
+postpool_line_color <- brewer.pal(9, "RdPu")[[7]]
+
+prepool_line_color <- "#2870af"
+postpool_line_color <- "#a51d7e"
+
+
 
 TwoCustomTrapezoids <- function(quantiles_list, overlay = FALSE) {
 
-  fill_color <- adjustcolor(brewer.pal(9, "Purples")[[3]], alpha.f = if (overlay) 0.1 else 0.5)
-  border_color <- if (overlay) NA else adjustcolor("#7c7198", alpha.f = 0.5)
+  use_lwd <- 0.85
 
   x_vec <- c(quantiles_list[[1]][["25%"]],
              quantiles_list[[1]][["75%"]],
@@ -508,11 +517,21 @@ TwoCustomTrapezoids <- function(quantiles_list, overlay = FALSE) {
              )
   polygon(x      = x_vec,
           y      = y_vec,
-          border = border_color,
-          col    = fill_color,
-          lwd    = par("lwd") * 0.75,
-          lty    = "21"
+          border = NA,
+          col    = adjustcolor(prepool_fill_color, alpha.f = if (overlay) 0.1 else 0.5)
           )
+
+  if (!(overlay)) {
+    for (use_quantile in c("25%", "50%", "75%")) {
+      segments(x0  = quantiles_list[[1]][[use_quantile]],
+               y0  = par("usr")[[4]],
+               y1  = quantiles_list[[1]][[use_quantile]],
+               col = adjustcolor(prepool_line_color, alpha.f = if (use_quantile == "50%") 0.9 else 0.6),
+               lwd = par("lwd") * use_lwd,
+               lty = "21"
+               )
+    }
+  }
 
   x_vec <- c(par("usr")[[2]],
              par("usr")[[2]],
@@ -524,47 +543,32 @@ TwoCustomTrapezoids <- function(quantiles_list, overlay = FALSE) {
              quantiles_list[[2]][["25%"]],
              quantiles_list[[2]][["75%"]]
              )
-
-  x_vec <- c(quantiles_list[[1]][["25%"]],
-             two_quantiles_list[[1]][["75%"]],
-             two_quantiles_list[[1]][["75%"]],
-             two_quantiles_list[[1]][["25%"]]
-             )
-  y_vec <- c(par("usr")[[4]],
-             par("usr")[[4]],
-             two_quantiles_list[[1]][["75%"]],
-             two_quantiles_list[[1]][["25%"]]
-             )
   polygon(x      = x_vec,
           y      = y_vec,
-          border = border_color,
-          col    = fill_color
+          border = NA,
+          col    = adjustcolor(postpool_fill_color, alpha.f = if (overlay) 0.1 else 0.5)
           )
 
-  x_vec <- c(par("usr")[[2]],
-             par("usr")[[2]],
-             two_quantiles_list[[2]][["25%"]],
-             two_quantiles_list[[2]][["75%"]]
-             )
-  y_vec <- c(two_quantiles_list[[2]][["75%"]],
-             two_quantiles_list[[2]][["25%"]],
-             two_quantiles_list[[2]][["25%"]],
-             two_quantiles_list[[2]][["75%"]]
-             )
-  polygon(x      = x_vec,
-          y      = y_vec,
-          border = border_color,
-          col    = fill_color
-          )
+  if (!(overlay)) {
+    for (use_quantile in c("25%", "50%", "75%")) {
+      segments(x0  = quantiles_list[[2]][[use_quantile]],
+               x1  = par("usr")[[2]],
+               y0  = quantiles_list[[2]][[use_quantile]],
+               col = adjustcolor(postpool_line_color, alpha.f = if (use_quantile == "50%") 0.9 else 0.6),
+               lwd = par("lwd") * use_lwd,
+               lty = "21"
+               )
+    }
+  }
 }
 
 
 tick_locations <- seq(-0.6, 0, by = 0.2)
-two_quantiles_list <- lapply(vec_list, function(x) quantile(x, probs = c(0.25, 0.75)))
+three_quantiles_list <- lapply(vec_list, function(x) quantile(x, probs = c(0.25, 0.5, 0.75)))
 
 UseGridFunction <- function() {
   abline(v = tick_locations, h = tick_locations, col = "gray86")
-  TwoCustomTrapezoids(two_quantiles_list)
+  TwoCustomTrapezoids(three_quantiles_list)
 }
 
 
@@ -582,8 +586,8 @@ RegressionScatter(vec_list[[1]], vec_list[[2]], same_limits = TRUE,
                   identity_line = FALSE
                   )
 
-TwoCustomTrapezoids(two_quantiles_list, overlay = TRUE)
-abline(a = 0, b = 1, col = adjustcolor("black", alpha.f = 0.4), lwd = par("lwd") * 1.25)
+TwoCustomTrapezoids(three_quantiles_list, overlay = TRUE)
+abline(a = 0, b = 1, col = adjustcolor("black", alpha.f = 0.4))
 axis(1, at = tick_locations, tcl = -0.35, mgp = c(3, 0.35, 0), lwd = par("lwd"))
 axis(2, at = tick_locations, tcl = -0.35, mgp = c(3, 0.5, 0), las = 1, lwd = par("lwd"))
 mtext(VerticalAdjust(expression("Prepool" ~ "(" * gamma * ")")),
@@ -600,8 +604,8 @@ y_density_mat <- GetDensityMat(vec_list[[2]])
 height_factor <- 1 / max(x_density_mat[, "height"], y_density_mat[, "height"])
 density_gap <- 0.25
 density_height <- 2.3
-beeswarm_spacing <- 0.375
-quantiles_lty <- c("21", "solid", "21")
+beeswarm_spacing <- 0.35
+quantiles_lty <- c("21", "21", "21")
 beeswarm_cex <- 0.2
 
 
@@ -613,7 +617,7 @@ height_scale <- height_factor * height_range
 values_vec <- x_density_mat[, "value"]
 polygon(x      = c(values_vec[[1]], values_vec, values_vec[[length(values_vec)]]),
         y      = start_pos + c(0, x_density_mat[, "height"] * height_scale, 0),
-        col    = brewer.pal(9, "Purples")[[3]],
+        col    = Palify(prepool_fill_color, fraction_pale = 0.45),
         border = NA,
         xpd    = NA
         )
@@ -627,7 +631,7 @@ for (i in seq_len(ncol(quantiles_mat))) {
            y0   = start_pos,
            y1   = start_pos + line_heights_vec[[i]],
            lty  = quantiles_lty[[i]],
-           col  = "#7c7198",
+           col  = prepool_line_color,
            lend = "butt",
            xpd  = NA
            )
@@ -647,9 +651,9 @@ points(x   = swarm_df[, "y"],
        y   = start_pos + point_radius + displacement_vec,
        cex = 0.2,
        pch = 21,
-       col = "#7c7198",
-       bg  = brewer.pal(9, "Purples")[[3]],
-       lwd = par("lwd") * 0.5,
+       col = Palify(prepool_line_color, fraction_pale = 0.1),
+       bg  = prepool_fill_color,
+       lwd = par("lwd") * 0.4,
        xpd = NA
        )
 
@@ -658,11 +662,11 @@ points(x   = swarm_df[, "y"],
 start_pos <- par("usr")[[2]] + diff(grconvertX(c(0, density_gap), from = "lines", to = "user"))
 end_pos <- start_pos + diff(grconvertX(c(0, density_gap + density_height), from = "lines", to = "user"))
 height_range <- end_pos - start_pos
-height_scale <- height_factor * height_range * 0.75
+height_scale <- height_factor * height_range * 0.8
 values_vec <- y_density_mat[, "value"]
 polygon(x      = start_pos + c(0, y_density_mat[, "height"] * height_scale, 0),
         y      = c(values_vec[[1]], values_vec, values_vec[[length(values_vec)]]),
-        col    = brewer.pal(9, "Purples")[[3]],
+        col    = Palify(postpool_fill_color, fraction_pale = 0.45),
         border = NA,
         xpd    = NA
         )
@@ -676,7 +680,7 @@ for (i in seq_len(ncol(quantiles_mat))) {
            x1   = start_pos + line_heights_vec[[i]],
            y0   = quantiles_mat[, "value"][[i]],
            lty  = quantiles_lty[[i]],
-           col  = "#7c7198",
+           col  = "#a80079",
            lend = "butt",
            xpd  = NA
            )
@@ -696,9 +700,9 @@ points(x   = start_pos + point_radius + displacement_vec,
        y   = swarm_df[, "y"],
        cex = 0.2,
        pch = 21,
-       col = "#7c7198",
-       bg  = brewer.pal(9, "Purples")[[3]],
-       lwd = par("lwd") * 0.5,
+       col = "#cc66af",
+       bg  = Palify(postpool_fill_color, fraction_pale = 0.45),
+       lwd = par("lwd") * 0.4,
        xpd = NA
        )
 
@@ -715,9 +719,9 @@ this_points_vec <- c(separation_prepooled_mat["Robust SSMD", ],
 this_points_vec <- abs(this_points_vec)
 
 pdf(file.path(output_dir, "Manuscript - Figure 6M - SSMD.pdf"),
-    width = 1.1, height = 2.1
+    width = 1.1, height = 2
     )
-old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.52, 0.5, 0.38, 0.1))
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 ComparePoints(this_points_vec, left_gap = 0.55, right_gap = 0.45,
               y_upper_limit = 2.5, group_labels = c(NA, "prepool", "postpool")
               )
@@ -747,7 +751,7 @@ manuscript_ROC_args <- list(
 pdf(file.path(output_dir, "Manuscript - Figure 6N - ROC curves.pdf"),
     width = 2, height = 2
     )
-old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.3))
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.3))
 do.call(MultiLinesROC, manuscript_ROC_args)
 par(old_par)
 dev.off()
@@ -803,7 +807,7 @@ for (variant_list in variant_list_list) {
   pdf(file.path(output_dir, paste0("ROC curve variants - ", variant_list[["file_suffix"]], ".pdf")),
       width = 2, height = 2.35
       )
-  old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.77, 0.5, 0.38, 0.3))
+  old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.77, 0.5, 0.38, 0.3))
 
   do.call(MultiLinesROC, manuscript_ROC_args)
   QuickTitle("ROC curve"); DrawSubtext()
