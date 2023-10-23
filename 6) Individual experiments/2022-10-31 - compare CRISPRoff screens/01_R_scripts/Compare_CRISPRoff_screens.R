@@ -1090,7 +1090,7 @@ pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6I - ROC curves.pdf"),
     )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.3))
 MultiLinesROC(list(new_common_ROC_CRISPRoff_df, new_common_ROC_4sg_df),
-              transparency = TRUE, use_lwd = 2.1,
+              transparency = TRUE, use_lwd = 2.2,
               use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
               y_label_line = 2.1, x_label_line = 1.7,
               middle_line = TRUE,
