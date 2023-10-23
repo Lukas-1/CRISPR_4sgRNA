@@ -132,9 +132,10 @@ ManuscriptMutationsDonutBar <- function(gRNA_numbers, main_title, donut_label) {
   donut_labels <- c(
     "Lacks a perfect-match site\nin the human genome",
     "Target sites do not\naffect any gene",
-    "Shares target genes with\nthe unmutated gRNA",
+    "Shares target genes with\nthe unmutated sgRNA",
     "Affects a new\noff-target gene"
   )
+  donut_labels <- gsub("-", "\uad", donut_labels, fixed = TRUE)
   donut_colors <- c("#DDDDDD", "#88CCEE", "#332288", "#AA4499")
 
   DonutBars(counts_vec         = SubtractFollowing(gRNA_numbers),
@@ -160,7 +161,8 @@ ManuscriptMutationsDonutBar <- function(gRNA_numbers, main_title, donut_label) {
             donut_text_font    = 1,
             title_text_size    = 1,
             text_dark_color    = "black",
-            side_space_ratio   = 0.6
+            side_space_ratio   = 0.6,
+            y_axis_mgp         = 0.375
             )
   return(invisible(NULL))
 }
@@ -173,7 +175,7 @@ pdf(file.path(manuscript_directory, paste0("E) Doughnut plot - CRISPRa library.p
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 ManuscriptMutationsDonutBar(TSS_20bp_mut_list[["gRNA_numbers"]],
                   "CRISPRa library (target: within 1000 bp of the TSS)",
-                  "Mutated\nCRISPRa\ngRNAs"
+                  "mutated\nT.gonfio\nsgRNAs"
                   )
 dev.off()
 
@@ -185,7 +187,7 @@ pdf(file.path(manuscript_directory, paste0("F) Doughnut plot - CRISPRo library.p
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 ManuscriptMutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]],
                   "CRISPRo library (target: CDS or exon)",
-                  "Mutated\nCRISPRo\ngRNAs"
+                  "mutated\nT.spiezzo\nsgRNAs"
                   )
 dev.off()
 
@@ -197,7 +199,7 @@ emf(file.path(manuscript_directory, paste0("E) Doughnut plot - CRISPRa library.e
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 ManuscriptMutationsDonutBar(TSS_20bp_mut_list[["gRNA_numbers"]], "",
-                  "Mutated\nT.gonfio\ngRNAs"
+                  "Mutated\nT.gonfio\nsgRNAs"
                   )
 dev.off()
 
@@ -208,7 +210,7 @@ emf(file.path(manuscript_directory, paste0("F) Doughnut plot - CRISPRo library.e
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
 ManuscriptMutationsDonutBar(CRISPRko_20bp_mut_list[["gRNA_numbers"]], "",
-                  "Mutated\nT.spiezzo\ngRNAs"
+                  "Mutated\nT.spiezzo\nsgRNAs"
                   )
 dev.off()
 
