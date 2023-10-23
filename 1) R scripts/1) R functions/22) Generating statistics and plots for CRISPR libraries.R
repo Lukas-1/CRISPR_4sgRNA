@@ -5220,6 +5220,7 @@ TSSHistogram <- function(distances_vec,
                          highlight_color      = brewer.pal(9, "Purples")[[2]],
                          label_range          = TRUE,
                          modality_text        = "range for CRISPRoff",
+                         x_axis_label         = "Position relative to the TSS (bp)",
                          make_plot            = TRUE,
                          use_y_max            = NULL,
                          use_title            = NULL,
@@ -5355,24 +5356,24 @@ TSSHistogram <- function(distances_vec,
                )
     }
 
-    hist(distances_vec,
-         breaks = use_breaks,
-         col    = hist_color,
-         border = NA,
-         freq   = TRUE,
-         add    = TRUE,
-         axes   = FALSE,
-         ylab   = "",
-         xpd    = NA
-         )
+    hist_results <- hist(distances_vec, breaks = use_breaks, plot = FALSE)
+    polygon_mat_list <- MakeHistogramPolygons(hist_results)
+    for (polygon_mat in polygon_mat_list) {
+      polygon(polygon_mat[, "x"],
+              polygon_mat[, "y"],
+              col    = hist_color,
+              border = NA,
+              xpd    = NA
+              )
+    }
 
     axis(1, at = x_axis_pos, labels = x_axis_labels, mgp = c(3, x_axis_mgp, 0),
          tcl = -(use_tcl), lwd = par("lwd"), gap.axis = 0.5
          )
     axis(2, mgp = c(3, y_axis_mgp, 0), tcl = -(use_tcl), las = 1, lwd = par("lwd"))
     box(bty = "l")
-    mtext("Position relative to the TSS (bp)", side = 1, line = x_label_line, cex = par("cex"))
-    mtext("Count (gRNAs)", side = 2, line = y_label_line, cex = par("cex"))
+    mtext(x_axis_label, side = 1, line = x_label_line, cex = par("cex"))
+    mtext("Count (sgRNAs)", side = 2, line = y_label_line, cex = par("cex"))
 
   }
 
