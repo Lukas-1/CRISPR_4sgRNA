@@ -313,7 +313,7 @@ reps_list_list <- lapply(c(TRUE, FALSE), function(prepooled) {
     title_line       = 3.3,
     draw_border      = TRUE,
     wex              = 0.88,
-    essential_labels = c("essential\ngenes", "non-essential\ngenes")
+    essential_labels = gsub("-", "\uad", c("essential\ngenes", "non-essential\ngenes"), fixed = TRUE)
   )
   par(old_par)
   dev.off()
@@ -324,9 +324,6 @@ reps_list_list <- lapply(c(TRUE, FALSE), function(prepooled) {
 
 separation_prepooled_mat <- SeparationMetrics(reps_list_list[[1]])
 separation_postpooled_mat <- SeparationMetrics(reps_list_list[[2]])
-
-
-
 
 
 
@@ -761,9 +758,9 @@ CombinedTemplateSwitch <- function(percentages_vec,
 
   ## Determine bar positions
   groups_vec <- rep(1:4, each = 2)
-  bar_positions <- RepositionByGroups(c(1, 1, 2, 2), gap_ratio = 1.15)
-  bar_positions <- c(scales::rescale(bar_positions, to = c(1, 3.8)),
-                     scales::rescale(bar_positions, to = c(5.2, 8))
+  bar_positions <- RepositionByGroups(c(1, 1, 2, 2), gap_ratio = 1.25)
+  bar_positions <- c(scales::rescale(bar_positions, to = c(1, 3.7)),
+                     scales::rescale(bar_positions, to = c(5.3, 8))
                      )
   num_bars <- length(bar_positions)
   bar_width <- 2/3
@@ -784,6 +781,9 @@ CombinedTemplateSwitch <- function(percentages_vec,
        axes = FALSE,
        ann  = FALSE
        )
+  segments(x0 = par("usr")[[1]], x1 = par("usr")[[2]], y0 = 0,
+           col = "gray70", xpd = NA
+           )
 
   PlotBarplotMat(rbind(1 - percentages_vec, percentages_vec),
                  colors_vec    = c(dark_color, light_color),
@@ -806,38 +806,47 @@ CombinedTemplateSwitch <- function(percentages_vec,
         cex  = par("cex")
         )
 
-  ## Draw the bar labels
-  mtext(text = rep(paste0("R", 1:2), times = 4),
-        at = bar_positions, side = 1, line = 0.3, cex = par("cex")
-        )
-  are_rep1 <- rep(c(TRUE, FALSE), times = 4)
-  segments(x0  = bar_positions[are_rep1] - 0.25,
-           x1  = bar_positions[!(are_rep1)] + 0.25,
-           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.425), from = "lines", to = "user")),
-           col = "gray50",
-           xpd = NA
-           )
-  mtext(text = c("T0", "T12"),
-        at   = tapply(bar_positions, groups_vec, mean),
-        side = 1,
-        line = 1.6,
-        cex  = par("cex")
-        )
 
-  mtext("Template switch", line = 1.75, padj = 0, cex = par("cex"))
-
+  ## Draw the top labels
+  mtext("Template switch", line = 1.6, padj = 0, cex = par("cex"))
   segments(x0  = bar_positions[c(1, 5)] - 0.25,
            x1  = bar_positions[c(4, 8)] + 0.25,
-           y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.45), from = "lines", to = "user")),
+           y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.35), from = "lines", to = "user")),
            col = "gray50",
            xpd = NA
            )
   mtext(c("prepool", "postpool"),
         at = c(mean(bar_positions[1:4]), mean(bar_positions[5:8])),
-        line = 0.6, padj = 0, cex = par("cex")
+        line = 0.525, padj = 0, cex = par("cex")
         )
 
-  box(bty = "l")
+  ## Draw the bottom labels
+  mtext(text = sapply(as.character(rep(1:2, times = 4)), VerticalAdjust),
+        at = bar_positions, side = 1, line = 0.925, cex = par("cex")
+        )
+  are_rep1 <- rep(c(TRUE, FALSE), times = 4)
+  segments(x0  = bar_positions[are_rep1] - 0.1,
+           x1  = bar_positions[!(are_rep1)] + 0.1,
+           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.725), from = "lines", to = "user")),
+           col = "gray50",
+           xpd = NA
+           )
+  mtext(text = sapply(c("T0", "end"), VerticalAdjust),
+        at   = tapply(bar_positions, groups_vec, mean),
+        side = 1,
+        line = 2.125,
+        cex  = par("cex")
+        )
+  mtext(VerticalAdjust("replicate:"), side = 1, line = 0.925, cex = par("cex"),
+        at = par("usr")[[1]] + diff(grconvertX(c(0, 1), from = "lines", to = "user")),
+        adj = 1
+        )
+  mtext(VerticalAdjust("timepoint:"), side = 1, line = 2.125, cex = par("cex"),
+        at = par("usr")[[1]] + diff(grconvertX(c(0, 1), from = "lines", to = "user")),
+        adj = 1
+        )
+
+  # box(bty = "l")
 
   return(invisible(NULL))
 }
@@ -845,9 +854,9 @@ CombinedTemplateSwitch <- function(percentages_vec,
 
 
 pdf(file.path(manuscript_dir, "Manuscript - Figure 6J - Template switch.pdf"),
-    width = 2, height = 2
+    width = 1.8, height = 2
     )
-old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.1))
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 CombinedTemplateSwitch(percent_switch_vec)
 par(old_par)
 dev.off()
