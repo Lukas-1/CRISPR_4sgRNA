@@ -400,7 +400,7 @@ MeanSwarms <- function(rep_list, group_labels = c("CRISPRoff", "T.gonfio"), ...)
            col = "black",
            xpd = NA
            )
-  mtext(text = c("essential\ngenes", "non-essential\ngenes"),
+  mtext(text = gsub("-", "\uad", c("essential\ngenes", "non-essential\ngenes"), fixed = TRUE),
         at = tapply(x_positions, rep(1:2, each = 2), mean),
         line = 0.4, padj = 0, cex = par("cex")
         )

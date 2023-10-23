@@ -302,7 +302,7 @@ reps_list <- RepEssentialViolins(
   title_line       = 3.3,
   draw_border      = TRUE,
   wex              = 0.88,
-  essential_labels = c("essential\ngenes", "non-essential\ngenes")
+  essential_labels = gsub("-", "\uad", c("essential\ngenes", "non-essential\ngenes"), fixed = TRUE)
 )
 par(old_par)
 dev.off()
