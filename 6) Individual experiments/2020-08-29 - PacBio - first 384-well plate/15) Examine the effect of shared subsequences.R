@@ -134,7 +134,7 @@ manuscript_directory <- file.path(file_output_directory, "Figures", "For the man
 
 axis_labels <- c(
   "Num_under_2kb" = "Truncated reads (< 2000 bp)",
-  "Count_all_4"   = "All 4 sgRNAs + tracRNAs correct"
+  "Count_all_4"   = "All 4 sgRNAs + tracrRNAs correct"
 )
 
 
