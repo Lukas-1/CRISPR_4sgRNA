@@ -249,9 +249,9 @@ TSS_4sg_distances_vec <- FilterDistanceByGroup(TSS_distances_df, "4sg")
 pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
               "Histogram - CRISPRoff - window around TSS.pdf"
               ),
-    width = 2.1, height = 2
+    width = 2.05, height = 2
     )
-par(cex = 0.6, lwd = 0.8,
+par(cex = 0.6, lwd = 0.7,
     mai = c(0.4, 0.6, 0.2, 0.2)
     )
 TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
@@ -269,7 +269,8 @@ TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
              x_axis_mgp           = 0.45,
              y_axis_mgp           = 0.55,
              y_label_line         = 2.7,
-             use_tcl              = 0.4
+             use_tcl              = 0.4,
+             x_axis_label         = "Position relative to the TSS"
              )
 title("T.gonfio library", cex.main = 1, font.main = 1, line = 0.5)
 dev.off()
