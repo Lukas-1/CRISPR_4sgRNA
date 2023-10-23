@@ -382,7 +382,8 @@ SetUpPercentagePlot <- function(use_columns,
                                 side_legend_x      = 1.25,
                                 side_legend_x_gap  = 0,
                                 legend_fills       = NULL,
-                                grid_lwd           = 1
+                                grid_lwd           = 1,
+                                use_brewer_pals    = c("Purples", "Blues")
                                 ) {
 
   stopifnot("column_labels_list" %in% ls(envir = globalenv()))
@@ -520,7 +521,7 @@ SetUpPercentagePlot <- function(use_columns,
          xpd    = NA
          )
 
-    colors_mat <- GetColorMat()
+    colors_mat <- GetColorMat(hue_A = use_brewer_pals[[1]], hue_B = use_brewer_pals[[2]])
     side_legend_x_gap <- diff(grconvertX(c(0, side_legend_x_gap), from = "lines", to = "npc"))
     points(x   = rep(grconvertX(x = x_start - side_legend_x_gap, from = "npc", to = "user"), 2),
            y   = if (points_centered) y_pos[c(2, 5)] else y_pos[c(1, 4)],
@@ -608,7 +609,8 @@ LollipopPlot <- function(input_df,
     old_mar <- par("mar" = c(5.5, 5, 4, 8))
   }
   SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
-                      y_axis_label = "Mean percentage of reads", ...
+                      y_axis_label = "Mean percentage of reads",
+                      ...
                       )
 
   spaced_percent <- 2.5
@@ -867,6 +869,7 @@ SummaryBoxPlot <- function(input_df,
                            shift_left        = 0,
                            box_lwd           = 1.5,
                            grid_lwd          = 1,
+                           use_brewer_pals   = c("Purples", "Blues"),
                            ...
                            ) {
 
@@ -902,7 +905,6 @@ SummaryBoxPlot <- function(input_df,
     use_title <- custom_title
   }
 
-  use_brewer_pals <- c("Purples", "Blues")
   if (draw_whiskers) {
     violin_colors <- vapply(use_brewer_pals, function(x) brewer.pal(9, x)[[3]], "")
     point_colors <- vapply(use_brewer_pals, function(x) {
@@ -941,8 +943,10 @@ SummaryBoxPlot <- function(input_df,
   } else {
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         side_gap = use_side_gap, legend_pch = 22, extra_grid_lines = TRUE,
-                        legend_fills = if (sina_plot) point_colors else NULL,,
-                        grid_lwd = grid_lwd, ...
+                        legend_fills = if (sina_plot) point_colors else NULL,
+                        use_brewer_pals = use_brewer_pals,
+                        grid_lwd = grid_lwd,
+                        ...
                         )
   }
 
@@ -1046,6 +1050,7 @@ SummaryBoxPlot <- function(input_df,
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         legend_pch = 22, draw_grid = FALSE,
                         make_plot = FALSE,
+                        use_brewer_pals = use_brewer_pals,
                         legend_fills = if (sina_plot) point_colors else NULL,
                         ...
                         )
