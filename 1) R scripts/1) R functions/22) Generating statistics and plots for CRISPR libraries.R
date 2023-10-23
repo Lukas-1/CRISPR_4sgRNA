@@ -3532,7 +3532,8 @@ DonutBars <- function(use_factor         = NULL,
                       percent_max        = NULL,
                       bottom_axis        = FALSE,
                       x_axis_label_line  = 1.5,
-                      y_axis_label_line  = 2.53
+                      y_axis_label_line  = 2.53,
+                      y_axis_mgp         = 0.3
                       ) {
 
   if (is.null(counts_vec)) {
@@ -3689,7 +3690,7 @@ DonutBars <- function(use_factor         = NULL,
     axis(if (bottom_axis) 1 else 3,
          at       = actual_pos,
          labels   = paste0(pretty_pos, "%"),
-         mgp      = c(3, 0.3, 0),
+         mgp      = c(3, y_axis_mgp, 0),
          tcl      = -0.3,
          lwd      = par("lwd"),
          gap.axis = -1
@@ -4013,7 +4014,7 @@ manuscript_donut_args <- list(
   bar_text_font      = 1,
   donut_radius       = 0.28,
   donut_text_size    = 0.9,
-  donut_label        = "4sg",
+  donut_label        = "qg",
   use_mai            = c(0.4, 1, 0.4, 0.15),
   use_omi            = rep(0, 4),
   donut_inner_radius = 0.35,
@@ -4330,6 +4331,7 @@ RenameLibraries <- function(group_names, modality, line_breaks = TRUE) {
     results_vec <- sub("\n-", "", results_vec, fixed = TRUE)
     results_vec <- sub("\n", "", results_vec, fixed = TRUE)
   }
+  results_vec <- gsub("-", "\uad", results_vec, fixed = TRUE)
   return(results_vec)
 }
 
@@ -4832,7 +4834,7 @@ ManuscriptViolinBox <- function(plot_df,
   raster_array <- readPNG(temp_path)
   file.remove(temp_path)
   dev.set(PDF_device)
-  par(PDF_mar)
+  par(mar = PDF_mar)
 
   ## Prepare the final plot
   plot(1,
