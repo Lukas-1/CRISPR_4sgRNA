@@ -689,7 +689,7 @@ this_points_vec <- this_bars_vec[3:6]
 pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6H - SSMD.pdf"),
     width = 1.1, height = 2
     )
-old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.1))
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 ComparePoints(this_points_vec, left_gap = 0.55, right_gap = 0.45)
 par(old_par)
 dev.off()
@@ -1088,16 +1088,16 @@ custom_colors <- c("black", "#0664ef")
 pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6I - ROC curves.pdf"),
     width = 2, height = 2
     )
-old_par <- par(cex = 0.6, lwd = 0.8, mai = c(0.42, 0.5, 0.38, 0.3))
+old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.3))
 MultiLinesROC(list(new_common_ROC_CRISPRoff_df, new_common_ROC_4sg_df),
-              transparency = TRUE, use_lwd = 2,
+              transparency = TRUE, use_lwd = 2.1,
               use_colors = custom_colors, black_alpha = 0.6, colors_alpha = 0.7,
               y_label_line = 2.1, x_label_line = 1.7,
               middle_line = TRUE,
               legend_inside = TRUE, long_labels = FALSE,
               lines_x_start = -0.225, lines_y_start = 0.8,
               large_gap_multiplier = 1.2, small_gap_size = 0.88,
-              text_cex = 0.9, AUC_num_digits = 2
+              text_cex = 0.9, AUC_num_digits = 3
               )
 par(old_par)
 dev.off()
@@ -1110,9 +1110,9 @@ rep_list <- c(split(new_common_ROC_CRISPRoff_df[, "Mean_log2FC"], !(new_common_R
               split(new_common_ROC_4sg_df[, "Mean_log2FC"], !(new_common_ROC_4sg_df[, "Is_essential"]))
               )
 
-cairo_pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6G - violin plots.pdf"),
-          width = 1.9, height = 2
-          )
+pdf(file.path(manuscript_dir, "bioRxiv v2 - Figure 6G - violin plots.pdf"),
+    width = 1.9, height = 2
+    )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 MeanSwarms(rep_list, show_truncation = FALSE)
 par(old_par)
