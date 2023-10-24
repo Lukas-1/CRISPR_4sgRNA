@@ -2,8 +2,6 @@
 
 
 
-
-
 # Import packages and source code -----------------------------------------
 
 library("venneuler")
@@ -235,7 +233,7 @@ ThreeSetsVenn <- function(use_factor,
           use_label <- "CRISPick"
         }
         y_distance <- (par("usr")[[4]] - par("usr")[[3]]) * 0.048
-        text(x = x_pos, y = y_pos + y_distance, labels = use_label, font = 2)
+        text(x = x_pos, y = y_pos + y_distance, labels = gsub("-", "\uad", use_label, fixed = TRUE), font = 2)
         y_pos <- y_pos - y_distance
       }
       if (combo %in% names(number_table)) {
