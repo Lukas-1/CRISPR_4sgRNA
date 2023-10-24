@@ -69,7 +69,7 @@ SplitIntoPlates <- function(input_df) {
 
 ## CRISPRa
 CRISPRa_df[, "Plasmid_name"] <- paste0(CRISPRa_df[, "Gene_symbol"],
-                                       ifelse(CRISPRa_df[, "TSS_ID"] == "", "", "_"),
+                                       ifelse(nzchar(CRISPRa_df[, "TSS_ID"]), "_", ""),
                                        CRISPRa_df[, "TSS_ID"]
                                        )
 
