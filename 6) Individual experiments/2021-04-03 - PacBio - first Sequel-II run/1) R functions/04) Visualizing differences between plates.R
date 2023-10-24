@@ -11,7 +11,6 @@ library("RColorBrewer")
 
 
 
-
 # Functions for drawing swarm plots ---------------------------------------
 
 ComparePlates <- function(summary_df,

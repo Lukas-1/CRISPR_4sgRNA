@@ -2,12 +2,10 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("RColorBrewer")
 library("beeswarm")
-
 
 
 
