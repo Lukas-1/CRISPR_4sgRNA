@@ -126,7 +126,7 @@ CRISPRko_by_gene_df[["Sequence_with_primers"]] <- toupper(AddPrimers(CRISPRko_by
 
 # Parse the REBASE text file ----------------------------------------------
 
-are_field_1 <- grepl("^<1>", rebase_file_df[, 1])
+are_field_1 <- startsWith(rebase_file_df[, 1], "<1>")
 are_references_start <- rebase_file_df[, 1] == "References:"
 
 rebase_indices <- seq(from = which(are_field_1)[[1]],

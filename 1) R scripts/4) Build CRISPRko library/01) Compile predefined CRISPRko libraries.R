@@ -16,7 +16,6 @@ source(file.path(general_functions_directory, "18) Using the Broad Institute's G
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory        <- "~/CRISPR_4sgRNA"
@@ -75,7 +74,7 @@ GPP_CRISPRko_full_df <- ReadGPPOutputFiles(c(GPP_priority_CRISPRko_path, GPP_opt
 
 # Find control sgRNA sequences --------------------------------------------
 
-are_controls_Brunello <- grepl("^NO_CURRENT_", Brunello_2018_df[["Annotated Gene Symbol"]])
+are_controls_Brunello <- startsWith(Brunello_2018_df[["Annotated Gene Symbol"]], "NO_CURRENT_")
 
 
 

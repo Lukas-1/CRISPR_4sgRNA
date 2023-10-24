@@ -12,8 +12,6 @@ source(file.path(general_functions_directory, "23) Translating between Ensembl I
 
 
 
-
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
@@ -251,7 +249,7 @@ CD_mapped_df <- MapToEntrezs(symbols_vec = CD_df[["NCBI_NAME"]])
 combined_CD_df <- data.frame(CD_df, CD_mapped_df)
 
 are_to_ignore <- (CD_df[["NCBI_NAME"]] == "carbohydrate") |
-                 grepl("^see ", CD_df[["NCBI_NAME"]])
+                 startsWith(CD_df[["NCBI_NAME"]], "see ")
 
 are_ambiguous <- !(CD_mapped_df[["Entrez_source"]] %in% c(1, 3))
 

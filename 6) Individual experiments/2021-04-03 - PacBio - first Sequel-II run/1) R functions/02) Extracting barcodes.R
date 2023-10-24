@@ -3,7 +3,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("Biostrings")
@@ -148,11 +147,11 @@ ProcessBarcodesDf <- function(barcodes_df, tolerate_unexpected_barcodes = FALSE)
     column_bc <- column_bc_vec[[well_number]]
 
     contains_mat[are_this_ID, "Contains_row_barcode"]       <- grepl(row_bc, barcodes_df[["Row_barcode"]][are_this_ID], fixed = TRUE)
-    contains_mat[are_this_ID, "Starts_with_row_barcode"]    <- grepl(paste0("^", row_bc), barcodes_df[["Row_barcode"]][are_this_ID])
-    contains_mat[are_this_ID, "Ends_with_row_barcode"]      <- grepl(paste0(row_bc, "$"), barcodes_df[["Row_barcode"]][are_this_ID])
+    contains_mat[are_this_ID, "Starts_with_row_barcode"]    <- startsWith(barcodes_df[["Row_barcode"]][are_this_ID], row_bc)
+    contains_mat[are_this_ID, "Ends_with_row_barcode"]      <- endsWith(barcodes_df[["Row_barcode"]][are_this_ID], row_bc)
     contains_mat[are_this_ID, "Contains_column_barcode"]    <- grepl(column_bc, barcodes_df[["Column_barcode"]][are_this_ID], fixed = TRUE)
-    contains_mat[are_this_ID, "Starts_with_column_barcode"] <- grepl(paste0("^", column_bc), barcodes_df[["Column_barcode"]][are_this_ID])
-    contains_mat[are_this_ID, "Ends_with_column_barcode"]   <- grepl(paste0(column_bc, "$"), barcodes_df[["Column_barcode"]][are_this_ID])
+    contains_mat[are_this_ID, "Starts_with_column_barcode"] <- startsWith(barcodes_df[["Column_barcode"]][are_this_ID], column_bc)
+    contains_mat[are_this_ID, "Ends_with_column_barcode"]   <- endsWith(barcodes_df[["Column_barcode"]][are_this_ID], column_bc)
   }
 
   message("Integrating results...")

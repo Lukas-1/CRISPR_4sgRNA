@@ -2495,7 +2495,7 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
         file_numbers <- FormatFixedWidthInteger(categorical_seq)
         for (i in categorical_seq) {
           use_column <- use_columns[[i]]
-          if (grepl("^Expected_", use_column)) {
+          if (startsWith(use_column, "Expected_")) {
             assign("delete_CRISPR_df", CRISPR_df, envir = globalenv())
             assign("delete_use_column", use_column, envir = globalenv())
             assign("delete_only_chosen", only_chosen, envir = globalenv())
@@ -4980,7 +4980,7 @@ PrepareManuscriptPlots <- function(CRISPR_df) {
                       filter_top4           = TRUE,
                       show_sublibraries     = FALSE,
                       filter_complete_genes = TRUE,
-                      use_cutoff            = if (grepl("^Minor_allele_", x)) 50 else NULL
+                      use_cutoff            = if (startsWith(x, "Minor_allele_")) 50 else NULL
                       )[["counts_mat"]]
     }, simplify = FALSE)})
 

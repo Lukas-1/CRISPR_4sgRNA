@@ -59,7 +59,7 @@ new_order <- order(
 CRISPRoff_df <- CRISPRoff_df[new_order, ]
 row.names(CRISPRoff_df) <- NULL
 
-CRISPRoff_df[, "gene"] <- ifelse(grepl("^Control_", CRISPRoff_df[, "Gene_symbol"]),
+CRISPRoff_df[, "gene"] <- ifelse(startsWith(CRISPRoff_df[, "Gene_symbol"], "Control_"),
                                  "negative_control", ""
                                  )
 

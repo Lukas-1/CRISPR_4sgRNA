@@ -162,7 +162,7 @@ table(num_transcripts_vec > 1)
 
 # Subset data / define sublibraries ---------------------------------------
 
-is_curated <- grepl("^Curated", merged_replaced_CRISPRa_df[["Source"]])
+is_curated <- startsWith(merged_replaced_CRISPRa_df[["Source"]], "Curated")
 replaced_curated_CRISPRa_df <- merged_replaced_CRISPRa_df[is_curated, ]
 
 merged_replaced_candidates_CRISPRa_df <- merged_replaced_CRISPRa_df[merged_replaced_CRISPRa_df[["Combined_ID"]] %in% candidates_CRISPRa_df[["Combined_ID"]], ]

@@ -38,8 +38,8 @@ load(file.path(s2rI_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 use_summary_df <- ccs3_df_list[["original_summary_df"]]
 
-CRISPRa_plate_numbers  <- plates_df[grepl("^HA", plates_df[, "Plate_name"]), "Plate_number"]
-CRISPRko_plate_numbers <- plates_df[grepl("^HO", plates_df[, "Plate_name"]), "Plate_number"]
+CRISPRa_plate_numbers  <- plates_df[startsWith(plates_df[, "Plate_name"], "HA"), "Plate_number"]
+CRISPRko_plate_numbers <- plates_df[startsWith(plates_df[, "Plate_name"], "HO"), "Plate_number"]
 
 CRISPRa_summary_df  <- use_summary_df[use_summary_df[, "Plate_number"] %in% CRISPRa_plate_numbers, ]
 CRISPRko_summary_df <- use_summary_df[use_summary_df[, "Plate_number"] %in% CRISPRko_plate_numbers, ]

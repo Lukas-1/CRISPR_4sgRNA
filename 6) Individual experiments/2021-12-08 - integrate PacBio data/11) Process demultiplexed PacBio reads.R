@@ -105,12 +105,12 @@ onlydel_ccs3_df_list <- SummarizeWells(onlydel_plates_analysis_list,
                                        filter_cross_plate = TRUE
                                        )
 
+
 source(file.path(R_functions_directory, "11) Creating stacked barplots for visualizing alterations.R"))
 load(file.path(s2rI_R_objects_directory, "01) Process and export plate barcodes.RData"))
 
-
-CRISPRa_plate_numbers  <- plates_df[grepl("^HA", plates_df[, "Plate_name"]), "Plate_number"]
-CRISPRko_plate_numbers <- plates_df[grepl("^HO", plates_df[, "Plate_name"]), "Plate_number"]
+CRISPRa_plate_numbers  <- plates_df[startsWith(plates_df[, "Plate_name"], "HA"), "Plate_number"]
+CRISPRko_plate_numbers <- plates_df[startsWith(plates_df[, "Plate_name"], "HO"), "Plate_number"]
 
 use_summary_df <- onlydel_ccs3_df_list[["original_summary_df"]]
 use_summary_df <- use_summary_df[use_summary_df[, "Count_total"] > 0, ]
@@ -133,13 +133,7 @@ ccs7_df_list <- ccs7_df_list[names(ccs7_df_list) != "original_summary_df"]
 
 # Summarize the median read counts ----------------------------------------
 
-load(file.path(s2rI_R_objects_directory, "01) Process and export plate barcodes.RData"))
-
 summary_df <- ccs7_df_list[["filtered_summary_df"]]
-
-CRISPRa_plate_numbers  <- plates_df[grepl("^HA", plates_df[, "Plate_name"]), "Plate_number"]
-CRISPRko_plate_numbers <- plates_df[grepl("^HO", plates_df[, "Plate_name"]), "Plate_number"]
-
 summary_df <- summary_df[summary_df[, "Plate_number"] %in% c(CRISPRa_plate_numbers, CRISPRko_plate_numbers), ]
 row.names(summary_df) <- NULL
 

@@ -15,7 +15,6 @@ source(file.path(R_functions_directory, "09) Producing heatmaps.R")) # For MakeI
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 sql2_directory           <- file.path(CRISPR_root_directory, "6) Individual experiments/2021-04-03 - PacBio - first Sequel-II run")
@@ -156,7 +155,7 @@ MakeComparisonPlot <- function(use_combined_df, use_metric) {
   alpha_hex <- substr(rgb(1, 1, 1, points_alpha), 8, 9)
   uncorrected_color <- paste0(brewer.pal(9, "Blues")[[7]], alpha_hex)
   corrected_color <- paste0(brewer.pal(9, "Purples")[[7]], alpha_hex)
-  column_colors <- ifelse(grepl("^Corrected_", colnames(numeric_mat)),
+  column_colors <- ifelse(startsWith(colnames(numeric_mat), "Corrected_"),
                           corrected_color,
                           uncorrected_color
                           )

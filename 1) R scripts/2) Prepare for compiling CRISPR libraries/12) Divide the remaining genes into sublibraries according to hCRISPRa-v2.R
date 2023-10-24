@@ -16,7 +16,6 @@ source(file.path(general_functions_directory, "24) Assigning genes to sublibrari
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory   <- "~/CRISPR_4sgRNA"
@@ -323,9 +322,9 @@ sublibrary_df[["Sublibrary"]][are_new_kinases] <- "Kinases/Phosphatases/Drug Tar
 are_membrane_proteins <- sublibrary_df[["Entrez_ID"]] %in% HPA_ensembl_membrane_df[["Consensus_entrez"]]
 
 receptor_activity_terms <- FindGOTerms("receptor activity$", fixed = FALSE)
-are_eligible_terms <- !(grepl("^negative regulation of ", receptor_activity_terms)) &
-                      !(grepl("^positive regulation of ", receptor_activity_terms)) &
-                      !(grepl("^regulation of ", receptor_activity_terms))
+are_eligible_terms <- !(startsWith(receptor_activity_terms, "negative regulation of ")) &
+                      !(startsWith(receptor_activity_terms, "positive regulation of ")) &
+                      !(startsWith(receptor_activity_terms, "regulation of "))
 receptor_activity_terms <- receptor_activity_terms[are_eligible_terms]
 
 receptor_or_transporter_terms <- c(receptor_activity_terms, "transmembrane transporter activity")
