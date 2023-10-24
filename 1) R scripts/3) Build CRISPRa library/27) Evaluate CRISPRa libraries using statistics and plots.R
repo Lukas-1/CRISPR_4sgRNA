@@ -188,11 +188,12 @@ pdf(file.path(output_plots_directory, "Manuscript", "Whole library",
     width = 2.6, height = 1.7
     )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
-new_donut_args <- list(space           = 0.3,
-                       use_mai         = c(0.05, 1, 0.4, 0.16),
-                       donut_radius    = 0.34,
-                       use_line_height = 0.72,
-                       donut_y_mid     = 0.35
+new_donut_args <- list(space             = 0.3,
+                       use_mai           = c(0.05, 1, 0.4, 0.16),
+                       donut_radius      = 0.34,
+                       use_line_height   = 0.72,
+                       donut_y_mid       = 0.35,
+                       donut_label_y_adj = 0.05
                        )
 do.call(SummaryDonutBar,
         c(manuscript_donut_args[!(names(manuscript_donut_args) %in% names(new_donut_args))],
@@ -215,11 +216,12 @@ devEMF::emf(file.path(output_plots_directory, "Manuscript", "Thesis",
             width = 3, height = 2.2, emfPlus = FALSE, coordDPI = 1500
             )
 par(cex = manuscript_cex, lwd = manuscript_lwd)
-new_donut_args <- list(space           = 0.3,
-                       use_mai         = c(0.05, 1, 0.4, 0.16),
-                       donut_radius    = 0.34,
-                       use_line_height = 0.9,
-                       donut_y_mid     = 0.35
+new_donut_args <- list(space             = 0.3,
+                       use_mai           = c(0.05, 1, 0.4, 0.16),
+                       donut_radius      = 0.34,
+                       use_line_height   = 0.9,
+                       donut_y_mid       = 0.35,
+                       donut_label_y_adj = 0.05
                        )
 do.call(SummaryDonutBar,
         c(manuscript_donut_args[!(names(manuscript_donut_args) %in% names(new_donut_args))],

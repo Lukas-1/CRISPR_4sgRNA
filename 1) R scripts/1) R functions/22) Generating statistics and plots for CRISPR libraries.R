@@ -3511,6 +3511,7 @@ DonutBars <- function(use_factor         = NULL,
                       donut_text_size    = 0.5,
                       donut_x_mid        = 0.8,
                       donut_y_mid        = 0.2,
+                      donut_label_y_adj  = 0,
                       counts_vec         = NULL,
                       use_labels         = NULL,
                       show_percentages   = TRUE,
@@ -3547,6 +3548,7 @@ DonutBars <- function(use_factor         = NULL,
       use_labels <- names(counts_vec)
     }
   }
+  use_labels <- gsub("-", "\uad", use_labels, fixed = TRUE)
 
 
   if (show_percentages) {
@@ -3675,7 +3677,7 @@ DonutBars <- function(use_factor         = NULL,
            )
 
   text(x      = donut_x_mid,
-       y      = donut_y_mid,
+       y      = donut_y_mid - diff(grconvertY(c(0, donut_label_y_adj), from = "lines", to = "user")),
        labels = donut_label,
        font   = donut_text_font,
        cex    = donut_text_size
@@ -5038,8 +5040,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
     "Expected_all22_SNP_AF_max_Kaviar"     = "Expected to hit alternate allele",
     "Minor_allele_all22_SNP_AF_max_Kaviar" = "Target minor allele",
     "Affects_any_unintended_gene"          = "Affect unintended gene",
-    "Affects_any_genes_at_other_loci"      = "Affect off-site gene",
-    "Affects_on_site_off_target"           = "Affect on-site gene",
+    "Affects_any_genes_at_other_loci"      = gsub("-", "\uad", "Affect off-site gene", fixed = TRUE),
+    "Affects_on_site_off_target"           = gsub("-", "\uad", "Affect on-site gene", fixed = TRUE),
     "Affects_on_site_protein_main_TSS"     = "On-site protein, main TSS",
     "GuideScan_specificity"                = "GuideScan specificity score",
     "CRISPOR_Doench_efficacy"              = "Efficacy score (Rule Set 2)",
