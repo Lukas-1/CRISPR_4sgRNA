@@ -126,8 +126,8 @@ stopifnot(identical(are_all_empty, have_NA_distance))
 table(FANTOM5_ann_df[["CAGE_Peak_ID"]] %in% FANTOM5_bed_df[["Peak_ID"]])
 table(FANTOM5_bed_df[["Peak_ID"]] %in% FANTOM5_ann_df[["CAGE_Peak_ID"]])
 
-any(duplicated(FANTOM5_ann_df[["CAGE_Peak_ID"]]))
-any(duplicated(FANTOM5_bed_df[["Peak_ID"]]))
+anyDuplicated(FANTOM5_ann_df[["CAGE_Peak_ID"]])
+anyDuplicated(FANTOM5_bed_df[["Peak_ID"]])
 
 
 

@@ -11,7 +11,6 @@ source(file.path(general_functions_directory, "01) Retrieving annotation data fo
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory    <- "~/CRISPR_4sgRNA"
@@ -79,12 +78,10 @@ NamesToAllCaps <- function(input_list) {
 
 
 
-
 # Convert alias_ and symbol_to_entrez_list to all capital letters ---------
 
 symbol_to_entrez_list <- ConsolidateList(NamesToAllCaps(symbol_to_entrez_list))
 alias_to_entrez_list  <- OrderEntrezsList(ConsolidateList(NamesToAllCaps(alias_to_entrez_list)))
-
 
 
 
@@ -102,11 +99,10 @@ stopifnot(identical(symbol_to_entrez_list, OrderEntrezsList(symbol_to_entrez_lis
 
 
 
-
 # Check for conflicting mappings of Entrez IDs to gene symbols ------------
 
-any(duplicated(names(entrez_to_symbol_list)))
-any(duplicated(names(NCBI_Hs_info_df[["GeneID"]])))
+anyDuplicated(names(entrez_to_symbol_list))
+anyDuplicated(names(NCBI_Hs_info_df[["GeneID"]]))
 
 unique_entrez_IDs <- unique(c(unlist(unname(symbol_to_entrez_list)), names(entrez_to_symbol_list), as.character(NCBI_Hs_info_df[["GeneID"]])))
 unique_entrez_IDs <- unique_entrez_IDs[order(as.integer(unique_entrez_IDs))]

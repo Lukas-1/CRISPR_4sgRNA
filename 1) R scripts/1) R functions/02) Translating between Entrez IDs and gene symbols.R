@@ -186,7 +186,7 @@ FilterDfEntrezSymbol <- function(gene_df, entrez_IDs, symbols_as_backup) {
   if (!(any(are_this_gene))) {
     return(NULL)
   } else {
-    if (any(duplicated(gene_df[are_this_gene, ]))) {
+    if (anyDuplicated(gene_df[are_this_gene, ])) {
       assign("delete_gene_sub_df", gene_df[are_this_gene, , drop = FALSE], envir = globalenv())
       assign("delete_gene_df",           gene_df,           envir = globalenv())
       assign("delete_are_this_gene",     are_this_gene,     envir = globalenv())

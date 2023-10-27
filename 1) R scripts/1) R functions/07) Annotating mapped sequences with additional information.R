@@ -374,7 +374,7 @@ LiftOverAndAnnotate <- function(ranges_df) {
 
   sgRNAs_lifted_over_df <- sgRNAs_lifted_over_df[sgRNAs_lifted_over_df[["width"]] == 20 , ]
 
-  if (any(duplicated(sgRNAs_lifted_over_df[["group"]]))) {
+  if (anyDuplicated(sgRNAs_lifted_over_df[["group"]])) {
     stop("Some sgRNAs mapped to multiple locations in the liftOver!")
   }
 
@@ -414,7 +414,7 @@ ReassignEntrezsByLocations <- function(confirmed_locations_df) {
     chromosomes_vec <- entrez_to_symbol_df[["Chromosome"]][match(entrezs_vec, entrez_to_symbol_df[["Entrez_ID"]])]
     correct_chromosome <- unique(ambiguous_df[["Chromosome"]][are_this_ID])
     stopifnot(length(correct_chromosome) == 1)
-    if (!(any(duplicated(chromosomes_vec))) && length(correct_chromosome == 1)) {
+    if (!(anyDuplicated(chromosomes_vec)) && length(correct_chromosome == 1)) {
       new_entrezs_vec[are_this_ID] <- entrezs_vec[[match(correct_chromosome, chromosomes_vec)]]
       assignment_vec[are_this_ID] <- "Unambiguous chromosome"
     } else {

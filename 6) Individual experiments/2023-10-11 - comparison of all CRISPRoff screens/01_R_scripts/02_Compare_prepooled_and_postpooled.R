@@ -56,7 +56,7 @@ BracketsCoords <- function(x1, y1, x2, y2, h = NULL, ticks = 0.5, curvature = 0.
     if (!is.numeric(ticks) & !is.null(ticks))
         stop("ticks must be numeric or NULL")
     if (length(ticks) > 1) {
-        if (any(duplicated(abs(ticks))))
+        if (anyDuplicated(abs(ticks)))
             stop("duplicated ticks")
     }
     xm <- mean(c(x1, x2))

@@ -39,7 +39,7 @@ FindAllSubRanges <- function(whole_length, min_length) {
 
 
 GetAllSubSequences <- function(sequences_vec, min_length = 18L) {
-  stopifnot(!(any(duplicated(sequences_vec))))
+  stopifnot(!(anyDuplicated(sequences_vec)))
   sequence_lengths <- nchar(sequences_vec)
   unique_lengths <- sort(unique(sequence_lengths))
   if (any(unique_lengths < min_length)) {

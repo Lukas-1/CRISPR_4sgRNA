@@ -268,8 +268,8 @@ sum(summaries_df[["Corrections_integrated"]][are_pool5], na.rm = TRUE)
 sum(summaries_df[["Weight"]][are_pool4], na.rm = TRUE)
 sum(summaries_df[["Weight"]][are_pool5], na.rm = TRUE)
 
-stopifnot(!(any(duplicated(summaries_df[are_pool4, "Barcode_ID"]))))
-stopifnot(!(any(duplicated(summaries_df[are_pool5, "Barcode_ID"]))))
+stopifnot(!(anyDuplicated(summaries_df[are_pool4, "Barcode_ID"])))
+stopifnot(!(anyDuplicated(summaries_df[are_pool5, "Barcode_ID"])))
 
 
 

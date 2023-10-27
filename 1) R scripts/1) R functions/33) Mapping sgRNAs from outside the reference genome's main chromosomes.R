@@ -27,7 +27,7 @@ MapUnlocatedSgRNAs <- function(CRISPR_df) {
   have_no_location <- is.na(CRISPR_df[, "Chromosome"]) &
                       (CRISPR_df[, "Is_control"] %in% "No")
   unlocated_sgRNAs <- toupper(CRISPR_df[, "sgRNA_sequence"][have_no_location])
-  # stopifnot(!(any(duplicated(unlocated_sgRNAs))))
+  # stopifnot(!(anyDuplicated(unlocated_sgRNAs)))
   original_unlocated_df <- FindSequences(unlocated_sgRNAs)
 
   ## Summarize sgRNA matches
