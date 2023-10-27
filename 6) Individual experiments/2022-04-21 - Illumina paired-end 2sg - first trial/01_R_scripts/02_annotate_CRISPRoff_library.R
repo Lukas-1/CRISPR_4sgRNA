@@ -72,7 +72,7 @@ plasmid_IDs_vec <- ifelse(num_plasmid_occurrences == 2,
                           plasmid_IDs_vec
                           )
 
-stopifnot(!(any(duplicated(plasmid_IDs_vec))))
+stopifnot(!(anyDuplicated(plasmid_IDs_vec)))
 
 CRISPRoff_df[, "Plasmid_ID"] <- gsub(",", "/", plasmid_IDs_vec, fixed = TRUE)
 

@@ -2,9 +2,6 @@
 
 
 
-
-
-
 # Define maps -------------------------------------------------------------
 
 sublibraries_short_names <- c(
@@ -247,7 +244,7 @@ AddSublibrary <- function(CRISPR_df, sublibrary_list, combine_unassigned = TRUE)
 
 AreGoodControls <- function(CRISPR_df) {
   are_controls <- CRISPR_df[["Is_control"]] == "Yes"
-  if (any(duplicated(toupper(CRISPR_df[["sgRNA_sequence"]][are_controls])))) {
+  if (anyDuplicated(toupper(CRISPR_df[["sgRNA_sequence"]][are_controls]))) {
     stop("Error: Duplicated control sgRNA sequences found!")
   }
   have_no_issues <- (CRISPR_df[["Num_0MM"]] %in% 0) &

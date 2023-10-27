@@ -378,8 +378,8 @@ TranslateENSGtoSymbol <- function(comma_separated_ENSG_vec) {
 BioMart_ENSG_to_symbol_df <- unique(BioMart_tidied_df[, c("ENSG", "Gene_symbol")])
 gencode_ENSG_to_symbol_df <- unique(gencode_df[, c("Ensembl_gene_ID", "Gene_symbol")])
 
-stopifnot(!(any(duplicated(BioMart_ENSG_to_symbol_df[["ENSG"]]))))
-stopifnot(!(any(duplicated(gencode_ENSG_to_symbol_df[["Ensembl_gene_ID"]]))))
+stopifnot(!(anyDuplicated(BioMart_ENSG_to_symbol_df[["ENSG"]])))
+stopifnot(!(anyDuplicated(gencode_ENSG_to_symbol_df[["Ensembl_gene_ID"]])))
 
 
 

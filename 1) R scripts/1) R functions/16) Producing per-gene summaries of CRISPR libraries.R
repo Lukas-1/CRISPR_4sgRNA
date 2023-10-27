@@ -3,7 +3,6 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 general_functions_directory <- "~/CRISPR_4sgRNA/1) R scripts/1) R functions"
@@ -11,7 +10,6 @@ source(file.path(general_functions_directory, "09) Constants and settings.R"))
 source(file.path(general_functions_directory, "14) Checking for identical subsequences.R"))
 source(file.path(general_functions_directory, "17) Exporting CRISPR libraries as text files.R")) # For RoundNumericColumns
 source(file.path(general_functions_directory, "20) Randomly allocating sgRNAs to plate layouts.R")) # For CRISPRkoAreTop4Mat
-
 
 
 
@@ -554,7 +552,7 @@ DifferUsingRelaxedLocations <- function(combined_IDs, strict_df, lax_df, filter_
   are_not_NA <- !(is.na(combined_IDs))
   combined_IDs <- combined_IDs[are_not_NA]
 
-  if (any(duplicated(combined_IDs))) {
+  if (anyDuplicated(combined_IDs)) {
     stop("Duplicated entries are not allowed for the 'combined_IDs' parameter!")
   }
 

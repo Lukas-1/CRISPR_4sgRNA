@@ -145,7 +145,7 @@ BioMart_gene_type_map <- c(
 anyNA(NCBI_Hs_info_df[["GeneID"]])
 table(NCBI_Hs_info_df[["type_of_gene"]])
 
-any(duplicated(NCBI_Hs_info_df[["GeneID"]]))
+anyDuplicated(NCBI_Hs_info_df[["GeneID"]])
 
 
 
@@ -188,7 +188,7 @@ BioMart_Entrez_type_only_df <- unique(BioMart_gene_type_df[!(are_NA_entrezs), c(
 colnames(BioMart_Entrez_type_only_df) <- c("NCBI_gene_ID", "Gene_type")
 rownames(BioMart_Entrez_type_only_df) <- NULL
 
-any(duplicated(BioMart_Entrez_type_only_df[["NCBI_gene_ID"]]))
+anyDuplicated(BioMart_Entrez_type_only_df[["NCBI_gene_ID"]])
 
 NCBI_IDs_char_vec <- as.character(BioMart_Entrez_type_only_df[["NCBI_gene_ID"]])
 
@@ -232,7 +232,7 @@ BioMart_ENSG_gene_type_df <- BioMart_ENSG_gene_type_df[order(BioMart_ENSG_gene_t
 colnames(BioMart_ENSG_gene_type_df) <- c("Ensembl_gene_ID", "Original_type")
 rownames(BioMart_ENSG_gene_type_df) <- NULL
 
-stopifnot(!(any(duplicated(BioMart_ENSG_gene_type_df[["Ensembl_gene_ID"]]))))
+stopifnot(!(anyDuplicated(BioMart_ENSG_gene_type_df[["Ensembl_gene_ID"]])))
 
 
 
@@ -251,7 +251,7 @@ gencode_ENSG_matches <- match(gencode_ENSG_gene_type_df[["Original_type"]],
 gencode_ENSG_gene_type_df[, "Recoded_type"] <- BioMart_gene_type_map[gencode_ENSG_matches]
 gencode_ENSG_gene_type_df <- gencode_ENSG_gene_type_df[ c(1, 3, 2)]
 
-stopifnot(!(any(duplicated(gencode_ENSG_gene_type_df[["Ensembl_gene_ID"]]))))
+stopifnot(!(anyDuplicated(gencode_ENSG_gene_type_df[["Ensembl_gene_ID"]])))
 
 
 

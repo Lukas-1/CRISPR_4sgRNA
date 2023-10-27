@@ -65,7 +65,7 @@ ReassignZMWs79to82 <- function(input_df, assignments_df, new_zmws_mat) {
 
   plate79_both_df <- input_df[are_both, ]
   new_zmw_matches <- match(plate79_both_df[, "ZMW"], new_zmws_mat[, "Plate82_ZMW"])
-  stopifnot(!(any(duplicated(new_zmw_matches))))
+  stopifnot(!(anyDuplicated(new_zmw_matches)))
   plate79_both_df[, "ZMW"] <- new_zmws_mat[new_zmw_matches, "Plate79_ZMW"]
 
   if ("Combined_ID" %in% names(input_df)) {
@@ -88,7 +88,7 @@ ReassignZMWs79to82 <- function(input_df, assignments_df, new_zmws_mat) {
     stringsAsFactors = FALSE
   )
 
-  stopifnot(!(any(duplicated(results_df[, "ZMW"]))))
+  stopifnot(!(anyDuplicated(results_df[, "ZMW"])))
   return(results_df)
 }
 

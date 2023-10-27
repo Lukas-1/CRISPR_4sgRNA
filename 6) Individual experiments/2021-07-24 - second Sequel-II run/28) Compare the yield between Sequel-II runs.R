@@ -280,7 +280,7 @@ table(s2r2_ccs_df[["Is_hifi_read"]], s2r2_ccs_df[["Passes_barcode_filters"]])
 
 # Create a combined data frame of read counts -----------------------------
 
-stopifnot(!(any(duplicated(plates_df[["Plate_number"]]))))
+stopifnot(!(anyDuplicated(plates_df[["Plate_number"]])))
 
 matches_vec <- match(s2r2_ccs7_df_list[["filtered_summary_df"]][["Plate_number"]],
                      s2r2_plates_df[["Plate_number"]]

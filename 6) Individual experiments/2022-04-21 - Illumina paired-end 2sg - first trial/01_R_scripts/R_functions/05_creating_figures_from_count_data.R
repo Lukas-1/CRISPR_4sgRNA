@@ -96,7 +96,7 @@ GetAvailableGenes <- function(entrezs_vec,
 
   stopifnot(all("CRISPRoff_df" %in% ls(envir = globalenv())))
   stopifnot(is.numeric(entrezs_vec))
-  stopifnot(!(any(duplicated(entrezs_vec))))
+  stopifnot(!(anyDuplicated(entrezs_vec)))
 
   matches_vec <- match(entrezs_vec, CRISPRoff_df[, "Entrez_ID"])
   if (verbose) {
@@ -1478,9 +1478,9 @@ DistanceToEssential <- function(logfc_df,
 
   ## Check assumptions
   stopifnot(!(anyNA(logfc_df[, "Gene_symbol"])))
-  stopifnot(!(any(duplicated(logfc_df[, "Gene_symbol"]))))
+  stopifnot(!(anyDuplicated(logfc_df[, "Gene_symbol"])))
   stopifnot(!(anyNA(use_TSS_df[, "Gene_symbol"])))
-  stopifnot(!(any(duplicated(use_TSS_df[, "Gene_symbol"]))))
+  stopifnot(!(anyDuplicated(use_TSS_df[, "Gene_symbol"])))
   stopifnot(!(anyNA(use_TSS_df[, "Chromosome"])))
 
   ## Prepare the TSS positions of essential genes

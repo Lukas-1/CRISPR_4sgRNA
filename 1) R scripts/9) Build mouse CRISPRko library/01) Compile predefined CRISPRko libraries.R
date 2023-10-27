@@ -214,7 +214,7 @@ row.names(CRISPRko_df) <- NULL
 
 # Check for multiple occurrences of the same sgRNA sequence ---------------
 
-any(duplicated(CRISPRko_df[["sgRNA_sequence"]]))
+anyDuplicated(CRISPRko_df[["sgRNA_sequence"]])
 
 
 

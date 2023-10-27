@@ -16,7 +16,6 @@ source(file.path(general_functions_directory, "24) Assigning genes to sublibrari
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory            <- "~/CRISPR_4sgRNA"
@@ -288,7 +287,7 @@ multiple_occurrences_df <- data.frame(new_hCRISPRa_v2_df, "Num_occurrences" = as
 multiple_occurrences_df <- multiple_occurrences_df[order(multiple_occurrences_df[["sgRNA_sequence"]]), ]
 multiple_occurrences_df[multiple_occurrences_df[["Num_occurrences"]] > 1, ]
 
-any(duplicated(new_Calabrese_df[["sgRNA_sequence"]]))
+anyDuplicated(new_Calabrese_df[["sgRNA_sequence"]])
 
 
 

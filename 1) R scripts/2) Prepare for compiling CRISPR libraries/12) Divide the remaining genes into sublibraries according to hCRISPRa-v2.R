@@ -81,7 +81,7 @@ colnames(hC2_sublibrary_df)[colnames(hC2_sublibrary_df) == "Sublibrary"] <- "Sub
 
 hC2_sublibrary_df <- hC2_sublibrary_df[hC2_sublibrary_df[["gene"]] != "negative_control", ]
 
-if (any(duplicated(hC2_sublibrary_df[["gene"]]))) {
+if (anyDuplicated(hC2_sublibrary_df[["gene"]])) {
   stop("Duplicated symbol-sublibrary combination found!")
 }
 

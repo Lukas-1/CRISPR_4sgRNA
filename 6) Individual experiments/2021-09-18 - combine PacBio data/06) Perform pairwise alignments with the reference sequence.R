@@ -119,7 +119,7 @@ alignments_df <- rbind.data.frame(
   make.row.names = FALSE
 )
 
-stopifnot(!(any(duplicated(alignments_df[, "ZMW"]))))
+stopifnot(!(anyDuplicated(alignments_df[, "ZMW"])))
 
 
 

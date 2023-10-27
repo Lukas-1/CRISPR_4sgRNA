@@ -244,7 +244,7 @@ multiple_occurrences_df <- data.frame(new_mCRISPRa_v2_df, "Num_occurrences" = as
 multiple_occurrences_df <- multiple_occurrences_df[order(multiple_occurrences_df[["sgRNA_sequence"]]), ]
 multiple_occurrences_df[multiple_occurrences_df[["Num_occurrences"]] > 1, ]
 
-any(duplicated(new_Caprano_df[["sgRNA_sequence"]]))
+anyDuplicated(new_Caprano_df[["sgRNA_sequence"]])
 
 
 

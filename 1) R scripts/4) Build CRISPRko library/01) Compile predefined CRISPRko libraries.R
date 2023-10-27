@@ -110,7 +110,7 @@ TKOv3_df[sub("exon_", "", TKOv3_df[["TARGET EXON"]], fixed = TRUE) == "CTRL", ]
 
 # Take the updated gene symbols from the 2018 version of Brunello ---------
 
-stopifnot(!(any(duplicated(Brunello_2018_df[["sgRNA Sequence"]]))))
+stopifnot(!(anyDuplicated(Brunello_2018_df[["sgRNA Sequence"]])))
 
 Brunello_matches <- match(toupper(Brunello_df[["sgRNA Target Sequence"]]), toupper(Brunello_2018_df[["sgRNA Sequence"]]))
 Brunello_symbols_noNA <- Brunello_df[["Target Gene Symbol"]][!(is.na(Brunello_matches))]
@@ -336,7 +336,7 @@ row.names(CRISPRko_df) <- NULL
 
 # Check for multiple occurrences of the same sgRNA sequence ---------------
 
-any(duplicated(CRISPRko_df[["sgRNA_sequence"]]))
+anyDuplicated(CRISPRko_df[["sgRNA_sequence"]])
 
 
 

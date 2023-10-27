@@ -161,7 +161,7 @@ row.names(run4_alignments_df) <- NULL
 
 # Add additional columns to run4_alignments_df ----------------------------
 
-stopifnot(!(any(duplicated(ccs_df[, "ZMW"]))))
+stopifnot(!(anyDuplicated(ccs_df[, "ZMW"])))
 matches_vec <- match(run4_alignments_df[, "ZMW"], ccs_df[, "ZMW"])
 for (column_name in c("Run", "Pool", "Original_ZMW")) {
   run4_alignments_df[[column_name]] <- ccs_df[[column_name]][matches_vec]
@@ -180,7 +180,7 @@ alignments_df <- rbind.data.frame(
 )
 
 
-stopifnot(!(any(duplicated(alignments_df[, "ZMW"]))))
+stopifnot(!(anyDuplicated(alignments_df[, "ZMW"])))
 
 
 
