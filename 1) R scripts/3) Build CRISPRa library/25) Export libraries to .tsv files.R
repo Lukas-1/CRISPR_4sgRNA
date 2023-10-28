@@ -333,7 +333,7 @@ original_guide_IDs   <- do.call(paste, c(as.list(merged_replaced_CRISPRa_df[, ID
 
 original_matches <- match(randomized_guide_IDs, original_guide_IDs)
 
-if (any(is.na(original_matches))) {
+if (anyNA(original_matches)) {
   stop("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
 }
 TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]

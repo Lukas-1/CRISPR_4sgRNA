@@ -12,7 +12,6 @@ source(file.path(general_functions_directory, "30) Finding overlapping genes and
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory       <- "~/CRISPR_4sgRNA"
@@ -170,7 +169,7 @@ original_guide_IDs <- paste0(ifelse(merged_CRISPRko_df[["Is_control"]] == "Yes",
                              "__", merged_CRISPRko_df[["sgRNA_sequence"]]
                              )
 original_matches <- match(randomized_guide_IDs, original_guide_IDs)
-if (any(is.na(original_matches))) {
+if (anyNA(original_matches)) {
   stop("Not all sgRNAs in TF_sgRNA_plates_df were found in the full library!")
 }
 TF_sgRNA_original_order_df <- TF_sgRNA_plates_df[order(original_matches), ]
