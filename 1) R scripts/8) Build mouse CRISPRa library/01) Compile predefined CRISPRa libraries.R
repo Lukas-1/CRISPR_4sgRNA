@@ -16,7 +16,6 @@ source(file.path(general_functions_directory, "24) Assigning genes to sublibrari
 
 
 
-
 # Define folder paths -----------------------------------------------------
 
 CRISPR_root_directory            <- "~/CRISPR_4sgRNA"
