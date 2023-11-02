@@ -286,7 +286,7 @@ devEMF::emf(file.path(output_plots_directory, "Manuscript", "Whole library",
             width = 4.2, height = 2.2, emfPlus = FALSE
             )
 par(cex = 0.7, lwd = 0.8,
-    mai = c(0.4, 0.5, 0.2, 0.32)
+    mai = c(0.4, 0.5, 0.2, 0.34)
     )
 TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
              use_breaks           = 200,
@@ -302,7 +302,8 @@ TSSHistogram(distances_vec        = TSS_4sg_distances_vec,
              x_axis_mgp           = 0.45,
              y_axis_mgp           = 0.55,
              y_label_line         = 2.8,
-             use_tcl              = 0.4
+             use_tcl              = 0.4,
+             x_axis_label         = "Position relative to the TSS"
              )
 title("T.gonfio library", cex.main = 1, font.main = 1, line = 0.5)
 dev.off()
