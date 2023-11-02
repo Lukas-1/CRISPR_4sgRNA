@@ -36,7 +36,7 @@ sg_sequences_df <- ReformatLibrary(library_df)
 # Save data ---------------------------------------------------------------
 
 save(sg_sequences_df,
-     file = file.path(rdata_dir, "02_reformat_CRISPRa_library.RData")
+     file = file.path(rdata_dir, "04_reformat_CRISPRa_library.RData")
      )
 
 
