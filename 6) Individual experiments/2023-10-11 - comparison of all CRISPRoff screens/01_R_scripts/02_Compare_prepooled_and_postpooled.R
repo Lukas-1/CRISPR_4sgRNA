@@ -169,7 +169,7 @@ CustomBracketsInBackground <- function(group_positions, quantiles_list, use_lwd 
   segments(x0  = coords_mat[1, 1],
            x1  = group_positions[[1]],
            y0  = c(quantiles_list[[1]][["25%"]], quantiles_list[[1]][["75%"]]),
-           lty = "21",,
+           lty = "21",
            lwd = par("lwd") * 0.7,
            col = "gray80"
            )
@@ -551,8 +551,8 @@ TwoCustomTrapezoids <- function(quantiles_list, overlay = FALSE) {
 
   if (!(overlay)) {
     for (use_quantile in c("25%", "50%", "75%")) {
-      segments(x0  = quantiles_list[[2]][[use_quantile]],
-               x1  = par("usr")[[2]],
+      segments(x0  = par("usr")[[2]],
+               x1  = quantiles_list[[2]][[use_quantile]],
                y0  = quantiles_list[[2]][[use_quantile]],
                col = adjustcolor(postpool_line_color, alpha.f = if (use_quantile == "50%") 0.9 else 0.6),
                lwd = par("lwd") * use_lwd,
