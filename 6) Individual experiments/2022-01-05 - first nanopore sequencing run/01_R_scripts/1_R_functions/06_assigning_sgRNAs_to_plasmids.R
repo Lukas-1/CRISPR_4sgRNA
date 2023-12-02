@@ -196,8 +196,8 @@ Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NU
     stringsAsFactors = FALSE
   )
   if (length(sg_numbers) == 4) {
-    two_or_more_mat <- t(apply(plasmids_mat, 1, AtLeast2))
-    num_plasmids_2ormore <- apply(two_or_more_mat , 1, function(x) length(unique(x[!(is.na(x))])))
+    two_or_more_mat <- t(apply(plasmids_mat, 1, AtLeastNumGuides, num_guides = 2))
+    num_plasmids_2ormore <- apply(two_or_more_mat, 1, function(x) length(unique(x[!(is.na(x))])))
     results_df <- data.frame(
       results_df,
       "Num_plasmids_2sgs" = num_plasmids_2ormore,
@@ -246,12 +246,12 @@ GetCounts <- function(library_plasmids, reads_df, sg_numbers = 1:4) {
 
 
 
-AtLeast2 <- function(char_vec) {
+AtLeastNumGuides <- function(char_vec, num_guides) {
   input_fac <- factor(char_vec)
   num_occurrences <- tabulate(input_fac)
   matches_vec <- match(char_vec, levels(input_fac))
-  have_at_least_2 <- num_occurrences[matches_vec] > 1
-  char_vec[!(have_at_least_2)] <- NA
+  have_at_least_x <- num_occurrences[matches_vec] >= num_guides
+  char_vec[!(have_at_least_x)] <- NA
   char_vec
 }
 
@@ -260,7 +260,7 @@ AtLeast2 <- function(char_vec) {
 MakeCountsDf <- function(sg_df, mapped_df) {
 
   plasmids_mat <- as.matrix(mapped_df[, paste0("Plasmid_sg", 1:4)])
-  two_or_more_mat <- t(apply(plasmids_mat, 1, AtLeast2))
+  two_or_more_mat <- t(apply(plasmids_mat, 1, AtLeastNumGuides, num_guides = 2))
 
   have_no_switch    <- mapped_df[, "Num_template_switches"] == 0
   no_switch_all_4   <- have_no_switch & (mapped_df[, "Num_matched_sgRNAs"] == 4)
@@ -303,7 +303,8 @@ MakeCountsDf <- function(sg_df, mapped_df) {
     "Count_sg2_match_sg3" = counts_sg2_sg3_vec,
     "Count_sg3_match_sg4" = counts_sg3_sg4_vec,
     sg_sequences_df[, use_columns],
-    stringsAsFactors = FALSE
+    stringsAsFactors = FALSE,
+    row.names = NULL
   )
   return(counts_df)
 }
