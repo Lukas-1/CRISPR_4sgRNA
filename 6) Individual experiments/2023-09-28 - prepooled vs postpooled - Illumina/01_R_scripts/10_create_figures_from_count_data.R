@@ -10,17 +10,18 @@ experiments_directory    <- file.path(CRISPR_root_directory, "6) Individual expe
 first_illumina_trial_dir <- file.path(experiments_directory, "2022-04-21 - Illumina paired-end 2sg - first trial")
 first_nanopore_dir       <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
 R_functions_dir          <- file.path(first_illumina_trial_dir, "01_R_scripts", "R_functions")
+project_dir              <- file.path(experiments_directory, "2023-09-28 - prepooled vs postpooled - Illumina")
 
 source(file.path(R_functions_dir, "01_violin_swarm_plots.R"))
 source(file.path(R_functions_dir, "02_ROC_curves.R"))
 source(file.path(R_functions_dir, "05_creating_figures_from_count_data.R"))
 source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "02_creating_histograms.R"))
+source(file.path(project_dir, "01_R_scripts", "R_functions", "02_annotating_plots.R"))
 
 
 
 # Define paths ------------------------------------------------------------
 
-project_dir     <- file.path(experiments_directory, "2023-09-28 - prepooled vs postpooled - Illumina")
 rdata_dir       <- file.path(project_dir, "03_R_objects")
 figures_dir     <- file.path(project_dir, "04_output", "Figures")
 PDFs_dir        <- file.path(figures_dir, "PDFs")
@@ -252,8 +253,8 @@ for (create_PDF in c(FALSE, TRUE)) {
 
 # Draw violin plots showing the log2FC for both replicates ----------------
 
-RepEssentialViolins(1:2, 3:4, use_title = prepooled_title, lower_bound = -0.6, upper_bound = 0.2, min_count_at_baseline = 0, y_limits = c(-0.51, 0.2))
-RepEssentialViolins(5:6, 7:8, use_title = postpooled_title, lower_bound = -0.6, upper_bound = 0.2, min_count_at_baseline = 0, y_limits = c(-0.51, 0.2))
+RepEssentialViolins(1:2, 3:4, use_title = prepooled_title, lower_bound = -0.6, upper_bound = 0.2, min_count_at_baseline = 0, y_limits = c(-0.61, 0.2))
+RepEssentialViolins(5:6, 7:8, use_title = postpooled_title, lower_bound = -0.6, upper_bound = 0.2, min_count_at_baseline = 0, y_limits = c(-0.61, 0.2))
 
 
 custom_y_limits <- c(-0.6 - (0.86 * 0.02), 0.2)
@@ -500,17 +501,17 @@ columns_list <- list(
   "Pre-pooled \u2013 T12"      = columns_vec[3:4],
   "Post-pooled \u2013 T12"     = columns_vec[7:8],
 
-  "Pre-pooled \u2013 T0\u2013 replicate 1"   = columns_vec[[1]],
-  "Pre-pooled \u2013 T0\u2013 replicate 2"   = columns_vec[[2]],
-  "Post-pooled \u2013 T0\u2013 replicate 1"  = columns_vec[[5]],
-  "Post-pooled \u2013 T0\u2013 replicate 2"  = columns_vec[[6]],
-  "Pre-pooled \u2013 T12\u2013 replicate 1"  = columns_vec[[3]],
-  "Pre-pooled \u2013 T12\u2013 replicate 2"  = columns_vec[[4]],
-  "Post-pooled \u2013 T12\u2013 replicate 1" = columns_vec[[7]],
-  "Post-pooled \u2013 T12\u2013 replicate 2" = columns_vec[[8]]
+  "Pre-pooled \u2013 T0 \u2013 replicate 1"   = columns_vec[[1]],
+  "Pre-pooled \u2013 T0 \u2013 replicate 2"   = columns_vec[[2]],
+  "Post-pooled \u2013 T0 \u2013 replicate 1"  = columns_vec[[5]],
+  "Post-pooled \u2013 T0 \u2013 replicate 2"  = columns_vec[[6]],
+  "Pre-pooled \u2013 T12 \u2013 replicate 1"  = columns_vec[[3]],
+  "Pre-pooled \u2013 T12 \u2013 replicate 2"  = columns_vec[[4]],
+  "Post-pooled \u2013 T12 \u2013 replicate 1" = columns_vec[[7]],
+  "Post-pooled \u2013 T12 \u2013 replicate 2" = columns_vec[[8]]
 )
 
-DrawHistogram(counts_df[, "Sum_MaySwitch_xMM"] / 6,
+DrawHistogram(counts_df[, "Sum_MaySwitch_xMM"] / 8,
               truncation_limit = 15000,
               num_breaks = 150,
               x_axis_label = "Mean read count",
@@ -757,14 +758,10 @@ CombinedTemplateSwitch <- function(percentages_vec,
                                    ) {
 
   ## Determine bar positions
-  groups_vec <- rep(1:4, each = 2)
-  bar_positions <- RepositionByGroups(c(1, 1, 2, 2), gap_ratio = 1.25)
-  bar_positions <- c(scales::rescale(bar_positions, to = c(1, 3.7)),
-                     scales::rescale(bar_positions, to = c(5.3, 8))
-                     )
+  bar_positions <- PrepoolPostpoolBarPositions()
   num_bars <- length(bar_positions)
   bar_width <- 2/3
-  final_width <- bar_width * ((max(bar_positions) - min(bar_positions)) / (num_bars - 1))
+  # final_width <- bar_width * ((max(bar_positions) - min(bar_positions)) / (num_bars - 1))
   group_limits <- c((min(bar_positions) - 0.5) - (num_bars * 0.04),
                      max(bar_positions) + 0.5  + (num_bars * 0.04)
                     )
@@ -807,44 +804,7 @@ CombinedTemplateSwitch <- function(percentages_vec,
         )
 
 
-  ## Draw the top labels
-  mtext("Template switch", line = 1.6, padj = 0, cex = par("cex"))
-  segments(x0  = bar_positions[c(1, 5)] - 0.25,
-           x1  = bar_positions[c(4, 8)] + 0.25,
-           y0  = par("usr")[[4]] + diff(grconvertY(c(0, 0.35), from = "lines", to = "user")),
-           col = "gray50",
-           xpd = NA
-           )
-  mtext(c("prepool", "postpool"),
-        at = c(mean(bar_positions[1:4]), mean(bar_positions[5:8])),
-        line = 0.525, padj = 0, cex = par("cex")
-        )
-
-  ## Draw the bottom labels
-  mtext(text = sapply(as.character(rep(1:2, times = 4)), VerticalAdjust),
-        at = bar_positions, side = 1, line = 0.925, cex = par("cex")
-        )
-  are_rep1 <- rep(c(TRUE, FALSE), times = 4)
-  segments(x0  = bar_positions[are_rep1] - 0.1,
-           x1  = bar_positions[!(are_rep1)] + 0.1,
-           y0  = par("usr")[[3]] - diff(grconvertY(c(0, 1.725), from = "lines", to = "user")),
-           col = "gray50",
-           xpd = NA
-           )
-  mtext(text = sapply(c("T0", "end"), VerticalAdjust),
-        at   = tapply(bar_positions, groups_vec, mean),
-        side = 1,
-        line = 2.125,
-        cex  = par("cex")
-        )
-  mtext(VerticalAdjust("replicate:"), side = 1, line = 0.925, cex = par("cex"),
-        at = par("usr")[[1]] + diff(grconvertX(c(0, 1), from = "lines", to = "user")),
-        adj = 1
-        )
-  mtext(VerticalAdjust("timepoint:"), side = 1, line = 2.125, cex = par("cex"),
-        at = par("usr")[[1]] + diff(grconvertX(c(0, 1), from = "lines", to = "user")),
-        adj = 1
-        )
+  AnnotatePrepoolPostpoolPlot(top_title = "Template switch")
 
   # box(bty = "l")
 
@@ -910,8 +870,8 @@ stopifnot(identical(counts_df[, "Plasmid_ID"], logfc_prepooled_df[, "Plasmid_ID"
 stopifnot(identical(counts_df[, "Plasmid_ID"], logfc_postpooled_df[, "Plasmid_ID"]))
 
 prepooled_count_columns <- c(
-  "MaySwitch_xMM_Prepool_T0_R1", "MaySwitch_xMM_Prepool_T0_R2",
-  "MaySwitch_xMM_Prepool_T12_R2", "MaySwitch_xMM_Prepool_T12_R2"
+  "NoSwitch_xMM_Prepool_T0_R1", "NoSwitch_xMM_Prepool_T0_R2",
+  "NoSwitch_xMM_Prepool_T12_R2", "NoSwitch_xMM_Prepool_T12_R2"
 )
 prepooled_counts_df <- counts_df[, prepooled_count_columns]
 export_new_column_names <- c(

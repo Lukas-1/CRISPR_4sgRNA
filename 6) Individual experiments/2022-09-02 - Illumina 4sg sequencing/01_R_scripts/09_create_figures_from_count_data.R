@@ -1097,8 +1097,8 @@ BidirectionalViolins(bidirectional_df, logfc_4sg_df, max_distance = 20000,
 stopifnot(identical(counts_df[, "Plasmid_ID"], logfc_4sg_df[, "Plasmid_ID"]))
 
 export_count_columns <- c(
-  "MaySwitch_xMM_Tbefore_R1", "MaySwitch_xMM_Tbefore_R2",
-  "MaySwitch_xMM_T12_R1", "MaySwitch_xMM_T12_R2"
+  "NoSwitch_xMM_Tbefore_R1", "NoSwitch_xMM_Tbefore_R2",
+  "NoSwitch_xMM_T12_R1", "NoSwitch_xMM_T12_R2"
 )
 export_counts_df <- counts_df[, export_count_columns]
 export_new_column_names <- c(
