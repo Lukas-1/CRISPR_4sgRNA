@@ -47,6 +47,7 @@ DrawHistogram <- function(numeric_input,
                           truncation_limit    = NULL,
                           num_breaks          = 200L,
                           use_exact_breaks    = FALSE,
+                          breaks_range        = NULL,
                           title_text          = "",
                           x_axis_label        = "",
                           y_axis_label        = "Count",
@@ -87,18 +88,24 @@ DrawHistogram <- function(numeric_input,
     }
   }
 
-  if (!(is.null(truncation_limit))) {
+  if ((!(is.null(truncation_limit))) && (any(unlist(numeric_list) > truncation_limit))) {
+    any_truncated <- TRUE
     numeric_list <- lapply(numeric_list, function(x) {
       ifelse(x > truncation_limit,
              truncation_limit,
              x
-             )})
+             )
+    })
+  } else {
+    any_truncated <- FALSE
   }
 
   ## Calculate histogram
   if (use_exact_breaks) {
-    data_range <- range(unlist(numeric_list))
-    use_breaks <- seq(from = data_range[[1]], to = data_range[[2]], length.out = num_breaks)
+    if (is.null(breaks_range)) {
+      breaks_range <- range(unlist(numeric_list))
+    }
+    use_breaks <- seq(from = breaks_range[[1]], to = breaks_range[[2]], length.out = num_breaks)
   } else {
     use_breaks <- num_breaks
   }
@@ -190,12 +197,10 @@ DrawHistogram <- function(numeric_input,
   if (!(isFALSE(only_annotation))) {
     x_axis_ticks <- axTicks(1)
     x_axis_labels <- format(x_axis_ticks)
-    if (is.null(truncation_limit)) {
-      x_axis_labels <- format(x_axis_ticks)
-    } else {
-      x_axis_labels <- ifelse(x_axis_ticks >= truncation_limit,
+    if (any_truncated && (x_axis_ticks[[length(x_axis_ticks)]] == truncation_limit)) {
+      x_axis_labels <- ifelse(seq_along(x_axis_labels) == length(x_axis_labels),
                               as.expression(bquote("" >= .(as.character(truncation_limit)))),
-                              format(x_axis_ticks)
+                              x_axis_labels
                               )
     }
 
