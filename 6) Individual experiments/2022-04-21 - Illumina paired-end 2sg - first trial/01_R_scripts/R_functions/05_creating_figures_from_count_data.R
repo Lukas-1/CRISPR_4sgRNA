@@ -314,7 +314,7 @@ RepEssentialViolins <- function(baseline_indices      = 3:4,
                                point_colors  = rep(c("#7c7198", "#5b8669"), each = 2),
                                border_colors = rep(c("#d1cddb", "#bfd4c6"), each = 2),
                                use_swarm = use_blomen_hart,
-                               cloud_alpha = 0.2, cloud_sd = 0.04,
+                               cloud_sd = 0.04,
                                ...
                                )
   if (is.null(y_axis_label)) {
@@ -2004,20 +2004,27 @@ CountBarPlot <- function(use_counts_mat,
 
   if (lollipop) {
     grid_pos <- pretty(numeric_limits, n = 30)
+    grid_color_vec <- ifelse(((grid_pos * 100) %% 10) < (10^-12), "gray88", "gray95")
     segments(x0  = par("usr")[[1]],
              x1  = par("usr")[[2]],
-             y0  = grid_pos,
-             col = ifelse(((grid_pos * 100) %% 10) < (10^-12),
-                          "gray88", "gray95"
-                          ),
+             y0  = grid_pos[-length(grid_pos)],
+             col = grid_color_vec[-length(grid_pos)],
              xpd = NA
              )
-    segments(x0  = bar_positions,
-             y0  = 0,
-             y1  = par("usr")[[4]],
-             col = stem_color,
-             xpd = NA,
-             lwd = par("lwd") * 2
+    segments(x0   = bar_positions,
+             y0   = 0,
+             y1   = par("usr")[[4]],
+             col  = stem_color,
+             xpd  = NA,
+             lend = "butt",
+             lwd  = par("lwd") * 2
+             )
+    # Re-draw the last grid line on top of the lollipop stem
+    segments(x0  = par("usr")[[1]],
+             x1  = par("usr")[[2]],
+             y0  = grid_pos[[length(grid_pos)]],
+             col = grid_color_vec[[length(grid_pos)]],
+             xpd = NA
              )
     points(x   = bar_positions,
            y   = bars_vec,
@@ -2078,7 +2085,7 @@ CountBoxPlot <- function(use_counts_mat,
   BeeViolinPlot(as.list(data.frame(numeric_mat)),
                 groups_vec    = all_timepoints_vec[are_included],
                 use_swarm     = FALSE,
-                cloud_alpha   = 0.08,
+                points_alpha  = 0.08,
                 cloud_sd      = 0.04,
                 draw_border   = TRUE,
                 violin_colors = brewer.pal(9, "Blues")[[3]],
@@ -2176,7 +2183,7 @@ GammaBoxPlot <- function(use_counts_df,
                 lower_bound   = -0.8,
                 upper_bound   = 0.4,
                 use_swarm     = use_swarm,
-                cloud_alpha   = cloud_alpha,
+                points_alpha  = cloud_alpha,
                 cloud_sd      = cloud_sd,
                 draw_border   = TRUE,
                 violin_colors = violin_colors,

@@ -247,7 +247,8 @@ SingleViolin <- function(numeric_vec,
                          line_color     = "black",
                          border_color   = line_color,
                          draw_border    = FALSE,
-                         use_lwd        = 1
+                         use_lwd        = 1,
+                         use_lend       = "butt"
                          ) {
 
   if (length(quantiles_lty) == 1) {
@@ -307,7 +308,7 @@ SingleViolin <- function(numeric_vec,
             y    = rep(lines_vec[[i]], 2),
             lty  = quantiles_lty[[i]],
             col  = line_color,
-            lend = "butt",
+            lend = use_lend,
             lwd  = use_lwd * par("lwd"),
             xpd  = NA
             )
@@ -410,20 +411,26 @@ BeeViolinPlot <- function(input_list,
                           gap_ratio       = 1.25,
                           side_gap        = 0.5,
                           right_gap       = side_gap,
-                          brewer_pals     = c("Blues", "Reds", "Purples",
-                                              "Greens", "Oranges", "Greys"
-                                              ),
+                          brewer_pals     = rep_len(c("Blues", "Reds", "Purples",
+                                                      "Greens", "Oranges", "Greys"
+                                                      ), length.out = length(input_list)
+                                                    ),
                           point_colors    = NULL,
+                          outline_colors  = NULL,
                           violin_colors   = NULL,
                           line_colors     = NULL,
                           border_colors   = NULL,
                           quantiles_lty   = c("21", "52", "21"),
                           point_cex       = 0.4,
                           use_spacing     = 0.8,
-                          swarm_method    = "swarm",
+                          custom_spacing  = NULL,
+                          swarm_method    = "compactswarm",
+                          outline_points  = FALSE,
                           sina_plot       = FALSE,
                           sina_wex_factor = 1,
                           sina_jitter     = 0.01,
+                          draw_violins    = (!(sina_plot)) || (length(input_list[[1]]) < 100),
+                          sina_pt_colors  = draw_violins,
                           mini_box        = FALSE,
                           x_limits        = NULL,
                           y_limits        = NULL,
@@ -441,7 +448,8 @@ BeeViolinPlot <- function(input_list,
                           draw_groups_n   = TRUE,
                           draw_points     = TRUE,
                           use_swarm       = TRUE,
-                          cloud_alpha     = 0.2,
+                          points_alpha    = if (sina_plot) {if (draw_violins) 0.8 else 0.4} else if (use_swarm) 1 else 0.2,
+                          outlines_alpha  = points_alpha,
                           cloud_sd        = 0.04,
                           embed_PNG       = FALSE,
                           png_res         = 900,
@@ -468,6 +476,11 @@ BeeViolinPlot <- function(input_list,
     point_colors <- vapply(brewer_pals, function(x) brewer.pal(9, x)[[7]], "")
   } else if (length(point_colors) == 1) {
     point_colors <- rep(point_colors, num_groups)
+  }
+  if (is.null(outline_colors)) {
+    outline_colors <- violin_colors
+  } else if (length(outline_colors) == 1) {
+    outline_colors <- rep(outline_colors, num_groups)
   }
   if (is.null(line_colors)) {
     line_colors <- point_colors
@@ -526,7 +539,7 @@ BeeViolinPlot <- function(input_list,
                GridFunction  = GridFunction
                )
 
-  if (!(sina_plot)) {
+  if (draw_violins) {
     for (i in seq_along(numeric_list)) {
       SingleViolin(numeric_list[[i]][are_finite_list[[i]]],
                    at            = x_positions[[i]],
@@ -544,7 +557,7 @@ BeeViolinPlot <- function(input_list,
     set.seed(1)
     if (sina_plot) {
       sina_df <- sinaplot::sinaplot(numeric_list,
-                                    col       = adjustcolor(violin_colors, alpha.f = 0.4),
+                                    col       = adjustcolor(if (sina_pt_colors) point_colors else violin_colors, alpha.f = points_alpha),
                                     plot      = FALSE,
                                     scale     = FALSE,
                                     maxwidth  = wex * sina_wex_factor,
@@ -554,52 +567,90 @@ BeeViolinPlot <- function(input_list,
       if (sina_jitter > 0) {
         x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = sina_jitter)
       }
+
+      if (outline_points) {
+        point_col_vec <- rep(adjustcolor(outline_colors, alpha.f = outlines_alpha), lengths(numeric_list))
+      } else {
+        point_col_vec <- sina_df[, "col"]
+      }
       points(x_vec + (sina_df[, "scaled"] - sina_df[, "x"]),
              sina_df[, "y"],
-             pch = 16,
-             col = sina_df[, "col"],
+             pch = if (outline_points) 21 else 16,
+             col = point_col_vec,
+             bg  = if (outline_points) sina_df[, "col"] else NA,
              cex = point_cex,
+             lwd = par("lwd") * point_cex,
              xpd = NA
              )
     } else if (use_swarm) {
-      beeswarm_df <- beeswarm::beeswarm(numeric_list,
-                                        at       = x_positions,
-                                        method   = swarm_method, #compactswarm
-                                        priority = "random",
-                                        spacing  = use_spacing,
-                                        cex      = point_cex,
-                                        col      = point_colors,
-                                        do.plot  = FALSE
-                                        )
+      for (i in seq_along(numeric_list)) {
+        if (names(input_list)[[i]] %in% names(custom_spacing)) {
+          this_spacing <- custom_spacing[[names(input_list)[[i]]]]
+        } else {
+          this_spacing <- use_spacing
+        }
+        beeswarm_df <- beeswarm::beeswarm(numeric_list[[i]],
+                                          at       = x_positions[[i]],
+                                          method   = swarm_method,
+                                          priority = "random",
+                                          spacing  = this_spacing,
+                                          cex      = point_cex,
+                                          col      = adjustcolor(point_colors[[i]], alpha.f = points_alpha),
+                                          do.plot  = FALSE
+                                          )
 
-      points(beeswarm_df[, "x"],
-             beeswarm_df[, "y"],
-             pch = 16,
-             col = beeswarm_df[, "col"],
-             cex = point_cex,
-             xpd = NA
-             )
-      if (!(is.null(text_vec))) {
-        stopifnot(length(text_vec) == nrow(beeswarm_df))
-        old_lheight <- par("lheight" = 1.3)
-        text(x      = beeswarm_df[, "x"],
-             y      = beeswarm_df[, "y"],
-             labels = text_vec,
-             col    = Darken(beeswarm_df[, "col"], factor = 1.2),
-             cex    = 0.05,
-             font   = 3,
-             xpd    = NA
-             )
-        par(old_lheight)
+        if (outline_points) {
+          point_col_vec <- rep(adjustcolor(outline_colors[[i]], alpha.f = outlines_alpha), length(numeric_list[[i]]))
+        } else {
+          point_col_vec <- beeswarm_df[, "col"]
+        }
+
+        points(beeswarm_df[, "x"],
+               beeswarm_df[, "y"],
+               pch = if (outline_points) 21 else 16,
+               col = point_col_vec,
+               bg  = if (outline_points) beeswarm_df[, "col"] else NA,
+               cex = point_cex,
+               lwd = par("lwd") * point_cex,
+               xpd = NA
+               )
+        if (!(is.null(text_vec))) {
+          this_text_vec <- text_vec[rep(seq_along(numeric_list), lengths(numeric_list)) == i]
+          stopifnot(length(this_text_vec) == nrow(beeswarm_df))
+          old_lheight <- par("lheight" = 1.3)
+          text(x      = beeswarm_df[, "x"],
+               y      = beeswarm_df[, "y"],
+               labels = this_text_vec,
+               col    = Darken(beeswarm_df[, "col"], factor = 1.2),
+               cex    = 0.05,
+               font   = 3,
+               xpd    = NA
+               )
+          par(old_lheight)
+        }
       }
 
     } else {
       x_vec <- rep(x_positions, lengths(numeric_list))
       x_vec <- x_vec + rnorm(n = length(x_vec), mean = 0, sd = cloud_sd)
-      cloud_colors <- adjustcolor(point_colors, alpha.f = cloud_alpha)
-      points(x = x_vec, y = unlist(numeric_list),
-             col = cloud_colors[rep(seq_along(numeric_list), lengths(numeric_list))],
-             cex = point_cex, pch = 16, xpd = NA
+
+      assign("delete_numeric_list", numeric_list, envir = globalenv())
+      assign("delete_foo", adjustcolor(point_colors, alpha.f = points_alpha), envir = globalenv())
+
+      fills_vec <- rep(adjustcolor(point_colors, alpha.f = points_alpha), lengths(numeric_list))
+      if (outline_points) {
+        point_col_vec <- rep(adjustcolor(outline_colors, alpha.f = outlines_alpha), lengths(numeric_list))
+      } else {
+        point_col_vec <- fills_vec
+      }
+      points(x   = x_vec,
+             y   = unlist(numeric_list),
+             col = point_col_vec,
+             bg  = if (outline_points) fills_vec else NA,
+             cex = point_cex,
+             pch = if (outline_points) 21 else 16,
+             lwd = par("lwd") * point_cex,
+             xpd = NA
              )
     }
   }
@@ -627,10 +678,10 @@ BeeViolinPlot <- function(input_list,
                lwd  = par("lwd"),
                xpd  = NA
                )
-      point_radius <- (par("cxy")[2] / pi) * par("cex")
+      point_width <- (par("cin")[[2]] / par("pin")[[1]]) * (par("usr")[[2]] - par("usr")[[1]]) * 0.5 * par("cex") * 0.375
       boxplot(input_list,
               at         = x_positions,
-              boxwex     = point_radius * 2.5,
+              boxwex     = point_width * 2.5,
               outline    = FALSE,
               names      = rep.int("", length(x_positions)),
               whisklty   = "blank",
@@ -646,13 +697,13 @@ BeeViolinPlot <- function(input_list,
       points(x    = x_positions,
              y    = vapply(input_list, median, numeric(1)),
              col  = line_colors,
-             bg   = point_colors,
+             bg   = if (identical(point_colors, line_colors)) violin_colors else point_colors,
              pch  = 23,
-             cex  = par("cex") * 0.8,
+             cex  = 0.5,
              lwd  = par("lwd") * 0.5,
              xpd  = NA
              )
-    } else {
+    } else if (!(draw_violins)) {
       for (i in seq_along(numeric_list)) {
         SingleViolin(numeric_list[[i]][are_finite_list[[i]]],
                      at            = x_positions[[i]],
