@@ -59,7 +59,7 @@ CheckGuides <- function(extract_df,
                         num_cores        = NULL
                         ) {
 
-  aligned_vec <- extracted_df[, paste0("Aligned_read_sg", sg_number)]
+  aligned_vec <- extract_df[, paste0("Aligned_read_sg", sg_number)]
   template_vec <- toupper(sg_sequences_df[, paste0("Sequence_sg", sg_number)])
 
   ## Check for sequences that match the corresponding sgRNA perfectly
@@ -69,7 +69,7 @@ CheckGuides <- function(extract_df,
                  " (", formatC(sum(are_identical) / nrow(extract_df) * 100,
                                digits = 1, format = "f"
                                ),
-                 "%) had perfect matches in extract_df."
+                 "%) had perfect matches in sg_sequences_df."
                  ))
 
   ## Check for sequences with two or more gaps in the alignment
