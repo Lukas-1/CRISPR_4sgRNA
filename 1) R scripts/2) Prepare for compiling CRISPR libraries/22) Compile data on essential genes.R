@@ -267,8 +267,8 @@ all_blomen_hart_intersect <- intersect(expanded_hart_df[["Entrez_ID"]],
 essential_datasets_list <- list(
 
     "CRISPR_common"               = list("essential" = CRISPR_common_df[["Entrez_ID"]],
-                                         "all"       = union(achilles_common_df[["Entrez_ID"]],
-                                                             achilles_depend_df[["Entrez_ID"]]
+                                         "all"       = union(CRISPR_common_df[["Entrez_ID"]],
+                                                             CRISPR_depend_df[["Entrez_ID"]]
                                                              )
                                          ),
 
