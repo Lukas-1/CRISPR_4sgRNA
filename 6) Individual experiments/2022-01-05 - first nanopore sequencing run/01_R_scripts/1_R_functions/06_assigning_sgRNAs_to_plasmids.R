@@ -25,10 +25,6 @@ Assign_gRNAs <- function(sg_df, match_df, sg_numbers = 1:4, include_columns = NU
     !(duplicated(seq_vec) | duplicated(seq_vec, fromLast = TRUE))
   }))
 
-  sg_combos_vec <- do.call(paste, c(as.list(data.frame(upper_library_mat)), sep = "_"))
-  combo_plasmids_list <- split(sg_df[, "Plasmid_ID"], sg_combos_vec)
-  combo_plasmids_vec <- vapply(combo_plasmids_list, paste0, collapse = ", ", "")
-
   message("Identifying sequences that map to more than one plasmid...")
   sequences_mat <- do.call(cbind, lapply(sg_numbers, function(x) {
     ifelse(match_df[, paste0("Num_MM_sg", x)] %in% 0,
