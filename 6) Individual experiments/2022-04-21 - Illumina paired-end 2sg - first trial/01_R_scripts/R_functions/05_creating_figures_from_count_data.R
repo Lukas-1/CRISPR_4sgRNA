@@ -45,11 +45,13 @@ GetLog2FC <- function(input_df,
                       baseline_indices     = 3:4,
                       intervention_indices = 5:6
                       ) {
+
   counts_mat <- GetCountsMat(input_df,
                              allow_switch = allow_switch,
                              allow_1MM = allow_1MM,
                              normalization_columns = c(baseline_indices, intervention_indices)
                              )
+
   if (is.null(choose_rep)) {
     baseline_counts <- rowMeans(counts_mat[, baseline_indices])
     intervention_counts <- rowMeans(counts_mat[, intervention_indices])
@@ -3163,7 +3165,9 @@ ExportResultsDf <- function(tidy_library_df, logfc_df, use_counts_df, file_path,
       make.row.names = FALSE, stringsAsFactors = FALSE
     )
   }
-  write.csv(export_df, quote = FALSE, row.names = FALSE, file = file_path)
+  write.table(export_df, file = file_path, sep = ",", row.names = FALSE,
+              col.names = is.null(add_first_line), quote = FALSE
+              )
   return(invisible(export_df))
 }
 
