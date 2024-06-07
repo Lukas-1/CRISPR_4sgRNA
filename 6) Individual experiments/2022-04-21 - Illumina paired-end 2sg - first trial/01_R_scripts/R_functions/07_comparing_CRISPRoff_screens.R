@@ -573,8 +573,6 @@ ComparePoints <- function(points_vec,
 
 
 
-
-
 # Functions for drawing custom scatter plots ------------------------------
 
 RegressionScatter <- function(x_vec,
@@ -672,7 +670,6 @@ RegressionScatter <- function(x_vec,
     axis(2, tcl = -0.375, mgp = c(3, 0.55, 0), las = 1, lwd = par("lwd"))
   }
   box()
-
   return(invisible(NULL))
 }
 
