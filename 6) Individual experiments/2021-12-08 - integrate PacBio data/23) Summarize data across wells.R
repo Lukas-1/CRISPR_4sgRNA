@@ -275,7 +275,8 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
                      sina_plot          = TRUE,
                      shift_left         = 0.03,
                      box_lwd            = 1.75,
-                     grid_lwd           = 0.7
+                     grid_lwd           = 0.7,
+                     draw_grid          = FALSE
                      )
       par(old_par)
       dev.off()
@@ -381,7 +382,8 @@ for (show_library in c("CRISPRa", "CRISPRo")) {
                      box_wex            = if (draw_figure == "E") 0.55 else if (draw_figure == "F") 1 else 0.6,
                      use_side_gap       = if (draw_figure == "E") 0.5 else if (draw_figure == "F") 0.8 else 0.3,
                      controls_x_gap     = if (draw_figure == "F") 0.425 else 0.35,
-                     use_brewer_pals    = c("RdPu", "Blues")
+                     use_brewer_pals    = c("RdPu", "Blues"),
+                     draw_grid          = FALSE
                      )
       par(old_par)
       dev.off()
@@ -432,7 +434,7 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
 # Create stacked bar plots for the manuscript -----------------------------
 
 for (show_library in c("CRISPRa", "CRISPRko")) {
-  file_name <- paste0("E) Stacked bar plot - ", show_library, " library.emf")
+  file_name <- paste0("E) Stacked bar plot - ", show_library, " library.pdf")
   pdf(file  = file.path(manuscript_directory, "Fig. 4", "Individual plots", file_name),
       width = 3.4, height = 1.75
       )
@@ -455,7 +457,8 @@ for (show_library in c("CRISPRa", "CRISPRko")) {
                      small_y_gap        = 1,
                      lines_x_start      = 0.7,
                      large_gap_ratio    = 1.45,
-                     use_side_gap       = 0.6
+                     use_side_gap       = 0.6,
+                     draw_grid          = FALSE
                      )
   par(old_par)
   dev.off()

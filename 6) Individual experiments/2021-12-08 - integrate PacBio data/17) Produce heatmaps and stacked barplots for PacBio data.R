@@ -195,7 +195,7 @@ for (include_promoters in c(FALSE, TRUE)) {
     old_par <- par(cex = 0.7, lwd = 0.8, mai = manuscript_mai)
     SingleSandPlot(current_summary_df,
                    top_title             = use_top_title,
-                   show_grid             = TRUE,
+                   show_grid             = FALSE,
                    consider_promoters    = include_promoters,
                    rotate_axes           = FALSE,
                    invert_x_axis         = TRUE,
@@ -294,13 +294,15 @@ for (include_promoters in c(FALSE, TRUE)) {
                 reverse_legend_order  = draw_figure == "D",
                 line_colors           = use_line_colors,
                 legend_pch            = 22,
-                lwd_multiplier        = 1.5
+                lwd_multiplier        = 1.5,
+                show_grid             = FALSE
                 )
       par(old_par)
       dev.off()
     }
   }
 }
+
 
 
 
