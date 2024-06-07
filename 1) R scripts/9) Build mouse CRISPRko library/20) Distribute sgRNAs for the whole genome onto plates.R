@@ -81,9 +81,6 @@ ExportSharedDf(shared_sgRNAs_df,
 
 
 
-
-
-
 # Export the whole-genome plate layouts -----------------------------------
 
 ExportPlates(sg4_by_gene_df,
