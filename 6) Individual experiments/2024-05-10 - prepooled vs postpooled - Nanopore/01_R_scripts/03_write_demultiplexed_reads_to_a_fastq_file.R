@@ -75,7 +75,6 @@ for (file_number in unique(chunks_df[, "File_number"])) {
                                filepath = file.path(export_dir, fastq_file_name),
                                compress = TRUE
                                )
-
 }
 
 
