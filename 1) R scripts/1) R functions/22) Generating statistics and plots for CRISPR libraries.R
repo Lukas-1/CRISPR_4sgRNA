@@ -2518,7 +2518,7 @@ UniqueSequencesBarPlots <- function(CRISPR_df) {
             PNG_file_name <- paste0(folder_name, " - ",
                                     file_numbers[[i]], ") ", use_column, ".png"
                                     )
-            png(file = file.path(folder_path, PNG_file_name),
+            png(filename = file.path(folder_path, PNG_file_name),
                 width = use_width, height = use_height, units = "in", res = 600
                 )
           }
@@ -3533,7 +3533,7 @@ DonutBars <- function(use_factor         = NULL,
                       percent_max        = NULL,
                       bottom_axis        = FALSE,
                       x_axis_label_line  = 1.5,
-                      y_axis_label_line  = 2.53,
+                      y_axis_label_line  = 2.4,
                       y_axis_mgp         = 0.3
                       ) {
 
@@ -4197,7 +4197,7 @@ ManuscriptAnnotate <- function(group_positions,
                                modality_on_side   = FALSE,
                                modality_on_bottom = FALSE,
                                diagonal_labels    = TRUE,
-                               y_axis_label_line  = 2.53
+                               y_axis_label_line  = 2.4
                                ) {
 
   old_lheight <- par("lheight" = 0.8)
@@ -4280,31 +4280,33 @@ ManuscriptAnnotate <- function(group_positions,
 
 
 
-ManuscriptGrid <- function(horizontal = TRUE, use_lwd = 1) {
+ManuscriptGrid <- function(horizontal = TRUE, use_lwd = 1, draw_grid = TRUE) {
   axis_ticks <- axTicks(if (horizontal) 1 else 2)
-  grid_positions <- seq(axis_ticks[[1]],
-                        axis_ticks[[length(axis_ticks)]],
-                        (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
-                        )
-  grid_colors <- ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
-  if (horizontal) {
-    segments(y0   = par("usr")[[3]],
-             y1   = par("usr")[[4]],
-             x0   = grid_positions,
-             col  = grid_colors,
-             lend = "butt",
-             lwd  = par("lwd") * use_lwd,
-             xpd  = NA
-             )
-  } else {
-    segments(x0   = par("usr")[[1]],
-             x1   = par("usr")[[2]],
-             y0   = grid_positions,
-             col  = grid_colors,
-             lend = "butt",
-             lwd  = par("lwd") * use_lwd,
-             xpd  = NA
-             )
+  if (draw_grid) {
+    grid_positions <- seq(axis_ticks[[1]],
+                          axis_ticks[[length(axis_ticks)]],
+                          (axis_ticks[[length(axis_ticks)]] - axis_ticks[[1]]) / (length(axis_ticks) - 1) / 2
+                          )
+    grid_colors <- ifelse(grid_positions %in% axis_ticks, "gray85", "gray95")
+    if (horizontal) {
+      segments(y0   = par("usr")[[3]],
+               y1   = par("usr")[[4]],
+               x0   = grid_positions,
+               col  = grid_colors,
+               lend = "butt",
+               lwd  = par("lwd") * use_lwd,
+               xpd  = NA
+               )
+    } else {
+      segments(x0   = par("usr")[[1]],
+               x1   = par("usr")[[2]],
+               y0   = grid_positions,
+               col  = grid_colors,
+               lend = "butt",
+               lwd  = par("lwd") * use_lwd,
+               xpd  = NA
+               )
+    }
   }
   return(axis_ticks)
 }
@@ -4389,7 +4391,8 @@ ManuscriptBars <- function(counts_mat,
                            CRISPRo_colors       = manuscript_CRISPRo_colors,
                            rename_libraries     = FALSE,
                            line_breaks          = TRUE,
-                           y_axis_label_line    = 2.53
+                           y_axis_label_line    = 2.45,
+                           draw_grid            = TRUE
                            ) {
 
   ## Prepare colors, percentages and labels
@@ -4501,7 +4504,7 @@ ManuscriptBars <- function(counts_mat,
        axes = FALSE,
        ann  = FALSE
        )
-  axis_ticks <- ManuscriptGrid(horizontal)
+  axis_ticks <- ManuscriptGrid(horizontal, draw_grid = draw_grid)
 
   if (space_like_boxplot) {
     if (!(lollipop)) {
@@ -4682,7 +4685,8 @@ ManuscriptViolinBox <- function(plot_df,
                                 sina_invert          = FALSE,
                                 grid_lwd             = 1,
                                 draw_whiskers        = FALSE,
-                                y_axis_label_line    = 2.53
+                                y_axis_label_line    = 2.45,
+                                draw_grid            = TRUE
                                 ) {
 
   ## Prepare colors and labels
@@ -4753,7 +4757,7 @@ ManuscriptViolinBox <- function(plot_df,
   old_par <- par(mai = use_mai, cex = use_cex, lwd = use_lwd)
   main_folder_path <- file.path(output_plots_directory, "Manuscript")
 
-  PDF_mar <- par("mar")
+  PDF_mai <- par("mai")
   PDF_device <- dev.cur()
   temp_path <- file.path(main_folder_path, "temp.png")
   temp_width  <- par("pin")[[1]]
@@ -4783,7 +4787,7 @@ ManuscriptViolinBox <- function(plot_df,
        )
 
   ## Draw the grid
-  axis_ticks <- ManuscriptGrid(horizontal, use_lwd = grid_lwd)
+  axis_ticks <- ManuscriptGrid(horizontal, use_lwd = grid_lwd, draw_grid = draw_grid)
 
   if (sina_plot) {
     if (sina_invert) {
@@ -4836,7 +4840,7 @@ ManuscriptViolinBox <- function(plot_df,
   raster_array <- readPNG(temp_path)
   file.remove(temp_path)
   dev.set(PDF_device)
-  par(mar = PDF_mar)
+  par(mai = PDF_mai)
 
   ## Prepare the final plot
   plot(1,
@@ -5030,6 +5034,7 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                                    make_EMFs        = FALSE,
                                    rename_libraries = FALSE,
                                    line_breaks      = TRUE,
+                                   draw_grid        = TRUE,
                                    ...
                                    ) {
 
@@ -5079,10 +5084,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
       }
       for (filter_genes in c(TRUE, FALSE)) {
 
-        file_number <- formatC(match(var_name, names(labels_list)),
-                               width = 2, flag = "0"
-                               )
-        file_name <- paste0(file_number, ") ", var_name)
+        file_number <- match(var_name, names(labels_list))
+        file_name <- paste0(formatC(file_number, width = 2, flag = "0"), ") ", var_name)
 
         if (var_name == "Expected_all22_SNP_AF_max_Kaviar") {
           if (SNP_as_percent) {
@@ -5152,6 +5155,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
         }
         use_mai[[1]] <- use_mai[[1]] + 0.1
 
+        main_figure_numbers <- c(1, 2, 4, 10, 11, 13, 14)
+
         if (var_name %in% names(mat_list)) {
           ManuscriptBars(mat_list[[var_name]],
                          axis_label           = labels_list[[var_name]],
@@ -5168,7 +5173,9 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                          CRISPRa_colors       = manuscript_CRISPRa_colors,
                          CRISPRo_colors       = manuscript_CRISPRo_colors,
                          rename_libraries     = rename_libraries,
-                         line_breaks          = line_breaks
+                         line_breaks          = line_breaks,
+                         draw_grid            = draw_grid,
+                         y_axis_label_line    = if (file_number %in% main_figure_numbers) 2.4 else 2.53
                          )
         } else if (var_name %in% names(df_list)) {
           ManuscriptViolinBox(df_list[[var_name]],
@@ -5186,7 +5193,8 @@ DrawAllManuscriptPlots <- function(df_mat_list,
                               rename_libraries     = rename_libraries,
                               line_breaks          = line_breaks,
                               grid_lwd             = if (make_EMFs) 0.7 else 1,
-                              y_axis_label_line    = if (make_EMFs) 2.2 else 2.53,
+                              y_axis_label_line    = if (make_EMFs) 2.2 else if (file_number %in% main_figure_numbers) 2.4 else 2.53,
+                              draw_grid            = draw_grid,
                               ...
                               )
         }
@@ -5230,7 +5238,7 @@ TSSHistogram <- function(distances_vec,
                          use_title            = NULL,
                          draw_grid            = TRUE,
                          hardcoded_x_axis     = TRUE,
-                         x_label_line         = 2.4,
+                         x_label_line         = 2.53,
                          x_axis_mgp           = 0.7,
                          y_label_line         = 3,
                          y_axis_mgp           = 0.6,
@@ -5619,7 +5627,5 @@ GetHalfLineWidth <- function(y_axis = FALSE) {
     diff(grconvertX(c(0, par("lwd") / 96), from = "inches", to = "user")) / 2
   }
 }
-
-
 
 
