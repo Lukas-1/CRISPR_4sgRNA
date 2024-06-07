@@ -425,6 +425,8 @@ SetUpPercentagePlot <- function(use_columns,
                   extra_grid_lines = extra_grid_lines,
                   grid_lwd = grid_lwd
                   )
+  } else {
+    box(bty = "l")
   }
 
   if (for_embedded_PNG) {
@@ -868,6 +870,7 @@ SummaryBoxPlot <- function(input_df,
                            sina_jitter       = TRUE,
                            shift_left        = 0,
                            box_lwd           = 1.5,
+                           draw_grid         = TRUE,
                            grid_lwd          = 1,
                            use_brewer_pals   = c("Purples", "Blues"),
                            ...
@@ -938,14 +941,14 @@ SummaryBoxPlot <- function(input_df,
     par(mar = rep(0, 4))
     SetUpPercentagePlot(use_columns, use_y_limits, NULL, side_gap = use_side_gap,
                         for_embedded_PNG = TRUE, extra_grid_lines = TRUE,
-                        grid_lwd = grid_lwd
+                        grid_lwd = grid_lwd, draw_grid = draw_grid
                         )
   } else {
     SetUpPercentagePlot(use_columns, use_y_limits, use_title, point_cex,
                         side_gap = use_side_gap, legend_pch = 22, extra_grid_lines = TRUE,
                         legend_fills = if (sina_plot) point_colors else NULL,
                         use_brewer_pals = use_brewer_pals,
-                        grid_lwd = grid_lwd,
+                        grid_lwd = grid_lwd, draw_grid = draw_grid,
                         ...
                         )
   }
@@ -1119,6 +1122,7 @@ SummaryStackedBars <- function(summary_df,
                                y_label_line       = 3,
                                x_labels_line      = 0.5,
                                use_side_gap       = 0.5,
+                               draw_grid          = FALSE,
                                grid_lwd           = 1,
                                four_colors        = c("#F9F4EC", "#DB678B", "#91C3DE", "#601A4A", NA),
                                ...
@@ -1203,7 +1207,10 @@ SummaryStackedBars <- function(summary_df,
        axes = FALSE,
        ann  = FALSE
        )
-  DrawGridlines(numeric_limits, extra_grid_lines = TRUE, grid_lwd = grid_lwd)
+
+  if (draw_grid) {
+    DrawGridlines(numeric_limits, extra_grid_lines = TRUE, grid_lwd = grid_lwd)
+  }
 
   ## Draw the title and/or sub-title
   if (!(is.null(sub_title))) {
@@ -1416,7 +1423,7 @@ ReadCountsBoxPlot <- function(summary_df,
     raster_array <- readPNG(temp_path)
     file.remove(temp_path)
     dev.set(PDF_device)
-    par(PDF_mar)
+    par(mar = PDF_mar)
 
     plot(1,
          xlim = group_limits,
@@ -1456,20 +1463,20 @@ ReadCountsBoxPlot <- function(summary_df,
 
   ## Draw the superimposed box plots
   boxplot(counts_list,
-          at         = group_positions,
-          boxwex     = 0.3,
-          outline    = FALSE,
-          names      = rep.int("", length(group_positions)),
-          whisklty   = "blank",
-          staplewex  = 0,
-          whisklwd   = 0,
-          staplelty  = 0,
-          medlwd     = par("lwd") * 2,
-          col        = light_colors,
-          border     = dark_colors,
-          add        = TRUE,
-          axes       = FALSE,
-          lwd        = par("lwd") * 1.5
+          at        = group_positions,
+          boxwex    = 0.3,
+          outline   = FALSE,
+          names     = rep.int("", length(group_positions)),
+          whisklty  = "blank",
+          staplewex = 0,
+          whisklwd  = 0,
+          staplelty = 0,
+          medlwd    = par("lwd") * 2,
+          col       = light_colors,
+          border    = dark_colors,
+          add       = TRUE,
+          axes      = FALSE,
+          lwd       = par("lwd") * 1.5
           )
 
   ## Draw the y axis and x and y axis labels

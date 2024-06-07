@@ -751,13 +751,14 @@ Plot_eCDF <- function(summary_df,
   }
 
   ## Draw the grid lines
-  light_grey <- "gray95"
-  darker_grey <- "gray88"
-  abline(v = seq(0.05, 0.95, by = 0.1), col = light_grey, lwd = par("lwd") * grid_lwd)
-  abline(h = seq(0.05, 0.95, by = 0.1), col = light_grey, lwd = par("lwd") * grid_lwd)
-  abline(v = seq(0, 1, by = 0.1), col = darker_grey, lwd = par("lwd") * grid_lwd)
-  abline(h = seq(0, 1, by = 0.1), col = darker_grey, lwd = par("lwd") * grid_lwd)
-
+  if (show_grid) {
+    light_grey <- "gray95"
+    darker_grey <- "gray88"
+    abline(v = seq(0.05, 0.95, by = 0.1), col = light_grey, lwd = par("lwd") * grid_lwd)
+    abline(h = seq(0.05, 0.95, by = 0.1), col = light_grey, lwd = par("lwd") * grid_lwd)
+    abline(v = seq(0, 1, by = 0.1), col = darker_grey, lwd = par("lwd") * grid_lwd)
+    abline(h = seq(0, 1, by = 0.1), col = darker_grey, lwd = par("lwd") * grid_lwd)
+  }
 
   ## Plot the x and y axes
   SingleSandAxes(rotate_axes, data_axis_label, fraction_axis_label, ...)

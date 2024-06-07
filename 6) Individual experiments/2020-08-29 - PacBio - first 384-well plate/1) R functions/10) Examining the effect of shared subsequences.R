@@ -79,12 +79,14 @@ PlotBySharedSubsequence <- function(summary_df,
                                     y_axis_label    = "",
                                     y_label_line    = 2.53,
                                     text_cex        = 0.9,
+                                    show_grid       = TRUE,
                                     grid_light_gray = "gray98",
                                     grid_dark_gray  = "gray94",
                                     grid_lwd        = 0.75,
                                     corr_line       = 0.75,
                                     bold_corr       = TRUE,
                                     x_axis_label    = "Length of shared subsequence",
+                                    x_label_line    = 2.3,
                                     point_cex       = 0.4,
                                     outline_points  = FALSE
                                     ) {
@@ -156,15 +158,17 @@ PlotBySharedSubsequence <- function(summary_df,
     tick_labels <- TRUE
   }
 
-  grid_locations <- seq(0, 1, 0.1)
-  grid_colors <- ifelse(grid_locations %in% tick_locations, grid_dark_gray, grid_light_gray)
-  segments(x0   = par("usr")[[1]],
-           x1   = par("usr")[[2]],
-           y0   = grid_locations,
-           col  = grid_colors,
-           lend = "butt",
-           xpd  = NA
-           )
+  if (show_grid) {
+    grid_locations <- seq(0, 1, 0.1)
+    grid_colors <- ifelse(grid_locations %in% tick_locations, grid_dark_gray, grid_light_gray)
+    segments(x0   = par("usr")[[1]],
+             x1   = par("usr")[[2]],
+             y0   = grid_locations,
+             col  = grid_colors,
+             lend = "butt",
+             xpd  = NA
+    )
+  }
 
   axis(2,
        labels   = tick_labels,
@@ -241,7 +245,7 @@ PlotBySharedSubsequence <- function(summary_df,
        xpd    = NA
        )
   text(x      = x_mid,
-       y      = par("usr")[[3]] - diff(grconvertY(c(0, 2.3), from = "lines", to = "user")),
+       y      = par("usr")[[3]] - diff(grconvertY(c(0, x_label_line), from = "lines", to = "user")),
        labels = x_axis_label,
        font   = 1,
        cex    = text_cex,
