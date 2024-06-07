@@ -45,7 +45,7 @@ SetUpBoxPlot <- function(num_groups,
     group_positions <- seq_len(num_groups)
     group_limits <- c((min(group_positions) - side_gap)  - (num_groups * 0.04),
                       max(group_positions) + right_gap  + (num_groups * 0.04)
-    )
+                      )
   }
 
   ## Determine y axis limits

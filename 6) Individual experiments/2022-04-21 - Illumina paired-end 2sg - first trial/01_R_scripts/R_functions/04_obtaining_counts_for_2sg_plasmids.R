@@ -34,7 +34,8 @@ GetCounts2sg <- function(mapped_df,
 
   sel_mapped_df <- mapped_df[are_selected, c("Plasmid_sg1", "Plasmid_sg2")]
   row.names(sel_mapped_df) <- NULL
-  counts_vec <- GetCounts(sg_sequences_df[, "Plasmid_ID"], sel_mapped_df,
+  counts_vec <- GetCounts(sg_sequences_df[, "Plasmid_ID"],
+                          sel_mapped_df,
                           sg_numbers = 1:2
                           )
   return(counts_vec)
@@ -51,8 +52,10 @@ AllSamplesCounts <- function(mapped_df, only_0MM = FALSE, no_template_switch = F
 
   sample_counts_list <- lapply(seq_along(sample_numbers), function(x) {
     message(paste0("Calculating counts for the sample: ", short_names[[x]], "..."))
-    GetCounts2sg(mapped_df, choose_sample = sample_numbers[[x]],
-                 only_0MM = only_0MM, no_template_switch = no_template_switch
+    GetCounts2sg(mapped_df,
+                 choose_sample = sample_numbers[[x]],
+                 only_0MM = only_0MM,
+                 no_template_switch = no_template_switch
                  )
   })
   results_mat <- do.call(cbind, sample_counts_list)
