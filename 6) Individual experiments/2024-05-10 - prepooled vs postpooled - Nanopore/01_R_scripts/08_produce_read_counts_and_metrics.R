@@ -1,4 +1,4 @@
-## 2023-11-04
+## 2024-06-10
 
 
 # Load packages and source code -------------------------------------------
@@ -12,16 +12,16 @@ source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "06_assign
 
 # Define paths ------------------------------------------------------------
 
-project_dir <- file.path(experiments_directory, "2023-10-05 - prepooled vs postpooled - Nanopore")
+project_dir <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
 rdata_dir <- file.path(project_dir, "03_R_objects")
 
 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "04_reformat_CRISPRa_library.RData"))
-load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__num_reads_mat.RData"))
-load(file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__nano_df.RData"))
+load(file.path(rdata_dir, "05_reformat_CRISPRa_library.RData"))
+load(file.path(rdata_dir, "07_assign_sgRNAs_to_plasmids__num_reads_mat.RData"))
+load(file.path(rdata_dir, "07_assign_sgRNAs_to_plasmids__nano_df.RData"))
 
 
 
@@ -202,6 +202,6 @@ num_all4_mapped_mat <- cbind(
 # Save data ---------------------------------------------------------------
 
 save(list = c("counts_df", "num_any_mapped_mat", "num_all4_mapped_mat"),
-     file = file.path(rdata_dir, "07_produce_read_counts_and_metrics.RData")
+     file = file.path(rdata_dir, "08_produce_read_counts_and_metrics.RData")
      )
 

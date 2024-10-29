@@ -1,4 +1,4 @@
-## 2023-10-28
+## 2023-06-09
 
 
 # Load packages and source code -------------------------------------------
@@ -14,7 +14,7 @@ source(file.path(first_illumina_trial_dir, "01_R_scripts", "R_functions", "03_di
 
 # Define paths ------------------------------------------------------------
 
-project_dir <- file.path(experiments_directory, "2023-10-05 - prepooled vs postpooled - Nanopore")
+project_dir <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
 rdata_dir <- file.path(project_dir, "03_R_objects")
 
 
@@ -36,7 +36,7 @@ sg_sequences_df <- ReformatLibrary(library_df)
 # Save data ---------------------------------------------------------------
 
 save(sg_sequences_df,
-     file = file.path(rdata_dir, "04_reformat_CRISPRa_library.RData")
+     file = file.path(rdata_dir, "05_reformat_CRISPRa_library.RData")
      )
 
 

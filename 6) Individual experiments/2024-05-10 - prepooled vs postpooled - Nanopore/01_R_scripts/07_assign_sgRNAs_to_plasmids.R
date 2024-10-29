@@ -1,4 +1,4 @@
-## 2023-11-03
+## 2024-06-10
 
 
 # Load packages and source code -------------------------------------------
@@ -14,22 +14,30 @@ source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "06_assign
 
 # Define paths ------------------------------------------------------------
 
-project_dir <- file.path(experiments_directory, "2023-10-05 - prepooled vs postpooled - Nanopore")
+project_dir <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
 rdata_dir <- file.path(project_dir, "03_R_objects")
 
 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "03_extract_aligned_sgRNAs_from_SAM_file.RData"))
-load(file.path(rdata_dir, "04_reformat_CRISPRa_library.RData"))
+load(file.path(rdata_dir, "04_extract_aligned_sgRNAs_from_SAM_file__1st_half.RData"))
+load(file.path(rdata_dir, "04_extract_aligned_sgRNAs_from_SAM_file__2nd_half.RData"))
+load(file.path(rdata_dir, "05_reformat_CRISPRa_library.RData"))
 for (i in 1:4) {
-  load(file.path(rdata_dir, paste0("05_look_up_aligned_sgRNA", i, ".RData")))
+  load(file.path(rdata_dir, paste0("06_look_up_aligned_sgRNA_", i, ".RData")))
 }
 
 
 
 # Create a combined matched_df --------------------------------------------
+
+extracted_df <- rbind.data.frame(first_half_extracted_df,
+                                 second_half_extracted_df,
+                                 make.row.names = FALSE
+                                 )
+rm(list = c("first_half_extracted_df", "second_half_extracted_df"))
+gc()
 
 matched_df_chunks <- paste0("matched_sg", 1:4, "_df")
 matched_df <- do.call(data.frame,
@@ -57,10 +65,9 @@ for (i in 1:4) {
 
 nano_df <- Assign_gRNAs(sg_sequences_df,
                         matched_df,
-                        include_columns = 2:4
+                        include_columns = c(1, 3:6)
                         )
-nano_df <- nano_df[, c(1:4, 13:ncol(nano_df))]
-
+nano_df <- nano_df[, c(1:6, 15:ncol(nano_df))]
 
 
 
@@ -88,10 +95,10 @@ num_reads_mat <- cbind(
 # Save data ---------------------------------------------------------------
 
 save(num_reads_mat,
-     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__num_reads_mat.RData")
+     file = file.path(rdata_dir, "07_assign_sgRNAs_to_plasmids__num_reads_mat.RData")
      )
 save(nano_df,
-     file = file.path(rdata_dir, "06_assign_sgRNAs_to_plasmids__nano_df.RData")
+     file = file.path(rdata_dir, "07_assign_sgRNAs_to_plasmids__nano_df.RData")
      )
 
 
