@@ -897,7 +897,6 @@ TruncateListList <- function(list_of_lists, max_items = 20L) {
 
 
 
-
 CollapseListList <- function(list_of_lists) {
   vapply(list_of_lists,
          function(x) paste0(vapply(x, paste0, collapse = ", ", ""), collapse = "; "),
@@ -1096,9 +1095,6 @@ AnalyzeGeneIDs <- function(full_df, use_column) {
 
 
 
-
-
-
 SummarizeSummaryDf <- function(summary_df) {
 
   summary_df[["Affects_intended_gene"]]       <- ifelse(summary_df[["Entrez_ID_available"]],
@@ -1175,7 +1171,6 @@ SummarizeSummaryDf <- function(summary_df) {
                                                  )
   return(summary_df)
 }
-
 
 
 
