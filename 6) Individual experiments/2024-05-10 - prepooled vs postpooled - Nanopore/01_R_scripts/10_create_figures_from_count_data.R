@@ -1,4 +1,4 @@
-### 2023-11-28
+## 2024-06-10
 
 
 # Load packages and source code -------------------------------------------
@@ -18,7 +18,7 @@ source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "02_creati
 
 # Define paths ------------------------------------------------------------
 
-project_dir     <- file.path(experiments_directory, "2023-10-05 - prepooled vs postpooled - Nanopore")
+project_dir     <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
 rdata_dir       <- file.path(project_dir, "03_R_objects")
 figures_dir     <- file.path(project_dir, "05_output", "Figures")
 PDFs_dir        <- file.path(figures_dir, "PDFs")
@@ -29,8 +29,8 @@ first_rdata_dir <- file.path(first_illumina_trial_dir, "03_R_objects")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "04_reformat_CRISPRa_library.RData"))
-load(file.path(rdata_dir, "07_produce_read_counts_and_metrics.RData"))
+load(file.path(rdata_dir, "05_reformat_CRISPRa_library.RData"))
+load(file.path(rdata_dir, "08_produce_read_counts_and_metrics.RData"))
 # load(file.path(rdata_dir, "04_assign_sgRNAs_to_plasmids_num_mapped_reads.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
@@ -532,15 +532,15 @@ for (create_PDF in c(FALSE, TRUE)) {
   for (use_title in names(columns_list)) {
     use_columns <- columns_list[[use_title]]
     DrawHistogram(rowMeans(as.matrix(counts_df[, use_columns, drop = FALSE])),
-                  truncation_limit   = 140L,
+                  truncation_limit   = 600,
                   use_exact_breaks   = TRUE,
                   num_breaks         = 71,
-                  breaks_range       = c(0, 140),
+                  breaks_range       = c(0, 600),
                   title_text         = use_title,
                   x_axis_label       = if (length(use_columns) == 1) "Read count" else "Mean read count",
                   y_axis_label       = "Number of plasmids",
-                  y_axis_limits      = c(-50, 3500),
-                  x_axis_upper_limit = 140,
+                  y_axis_limits      = c(-50, 3000),
+                  x_axis_upper_limit = 600,
                   x_axis_space       = 1 / 100
                   )
   }
@@ -782,6 +782,6 @@ save(list = c("logfc_prepooled_df", "logfc_postpooled_df",
               "ROC_prepooled_df", "ROC_postpooled_df",
               "AUC_prepooled_vec", "AUC_postpooled_vec"
               ),
-     file = file.path(rdata_dir, "09_create_figures_from_count_data.RData")
+     file = file.path(rdata_dir, "10_create_figures_from_count_data.RData")
      )
 

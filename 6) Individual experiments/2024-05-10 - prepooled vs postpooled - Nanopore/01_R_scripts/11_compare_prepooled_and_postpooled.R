@@ -1,4 +1,4 @@
-### 2023-11-29
+## 2024-06-10
 
 
 # Load packages and source code -------------------------------------------
@@ -18,7 +18,7 @@ source(file.path(R_functions_dir, "07_comparing_CRISPRoff_screens.R"))
 # Define paths ------------------------------------------------------------
 
 first_rdata_dir <- file.path(first_illumina_trial_dir, "03_R_objects")
-project_dir     <- file.path(experiments_directory, "2023-10-05 - prepooled vs postpooled - Nanopore")
+project_dir     <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
 rdata_dir       <- file.path(project_dir, "03_R_objects")
 output_dir      <- file.path(project_dir, "05_output")
 figures_dir     <- file.path(output_dir, "Figures", "Comparison prepool-postpool")
@@ -27,7 +27,7 @@ figures_dir     <- file.path(output_dir, "Figures", "Comparison prepool-postpool
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "09_create_figures_from_count_data.RData"))
+load(file.path(rdata_dir, "10_create_figures_from_count_data.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__2020Q2_gene_lists.RData"))
 load(file.path(first_rdata_dir, "05_compile_data_on_essential_genes__essential_df.RData"))
 
@@ -153,7 +153,7 @@ pdf(file.path(figures_dir, "Manuscript-style SSMD.pdf"),
     )
 old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 ComparePoints(this_points_vec, left_gap = 0.55, right_gap = 0.45,
-              y_upper_limit = 1.5, group_labels = c(NA, "prepool", "postpool")
+              y_upper_limit = 2, group_labels = c(NA, "prepool", "postpool")
               )
 par(old_par)
 dev.off()
