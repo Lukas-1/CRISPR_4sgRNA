@@ -29,7 +29,7 @@ load(file.path(rdata_dir, "04_assign_sgRNAs_to_plasmids_parts_combined.RData"))
 # Define functions --------------------------------------------------------
 
 AllSamplesCountsWithSubsampling <- function(input_df,
-                                            use_fractions   = c(1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001),
+                                            use_fractions   = c(1, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.125, 0.1, 0.075, 0.05, 0.025, 0.01, 0.005, 0.001),
                                             num_repetitions = 3
                                             ) {
 
