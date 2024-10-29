@@ -1,4 +1,4 @@
-## 2023-11-28
+## 2024-06-10
 
 
 # Load packages and source code -------------------------------------------
@@ -18,7 +18,7 @@ source(file.path(illumina_pooling_dir, "01_R_scripts", "R_functions", "02_annota
 
 # Define paths ------------------------------------------------------------
 
-project_dir <- file.path(experiments_directory, "2023-10-05 - prepooled vs postpooled - Nanopore")
+project_dir <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
 rdata_dir   <- file.path(project_dir, "03_R_objects")
 output_dir  <- file.path(project_dir, "05_output")
 
@@ -26,7 +26,7 @@ output_dir  <- file.path(project_dir, "05_output")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "07_produce_read_counts_and_metrics.RData"))
+load(file.path(rdata_dir, "08_produce_read_counts_and_metrics.RData"))
 
 
 
@@ -310,7 +310,7 @@ StackedBars(targeted_plasmids_mat[4:1,],
             legend_title_vec = c("Targeted", "plasmids"),
             bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
             y_axis_label = "Number of full reads", y_label_line = 2.4,
-            y_axis_upper_limit = 2.5 * 10^6
+            y_axis_upper_limit = 12 * 10^6
             )
 AnnotatePrepoolPostpoolPlot()
 dev.off()
@@ -392,6 +392,85 @@ CreateEMF("13) Switch rate sg3 matches sg4")
 PlotNumMatching(3, 4)
 dev.off()
 
+
+
+
+pdf(file.path(output_dir, "Figures", "Read-level metrics", "Template switches.pdf"),
+    width = 2.8, height = 2.2
+    )
+
+
+par(mai = c(0.52, 0.5, 0.38, 0.6), cex = 0.6, lwd = 0.7)
+StackedBars(num_reads_mat, legend_title_vec = c("Mapped", "sgRNAs"),
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "Number of reads", y_label_line = y_label_line
+            )
+AnnotatePrepoolPostpoolPlot()
+
+
+StackedBars(prop.table(num_1MM_mat, margin = 2) * 100, invert_colors = TRUE, show_legend = FALSE,
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "% mapped sgRNAs", y_label_line = y_label_line
+            )
+mtext("Single-base mismatch", line = 0.5, cex = par("cex"))
+AnnotatePrepoolPostpoolPlot()
+
+
+StackedBars(prop.table(num_mismatched_mat, margin = 2) * 100, legend_title_vec = c("1MM", "sgRNAs"),
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "% full reads", y_label_line = y_label_line
+            )
+AnnotatePrepoolPostpoolPlot()
+
+
+
+StackedBars(prop.table(num_switches_mat, margin = 2) * 100,
+            legend_title_vec = c("Template", "switches"),
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "% full reads", y_label_line = y_label_line
+            )
+AnnotatePrepoolPostpoolPlot()
+
+StackedBars(prop.table(targeted_plasmids_mat, margin = 2) * 100,
+            legend_title_vec = c("Targeted", "plasmids"),
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "% full reads", y_label_line = y_label_line
+            )
+AnnotatePrepoolPostpoolPlot()
+
+
+StackedBars(targeted_plasmids_mat[4:1,],
+            legend_title_vec = c("Targeted", "plasmids"),
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "Number of full reads", y_label_line = 2.4,
+            y_axis_upper_limit = 12 * 10^6
+            )
+AnnotatePrepoolPostpoolPlot()
+
+
+
+use_columns <- c("Num_0_switch_backs",  "Num_1_switch_back", "Num_2_switch_backs")
+switch_backs_mat <- t(num_all4_mapped_mat[, use_columns])
+colnames(switch_backs_mat) <- character(8)
+rownames(switch_backs_mat) <- 0:2
+StackedBars(prop.table(switch_backs_mat, margin = 2) * 100,
+            legend_title_vec = c("Switch-", "backs"),
+            bar_positions = PrepoolPostpoolBarPositions(), set_mar = FALSE, draw_box = FALSE,
+            y_axis_label = "% full reads", y_label_line = y_label_line
+            )
+AnnotatePrepoolPostpoolPlot()
+
+
+
+PlotSwitchRate(1, 2)
+PlotSwitchRate(2, 3)
+PlotSwitchRate(3, 4)
+
+PlotNumMatching(1, 2)
+PlotNumMatching(2, 3)
+PlotNumMatching(3, 4)
+
+dev.off()
 
 
 
