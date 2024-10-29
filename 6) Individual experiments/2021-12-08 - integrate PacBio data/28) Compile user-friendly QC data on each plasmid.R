@@ -37,7 +37,6 @@ load(file.path(s2rI_R_objects_directory, "11) Process demultiplexed PacBio reads
 
 
 
-
 # Select the quality control data used ------------------------------------
 
 use_summary_df <- ccs3_df_list[["original_summary_df"]]
@@ -89,6 +88,7 @@ count_columns <- c(
 perc_mat <- apply(use_summary_df[, count_columns], 2, function(x) x / use_summary_df[, "Count_total"])
 colnames(perc_mat) <- sub("^(Num|Count)", "Percent", colnames(perc_mat))
 
+
 combined_df <- data.frame(
   library_df[, library_columns],
   use_summary_df["Count_total"],
@@ -118,6 +118,9 @@ for (column_name in names(rename_columns)) {
 
 # Re-order data -----------------------------------------------------------
 
+are_controls <- grepl("Int", library_df[, "Plate_name"], fixed = TRUE)
+combined_df <- combined_df[(!are_controls), ]
+
 new_order <- order(combined_df[, "Modality"],
                    as.integer(sub("H[AO]_", "", sub("+", "", combined_df[, "Library_plate"], fixed = TRUE))),
                    combined_df[, "Library_plate"]
@@ -143,7 +146,7 @@ ExportTable(CRISPRa_df,
             file_directory = pretty_tables_directory
             )
 
-ExportTable(CRISPRko_df,
+ExportTable(CRISPRko_df[, names(CRISPRko_df) != "TSS"],
             file_name_only = "T.spiezzo (CRISPRko) QC data",
             file_directory = pretty_tables_directory
             )
