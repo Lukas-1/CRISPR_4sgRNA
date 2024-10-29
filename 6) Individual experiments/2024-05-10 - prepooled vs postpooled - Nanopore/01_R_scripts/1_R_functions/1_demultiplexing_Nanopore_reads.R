@@ -1,34 +1,4 @@
-## 2024-05-30
-
-
-# Load packages and source code -------------------------------------------
-
-CRISPR_root_directory <- "~/CRISPR_4sgRNA"
-experiments_directory <- file.path(CRISPR_root_directory, "6) Individual experiments")
-pacbio_seq_functions_directory  <- file.path(experiments_directory, "2020-08-29 - PacBio - first 384-well plate", "1) R functions")
-source(file.path(pacbio_seq_functions_directory, "02) Analyzing reads.R")) # For GetMeanQuality
-
-first_nanopore_dir <- file.path(experiments_directory, "2022-01-05 - first nanopore sequencing run")
-project_dir <- first_nanopore_dir
-source(file.path(first_nanopore_dir, "01_R_scripts", "1_R_functions", "01_aligning_reads.R"))
-rm(project_dir)
-
-
-
-# Define folder paths -----------------------------------------------------
-
-project_dir <- file.path(experiments_directory, "2024-05-10 - prepooled vs postpooled - Nanopore")
-input_dir <- file.path(project_dir, "02_input")
-rdata_dir <- file.path(project_dir, "03_R_objects")
-
-fastq_files <- list.files(file.path(input_dir, "Raw_reads"), full.names = TRUE)
-stopifnot(all(grepl(".pass.fastq.gz", fastq_files, fixed = TRUE)))
-
-
-
-# Load data ---------------------------------------------------------------
-
-load(file.path(rdata_dir, "01_prepare_barcodes.RData"))
+## 2023-10-05
 
 
 
@@ -135,7 +105,6 @@ DemultiplexReads <- function(fastq_yield) {
     trimmed_qual[are_this_replicate][are_valid] <- this_qual
   }
 
-
   message("Constructing the final data frame...")
 
   lengths_vec <- nchar(trimmed_seq)
@@ -153,40 +122,90 @@ DemultiplexReads <- function(fastq_yield) {
 }
 
 
-
-# Demultiplex reads -------------------------------------------------------
-
-chunk_size <- 7 * 10^6
-
-for (i in seq_along(fastq_files)) {
-
-  fastq_file <- fastq_files[[i]]
-
-  fastq_streamer <- ShortRead::FastqStreamer(fastq_file, n = chunk_size)
-
-  chunk_i <- 0L
-
-  message("Reading in the FASTQ reads for file ", i, " and chunk 1...")
-
-  while (length(fastq_yield_chunk <- ShortRead::yield(fastq_streamer))) {
-
-    chunk_i <- chunk_i + 1L
-
-    message("Demultiplexing ", length(fastq_yield_chunk), " reads...")
-    chunk_df <- DemultiplexReads(fastq_yield_chunk)
-
-    message("Saving demultiplexed reads for file ", i, " and chunk ", chunk_i, "...")
-    chunk_df_name <- paste0("file_", i, "_demuxed_", chunk_i, "_df")
-    assign(chunk_df_name, chunk_df, envir = globalenv())
-    save(list = chunk_df_name,
-         file = file.path(rdata_dir, paste0("02_demultiplex_reads__file_", i, "_chunk_", chunk_i, ".RData"))
-         )
-
-    if (length(fastq_yield_chunk) == chunk_size) {
-      message("\nReading in the FASTQ reads for file ", i, " and chunk ", chunk_i + 1, "...")
-    }
+RangesForChunks <- function(num_reads, chunk_size) {
+  if (missing(chunk_size)) {
+    stop("Please provide the 'chunk_size' argument!")
   }
-  message("No more reads found! Demultiplexing complete!")
+  chunk_from <- seq(from = 1, to = num_reads, by = chunk_size)
+  chunk_to <- c(chunk_from[seq_len(length(chunk_from) - 1) + 1] - 1L,
+                num_reads
+                )
+  chunk_mat <- cbind(
+    "chunk_number" = seq_along(chunk_from),
+    "from"         = chunk_from,
+    "to"           = chunk_to
+  )
+  return(chunk_mat)
+}
+
+
+
+DemultiplexFastqFiles <- function(fastq_files,
+                                  file_numbers    = NULL,
+                                  chunk_size      = 7 * 10^6,
+                                  max_num_chunks  = NULL,
+                                  start_at_chunk  = 1,
+                                  fastq_num_reads = NULL,
+                                  readerBlockSize = 1e8
+                                  ) {
+  if (is.null(file_numbers)) {
+    file_numbers <- seq_along(fastq_files)
+  } else {
+    stopifnot(length(fastq_files) == length(file_numbers))
+  }
+  for (i in file_numbers) {
+
+    fastq_file <- fastq_files[[which(file_numbers == i)]]
+
+    use_n <- chunk_size
+    if (!(is.null(max_num_chunks))) {
+      if (is.null(fastq_num_reads)) {
+        fastq_num_reads <- countFastq(fastq_file)
+      }
+      if (fastq_num_reads > (chunk_size * max_num_chunks)) {
+        ranges_mat <- RangesForChunks(fastq_num_reads, chunk_size)
+        use_chunks <- seq(from = start_at_chunk,
+                          to = min(start_at_chunk + max_num_chunks - 1,
+                                   nrow(ranges_mat)
+                                   ),
+                          by = 1
+                          )
+        use_n <- IRanges(start = ranges_mat[, "from"][use_chunks],
+                         end = ranges_mat[, "to"][use_chunks]
+                         )
+      }
+    }
+
+    fastq_streamer <- ShortRead::FastqStreamer(fastq_file, n = use_n, readerBlockSize = readerBlockSize)
+
+    chunk_i <- start_at_chunk - 1L
+
+    message("Reading in the FASTQ reads for file ", i, " and chunk ", chunk_i + 1L, "...")
+
+    while (length(fastq_yield_chunk <- ShortRead::yield(fastq_streamer))) {
+
+      chunk_i <- chunk_i + 1L
+
+      message("Demultiplexing ", length(fastq_yield_chunk), " reads...")
+      chunk_df <- DemultiplexReads(fastq_yield_chunk)
+
+      message("Saving demultiplexed reads for file ", i, " and chunk ", chunk_i, "...")
+      chunk_df_name <- paste0("file_", i, "_demuxed_", chunk_i, "_df")
+      assign(chunk_df_name, chunk_df, envir = globalenv())
+      save(list = chunk_df_name,
+           file = file.path(rdata_dir, paste0("02_demultiplex_reads__file_", i, "_chunk_", chunk_i, ".RData"))
+           )
+      rm(list = c("chunk_df_name", "chunk_df"))
+      gc()
+
+      if ((length(fastq_yield_chunk) == chunk_size) &&
+          (is.null(max_num_chunks) || (chunk_i < (start_at_chunk + max_num_chunks - 1)))
+          ) {
+        message("\nReading in the FASTQ reads for file ", i, " and chunk ", chunk_i + 1, "...")
+      }
+    }
+    message("No more reads found! Demultiplexing complete!")
+  }
 }
 
 
