@@ -381,6 +381,20 @@ dev.off()
 
 
 
+## Export source data
+ssmd_source_data_df <- data.frame(
+  "Screen" = rep(c("prepool", "postpool"), each = 2),
+  "Replicate" = rep(1:2, times = 2),
+  "Robust_SSMD" = this_points_vec
+)
+
+write.table(ssmd_source_data_df,
+            file.path(output_dir, "Manuscript - Figure 6M - SSMD - source data.tsv"),
+            row.names = FALSE, sep = "\t", quote = FALSE
+            )
+
+
+
 # Export combined ROC curves for the manuscript ---------------------------
 
 manuscript_ROC_args <- list(

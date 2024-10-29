@@ -22,7 +22,9 @@ source(file.path(project_dir, "01_R_scripts", "R_functions", "02_annotating_plot
 
 first_rdata_dir <- file.path(first_illumina_trial_dir, "03_R_objects")
 rdata_dir       <- file.path(project_dir, "03_R_objects")
-figures_dir     <- file.path(project_dir, "04_output", "Figures")
+output_dir      <- file.path(project_dir, "04_output")
+figures_dir     <- file.path(output_dir, "Figures")
+tables_dir      <- file.path(output_dir, "Tables")
 PDFs_dir        <- file.path(figures_dir, "Subsampling")
 
 
@@ -282,7 +284,7 @@ postpool_SSMD_rep2_list <- lapply(postpool_separation_mat_list, function(x) {
 # Compile results ---------------------------------------------------------
 
 subsampling_df <- data.frame(
-  "Fraction_sampled"   = rep(as.numeric(sub("% sampled", "", names(subsampled_counts_mat_list))),
+  "Percent_sampled"    = rep(as.numeric(sub("% sampled", "", names(subsampled_counts_mat_list))),
                              lengths(subsampled_counts_mat_list)
                              ),
   "Resampling_rep"     = unlist(lapply(subsampled_counts_mat_list, seq_along)),
@@ -298,6 +300,24 @@ subsampling_df <- data.frame(
   "Postpool_SSMD_rep2" = unlist(postpool_SSMD_rep2_list),
   row.names            = NULL
 )
+
+
+
+# Export data -------------------------------------------------------------
+
+export_df <- subsampling_df
+names(export_df)[[1]] <- "Fraction_sampled"
+export_df[[1]] <- export_df[[1]] / 100
+
+export_df[["Resampling_rep"]] <- letters[1:3][export_df[["Resampling_rep"]]]
+
+for (column_name in c("Prepool_SSMD_rep1", "Prepool_SSMD_rep2", "Postpool_SSMD_rep1", "Postpool_SSMD_rep2")) {
+  export_df[[column_name]] <- -(export_df[[column_name]])
+}
+
+write.table(export_df, file = file.path(tables_dir, "subsampled_ratios.csv"),
+            sep = ",", row.names = FALSE, quote = FALSE
+            )
 
 
 

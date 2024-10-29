@@ -472,14 +472,12 @@ CompareScreenBars <- function(bars_vec,
 
 
 
-
 # Prioritize plasmids included in the new CRISPRoff 2sg library -----------
 
 intersect_plasmids <- intersect(logfc_CRISPRoff_df[, "sgID"], logfc_original_df[, "sgID"])
 matches_vec <- match(logfc_original_df[, "sgID"], logfc_CRISPRoff_df[, "sgID"])
 logfc_original_df <- logfc_original_df[order(matches_vec), ]
 row.names(logfc_original_df) <- NULL
-
 
 
 
@@ -503,8 +501,6 @@ new_common_genes <- intersect(logfc_CRISPRoff_df[, "Entrez_ID"], logfc_4sg_df[, 
 
 new_non_NA_common_genes <- intersect(new_common_genes, present_CRISPRoff_genes)
 new_non_NA_common_genes <- intersect(new_non_NA_common_genes, present_4sg_genes)
-
-
 
 
 
@@ -548,7 +544,6 @@ dev.off()
 
 
 
-
 # Plot the numbers of missing plasmids at baseline ------------------------
 
 devEMF::emf(file.path(thesis_dir, "2C) Missing plasmids at baseline.emf"),
@@ -565,7 +560,6 @@ CompareScreenBars(c(num_missing_CRISPRoff[1:2], num_missing_4sg[1:2]),
                   )
 title("Absent at baseline", cex.main = 1, font.main = 1)
 dev.off()
-
 
 
 
@@ -680,8 +674,6 @@ dev.off()
 
 
 
-
-
 # Plot the separation between E and NE genes for the manuscript -----------
 
 this_points_vec <- this_bars_vec[3:6]
@@ -695,6 +687,17 @@ par(old_par)
 dev.off()
 
 
+## Export source data
+ssmd_source_data_df <- data.frame(
+  "Screen" = rep(c("CRISPRoff", "T.gonfio"), each = 2),
+  "Replicate" = rep(1:2, times = 2),
+  "Robust_SSMD" = this_points_vec
+)
+
+write.table(ssmd_source_data_df,
+            file.path(manuscript_dir, "bioRxiv v2 - Figure 6H - SSMD - source data.tsv"),
+            row.names = FALSE, sep = "\t", quote = FALSE
+            )
 
 
 
@@ -879,7 +882,6 @@ ThreeScatterPlots(logfc_4sg_df,
 dev.off()
 
 
-
 pdf(file = file.path(manuscript_dir, "Scatter plots - CRISPRoff vs. T.gonfio - replicate 2.pdf"),
     width = PDF_width, height = PDF_height
     )
@@ -954,7 +956,6 @@ for (i in 1:6) {
 
 
 
-
 # Export combined ROC curves ----------------------------------------------
 
 essential_entrezs     <- intersect(essentials_2020Q2_df[, "Entrez_ID"], non_NA_common_genes)
@@ -992,7 +993,6 @@ PlotROCDf(ROC_4sg_df, add = TRUE,
           line_color = brewer.pal(9, "Reds")[[4]]
           )
 box()
-
 
 
 
@@ -1253,7 +1253,6 @@ beeswarm(split_list, cex = 0.5, pch = 16)
 
 
 
-
 # Analyze the effect of proximity to essential genes ----------------------
 
 ## Compute distances to the nearest essential gene
@@ -1392,7 +1391,6 @@ mtext(VerticalAdjust("T.gonfio library: non-essential genes"),
       adj = 0, line = -0.05, cex = par("cex")
       )
 dev.off()
-
 
 
 

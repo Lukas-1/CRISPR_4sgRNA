@@ -603,7 +603,6 @@ PlotCountsForPlasmid("HNRNPK")
 
 
 
-
 # Create QC plots ---------------------------------------------------------
 
 ## Prepare read-level statistics
@@ -820,6 +819,21 @@ old_par <- par(cex = 0.6, lwd = 0.7, mai = c(0.42, 0.5, 0.38, 0.1))
 CombinedTemplateSwitch(percent_switch_vec)
 par(old_par)
 dev.off()
+
+
+## Export source data
+template_switch_source_df <- data.frame(
+  "Library_prep" = rep(c("prepool", "postpool"), each = 4),
+  "Timepoint"    = rep(rep(c("T0", "endpoint"), each = 2), times = 2),
+  "Replicate"    = rep(1:2, times = 4),
+  "Fraction_template_switch" = percent_switch_vec
+)
+
+write.table(template_switch_source_df,
+            file.path(manuscript_dir, "Manuscript - Figure 6J - Template switch - source data.tsv"),
+            row.names = FALSE, sep = "\t", quote = FALSE
+            )
+
 
 
 
