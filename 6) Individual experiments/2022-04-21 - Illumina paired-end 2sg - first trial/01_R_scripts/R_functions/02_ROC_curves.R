@@ -79,7 +79,8 @@ PlotROCDf <- function(use_ROC_df,
                       show_AUC   = !(add),
                       xlab_line  = 1.8,
                       ylab_line  = 2.3,
-                      ROC_lwd    = 2
+                      ROC_lwd    = 2,
+                      AUC_digits = 3
                       ) {
 
   ROC_mat <- GetROCMat(use_ROC_df)
@@ -116,7 +117,7 @@ PlotROCDf <- function(use_ROC_df,
     space_in_lines <- 1.1
     text(x      = par("usr")[[2]] - diff(grconvertY(c(0, space_in_lines), from = "lines", to = "user")),
          y      = par("usr")[[3]] + diff(grconvertY(c(0, space_in_lines), from = "lines", to = "user")),
-         labels = paste0("AUC = ", format(round(AUC_value, digits = 2), nsmall = 2)),
+         labels = paste0("AUC = ", format(round(AUC_value, digits = AUC_digits), nsmall = AUC_digits)),
          adj    = c(1, 0),
          xpd    = NA
          )

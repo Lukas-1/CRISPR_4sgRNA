@@ -971,7 +971,7 @@ GetEssentialROCDf <- function(essential_genes,
 
 
 
-PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with CRISPRoff") {
+PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with CRISPRoff", AUC_digits = 3) {
 
   numbers_text <- paste0(sum(use_ROC_df[, "Is_essential"]), " essential genes and ",
                          sum(!(use_ROC_df[, "Is_essential"])), " non-essential genes"
@@ -979,7 +979,7 @@ PlotEssentialROCDf <- function(use_ROC_df, use_title = "Gene essentiality with C
 
   old_mar <- par(mar = c(3.7, 3.95, 4.1, 1.75))
 
-  AUC_value <- PlotROCDf(use_ROC_df, flip = TRUE)
+  AUC_value <- PlotROCDf(use_ROC_df, flip = TRUE, AUC_digits = AUC_digits)
 
   title(as.expression(use_title), cex.main = par("cex"), line = 2.5)
   mtext(numbers_text, line = 0.75, cex = par("cex") * 0.75, adj = 0.5)
