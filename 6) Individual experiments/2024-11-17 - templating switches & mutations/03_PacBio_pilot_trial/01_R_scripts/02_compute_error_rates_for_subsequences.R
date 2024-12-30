@@ -6,8 +6,8 @@
 root_dir    <- "~/CRISPR_4sgRNA"
 exper_dir   <- file.path(root_dir, "6) Individual experiments")
 project_dir <- file.path(exper_dir, "2024-11-17 - templating switches & mutations")
-source(file.path(project_dir, "01_R_functions", "01_extracting_and_categorizing_sequences.R")) # For CheckThatIntegerVectorIsInOrder
-source(file.path(project_dir, "01_R_functions", "02_computing_error_rates.R"))
+source(file.path(project_dir, "01_R_functions", "01_extracting_and_categorizing_subsequences.R")) # For CheckThatIntegerVectorIsInOrder
+source(file.path(project_dir, "01_R_functions", "02_computing_error_rates_for_subsequences.R"))
 
 
 
