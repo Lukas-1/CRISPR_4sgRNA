@@ -118,10 +118,6 @@ ExtractAlignedSequences <- function(ccs_df,
     unaligned_qual_vec <- ccs_df[["Quality"]][zmw_matches]
     this_ID_fwd <- alignments_df[["Orientation_fwd"]][are_this_ID]
 
-    assign("delete_unaligned_qual_vec", unaligned_qual_vec, envir = globalenv())
-    assign("delete_this_ID_fwd",        this_ID_fwd,        envir = globalenv())
-    assign("delete_x",                  x,                  envir = globalenv())
-
     unaligned_qual_vec[!(this_ID_fwd)] <- reverse(unaligned_qual_vec[!(this_ID_fwd)])
 
     unaligned_qual_char_list <- strsplit(unaligned_qual_vec, "")
@@ -271,22 +267,32 @@ ProcessByPlate <- function(input_df, UseFunction, is_df = TRUE, message_prefix =
 
 
 
-ThreeBasicCategories <- function(extracted_df) {
+ThreeBasicCategories <- function(extracted_df, verbose = FALSE) {
 
-  mean_quality_vec <- GetMeanQualityNoGaps(extracted_df[["Quality"]])
-  aligned_read_chars <- strsplit(extracted_df[["Aligned_read"]], "", fixed = TRUE)
-  aligned_template_chars <- strsplit(extracted_df[["Aligned_template"]], "", fixed = TRUE)
+  ShowMessage <- function(x) if (verbose) message(x)
+
+  ShowMessage("Computing mean qualities...")
+  mean_quality_vec <- GetMeanQualityNoGaps(extracted_df[, "Quality"])
+
+  ShowMessage("Splitting sequences into single-character strings...")
+  aligned_read_chars <- strsplit(extracted_df[, "Aligned_read"], "", fixed = TRUE)
+  aligned_template_chars <- strsplit(extracted_df[, "Aligned_template"], "", fixed = TRUE)
+
+  ShowMessage("Counting the number of incorrect bases...")
   num_bases_incorrect <- mapply(function(x, y) sum(x != y),
                                 aligned_read_chars,
                                 aligned_template_chars
                                 )
-  num_bases_lost <- vapply(aligned_read_chars, function(x) sum(x == "-"), integer(1))
-  sequence_lengths <- nchar(extracted_df[["Aligned_read"]])
 
+  ShowMessage("Counting the number of deleted bases...")
+  num_bases_lost <- vapply(aligned_read_chars, function(x) sum(x == "-"), integer(1))
+
+  ShowMessage("Combining data...")
+  sequence_lengths <- nchar(extracted_df[["Aligned_read"]])
   results_df <- data.frame(
     extracted_df,
     "Mean_quality"             = mean_quality_vec,
-    "Is_correct"               = extracted_df[["Template"]] == extracted_df[["Aligned_read"]],
+    "Is_correct"               = extracted_df[, "Template"] == extracted_df[, "Aligned_read"],
     "Alignment_length"         = sequence_lengths,
     "Num_incorrect"            = num_bases_incorrect,
     "Over_5_percent_incorrect" = (num_bases_incorrect / sequence_lengths) > 0.05,
@@ -294,6 +300,7 @@ ThreeBasicCategories <- function(extracted_df) {
     "Mostly_deleted"           = num_bases_lost >= (sequence_lengths / 2)
   )
 
+  ShowMessage("Assigning 3 categories...")
   category_vec <- ifelse(results_df[["Is_correct"]],
                          "Correct",
                          ifelse(results_df[["Mostly_deleted"]],
@@ -346,8 +353,6 @@ ProcessExtractedDf <- function(extracted_df, unique_IDs = seq_len(384)) {
 
   stopifnot(all("sg_sequences_df" %in% ls(envir = globalenv())))
 
-  assign("delete_1_extracted_df", extracted_df, envir = globalenv())
-
   if ("Plate_number" %in% names(extracted_df)) {
     results_df <- ProcessByPlate(extracted_df,
                                  ThreeBasicCategories,
@@ -386,9 +391,6 @@ ProcessExtractedDf <- function(extracted_df, unique_IDs = seq_len(384)) {
   results_df[["Is_contamination"]] <- are_contamination
   results_df[["Category"]][are_contamination] <- "Contamination"
 
-
-  assign("delete_2_results_df", results_df, envir = globalenv())
-
   ## Check for small insertions that may or may not be considered to fall within
   ## the sgRNA + tracrRNA region
   if ("Plate_number" %in% names(results_df)) {
@@ -400,7 +402,6 @@ ProcessExtractedDf <- function(extracted_df, unique_IDs = seq_len(384)) {
   } else {
     category_vec <- GetFlankingInsertions(results_df)
   }
-  assign("delete_category_vec", category_vec, envir = globalenv())
   results_df[["Category"]] <- category_vec
   return(results_df)
 }
