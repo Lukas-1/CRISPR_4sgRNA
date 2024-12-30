@@ -2,12 +2,10 @@
 
 
 
-
 # Import packages and source code -----------------------------------------
 
 library("Biostrings")
 library("data.table")
-
 
 
 
@@ -42,7 +40,6 @@ features_list <- list(
   "row_primer"     = c(2216, 2235),
   "row_barcode"    = c(2236, 2245)
 )
-
 
 
 
@@ -405,8 +402,6 @@ ProcessExtractedDf <- function(extracted_df, unique_IDs = seq_len(384)) {
   results_df[["Category"]] <- category_vec
   return(results_df)
 }
-
-
 
 
 
