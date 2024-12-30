@@ -3856,9 +3856,9 @@ CategoriesDonutBar <- function(character_vec,
 
 
 
-Summarize4sgTargets <- function(CRISPR_df, targets_df) {
+Summarize4sgTargets <- function(CRISPR_df, guide_targets_df) {
 
-  stopifnot(nrow(CRISPR_df) == nrow(targets_df))
+  stopifnot(nrow(CRISPR_df) == nrow(guide_targets_df))
 
   are_4sg <- Are4sg(CRISPR_df, sublibraries_all_entrezs_list)
 
@@ -3868,7 +3868,7 @@ Summarize4sgTargets <- function(CRISPR_df, targets_df) {
     ID_column <- "Entrez_ID"
   }
 
-  summary_splits <- split(as.character(targets_df[["Gene_targets_summary"]][are_4sg]),
+  summary_splits <- split(as.character(guide_targets_df[["Gene_targets_summary"]][are_4sg]),
                           CRISPR_df[[ID_column]][are_4sg]
                           )
 
@@ -3913,7 +3913,7 @@ Summarize4sgTargets <- function(CRISPR_df, targets_df) {
     "No location data for the intended gene",
     "No hits in the reference genome"
   )
-  stopifnot(identical(sort(category_order), sort(levels(targets_df[["Gene_targets_summary"]]))))
+  stopifnot(identical(sort(category_order), sort(levels(guide_targets_df[["Gene_targets_summary"]]))))
 
   summary_vec <- vapply(summary_splits,
                         function(x) {
