@@ -58,7 +58,6 @@ merged_replaced_CRISPRa_df <- AddMainTSS(merged_replaced_CRISPRa_df)
 
 
 
-
 # Re-arrange the columns --------------------------------------------------
 
 selected_columns <- c("Combined_ID",
@@ -141,7 +140,6 @@ show_columns <- c("Combined_ID", "Entrez_ID", "Gene_symbol",
                   )
 
 head(merged_replaced_CRISPRa_df[(merged_replaced_CRISPRa_df[["Off_target_stringency"]] > 0) %in% TRUE, show_columns])
-
 
 
 

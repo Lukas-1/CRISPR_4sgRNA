@@ -2,8 +2,6 @@
 
 
 
-
-
 # Import packages and source code -----------------------------------------
 
 library("vcfR")
@@ -32,12 +30,11 @@ vcfR_read <- read.vcfR(file = NCBI_vcf_path)
 
 
 
-
 # Process data ------------------------------------------------------------
 
 info_splits <- strsplit(vcfR_read@fix[, "INFO"], ";", fixed = TRUE)
 
-CAF_raw_vec     <- vapply(info_splits, function(x) grep("CAF=", x, value = TRUE, fixed = TRUE), "")
+CAF_raw_vec <- vapply(info_splits, function(x) grep("CAF=", x, value = TRUE, fixed = TRUE), "")
 TOPMED_raw_vec <- vapply(info_splits, function(x) {
   result_string <- grep("TOPMED=", x, value = TRUE, fixed = TRUE)
   if (length(result_string) == 0) {
@@ -62,16 +59,11 @@ dbSNP_common_raw_df <- data.frame(
 
 
 
-
-
 # Save data ---------------------------------------------------------------
 
 save(list = "dbSNP_common_raw_df",
      file = file.path(general_RData_directory, "03) Read in data on genetic polymorphisms from dbSNP.RData")
      )
-
-
-
 
 
 

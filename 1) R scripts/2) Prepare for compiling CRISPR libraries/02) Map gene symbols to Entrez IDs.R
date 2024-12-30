@@ -77,12 +77,10 @@ NamesToAllCaps <- function(input_list) {
 
 
 
-
 # Convert alias_ and symbol_to_entrez_list to all capital letters ---------
 
 symbol_to_entrez_list <- ConsolidateList(NamesToAllCaps(symbol_to_entrez_list))
 alias_to_entrez_list  <- OrderEntrezsList(ConsolidateList(NamesToAllCaps(alias_to_entrez_list)))
-
 
 
 
@@ -183,7 +181,6 @@ collected_symbols <- sort(unique(c(names(symbol_to_entrez_list),
                                    )
                                  )
                           )
-
 
 
 
@@ -289,28 +286,10 @@ entrez_to_symbol_df <- Entrez_map_df
 
 
 
-
 # Save data ---------------------------------------------------------------
 
 save(list = c("symbol_to_entrez_df", "entrez_to_symbol_df"),
      file = file.path(general_RData_directory, "02) Map gene symbols to Entrez IDs.RData")
      )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

@@ -40,7 +40,6 @@ merged_replaced_CRISPRa_df <- AddOtherTargetBooleans(merged_replaced_CRISPRa_df,
                                                      )
 
 
-
 # Show some example plots -------------------------------------------------
 
 BarPlot_Sources(merged_replaced_CRISPRa_df,

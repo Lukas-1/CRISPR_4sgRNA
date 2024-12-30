@@ -2,13 +2,9 @@
 
 
 
-
-
 # Import packages and source code -----------------------------------------
 
 library("vcfR")
-
-
 
 
 
@@ -23,7 +19,6 @@ Kaviar_vcf_path <- file.path(polymorphisms_directory, "Kaviar-160204-Public-hg38
 
 
 
-
 # Read in data ------------------------------------------------------------
 
 # Downloaded from http://db.systemsbiology.net/kaviar/Kaviar.downloads.html
@@ -32,8 +27,6 @@ Kaviar_vcf_path <- file.path(polymorphisms_directory, "Kaviar-160204-Public-hg38
 # accessed on 7 August 2019
 
 vcfR_read <- read.vcfR(file = Kaviar_vcf_path)
-
-
 
 
 
@@ -55,17 +48,10 @@ Kaviar_common_raw_df <- data.frame(
 
 
 
-
-
-
 # Save data ---------------------------------------------------------------
 
 save(list = "Kaviar_common_raw_df",
      file = file.path(general_RData_directory, "04) Read in data on genetic polymorphisms from Kaviar.RData")
      )
-
-
-
-
 
 

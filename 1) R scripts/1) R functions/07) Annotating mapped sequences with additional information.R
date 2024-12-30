@@ -56,7 +56,6 @@ GetNGGPAM <- function(ranges_df, use_genome = BSgenome.Hsapiens.UCSC.hg38) {
 
 
 
-
 # Functions for mapping from genomic locations to genes -------------------
 
 ProcessHitsObject <- function(Hits_object, num_queries, gene_models_GRanges, is_mouse = FALSE, is_rat = FALSE) {
