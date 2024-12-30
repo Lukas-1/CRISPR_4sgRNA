@@ -10,7 +10,7 @@ lumi_func_dir <- file.path(illumina_dir, "01_R_scripts", "R_functions")
 project_dir   <- file.path(exper_dir, "2024-11-17 - templating switches & mutations")
 
 source(file.path(lumi_func_dir, "01_violin_swarm_plots.R")) # For RepositionByGroups
-source(file.path(project_dir, "01_R_functions", "03_visualizing_error_rates.R"))
+source(file.path(project_dir, "01_R_functions", "03_visualizing_error_rates_for_subsequences.R"))
 
 
 # Define paths ------------------------------------------------------------

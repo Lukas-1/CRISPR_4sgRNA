@@ -12,7 +12,7 @@ project_dir  <- file.path(exper_dir, "2024-11-17 - templating switches & mutatio
 
 source(file.path(first_QC_dir, "1) R functions", "07) Categorizing subsequences of reads aligned to the reference.R"))
 source(file.path(nanopore_dir, "01_R_scripts", "1_R_functions", "03_extracting_aligned_sgRNAs.R"))
-source(file.path(project_dir, "01_R_functions", "01_extracting_and_categorizing_sequences.R"))
+source(file.path(project_dir, "01_R_functions", "01_extracting_and_categorizing_subsequences.R"))
 
 
 
