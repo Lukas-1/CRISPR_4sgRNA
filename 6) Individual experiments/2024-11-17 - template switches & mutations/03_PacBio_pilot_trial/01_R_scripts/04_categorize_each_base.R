@@ -46,8 +46,7 @@ read_char_list <- strsplit(filtered_df[, "Aligned_read"], "", fixed = TRUE)
 ref_are_gaps_list <- lapply(ref_char_list, function(x) x == "-")
 ref_char_numbers_list <- lapply(ref_are_gaps_list, function(x) cumsum(!(x)))
 
-use_indices <- 1:2225
-use_indices <- 1:10
+use_indices <- seq_len(2225)
 
 indices_vec_list <- lapply(use_indices, function(x) {
   message("Finding the aligned index at position #", x, "...")
