@@ -25,7 +25,7 @@ output_dir   <- file.path(sub_dir, "03_output")
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(plasmids_dir, "03_compute_error_rates_for_each_base.RData"))
+load(file.path(plasmids_dir, "03_compute_error_rates__individual_bases.RData"))
 load(file.path(rdata_dir, "01_extract_and_categorize_subsequences__features_df.RData"))
 df_list_names <- load(file.path(rdata_dir, "05_compute_error_rates_for_each_base.RData"))
 
@@ -392,31 +392,28 @@ SixErrorRates <- function(display_df_list, show_title = NULL, y_upper = NULL) {
 
 # Add comparison data from the original plasmids --------------------------
 
-sg_pairs <- names(error_mat_list)[2:7]
+sg_pairs <- names(base_error_mat_list)[2:7]
 
 full_reads_deletions_df_list <- lapply(full_reads_deletions_df_list, function(x) {
-  x[, "Fraction_reference"] <- error_mat_list[["Full"]][, "Fraction_deleted"]
+  x[, "Fraction_reference"] <- base_error_mat_list[["Full"]][, "Fraction_deleted"]
   x
 })
 
 full_reads_errors_df_list <- lapply(full_reads_errors_df_list, function(x) {
-  x[, "Fraction_reference"] <- error_mat_list[["Full"]][, "Fraction_incorrect"]
+  x[, "Fraction_reference"] <- base_error_mat_list[["Full"]][, "Fraction_incorrect"]
   x
 })
 
 all_reads_deletions_df_list <- lapply(1:6, function(x) {
   use_df <- all_reads_deletions_df_list[[x]]
-  pair_name <- sg_pairs[[x]]
-  print(pair_name)
-  use_df[, "Fraction_reference"] <- error_mat_list[[pair_name]][, "Fraction_deleted"]
+  use_df[, "Fraction_reference"] <- base_error_mat_list[[sg_pairs[[x]]]][, "Fraction_deleted"]
   use_df
 })
 names(all_reads_deletions_df_list) <- sg_pairs
 
 all_reads_errors_df_list <- lapply(1:6, function(x) {
   use_df <- all_reads_errors_df_list[[x]]
-  pair_name <- sg_pairs[[x]]
-  use_df[, "Fraction_reference"] <- error_mat_list[[pair_name]][, "Fraction_incorrect"]
+  use_df[, "Fraction_reference"] <- base_error_mat_list[[sg_pairs[[x]]]][, "Fraction_incorrect"]
   use_df
 })
 names(all_reads_errors_df_list) <- sg_pairs
