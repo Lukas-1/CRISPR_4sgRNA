@@ -20,7 +20,6 @@ reactome_df <- read.delim(file.path(anno_dir, "Reactome", "NCBI2Reactome_All_Lev
                           )
 
 
-
 # Filter data -------------------------------------------------------------
 
 GO_df <- GO_df[GO_df[, "#tax_id"] %in% "9606", names(GO_df) != "#tax_id"]
