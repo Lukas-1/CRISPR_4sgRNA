@@ -11,7 +11,7 @@ rdata_dir   <- file.path(project_dir, "3_RData")
 
 # Read in data ------------------------------------------------------------
 
-hgnc_df <- read.delim(file.path(anno_dir, "HGNC", "hgnc_complete_set_2024-08-23"),
+hgnc_df <- read.delim(file.path(anno_dir, "HGNC", "hgnc_complete_set_2024-08-23.tsv"),
                       quote = "", stringsAsFactors = FALSE
                       )
 
