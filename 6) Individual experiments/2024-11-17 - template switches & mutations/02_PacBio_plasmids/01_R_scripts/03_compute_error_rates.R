@@ -29,7 +29,7 @@ load(file.path(rdata_dir, "02_categorize_subsequences_from_bases.RData"))
 
 # Define functions --------------------------------------------------------
 
-GetStats <- function(are_included) {
+GetSingleBaseStats <- function(are_included) {
   results_mat <- cbind(
     "Fraction_incorrect" = colSums(!(is_correct_mat[are_included, ])) / sum(are_included),
     "Fraction_deleted"   = colSums(is_deleted_mat[are_included, ]) / sum(are_included)
@@ -37,6 +37,13 @@ GetStats <- function(are_included) {
   return(results_mat)
 }
 
+GetSubsequenceStats <- function(are_included) {
+  results_mat <- cbind(
+    "Fraction_incorrect" = colSums(!(features_correct_mat[are_included, ])) / sum(are_included),
+    "Fraction_deleted"   = colSums(features_deleted_mat[are_included, ]) / sum(are_included)
+  )
+  return(results_mat)
+}
 
 
 # Prepare for computing statistics ----------------------------------------
@@ -75,21 +82,37 @@ colnames(have_both_mat) <- colnames(sg_pairs_mat)
 
 
 
-# Compute statistics for "fully mapped" reads and each pairing ------------
+# Compute error rates for individual bases --------------------------------
+## Statistics are computed for "fully mapped" reads and each pairing
 
 have_all <- rowSums(sg_correct_mat) == 4
 
-error_mat_list <- c(
-  list(GetStats(have_all)),
-  lapply(1:6, function(x) GetStats(have_both_mat[, x]))
+base_error_mat_list <- c(
+  list(GetSingleBaseStats(have_all)),
+  lapply(1:6, function(x) GetSingleBaseStats(have_both_mat[, x]))
 )
-names(error_mat_list) <- c("Full", colnames(sg_pairs_mat))
+names(base_error_mat_list) <- c("Full", colnames(sg_pairs_mat))
+
+
+
+# Compute error rates for subsequences ------------------------------------
+
+features_correct_mat <- CategorDfToMat(feature_categ_df, "Is_correct")
+features_deleted_mat <- CategorDfToMat(feature_categ_df, "Mostly_deleted")
+subsequence_error_mat_list <- c(
+  list(GetSubsequenceStats(have_all)),
+  lapply(1:6, function(x) GetSubsequenceStats(have_both_mat[, x]))
+)
+names(subsequence_error_mat_list) <- c("Full", colnames(sg_pairs_mat))
 
 
 
 # Save data ---------------------------------------------------------------
 
-save(error_mat_list,
-     file = file.path(rdata_dir, "03_compute_error_rates_for_each_base.RData")
+save(base_error_mat_list,
+     file = file.path(rdata_dir, "03_compute_error_rates__individual_bases.RData")
+     )
+save(subsequence_error_mat_list,
+     file = file.path(rdata_dir, "03_compute_error_rates__subsequences.RData")
      )
 

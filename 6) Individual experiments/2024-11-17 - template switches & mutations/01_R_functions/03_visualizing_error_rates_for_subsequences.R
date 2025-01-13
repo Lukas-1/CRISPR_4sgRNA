@@ -50,7 +50,8 @@ ErrorDumbBells <- function(display_df,
                            sg_A = NULL,
                            sg_B = NULL,
                            x_upper_limit = 25,
-                           x_axis_label = "Error rate"
+                           x_axis_label = "Error rate",
+                           show_reference = TRUE
                            ) {
 
   ## Check parameters
@@ -108,7 +109,9 @@ ErrorDumbBells <- function(display_df,
   ## Prepare data for plotting
   x_vec_1 <- display_df[, "Fraction_incorrect_nonswitched"] * 100
   x_vec_2 <- display_df[, "Fraction_incorrect_switched"] * 100
-
+  if (show_reference) {
+    x_vec_3 <- display_df[, "Fraction_reference"] * 100
+  }
 
   ## Visually group related features by positioning them closer together on the y axis
   num_features <- nrow(display_df)
@@ -127,9 +130,11 @@ ErrorDumbBells <- function(display_df,
   switched_light_color    <- adjustcolor(hcl.colors(9, "Reds")[[5]], alpha.f = 0.5)
   nonswitched_dark_color  <- adjustcolor(hcl.colors(9, "Blues")[[3]], alpha.f = 0.6)
   nonswitched_light_color <- adjustcolor(hcl.colors(9, "Blues")[[5]], alpha.f = 0.5)
+  reference_dark_color    <- adjustcolor("gray40", alpha.f = 0.6)
+  reference_light_color   <- adjustcolor("gray80", alpha.f = 0.5)
 
   ## Set up plot region
-  par(mar = c(5, 8, 3.8, 3))
+  par(mar = c(5, 8, 4, 3))
   plot.new()
   plot.window(xlim = c(0, x_upper_limit),
               ylim = c(1 - (1 / ((1 + sqrt(5)) / 2)), num_features),
@@ -187,6 +192,22 @@ ErrorDumbBells <- function(display_df,
        xpd    = NA,
        adj    = c(0, 0.5)
        )
+
+  if (show_reference) {
+    points(x   = point_x + diff(grconvertX(c(0, 4.6), from = "chars", to = "user")),
+           y   = switch_y,
+           pch = 21,
+           col = reference_dark_color,
+           bg  = reference_light_color,
+           xpd = NA
+           )
+    text(x      = point_x + diff(grconvertX(c(0, 5), from = "chars", to = "user")),
+         y      = switch_y,
+         labels = "Plasmids",
+         xpd    = NA,
+         adj    = c(0, 0.5)
+         )
+  }
 
 
   ## Add an x axis and gridlines
@@ -248,6 +269,18 @@ ErrorDumbBells <- function(display_df,
   ## Plot points
   point_cex <- 1.2
   point_lwd <- 1.5
+  if (show_reference) {
+    points(x   = x_vec_3[!(are_marked)],
+           y   = y_pos[!(are_marked)],
+           col = reference_dark_color,
+           bg  = reference_light_color,
+           cex = point_cex,
+           lwd = 1,
+           pch = 21,
+           xpd = NA
+           )
+  }
+
   points(x   = x_vec_1[!(are_marked)],
          y   = y_pos[!(are_marked)],
          col = nonswitched_dark_color,

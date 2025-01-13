@@ -15,21 +15,54 @@ source(file.path(project_dir, "01_R_functions", "03_visualizing_error_rates_for_
 
 # Define paths ------------------------------------------------------------
 
-sub_dir    <- file.path(project_dir, "03_PacBio_pilot_trial")
-rdata_dir  <- file.path(sub_dir, "02_R_objects")
-output_dir <- file.path(sub_dir, "03_output")
+plasmids_dir <- file.path(project_dir, "02_PacBio_plasmids", "02_R_objects")
+sub_dir      <- file.path(project_dir, "03_PacBio_pilot_trial")
+rdata_dir    <- file.path(sub_dir, "02_R_objects")
+output_dir   <- file.path(sub_dir, "03_output")
 
 
 # Load data ---------------------------------------------------------------
 
+load(file.path(plasmids_dir, "03_compute_error_rates__subsequences.RData"))
 load(file.path(rdata_dir, "01_extract_and_categorize_subsequences__features_df.RData"))
 load(file.path(rdata_dir, "02_compute_error_rates_for_subsequences.RData"))
 
 
 
+# Add comparison data from the original plasmids --------------------------
+
+sg_pairs <- names(subsequence_error_mat_list)[2:7]
+
+full_reads_deletions_df_list <- lapply(full_reads_deletions_df_list, function(x) {
+  x[, "Fraction_reference"] <- subsequence_error_mat_list[["Full"]][, "Fraction_deleted"]
+  x
+})
+
+full_reads_errors_df_list <- lapply(full_reads_errors_df_list, function(x) {
+  x[, "Fraction_reference"] <- subsequence_error_mat_list[["Full"]][, "Fraction_incorrect"]
+  x
+})
+
+all_reads_deletions_df_list <- lapply(1:6, function(x) {
+  use_df <- all_reads_deletions_df_list[[x]]
+  use_df[, "Fraction_reference"] <- subsequence_error_mat_list[[sg_pairs[[x]]]][, "Fraction_deleted"]
+  use_df
+})
+names(all_reads_deletions_df_list) <- sg_pairs
+
+all_reads_errors_df_list <- lapply(1:6, function(x) {
+  use_df <- all_reads_errors_df_list[[x]]
+  use_df[, "Fraction_reference"] <- subsequence_error_mat_list[[sg_pairs[[x]]]][, "Fraction_incorrect"]
+  use_df
+})
+names(all_reads_errors_df_list) <- sg_pairs
+
+
+
+
 # Display error rates -----------------------------------------------------
 
-PDF_width <- 6.5
+PDF_width <- 7
 PDF_height <- 8
 
 for (create_PDF in c(FALSE, TRUE)) {
