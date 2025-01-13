@@ -1096,7 +1096,8 @@ DrawSideLegend <- function(labels_list,
                            point_x_start        = 0.15,
                            title_vec            = NULL,
                            title_x_start        = NULL,
-                           text_cex             = 1
+                           text_cex             = 1,
+                           x_starting_point     = 1
                            ) {
 
   ## Perform checks
@@ -1127,8 +1128,8 @@ DrawSideLegend <- function(labels_list,
   y_sequence <- start_y - cumsum(gaps_vec)
   y_pos <- grconvertY(y = y_sequence, from = "npc", to = "user")
 
-  x_text  <- 1 + diff(grconvertX(c(0, lines_x_start), from = "lines", to = "npc"))
-  x_point <- 1 + diff(grconvertX(c(0, lines_x_start + point_x_start), from = "lines", to = "npc"))
+  x_text  <- x_starting_point + diff(grconvertX(c(0, lines_x_start), from = "lines", to = "npc"))
+  x_point <- x_starting_point + diff(grconvertX(c(0, lines_x_start + point_x_start), from = "lines", to = "npc"))
 
   if (!(is.null(title_vec))) {
     if (is.null(title_x_start)) {
