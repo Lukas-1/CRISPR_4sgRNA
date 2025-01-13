@@ -5,6 +5,37 @@
 # 2022-01-05 - first nanopore sequencing run/01_R_scripts/1_R_functions/03_extracting_aligned_sgRNAs.R
 
 
+# Define maps -------------------------------------------------------------
+
+features_list <- list(
+  "promoter1_hU6"  = c(177, 426),
+  "sg1"            = c(427, 446),
+  "tracrRNA1"      = c(447, 532),
+  "polyT_1"        = c(533, 539),
+
+  "EM7_promoter"   = c(540, 587),
+  "pre_TpR"        = c(588, 605),
+  "TpR_DHFR"       = c(606, 842),
+  "polyT_TpR"      = c(843, 849),
+
+  "promoter2_mU6"  = c(850, 1165),
+  "sg2"            = c(1166, 1185),
+  "tracrRNA2"      = c(1186, 1273),
+  "polyT_2"        = c(1274, 1280),
+
+  "promoter3_hH1"  = c(1281, 1504),
+  "sg3"            = c(1505, 1524),
+  "tracrRNA3"      = c(1525, 1612),
+  "polyT_3"        = c(1613, 1619),
+
+  "promoter4_h7SK" = c(1620, 1863),
+  "sg4"            = c(1864, 1883),
+  "tracrRNA4"      = c(1884, 1969),
+  "polyT_4"        = c(1970, 1976)
+)
+
+
+
 # General utility functions -----------------------------------------------
 
 CheckThatIntegerVectorIsInOrder <- function(my_factor) {
@@ -28,12 +59,13 @@ TweakFeaturesDf <- function(input_df) {
   for (column in c("Start", "End")) {
     features_df[[column]] <- features_df[[column]] - 10L
   }
-
   features_df[, "Length"] <- features_df[, "End"] - features_df[, "Start"] + 1L
-  features_df[, "Template"] <- mapply(function(x, y) substr(amplicon_ref, x, y),
-                                      features_df[, "Start"],
-                                      features_df[, "End"]
-                                      )
+  if ("amplicon_ref" %in% ls(envir = globalenv())) {
+    features_df[, "Template"] <- mapply(function(x, y) substr(amplicon_ref, x, y),
+                                        features_df[, "Start"],
+                                        features_df[, "End"]
+                                        )
+  }
   return(features_df)
 }
 
@@ -118,5 +150,60 @@ AddGuideData <- function(categor_df, mapped_df) {
   }
   return(categor_df)
 }
+
+
+
+# Functions for categorizing subsequences based on single-base data -------
+
+UnMatrix <- function(input_mat) {
+  dim(input_mat) <- NULL
+  input_mat
+}
+
+
+CategorizeFeaturesFromBases <- function(correct_mat, del_mat) {
+
+  stopifnot("features_df" %in% ls(envir = globalenv()))
+
+  indices_list <- Map(function(x, y) x:y, features_df[, "Start"], features_df[, "End"])
+  names(indices_list) <- features_df[, "Feature"]
+
+  all_correct_mat <- do.call(cbind, lapply(indices_list, function(x) {
+    rowSums(correct_mat[, x]) == length(x)
+  }))
+  at_least_95_percent_correct_mat <- do.call(cbind, lapply(indices_list, function(x) {
+    rowSums(correct_mat[, x]) >= ceiling(length(x) * 0.95)
+  }))
+  num_incorrect_mat <- do.call(cbind, lapply(indices_list, function(x) {
+    rowSums(!(correct_mat[, x]))
+  }))
+  num_missing_mat <- do.call(cbind, lapply(indices_list, function(x) {
+    rowSums(del_mat[, x])
+  }))
+  mostly_deleted_mat <- do.call(cbind, lapply(indices_list, function(x) {
+    rowSums(del_mat[, x]) > floor(length(x) * 0.5)
+  }))
+  category_mat <- matrix(nrow = nrow(all_correct_mat),
+                         ncol = ncol(all_correct_mat)
+                         )
+  colnames(category_mat) <- features_df[, "Feature"]
+  category_mat[all_correct_mat] <- "Correct"
+  category_mat[!(all_correct_mat)] <- "Mutation"
+  category_mat[mostly_deleted_mat] <- "Deletion"
+
+  results_df <- data.frame(
+    "Feature"                  = rep(features_df[, "Feature"], times = nrow(correct_mat)),
+    "Is_correct"               = UnMatrix(t(all_correct_mat)),
+    "Num_incorrect"            = UnMatrix(t(num_incorrect_mat)),
+    "Over_5_percent_incorrect" = UnMatrix(t(!(at_least_95_percent_correct_mat))),
+    "Num_missing"              = UnMatrix(t(num_missing_mat)),
+    "Mostly_deleted"           = UnMatrix(t(mostly_deleted_mat)),
+    "Category"                 = UnMatrix(t(category_mat))
+  )
+  return(results_df)
+}
+
+
+
 
 

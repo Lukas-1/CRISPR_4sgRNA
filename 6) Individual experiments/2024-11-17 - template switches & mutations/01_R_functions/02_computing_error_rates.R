@@ -62,16 +62,18 @@ CompareSwitchedNonswitched <- function(categor_df,
 
   ## Identify template switches
   are_switched <- apply(plasmid_mat, 1, function(x) length(unique(x[!(is.na(x))])) > 1)
+  num_switched <- sum(are_switched)
+  num_non_switched <- sum(!(are_switched))
+  num_total <- length(are_switched)
   message("For this analysis, ",
           sum(are_included), " reads (out of a total of ", length(read_numbers),
-          ") were included.\nOf these, ", sum(are_switched), " (",
-          format(sum(are_switched) / length(are_switched) * 100, digits = 1, nsmall = 1),
+          ") were included.\nOf these, ", num_switched, " (",
+          format(num_switched / num_total * 100, digits = 1, nsmall = 1),
           "%) featured a template switch\nbetween sg", sg_A, " and sg", sg_B,
-          ", whereas ", sum(!(are_switched)), " (",
-          format(sum(!(are_switched)) / length(are_switched) * 100, digits = 1, nsmall = 1),
+          ", whereas ", num_non_switched, " (",
+          format(num_non_switched / num_total * 100, digits = 1, nsmall = 1),
           "%) did not.\n"
           )
-
   ## Produce a logical matrix (is correct? => TRUE/FALSE) for each read and feature
   if (only_deletions) {
     are_incorrect_mat <- CategorDfToMat(categor_df, "Mostly_deleted")
@@ -81,6 +83,7 @@ CompareSwitchedNonswitched <- function(categor_df,
   stopifnot(nrow(are_incorrect_mat) == length(read_numbers))
   are_incorrect_mat <- are_incorrect_mat[are_included, ]
 
+
   ## Calculate error rates for switched and non-switched reads
   errors_df <- data.frame(
     "Feature"                   = colnames(are_incorrect_mat),
@@ -88,28 +91,50 @@ CompareSwitchedNonswitched <- function(categor_df,
     "Num_incorrect_switched"    = as.integer(colSums(are_incorrect_mat[are_switched, ])),
     row.names = NULL
   )
-  errors_df[, "Fraction_incorrect_nonswitched"] <- errors_df[, "Num_incorrect_nonswitched"] / sum(!(are_switched))
-  errors_df[, "Fraction_incorrect_switched"] <- errors_df[, "Num_incorrect_switched"] / sum(are_switched)
+
+  ## Perform Fisher's exact tests (template switches vs. errors)
+  fisher_prop_mat <- t(vapply(seq_len(ncol(are_incorrect_mat)), function(x) {
+    are_incorrect <- are_incorrect_mat[, x]
+    if ((!(any(are_incorrect))) || all(are_incorrect)) {
+      results_vec <- rep(NA_real_, 8)
+    } else {
+      fisher_vec <- unlist(fisher.test(are_switched, are_incorrect)[c("estimate", "p.value")])
+      prop_vec_nonswitched <- unlist(prop.test(sum(!(are_switched) & are_incorrect), num_non_switched)[c("estimate", "conf.int")])
+      prop_vec_switched <- unlist(prop.test(sum(are_switched & are_incorrect), num_switched)[c("estimate", "conf.int")])
+      results_vec <- c(prop_vec_nonswitched, prop_vec_switched, fisher_vec)
+    }
+    names(results_vec) <- c("Fraction_incorrect_nonswitched", "Lower_95_nonswitched", "Upper_95_nonswitched",
+                            "Fraction_incorrect_switched", "Lower_95_switched", "Upper_95_switched",
+                            "Fisher_OR", "Fisher_p"
+                            )
+    return(results_vec)
+  }, numeric(8)))
+  errors_df <- data.frame(errors_df, fisher_prop_mat)
   errors_df[, "Delta_fraction"] <- errors_df[, "Fraction_incorrect_switched"] - errors_df[, "Fraction_incorrect_nonswitched"]
 
-  ## Bootstrap p values for error rates
-  set.seed(1)
-  resampled_delta_mat <- t(vapply(seq_len(k), function(x) {
-    random_are_switched <- sample(are_switched)
-    (colSums(are_incorrect_mat[!(random_are_switched), ]) / sum(!(random_are_switched))) -
-    colSums(are_incorrect_mat[random_are_switched, ]) / sum(random_are_switched)
-  }, numeric(nrow(errors_df))))
 
-  p_values_one_sided <- vapply(seq_len(nrow(errors_df)), function(x) {
-    sum(resampled_delta_mat[, x] >= errors_df[, "Delta_fraction"][[x]])
-  }, integer(1))
-  p_values_two_sided <- vapply(seq_len(nrow(errors_df)), function(x) {
-    sum(abs(resampled_delta_mat[, x]) >= abs(errors_df[, "Delta_fraction"][[x]]))
-  }, integer(1))
+  # ## Bootstrap p values for error rates
+  # set.seed(1)
+  # resampled_delta_mat <- t(vapply(seq_len(k), function(x) {
+  #   random_are_switched <- sample(are_switched)
+  #   (colSums(are_incorrect_mat[!(random_are_switched), ]) / sum(!(random_are_switched))) -
+  #   colSums(are_incorrect_mat[random_are_switched, ]) / sum(random_are_switched)
+  # }, numeric(nrow(errors_df))))
+  #
+  # p_values_one_sided <- vapply(seq_len(nrow(errors_df)), function(x) {
+  #   sum(resampled_delta_mat[, x] >= errors_df[, "Delta_fraction"][[x]])
+  # }, integer(1))
+  # p_values_two_sided <- vapply(seq_len(nrow(errors_df)), function(x) {
+  #   sum(abs(resampled_delta_mat[, x]) >= abs(errors_df[, "Delta_fraction"][[x]]))
+  # }, integer(1))
+  #
+  # errors_df[, "P_one_sided"] <- p_values_one_sided / k
+  # errors_df[, "P_two_sided"] <- p_values_two_sided / k
 
-  errors_df[, "P_one_sided"] <- p_values_one_sided / k
-  errors_df[, "P_two_sided"] <- p_values_two_sided / k
+
   return(errors_df)
 }
+
+
 
 

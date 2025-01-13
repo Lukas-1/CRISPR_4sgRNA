@@ -30,9 +30,9 @@ SetUpMappings <- function() {
     data.frame("Well_number_384"  = as.vector(t(indices_mat_list[[x]])),
                "Plate_96"         = names(indices_mat_list)[[x]],
                "Well_coords_96"   = as.vector(t(coords_96wp_mat)),
-               stringsAsFactors = FALSE
+               stringsAsFactors   = FALSE
                )
-    })
+  })
   long_df <- do.call(rbind.data.frame,
                      c(long_df_list,
                        stringsAsFactors = FALSE,

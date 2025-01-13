@@ -5,9 +5,9 @@
 
 root_dir    <- "~/CRISPR_4sgRNA"
 exper_dir   <- file.path(root_dir, "6) Individual experiments")
-project_dir <- file.path(exper_dir, "2024-11-17 - templating switches & mutations")
+project_dir <- file.path(exper_dir, "2024-11-17 - template switches & mutations")
 source(file.path(project_dir, "01_R_functions", "01_extracting_and_categorizing_subsequences.R")) # For CheckThatIntegerVectorIsInOrder
-source(file.path(project_dir, "01_R_functions", "02_computing_error_rates_for_subsequences.R"))
+source(file.path(project_dir, "01_R_functions", "02_computing_error_rates.R"))
 
 
 
@@ -20,7 +20,7 @@ first_rdata_dir <- file.path(exper_dir, "2022-04-06 - PacBio pooled 4sg - first 
 
 # Load data ---------------------------------------------------------------
 
-load(file.path(rdata_dir, "01_extract_and_categorize_sequences__categorized_df.RData"))
+load(file.path(rdata_dir, "01_extract_and_categorize_subsequences__categorized_df.RData"))
 load(file.path(first_rdata_dir, "07_assign_sgRNAs_to_plasmids.RData"))
 
 
@@ -74,7 +74,7 @@ all_reads_deletions_df_list <- lapply(1:6, function(x) {
                              only_deletions = TRUE
                              )
 })
-names(all_reads_deletions_df_list) <- paste0("sg", sg_pairs_mat[1, ], "_sg", sg_pairs_mat[2, ])
+names(all_reads_deletions_df_list) <- colnames(sg_pairs_mat)
 
 
 
@@ -93,6 +93,6 @@ vapply(all_reads_deletions_df_list,  function(x) max(x[, use_columns]), numeric(
 save(list = c("full_reads_errors_df_list", "full_reads_deletions_df_list",
               "all_reads_errors_df_list", "all_reads_deletions_df_list"
               ),
-     file = file.path(rdata_dir, "02_compute_error_rates.RData")
+     file = file.path(rdata_dir, "02_compute_error_rates_for_subsequences.RData")
      )
 

@@ -54,7 +54,7 @@ ErrorDumbBells <- function(display_df,
                            ) {
 
   ## Check parameters
-  stopifnot(max(display_df[, c("Fraction_incorrect_nonswitched", "Fraction_incorrect_switched")]) < (x_upper_limit / 100))
+  stopifnot(max(display_df[, c("Fraction_incorrect_nonswitched", "Fraction_incorrect_switched")], na.rm = TRUE) < (x_upper_limit / 100))
   sg_NULL <- is.null(sg_A) + is.null(sg_B)
   if (sg_NULL == 1L) {
     stop("The parameters 'sg_A' and 'sg_B' must either both be specified, or both be NULL!")
@@ -215,7 +215,7 @@ ErrorDumbBells <- function(display_df,
   ## Draw stars to indicate p values
   text(x      = par("usr")[[2]] + diff(grconvertX(c(0, 0.7), from = "lines", to = "user")),
        y      = y_pos[!(are_marked)] - diff(grconvertY(c(0, 0.1), from = "lines", to = "user")),
-       labels = PValueToStars(p.adjust(display_df[!(are_marked), "P_two_sided"])),
+       labels = PValueToStars(p.adjust(display_df[!(are_marked), "Fisher_p"])),
        adj    = c(0.5, 0.5),
        col    = "gray50",
        xpd    = NA
