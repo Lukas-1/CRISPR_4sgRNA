@@ -33,30 +33,27 @@ is_correct_mat[has_insertion_mat] <- FALSE
 
 
 
-
 # Categorize subsequences -------------------------------------------------
 
 feature_categ_df <- CategorizeFeaturesFromBases(is_correct_mat, is_deleted_mat)
 
 
 
-nrow(feature_categ_df)
-nrow(categorized_df)
+# Compare features assessed directly vs. those computed from bases --------
 
-table(feature_categ_df[, "Feature"] == categorized_df[, "Feature"])
+stopifnot(identical(feature_categ_df[, "Feature"], categorized_df[, "Feature"]))
 
-df1 <- feature_categ_df[!(feature_categ_df[, "Feature"] %in% paste0("sg", 1:4)), ]
-df2 <- categorized_df[!(categorized_df[, "Feature"] %in% paste0("sg", 1:4)), ]
+## Exclude features corresponding to the 4 sgRNAs
+bases_df <- feature_categ_df[!(feature_categ_df[, "Feature"] %in% paste0("sg", 1:4)), ]
+direct_df <- categorized_df[!(categorized_df[, "Feature"] %in% paste0("sg", 1:4)), ]
 
-are_different <- df1[, "Is_correct"] != df2[, "Is_correct"]
+stopifnot(all(direct_df[, "Is_correct"] == bases_df[, "Is_correct"]))
+stopifnot(all(direct_df[, "Num_missing"] == bases_df[, "Num_missing"]))
 
-table(df1[, "Is_correct"])
-table(df2[, "Is_correct"])
-
-
-table(df1[, "Is_correct"], df2[, "Is_correct"])
-
-
+table(direct_df[, "Is_correct"], bases_df[, "Is_correct"])
+table(direct_df[, "Over_5_percent_incorrect"], bases_df[, "Over_5_percent_incorrect"])
+table(direct_df[, "Num_incorrect"] == bases_df[, "Num_incorrect"])
+table(direct_df[, "Mostly_deleted"], bases_df[, "Mostly_deleted"])
 
 
 
